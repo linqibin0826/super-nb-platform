@@ -24,6 +24,13 @@ class HexagonalBoundaryTest {
             .should().dependOnClassesThat().resideInAnyPackage("..infra..", "..adapter..");
 
     @ArchTest
+    static final ArchRule appIsPersistenceFree = noClasses()
+            .that().resideInAPackage("..app..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "jakarta.persistence..", "org.hibernate..", "org.springframework.data..")
+            .as("app 端口层不感知持久化技术(JPA 实体/仓储只在 infra)");
+
+    @ArchTest
     static final ArchRule domainDoesNotDependOnOtherContexts = noClasses()
             .that().resideInAPackage("..activity..")
             .should().dependOnClassesThat().resideInAPackage("..gallery..")

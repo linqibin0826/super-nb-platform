@@ -13,79 +13,46 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
-import me.supernb.activity.app.ActivityDto;
-import me.supernb.activity.app.RechargeQueryPort;
 import me.supernb.activity.domain.Campaign;
 import me.supernb.activity.domain.DrawResult;
 import me.supernb.activity.domain.NoDrawsLeftException;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /// 并发抽奖不超额:advisory lock 串行化同一用户,发放数永远 = min(应得次数, 池容量),多余请求一律 NoDrawsLeft。
+/// 真实 Spring 上下文(JPA 适配器)+ Testcontainers PG + Flyway 建 activity schema。
+@SpringBootTest(classes = ActivityInfraTestApp.class)
 @Testcontainers
 class DrawAdapterConcurrencyTest {
 
     @Container
     static final PostgreSQLContainer<?> PG = new PostgreSQLContainer<>("postgres:16-alpine");
 
+    @DynamicPropertySource
+    static void props(DynamicPropertyRegistry r) {
+        r.add("spring.datasource.url", PG::getJdbcUrl);
+        r.add("spring.datasource.username", PG::getUsername);
+        r.add("spring.datasource.password", PG::getPassword);
+        r.add("spring.flyway.locations", () -> "classpath:db/migration/activity");
+        r.add("spring.flyway.schemas", () -> "activity");
+    }
+
     static final long USER = 42L;
     static final Instant START = Instant.parse("2026-07-01T00:00:00Z");
     static final Instant END = Instant.parse("2026-08-01T00:00:00Z");
 
-    static JdbcTemplate jdbc;
-    static PlatformTransactionManager txm;
+    @Autowired
+    DrawAdapter adapter;
 
-    /// 充值总额固定 ¥300 → 应得 3 次抽奖。
-    static final RechargeQueryPort RECHARGE_300 = new RechargeQueryPort() {
-        @Override
-        public BigDecimal totalRecharge(long userId, Instant start, Instant end) {
-            return new BigDecimal("300");
-        }
-
-        @Override
-        public List<ActivityDto.LeaderEntry> leaderboard(Instant s, Instant e, int limit) {
-            return List.of();
-        }
-
-        @Override
-        public List<ActivityDto.RechargeEntry> recentRecharges(Instant s, Instant e, int limit) {
-            return List.of();
-        }
-
-        @Override
-        public Map<Long, String> maskedEmailsByIds(java.util.Collection<Long> ids) {
-            return Map.of();
-        }
-
-        @Override
-        public Map<String, ActivityDto.CodeStatus> codeStatuses(java.util.Collection<String> codes) {
-            return Map.of();
-        }
-    };
-
-    @BeforeAll
-    static void init() {
-        DriverManagerDataSource ds =
-                new DriverManagerDataSource(PG.getJdbcUrl(), PG.getUsername(), PG.getPassword());
-        jdbc = new JdbcTemplate(ds);
-        txm = new DataSourceTransactionManager(ds);
-        jdbc.execute("CREATE SCHEMA IF NOT EXISTS activity");
-        jdbc.execute("CREATE TABLE activity.campaign (id BIGSERIAL PRIMARY KEY, name TEXT, "
-                + "starts_at TIMESTAMPTZ, ends_at TIMESTAMPTZ, status TEXT, consolation_amount NUMERIC(20,2))");
-        jdbc.execute("CREATE TABLE activity.prize_slot (id BIGSERIAL PRIMARY KEY, campaign_id BIGINT, "
-                + "amount NUMERIC(20,2), redeem_code TEXT, status TEXT DEFAULT 'available', "
-                + "claimed_by BIGINT, claimed_at TIMESTAMPTZ)");
-        jdbc.execute("CREATE TABLE activity.draw (id BIGSERIAL PRIMARY KEY, campaign_id BIGINT, user_id BIGINT, "
-                + "slot_id BIGINT, amount NUMERIC(20,2), redeem_code TEXT, is_consolation BOOLEAN DEFAULT false, "
-                + "created_at TIMESTAMPTZ DEFAULT now())");
-    }
+    @Autowired
+    JdbcTemplate jdbc;
 
     Campaign seed(int slots) {
         jdbc.execute("TRUNCATE activity.draw, activity.prize_slot, activity.campaign RESTART IDENTITY");
@@ -101,7 +68,6 @@ class DrawAdapterConcurrencyTest {
     }
 
     Map<String, Long> raceDraw(Campaign campaign, int threads) throws Exception {
-        DrawAdapter adapter = new DrawAdapter(jdbc, txm, RECHARGE_300);
         ExecutorService pool = Executors.newFixedThreadPool(threads);
         CountDownLatch startGate = new CountDownLatch(1);
         Map<String, LongAdder> tally = new ConcurrentHashMap<>();

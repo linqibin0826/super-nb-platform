@@ -10,6 +10,11 @@ spring:
     locations: classpath:db/migration/activity,classpath:db/migration/gallery
     schemas: activity,gallery
     create-schemas: true
+  jpa:
+    # schema 由 Flyway 全权管理;validate 只校验实体映射与库结构一致
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
 
 management:
   endpoints:

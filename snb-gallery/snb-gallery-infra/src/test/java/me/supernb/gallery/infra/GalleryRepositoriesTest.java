@@ -4,47 +4,58 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 import me.supernb.gallery.app.GalleryDto;
 import me.supernb.gallery.app.GenerationRepository;
 import me.supernb.gallery.domain.SortMode;
-import org.flywaydb.core.Flyway;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/// gallery 三仓储对真实 Flyway schema(Testcontainers PG)的集成测试。
+/// gallery 三适配器(JPA)对真实 Flyway schema(Testcontainers PG)的集成测试。
+@SpringBootTest(classes = GalleryInfraTestApp.class)
 @Testcontainers
 class GalleryRepositoriesTest {
 
     @Container
     static final PostgreSQLContainer<?> PG = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    static JdbcTemplate jdbc;
-    static JdbcPromptRepository prompts;
-    static JdbcInteractionRepository interactions;
-    static JdbcGenerationRepository generations;
-    static long p1;
-    static long p2;
-    static long p3;
+    @DynamicPropertySource
+    static void props(DynamicPropertyRegistry r) {
+        r.add("spring.datasource.url", PG::getJdbcUrl);
+        r.add("spring.datasource.username", PG::getUsername);
+        r.add("spring.datasource.password", PG::getPassword);
+        r.add("spring.flyway.locations", () -> "classpath:db/migration/gallery");
+        r.add("spring.flyway.schemas", () -> "gallery");
+    }
 
-    @BeforeAll
-    static void init() {
-        DriverManagerDataSource ds =
-                new DriverManagerDataSource(PG.getJdbcUrl(), PG.getUsername(), PG.getPassword());
-        Flyway.configure().dataSource(ds).schemas("gallery")
-                .locations("classpath:db/migration/gallery").load().migrate();
-        jdbc = new JdbcTemplate(ds);
-        prompts = new JdbcPromptRepository(jdbc);
-        interactions = new JdbcInteractionRepository(jdbc);
-        generations = new JdbcGenerationRepository(jdbc, new DataSourceTransactionManager(ds));
+    @Autowired
+    JdbcTemplate jdbc;
 
+    @Autowired
+    PromptAdapter prompts;
+
+    @Autowired
+    InteractionAdapter interactions;
+
+    @Autowired
+    GenerationAdapter generations;
+
+    long p1;
+    long p2;
+    long p3;
+
+    @BeforeEach
+    void seed() {
+        jdbc.execute("TRUNCATE gallery.category, gallery.prompt, gallery.prompt_like, gallery.prompt_favorite, "
+                + "gallery.generation, gallery.generation_image, gallery.generation_ref, gallery.ref_image "
+                + "RESTART IDENTITY");
         jdbc.update("INSERT INTO gallery.category (slug, axis, name_en, name_zh) VALUES "
                 + "('portrait','scene','Portrait','人像'),('anime','style','Anime','动漫'),('animal','subject','Animal','动物')");
         p1 = insertPrompt("s1", "a cat", "portrait");
@@ -52,7 +63,7 @@ class GalleryRepositoriesTest {
         p3 = insertPrompt("s3", "sunset", null);
     }
 
-    static long insertPrompt(String sourceId, String title, String categorySlug) {
+    long insertPrompt(String sourceId, String title, String categorySlug) {
         Integer catId = categorySlug == null ? null
                 : jdbc.queryForObject("SELECT id FROM gallery.category WHERE slug = ?", Integer.class, categorySlug);
         return jdbc.queryForObject(
@@ -61,20 +72,20 @@ class GalleryRepositoriesTest {
                 Long.class, sourceId, title, catId);
     }
 
-    @BeforeEach
-    void resetMutableState() {
-        jdbc.update("TRUNCATE gallery.prompt_like, gallery.prompt_favorite");
-        jdbc.update("TRUNCATE gallery.generation CASCADE");
-        jdbc.update("TRUNCATE gallery.ref_image");
-        jdbc.update("UPDATE gallery.prompt SET like_count = 0, fav_count = 0");
-    }
-
     @Test
     void listReturnsPublishedPaged() {
         GalleryDto.Page<GalleryDto.PromptSummary> page = prompts.list(null, null, SortMode.FEATURED, 1, 24);
         assertThat(page.total()).isEqualTo(3);
         assertThat(page.items()).hasSize(3);
         assertThat(page.items().get(0).id()).isEqualTo(p3); // featured = id DESC
+    }
+
+    @Test
+    void listSupportsAllSortModes() {
+        // 排序 HQL 为运行时动态拼接(启动期不校验),四种模式逐一走一遍确保可解析(含 NULLS LAST)
+        for (SortMode mode : SortMode.values()) {
+            assertThat(prompts.list(null, null, mode, 1, 24).total()).isEqualTo(3);
+        }
     }
 
     @Test
