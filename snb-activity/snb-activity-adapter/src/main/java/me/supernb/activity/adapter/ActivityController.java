@@ -11,18 +11,16 @@ import me.supernb.activity.app.GetRecentDrawsUseCase;
 import me.supernb.activity.app.GetRecentRechargesUseCase;
 import me.supernb.activity.app.PerformDrawUseCase;
 import me.supernb.activity.domain.DrawResult;
-import me.supernb.common.UnauthorizedException;
-import me.supernb.sub2api.Sub2apiIntrospectClient;
-import me.supernb.sub2api.UserProfile;
-import org.springframework.http.HttpHeaders;
+import me.supernb.sub2api.auth.CurrentUser;
+import me.supernb.sub2api.auth.UserProfile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /// 活动中心 REST 入口。公开端点(榜单/流水/奖池/近期中奖)免登录;
-/// status / draw / my-draws 需登录(introspect 校验 active 终端用户,否则 401)。
+/// status / draw / my-draws 需登录——@CurrentUser 由 sub2api starter 的解析器完成
+/// introspect 校验(active 终端用户,否则 401)。
 @RestController
 @RequestMapping("/activity/v1")
 public class ActivityController {
@@ -34,7 +32,6 @@ public class ActivityController {
     private final GetPoolUseCase getPool;
     private final GetRecentDrawsUseCase getRecentDraws;
     private final GetMyDrawsUseCase getMyDraws;
-    private final Sub2apiIntrospectClient introspect;
 
     public ActivityController(
             GetDrawStatusUseCase getDrawStatus,
@@ -43,8 +40,7 @@ public class ActivityController {
             GetRecentRechargesUseCase getRecentRecharges,
             GetPoolUseCase getPool,
             GetRecentDrawsUseCase getRecentDraws,
-            GetMyDrawsUseCase getMyDraws,
-            Sub2apiIntrospectClient introspect) {
+            GetMyDrawsUseCase getMyDraws) {
         this.getDrawStatus = getDrawStatus;
         this.performDraw = performDraw;
         this.getLeaderboard = getLeaderboard;
@@ -52,7 +48,6 @@ public class ActivityController {
         this.getPool = getPool;
         this.getRecentDraws = getRecentDraws;
         this.getMyDraws = getMyDraws;
-        this.introspect = introspect;
     }
 
     /// 抽奖结果响应。
@@ -80,26 +75,18 @@ public class ActivityController {
     }
 
     @GetMapping("/status")
-    public ActivityDto.DrawStatus status(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        return getDrawStatus.status(requireUserId(auth));
+    public ActivityDto.DrawStatus status(@CurrentUser UserProfile user) {
+        return getDrawStatus.status(user.id());
     }
 
     @PostMapping("/draw")
-    public DrawResponse draw(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        DrawResult r = performDraw.draw(requireUserId(auth));
+    public DrawResponse draw(@CurrentUser UserProfile user) {
+        DrawResult r = performDraw.draw(user.id());
         return new DrawResponse(r.amount(), r.redeemCode(), r.consolation());
     }
 
     @GetMapping("/my-draws")
-    public List<ActivityDto.MyDrawView> myDraws(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        return getMyDraws.myDraws(requireUserId(auth));
-    }
-
-    /// 校验登录态:introspect 转发 sub2api,要求 active 终端用户,否则 401。
-    private long requireUserId(String authorizationHeader) {
-        return introspect.introspect(authorizationHeader)
-                .filter(UserProfile::isActiveUser)
-                .map(UserProfile::id)
-                .orElseThrow(UnauthorizedException::new);
+    public List<ActivityDto.MyDrawView> myDraws(@CurrentUser UserProfile user) {
+        return getMyDraws.myDraws(user.id());
     }
 }

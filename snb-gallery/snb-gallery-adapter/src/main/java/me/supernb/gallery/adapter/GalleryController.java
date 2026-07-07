@@ -7,21 +7,19 @@ import me.supernb.gallery.app.GalleryDto;
 import me.supernb.gallery.app.Generations;
 import me.supernb.gallery.app.Interactions;
 import me.supernb.gallery.app.PromptQueries;
-import me.supernb.common.UnauthorizedException;
-import me.supernb.sub2api.Sub2apiIntrospectClient;
-import me.supernb.sub2api.UserProfile;
-import org.springframework.http.HttpHeaders;
+import me.supernb.sub2api.auth.CurrentUser;
+import me.supernb.sub2api.auth.UserProfile;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/// 灵感库 REST 入口。prompts / categories 公开;互动与生成历史需登录(introspect)。
+/// 灵感库 REST 入口。prompts / categories 公开;互动与生成历史需登录——
+/// @CurrentUser 由 sub2api starter 的解析器完成 introspect 校验(active 终端用户,否则 401)。
 @RestController
 @RequestMapping("/gallery/v1")
 public class GalleryController {
@@ -29,15 +27,11 @@ public class GalleryController {
     private final PromptQueries promptQueries;
     private final Interactions interactions;
     private final Generations generations;
-    private final Sub2apiIntrospectClient introspect;
 
-    public GalleryController(
-            PromptQueries promptQueries, Interactions interactions, Generations generations,
-            Sub2apiIntrospectClient introspect) {
+    public GalleryController(PromptQueries promptQueries, Interactions interactions, Generations generations) {
         this.promptQueries = promptQueries;
         this.interactions = interactions;
         this.generations = generations;
-        this.introspect = introspect;
     }
 
     // —— 公开只读 ——
@@ -65,37 +59,36 @@ public class GalleryController {
     // —— 互动(需登录)——
 
     @PostMapping("/prompts/{id}/like")
-    public Interactions.LikeResult like(@PathVariable long id, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        return interactions.like(id, requireUserId(auth), true);
+    public Interactions.LikeResult like(@PathVariable long id, @CurrentUser UserProfile user) {
+        return interactions.like(id, user.id(), true);
     }
 
     @DeleteMapping("/prompts/{id}/like")
-    public Interactions.LikeResult unlike(@PathVariable long id, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        return interactions.like(id, requireUserId(auth), false);
+    public Interactions.LikeResult unlike(@PathVariable long id, @CurrentUser UserProfile user) {
+        return interactions.like(id, user.id(), false);
     }
 
     @PostMapping("/prompts/{id}/favorite")
-    public Interactions.FavResult favorite(@PathVariable long id, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        return interactions.favorite(id, requireUserId(auth), true);
+    public Interactions.FavResult favorite(@PathVariable long id, @CurrentUser UserProfile user) {
+        return interactions.favorite(id, user.id(), true);
     }
 
     @DeleteMapping("/prompts/{id}/favorite")
-    public Interactions.FavResult unfavorite(@PathVariable long id, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        return interactions.favorite(id, requireUserId(auth), false);
+    public Interactions.FavResult unfavorite(@PathVariable long id, @CurrentUser UserProfile user) {
+        return interactions.favorite(id, user.id(), false);
     }
 
     @GetMapping("/me/interactions")
-    public GalleryDto.MyInteractions myInteractions(
-            @RequestParam String ids, @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        return interactions.myInteractions(parseIds(ids), requireUserId(auth));
+    public GalleryDto.MyInteractions myInteractions(@RequestParam String ids, @CurrentUser UserProfile user) {
+        return interactions.myInteractions(parseIds(ids), user.id());
     }
 
     @GetMapping("/me/favorites")
     public GalleryDto.Page<GalleryDto.PromptSummary> myFavorites(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "24") int pageSize,
-            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        return interactions.myFavorites(requireUserId(auth), Math.max(1, page), clampSize(pageSize));
+            @CurrentUser UserProfile user) {
+        return interactions.myFavorites(user.id(), Math.max(1, page), clampSize(pageSize));
     }
 
     // —— 生成历史(需登录)——
@@ -112,11 +105,10 @@ public class GalleryController {
             List<ImagePayload> outputImages, List<RefPayload> refImages) {
     }
 
+    // @RequestBody 在前、@CurrentUser 在后:保持「坏 JSON 先 400、再谈 401」的旧语义(参数按序解析)
     @PostMapping("/me/generations")
     public Generations.Created createGeneration(
-            @RequestBody CreateGenerationRequest body,
-            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        long userId = requireUserId(auth);
+            @RequestBody CreateGenerationRequest body, @CurrentUser UserProfile user) {
         List<GalleryDto.ImageBytes> outputs = new ArrayList<>();
         if (body.outputImages() != null) {
             for (ImagePayload img : body.outputImages()) {
@@ -130,7 +122,7 @@ public class GalleryController {
             }
         }
         return generations.create(new GalleryDto.CreateGenerationCommand(
-                body.id(), userId, body.prompt(), body.size(), body.n(), body.quality(), body.status(),
+                body.id(), user.id(), body.prompt(), body.size(), body.n(), body.quality(), body.status(),
                 body.cost(), body.elapsedMs(), body.groupName(), body.keyId(), body.error(), outputs, refs));
     }
 
@@ -138,33 +130,24 @@ public class GalleryController {
     public GalleryDto.Page<GalleryDto.GenerationSummary> listGenerations(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "24") int pageSize,
-            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        return generations.list(requireUserId(auth), Math.max(1, page), clampSize(pageSize));
+            @CurrentUser UserProfile user) {
+        return generations.list(user.id(), Math.max(1, page), clampSize(pageSize));
     }
 
     @GetMapping("/me/generations/{generationId}")
     public GalleryDto.GenerationDetail getGeneration(
-            @PathVariable String generationId,
-            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        return generations.detail(generationId, requireUserId(auth));
+            @PathVariable String generationId, @CurrentUser UserProfile user) {
+        return generations.detail(generationId, user.id());
     }
 
     @DeleteMapping("/me/generations/{generationId}")
     public DeleteResponse deleteGeneration(
-            @PathVariable String generationId,
-            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String auth) {
-        generations.delete(generationId, requireUserId(auth));
+            @PathVariable String generationId, @CurrentUser UserProfile user) {
+        generations.delete(generationId, user.id());
         return new DeleteResponse(true);
     }
 
     public record DeleteResponse(boolean ok) {
-    }
-
-    private long requireUserId(String authorizationHeader) {
-        return introspect.introspect(authorizationHeader)
-                .filter(UserProfile::isActiveUser)
-                .map(UserProfile::id)
-                .orElseThrow(UnauthorizedException::new);
     }
 
     private static int clampSize(int pageSize) {

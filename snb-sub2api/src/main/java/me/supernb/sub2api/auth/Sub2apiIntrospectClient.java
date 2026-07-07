@@ -1,4 +1,4 @@
-package me.supernb.sub2api;
+package me.supernb.sub2api.auth;
 
 import java.time.Duration;
 import java.util.Map;

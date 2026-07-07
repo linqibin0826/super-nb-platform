@@ -35,4 +35,10 @@ class HexagonalBoundaryTest {
             .that().resideInAPackage("..activity..")
             .should().dependOnClassesThat().resideInAPackage("..gallery..")
             .as("上下文之间不互相依赖(activity 不依赖 gallery)");
+
+    @ArchTest
+    static final ArchRule aclStaysOutOfDomainAndApp = noClasses()
+            .that().resideInAnyPackage("..domain..", "..app..")
+            .should().dependOnClassesThat().resideInAPackage("me.supernb.sub2api..")
+            .as("sub2api 防腐层类型只进 infra/adapter,不进 domain/app(各上下文用自己的端口适配)");
 }

@@ -1,4 +1,4 @@
-package me.supernb.sub2api;
+package me.supernb.sub2api.auth;
 
 /// sub2api 用户身份(introspect 结果)。防腐层对外只暴露业务需要的三字段。
 ///

@@ -1,4 +1,4 @@
-package me.supernb.sub2api;
+package me.supernb.sub2api.recharge;
 
 import java.math.BigDecimal;
 import java.time.Instant;

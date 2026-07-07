@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import me.supernb.activity.app.ActivityDto;
 import me.supernb.activity.app.RechargeQueryPort;
-import me.supernb.sub2api.RechargeReadModel;
+import me.supernb.sub2api.recharge.RechargeReadModel;
 import org.springframework.stereotype.Component;
 
 /// RechargeQueryPort 实现:薄适配,委托 snb-sub2api 的 RechargeReadModel,把 sub2api 行映射为 activity app DTO。

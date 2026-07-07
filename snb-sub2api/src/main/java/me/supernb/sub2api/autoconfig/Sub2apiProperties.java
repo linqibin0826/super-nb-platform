@@ -1,4 +1,4 @@
-package me.supernb.sub2api;
+package me.supernb.sub2api.autoconfig;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

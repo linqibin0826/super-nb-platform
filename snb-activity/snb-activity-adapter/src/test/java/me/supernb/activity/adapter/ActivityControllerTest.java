@@ -19,8 +19,9 @@ import me.supernb.activity.app.GetRecentDrawsUseCase;
 import me.supernb.activity.app.GetRecentRechargesUseCase;
 import me.supernb.activity.app.PerformDrawUseCase;
 import me.supernb.activity.domain.DrawResult;
-import me.supernb.sub2api.Sub2apiIntrospectClient;
-import me.supernb.sub2api.UserProfile;
+import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
+import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
+import me.supernb.sub2api.auth.UserProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
@@ -44,8 +45,10 @@ class ActivityControllerTest {
     void setup() {
         ActivityController controller = new ActivityController(
                 getDrawStatus, performDraw, getLeaderboard, getRecentRecharges,
-                getPool, getRecentDraws, getMyDraws, introspect);
-        mvc = MockMvcBuilders.standaloneSetup(controller).build();
+                getPool, getRecentDraws, getMyDraws);
+        mvc = MockMvcBuilders.standaloneSetup(controller)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
+                .build();
     }
 
     @Test

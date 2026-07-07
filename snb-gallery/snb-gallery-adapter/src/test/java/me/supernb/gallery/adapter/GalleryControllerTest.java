@@ -15,8 +15,9 @@ import me.supernb.gallery.app.GalleryDto;
 import me.supernb.gallery.app.Generations;
 import me.supernb.gallery.app.Interactions;
 import me.supernb.gallery.app.PromptQueries;
-import me.supernb.sub2api.Sub2apiIntrospectClient;
-import me.supernb.sub2api.UserProfile;
+import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
+import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
+import me.supernb.sub2api.auth.UserProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -36,7 +37,9 @@ class GalleryControllerTest {
     @BeforeEach
     void setup() {
         mvc = MockMvcBuilders.standaloneSetup(
-                new GalleryController(promptQueries, interactions, generations, introspect)).build();
+                        new GalleryController(promptQueries, interactions, generations))
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
+                .build();
     }
 
     @Test
