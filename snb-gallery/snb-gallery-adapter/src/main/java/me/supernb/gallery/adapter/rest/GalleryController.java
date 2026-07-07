@@ -142,7 +142,7 @@ public class GalleryController {
             }
         }
         return commandBus.handle(new CreateGenerationCommand(
-                body.id(), user.id(), body.prompt(), body.size(), body.n(), body.quality(), body.status(),
+                user.id(), body.prompt(), body.size(), body.n(), body.quality(), body.status(),
                 body.cost(), body.elapsedMs(), body.groupName(), body.keyId(), body.error(), outputs, refs));
     }
 
@@ -156,13 +156,13 @@ public class GalleryController {
 
     @GetMapping("/me/generations/{generationId}")
     public GenerationDetail getGeneration(
-            @PathVariable String generationId, @CurrentUser UserProfile user) {
+            @PathVariable long generationId, @CurrentUser UserProfile user) {
         return generationQueryService.detail(generationId, user.id());
     }
 
     @DeleteMapping("/me/generations/{generationId}")
     public DeleteResponse deleteGeneration(
-            @PathVariable String generationId, @CurrentUser UserProfile user) {
+            @PathVariable long generationId, @CurrentUser UserProfile user) {
         commandBus.handle(new DeleteGenerationCommand(generationId, user.id()));
         return new DeleteResponse(true);
     }

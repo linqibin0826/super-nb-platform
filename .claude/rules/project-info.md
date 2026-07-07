@@ -43,7 +43,7 @@ snb-platform/
 ## API 形态
 
 - 路径：`/activity/v1/*`、`/gallery/v1/*`（版本进路径；裸 `/api/*`、`/v1/*` 被上游反代占用）
-- 契约：错误统一 RFC 9457 problem+json；成功 200 裸 DTO；分页 `page`/`size` + `{items, total}`
+- 契约：错误统一 RFC 9457 problem+json；成功 200 裸 DTO；分页 `page`/`size` + `{items, total}`；**实体 id 在 JSON 中一律字符串**（雪花超 JS 安全整数；路径/查询参数照常收数字）
 - 鉴权：`Authorization: Bearer <token>` → snb-sub2api introspect；公开端点不要求头
 
 ## 数据

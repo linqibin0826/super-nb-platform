@@ -82,10 +82,9 @@ CREATE TABLE gallery.prompt_favorite (
 );
 CREATE INDEX idx_fav_user ON gallery.prompt_favorite (user_id, created_at DESC);
 
--- 生成历史(聚合根,BaseJpaEntity;client_task_id=前端任务 uuid,对外与幂等标识,雪花 id 仅内部)
+-- 生成历史(聚合根,BaseJpaEntity;雪花 id 即唯一身份,对外 JSON 以字符串输出)
 CREATE TABLE gallery.generation (
     id             BIGINT PRIMARY KEY,
-    client_task_id TEXT NOT NULL UNIQUE,
     user_id        BIGINT NOT NULL,
     prompt         TEXT NOT NULL,
     size           TEXT NOT NULL,

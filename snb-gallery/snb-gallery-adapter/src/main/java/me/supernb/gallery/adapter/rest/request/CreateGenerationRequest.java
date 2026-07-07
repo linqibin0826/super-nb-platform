@@ -4,7 +4,7 @@ import java.util.List;
 
 /// 创建生成记录请求(图以 base64 传输,adapter 解码后组命令)。
 public record CreateGenerationRequest(
-        String id, String prompt, String size, int n, String quality, String status,
+        String prompt, String size, int n, String quality, String status,
         Double cost, int elapsedMs, String groupName, Long keyId, String error,
         List<ImagePayload> outputImages, List<RefPayload> refImages) {
 

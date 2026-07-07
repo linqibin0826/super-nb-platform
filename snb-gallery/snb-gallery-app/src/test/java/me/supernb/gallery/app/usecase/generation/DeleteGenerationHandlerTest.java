@@ -22,19 +22,19 @@ class DeleteGenerationHandlerTest {
 
     @Test
     void deleteCleansReturnedKeys() {
-        when(repo.deleteReturningObjectKeys("g1", 7L))
-                .thenReturn(Optional.of(List.of("gen/7/g1/0.png", "gen/7/g1/thumb.png")));
+        when(repo.deleteReturningObjectKeys(9L, 7L))
+                .thenReturn(Optional.of(List.of("gen/7/9/0.png", "gen/7/9/thumb.png")));
 
-        handler.handle(new DeleteGenerationCommand("g1", 7L));
+        handler.handle(new DeleteGenerationCommand(9L, 7L));
 
-        verify(storage).delete("gen/7/g1/0.png");
-        verify(storage).delete("gen/7/g1/thumb.png");
+        verify(storage).delete("gen/7/9/0.png");
+        verify(storage).delete("gen/7/9/thumb.png");
     }
 
     @Test
     void deleteNotFoundThrows() {
-        when(repo.deleteReturningObjectKeys("gx", 7L)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> handler.handle(new DeleteGenerationCommand("gx", 7L)))
+        when(repo.deleteReturningObjectKeys(99L, 7L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> handler.handle(new DeleteGenerationCommand(99L, 7L)))
                 .isInstanceOf(GalleryException.class);
     }
 }

@@ -1,5 +1,6 @@
 package me.supernb.gallery.infra.adapter.persistence;
 
+import dev.linqibin.starter.jpa.id.SnowflakeIdGenerator;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,9 +26,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 /// 生成历史聚合仓储适配器:4 表(generation/generation_image/generation_ref/ref_image)
 /// 一个事务落库,级联随聚合根。
 ///
-/// 端口语义里的 `id` = 前端任务 uuid,落到实体的 `client_task_id` 列;
-/// 雪花主键只在本适配器内部做关联(缩略图回退批查、参考图键联查)。
-/// 建单幂等:先按 (client_task_id, user_id) 回查,撞唯一约束重试一次转回读。
+/// 身份即雪花 id(经 [#nextId()] 预分配,插入不会撞主键);
+/// 撞唯一约束仅剩参考图 (user_id, sha256) 并发去重一种,重试一轮改走跳过。
 @Repository
 public class GenerationRepositoryAdapter implements GenerationRepository {
 
@@ -50,10 +50,10 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
         this.txTemplate = new TransactionTemplate(txManager);
     }
 
-    /// 按任务 uuid + 归属用户取创建时刻(建单幂等预检)。
+    /// 预分配下一个生成记录 id(雪花)。
     @Override
-    public Optional<Instant> findCreatedAt(String id, long userId) {
-        return generations.findByClientTaskIdAndUserId(id, userId).map(GenerationEntity::getCreatedAt);
+    public long nextId() {
+        return SnowflakeIdGenerator.getId();
     }
 
     /// 用户参考图库中是否已有该内容哈希。
@@ -62,7 +62,7 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
         return refImages.existsByUserIdAndSha256(userId, sha256);
     }
 
-    /// 落库(幂等):任务 uuid 撞唯一约束时重试一次,第二次直接命中回查。
+    /// 落库:参考图 (user_id, sha256) 并发去重撞唯一约束时重试一次(重试轮 exists 命中改走跳过)。
     @Override
     public Instant save(SaveGeneration c) {
         try {
@@ -72,13 +72,9 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
         }
     }
 
-    /// 事务体:已存在直接返回创建时刻,否则组装聚合(输出图/参考图去重/引用)一次持久化。
+    /// 事务体:组装聚合(输出图/参考图去重/引用)一次持久化。
     private Instant trySave(SaveGeneration c) {
         return txTemplate.execute(status -> {
-            Optional<GenerationEntity> existing = generations.findByClientTaskIdAndUserId(c.id(), c.userId());
-            if (existing.isPresent()) {
-                return existing.get().getCreatedAt();
-            }
             GenerationEntity g = new GenerationEntity(c.id(), c.userId(), c.prompt(), c.size(), c.n(),
                     c.quality(), c.status(), c.cost(), c.elapsedMs(), c.groupName(), c.keyId(),
                     c.error(), c.thumbKey());
@@ -113,7 +109,7 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
         }
 
         List<ListRow> rows = pg.getContent().stream().map(g -> new ListRow(
-                g.getClientTaskId(), g.getCreatedAt(), g.getPrompt(), g.getSize(), g.getN(), g.getQuality(),
+                g.getId(), g.getCreatedAt(), g.getPrompt(), g.getSize(), g.getN(), g.getQuality(),
                 g.getStatus(), g.getCost(), g.getElapsedMs(), g.getError(),
                 g.getThumbKey() != null ? g.getThumbKey() : firstImageKey.get(g.getId()))).toList();
         return new PageRows(rows, pg.getTotalElements());
@@ -121,9 +117,9 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
 
     /// 单条详情:输出图预取 + 参考图键内容寻址联查;不存在或不归属该用户返回 empty。
     @Override
-    public Optional<DetailRow> detail(String id, long userId) {
+    public Optional<DetailRow> detail(long id, long userId) {
         return generations.findWithImages(id, userId).map(g -> new DetailRow(
-                g.getClientTaskId(), g.getCreatedAt(), g.getPrompt(), g.getSize(), g.getN(), g.getQuality(),
+                g.getId(), g.getCreatedAt(), g.getPrompt(), g.getSize(), g.getN(), g.getQuality(),
                 g.getStatus(), g.getCost(), g.getElapsedMs(), g.getGroupName(), g.getKeyId(), g.getError(),
                 g.getImages().stream().map(GenerationImageEntity::getR2Key).toList(),
                 generationRefs.refKeysOf(g.getId(), userId)));
@@ -131,7 +127,7 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
 
     /// 删除生成记录并返回其全部 R2 对象键(含缩略图);不存在返回 empty,由用例转 404。
     @Override
-    public Optional<List<String>> deleteReturningObjectKeys(String id, long userId) {
+    public Optional<List<String>> deleteReturningObjectKeys(long id, long userId) {
         return txTemplate.execute(status -> {
             GenerationEntity g = generations.findWithImages(id, userId).orElse(null);
             if (g == null) {

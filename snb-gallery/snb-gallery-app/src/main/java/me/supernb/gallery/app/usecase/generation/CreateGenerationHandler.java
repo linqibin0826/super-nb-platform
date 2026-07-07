@@ -4,7 +4,6 @@ import dev.linqibin.commons.cqrs.CommandHandler;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import me.supernb.gallery.app.usecase.generation.command.CreateGenerationCommand;
 import me.supernb.gallery.app.usecase.generation.command.ImageBytes;
 import me.supernb.gallery.app.usecase.generation.command.RefBytes;
@@ -34,11 +33,8 @@ public class CreateGenerationHandler implements CommandHandler<CreateGenerationC
     /// 幂等创建:上传输出图 + 首图缩略图(尽力而为)+ 参考图去重,再一个事务落 4 表。
     @Override
     public Created handle(CreateGenerationCommand cmd) {
-        // 幂等:本人已有该 id 直接返回,不重复上传/写库
-        Optional<Instant> existing = repo.findCreatedAt(cmd.id(), cmd.userId());
-        if (existing.isPresent()) {
-            return new Created(cmd.id(), existing.get());
-        }
+        // 身份=服务端预分配雪花(验收意见⑦):R2 键按它命名,须先于上传/落库取号
+        long id = repo.nextId();
 
         // 1) 输出图逐张上传(png),留首图字节给缩略图
         List<GenerationRepository.OutputImage> outputs = new ArrayList<>();
@@ -49,7 +45,7 @@ public class CreateGenerationHandler implements CommandHandler<CreateGenerationC
             if (idx == 0) {
                 firstBytes = data;
             }
-            String key = "gen/" + cmd.userId() + "/" + cmd.id() + "/" + idx + ".png";
+            String key = "gen/" + cmd.userId() + "/" + id + "/" + idx + ".png";
             storage.put(key, data, "image/png");
             outputs.add(new GenerationRepository.OutputImage(idx, key, data.length));
         }
@@ -59,7 +55,7 @@ public class CreateGenerationHandler implements CommandHandler<CreateGenerationC
         if (firstBytes != null) {
             try {
                 byte[] thumb = thumbnails.toPng(firstBytes, THUMB_EDGE);
-                String key = "gen/" + cmd.userId() + "/" + cmd.id() + "/thumb.png";
+                String key = "gen/" + cmd.userId() + "/" + id + "/thumb.png";
                 storage.put(key, thumb, "image/png");
                 thumbKey = key;
             } catch (RuntimeException e) {
@@ -83,9 +79,9 @@ public class CreateGenerationHandler implements CommandHandler<CreateGenerationC
 
         // 3) 落 4 表(一个事务)
         Instant createdAt = repo.save(new GenerationRepository.SaveGeneration(
-                cmd.id(), cmd.userId(), cmd.prompt(), cmd.size(), cmd.n(), cmd.quality(), cmd.status(),
+                id, cmd.userId(), cmd.prompt(), cmd.size(), cmd.n(), cmd.quality(), cmd.status(),
                 cmd.cost(), cmd.elapsedMs(), cmd.groupName(), cmd.keyId(), cmd.error(), thumbKey, outputs, refs));
-        return new Created(cmd.id(), createdAt);
+        return new Created(String.valueOf(id), createdAt);
     }
 
     /// contentType → 存储键扩展名(未知回落 png)。

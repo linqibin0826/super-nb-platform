@@ -57,7 +57,7 @@ class GalleryControllerTest {
     void listPromptsIsPublic() throws Exception {
         when(promptQueryService.list("style", null, "featured", 1, 24)).thenReturn(
                 Page.of(List.of(new PromptSummary(
-                        1, "a cat", "http://img", 512, 512, "alice", 3, 1)), 1, 1, 24));
+                        "1", "a cat", "http://img", 512, 512, "alice", 3, 1)), 1, 1, 24));
         mvc.perform(get("/gallery/v1/prompts").param("category", "style"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(1))
@@ -80,15 +80,15 @@ class GalleryControllerTest {
     void createGenerationDecodesBase64AndDispatchesCommand() throws Exception {
         when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
         when(commandBus.handle(any(CreateGenerationCommand.class)))
-                .thenReturn(new Created("task-1", Instant.parse("2026-07-06T00:00:00Z")));
-        String body = "{\"id\":\"task-1\",\"prompt\":\"p\",\"size\":\"1024x1024\",\"n\":1,"
+                .thenReturn(new Created("42", Instant.parse("2026-07-06T00:00:00Z")));
+        String body = "{\"prompt\":\"p\",\"size\":\"1024x1024\",\"n\":1,"
                 + "\"quality\":\"medium\",\"status\":\"done\",\"elapsedMs\":0,"
                 + "\"outputImages\":[{\"b64\":\"AQID\"}]}";
         mvc.perform(post("/gallery/v1/me/generations")
                         .header("Authorization", "Bearer T")
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value("task-1"));
+                .andExpect(jsonPath("$.id").value("42")); // 服务端分配的雪花,对外字符串
 
         ArgumentCaptor<CreateGenerationCommand> dispatched = ArgumentCaptor.forClass(CreateGenerationCommand.class);
         verify(commandBus).handle(dispatched.capture());

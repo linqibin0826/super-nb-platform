@@ -30,7 +30,7 @@ public class GenerationQueryService {
         GenerationRepository.PageRows rows = repo.list(userId, page, pageSize);
         List<GenerationSummary> items = rows.rows().stream()
                 .map(r -> new GenerationSummary(
-                        r.id(), r.createdAt(), r.prompt(), r.size(), r.n(), r.quality(), r.status(),
+                        String.valueOf(r.id()), r.createdAt(), r.prompt(), r.size(), r.n(), r.quality(), r.status(),
                         r.cost(), r.elapsedMs(), r.error(),
                         r.thumbKey() == null ? null : storage.presignGet(r.thumbKey(), PRESIGN_TTL)))
                 .toList();
@@ -38,9 +38,9 @@ public class GenerationQueryService {
     }
 
     /// 详情(输出/参考图现签 presigned),不存在/非本人 → 404。
-    public GenerationDetail detail(String id, long userId) {
+    public GenerationDetail detail(long id, long userId) {
         GenerationRepository.DetailRow r = repo.detail(id, userId)
-                .orElseThrow(() -> GalleryException.generationNotFound(id));
+                .orElseThrow(() -> GalleryException.generationNotFound(String.valueOf(id)));
         List<Image> outputs = r.outputKeys().stream()
                 .map(k -> new Image(storage.presignGet(k, PRESIGN_TTL), null, null))
                 .toList();
@@ -48,7 +48,7 @@ public class GenerationQueryService {
                 .map(k -> new Image(storage.presignGet(k, PRESIGN_TTL), null, null))
                 .toList();
         return new GenerationDetail(
-                r.id(), r.createdAt(), r.prompt(), r.size(), r.n(), r.quality(), r.status(),
+                String.valueOf(r.id()), r.createdAt(), r.prompt(), r.size(), r.n(), r.quality(), r.status(),
                 r.cost(), r.elapsedMs(), r.groupName(), r.keyId(), r.error(), outputs, refs);
     }
 }

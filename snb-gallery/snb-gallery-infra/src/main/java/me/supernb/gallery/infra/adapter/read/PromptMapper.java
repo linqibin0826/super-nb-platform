@@ -15,7 +15,7 @@ public final class PromptMapper {
 
     /// 实体 → 列表瘦身条目。
     public static PromptSummary toSummary(PromptEntity p) {
-        return new PromptSummary(p.getId(), p.getTitle(), p.getImageUrl(),
+        return new PromptSummary(String.valueOf(p.getId()), p.getTitle(), p.getImageUrl(),
                 p.getImageW(), p.getImageH(), p.getAuthorName(), p.getLikeCount(), p.getFavCount());
     }
 
@@ -25,7 +25,7 @@ public final class PromptMapper {
         Category category = c == null ? null
                 : new Category(c.getSlug(), c.getAxis(), c.getNameZh(), c.getNameEn());
         return new PromptDetail(
-                p.getId(), p.getSource(), p.getTitle(), p.getDescription(),
+                String.valueOf(p.getId()), p.getSource(), p.getTitle(), p.getDescription(),
                 p.getPromptText(), p.getLang(), p.getAuthorName(),
                 p.getAuthorLink(), p.getSourceLink(), p.getImageUrl(),
                 p.getImageW(), p.getImageH(),

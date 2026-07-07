@@ -115,10 +115,10 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         if (promptIds.isEmpty()) {
             return new MyInteractions(List.of(), List.of());
         }
-        List<Long> liked = likes.findByUserIdAndPromptIdIn(userId, promptIds).stream()
-                .map(PromptLikeEntity::getPromptId).toList();
-        List<Long> favorited = favorites.findByUserIdAndPromptIdIn(userId, promptIds).stream()
-                .map(PromptFavoriteEntity::getPromptId).toList();
+        List<String> liked = likes.findByUserIdAndPromptIdIn(userId, promptIds).stream()
+                .map(l -> String.valueOf(l.getPromptId())).toList();
+        List<String> favorited = favorites.findByUserIdAndPromptIdIn(userId, promptIds).stream()
+                .map(f -> String.valueOf(f.getPromptId())).toList();
         return new MyInteractions(liked, favorited);
     }
 }

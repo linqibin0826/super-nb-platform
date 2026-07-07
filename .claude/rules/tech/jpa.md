@@ -14,18 +14,19 @@
 | SoftDeletable 两变体 | 上两者 + Hibernate `@SoftDelete`(deleted_at) | **本仓暂无**——现有删除语义都是真删（generation 删除连 R2 对象一起清，软删会留悬空引用）；需要软删的新聚合再选 |
 
 - 实体子类风格：`@Getter` + `@NoArgsConstructor(PROTECTED)` + 意图构造器/意图方法；基座已带 `@Data`/`@SuperBuilder`，子类**不要**再加 `@Data`（全字段 equals/toString 与懒加载冲突，见 code-style.md）
-- **雪花 ID 应用层预分配**：业务构造器第一行 `setId(SnowflakeIdGenerator.getId())`；级联子实体在自己的构造器里各自预分配。无业务写路径的实体（campaign/category/prompt 由运维 SQL/收录管线维护）不写业务构造器
+- **雪花 ID 应用层预分配**：业务构造器第一行 `setId(SnowflakeIdGenerator.getId())`；级联子实体在自己的构造器里各自预分配。例外：generation 的 id 由端口 `nextId()` 预分配后传入构造器（R2 键须先于落库确定，见下节）。无业务写路径的实体（campaign/category/prompt 由运维 SQL/收录管线维护）不写业务构造器
 - **审计操作人**：`@CreatedBy`/`@LastModifiedBy` 由 boot 的 `auditorAware` Bean 供值——读 `@CurrentUser` 解析器挂的请求属性（`CurrentUserAuditorConfig`）。⚠️ **Bean 名必须叫 `auditorAware`**（starter 的 `@EnableJpaAuditing(auditorAwareRef = "auditorAware")` 按名引用，改名会让容器起不来）。无请求上下文（迁移/定时任务/infra 测试）审计人留 NULL
 - created_by_name / updated_by_name / ip_address 暂不填（sub2api 画像无用户名；列随基座存在，将来要用再接）
 - **纯 SQL 写入（数据迁移/收录管线/测试造数）必须显式给 id**；审计列靠 DDL DEFAULT 兜底（created_at/updated_at `DEFAULT now()`、version `DEFAULT 0`）
 
-## 代理键 vs 自然键
+## 对外 id 契约（验收意见⑦：单一身份）
 
-雪花主键是 **infra 私有细节**，domain/app 端口不感知：
+雪花 id 就是唯一身份，对内对外同一条——**不设 client_task_id 类自然键双轨**（一行两 id 的赘余已废）：
 
-- 成员表幂等改走**唯一约束**：`UNIQUE(prompt_id, user_id)`、`UNIQUE(user_id, sha256)`（复合主键/@EmbeddedId 已全部退役）
-- generation 对外标识 = `client_task_id`（前端任务 uuid，`UNIQUE`）——端口/命令/API 说的 `id` 都指它，dao 按 `findByClientTaskIdAndUserId` 定位；雪花 id 只做内部关联（子表 FK、整页批查）
-- 收益：对外不暴露任何雪花 Long，不踩 JS `Number.MAX_SAFE_INTEGER` 精度坑（雪花 ≈ 3e17 > 2^53）
+- **JSON 里实体 id 一律字符串**（雪花 ≈ 3e17 超 JS `Number.MAX_SAFE_INTEGER`）：读视图/DTO 的 id 字段建模为 `String`，mapper 用 `String.valueOf(...)` 转；路径/查询参数照常收 `long`（Spring 解析字符串，非法数字自然 400）
+- **持久化前就要用 id 的聚合**（generation：R2 键 `gen/{userId}/{id}/…` 须先于落库确定）由仓储端口 `nextId()` 预分配、实体构造器收传入 id；其余实体仍在业务构造器内自取雪花
+- 成员表幂等走**唯一约束**：`UNIQUE(prompt_id, user_id)`、`UNIQUE(user_id, sha256)`（复合主键/@EmbeddedId 已全部退役）
+- 建单幂等预检随 client_task_id 一并退役：id 服务端生成、客户端无法预给；防重靠前端队列单飞（显式取舍：极端重试接受重复历史行）
 
 ## 与 patra 的刻意差异
 
@@ -54,12 +55,11 @@ Optional<PrizeSlotEntity> lockRandomAvailable(@Param("campaignId") long campaign
 1. **并发删除禁用派生 delete**：select-then-remove 在并发 0 行删除时抛 `StaleStateException`。必须 `@Modifying @Query("DELETE ...")` 批量删除，用返回行数决定语义（是否计入减量）
 2. **计数增减**用 `@Modifying` UPDATE 原子加减（`SET like_count = like_count + :delta`），禁止读-改-写（批量语句不走乐观锁，别指望 version 拦并发计数）
 3. **toggle 幂等**（点赞/收藏）：插入撞成员唯一约束 → 整事务回滚 → 在事务**外**捕获 `DataIntegrityViolationException` → 回读计数返回
-4. **唯一键竞态重试一次**：按 (user_id, sha256)、client_task_id 去重类写入撞 `DataIntegrityViolationException` 时重试一轮，重试轮 exists/回查命中改走跳过
+4. **唯一键竞态重试一次**：按 (user_id, sha256) 去重类写入撞 `DataIntegrityViolationException` 时重试一轮，重试轮 exists 命中改走跳过
 
 ## 聚合写入
 
 - 聚合根 `cascade = ALL` + `orphanRemoval = true`；新聚合直接 `dao.save()`——实体带 `@Version`，version 为 null 判定为新实体走 persist（雪花 id 预填不会误触发 merge）
-- 幂等 save：幂等键（如 client_task_id）已存在 → 直接返回既有 `createdAt`，不重写
 
 ## 事务
 

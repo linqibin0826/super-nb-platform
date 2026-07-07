@@ -88,7 +88,7 @@ class GalleryRepositoriesTest {
         Page<PromptSummary> page = prompts.list(null, null, SortMode.FEATURED, 1, 24);
         assertThat(page.total()).isEqualTo(3);
         assertThat(page.items()).hasSize(3);
-        assertThat(page.items().get(0).id()).isEqualTo(p3); // featured = id DESC
+        assertThat(page.items().get(0).id()).isEqualTo(String.valueOf(p3)); // featured = id DESC
     }
 
     @Test
@@ -102,7 +102,7 @@ class GalleryRepositoriesTest {
     @Test
     void listFiltersByCategoryAndSearch() {
         assertThat(prompts.list("portrait", null, SortMode.FEATURED, 1, 24).total()).isEqualTo(1);
-        assertThat(prompts.list(null, "cat", SortMode.FEATURED, 1, 24).items().get(0).id()).isEqualTo(p1);
+        assertThat(prompts.list(null, "cat", SortMode.FEATURED, 1, 24).items().get(0).id()).isEqualTo(String.valueOf(p1));
     }
 
     @Test
@@ -139,38 +139,39 @@ class GalleryRepositoriesTest {
 
         Page<PromptSummary> favs = interactions.myFavorites(7L, 1, 24);
         assertThat(favs.total()).isEqualTo(1);
-        assertThat(favs.items().get(0).id()).isEqualTo(p1);
+        assertThat(favs.items().get(0).id()).isEqualTo(String.valueOf(p1)); // 对外 id 一律字符串
 
         MyInteractions mine = interactions.myInteractions(List.of(p1, p2, p3), 7L);
-        assertThat(mine.favorited()).containsExactly(p1);
-        assertThat(mine.liked()).containsExactly(p2);
+        assertThat(mine.favorited()).containsExactly(String.valueOf(p1));
+        assertThat(mine.liked()).containsExactly(String.valueOf(p2));
     }
 
     @Test
     void generationSaveListDetailDelete() {
+        long gid = generations.nextId();
         GenerationRepository.SaveGeneration cmd = new GenerationRepository.SaveGeneration(
-                "g1", 7L, "a cat", "1024x1024", 1, "medium", "done", 0.04, 1200, "grp", 9L, null,
-                "gen/7/g1/thumb.png",
-                List.of(new GenerationRepository.OutputImage(0, "gen/7/g1/0.png", 100)),
+                gid, 7L, "a cat", "1024x1024", 1, "medium", "done", 0.04, 1200, "grp", 9L, null,
+                "gen/7/" + gid + "/thumb.png",
+                List.of(new GenerationRepository.OutputImage(0, "gen/7/" + gid + "/0.png", 100)),
                 List.of(new GenerationRepository.RefImage(0, "shaA", "ref/7/shaA.png", 50)));
         generations.save(cmd);
 
-        assertThat(generations.findCreatedAt("g1", 7L)).isPresent();
         assertThat(generations.refExists(7L, "shaA")).isTrue();
 
         GenerationRepository.PageRows list = generations.list(7L, 1, 24);
         assertThat(list.total()).isEqualTo(1);
-        assertThat(list.rows().get(0).thumbKey()).isEqualTo("gen/7/g1/thumb.png");
+        assertThat(list.rows().get(0).id()).isEqualTo(gid);
+        assertThat(list.rows().get(0).thumbKey()).isEqualTo("gen/7/" + gid + "/thumb.png");
 
-        GenerationRepository.DetailRow detail = generations.detail("g1", 7L).orElseThrow();
-        assertThat(detail.outputKeys()).containsExactly("gen/7/g1/0.png");
+        GenerationRepository.DetailRow detail = generations.detail(gid, 7L).orElseThrow();
+        assertThat(detail.outputKeys()).containsExactly("gen/7/" + gid + "/0.png");
         assertThat(detail.refKeys()).containsExactly("ref/7/shaA.png");
-        assertThat(generations.detail("g1", 999L)).isEmpty(); // 非本人
+        assertThat(generations.detail(gid, 999L)).isEmpty(); // 非本人
 
-        Optional<List<String>> deletedKeys = generations.deleteReturningObjectKeys("g1", 7L);
+        Optional<List<String>> deletedKeys = generations.deleteReturningObjectKeys(gid, 7L);
         assertThat(deletedKeys).isPresent();
-        assertThat(deletedKeys.get()).containsExactlyInAnyOrder("gen/7/g1/0.png", "gen/7/g1/thumb.png");
-        assertThat(generations.findCreatedAt("g1", 7L)).isEmpty();
+        assertThat(deletedKeys.get()).containsExactlyInAnyOrder("gen/7/" + gid + "/0.png", "gen/7/" + gid + "/thumb.png");
+        assertThat(generations.detail(gid, 7L)).isEmpty();
     }
 
     @Test
@@ -195,24 +196,25 @@ class GalleryRepositoriesTest {
     }
 
     @Test
-    void generationKeepsClientTaskIdAsExternalIdentity() {
+    void generationIdentityIsServerAssignedSnowflake() {
+        long gid = generations.nextId();
+        assertThat(gid).isGreaterThan(1_000_000_000L); // 雪花量级,预分配即身份(验收意见⑦)
         generations.save(new GenerationRepository.SaveGeneration(
-                "task-uuid-1", 7L, "x", "1024x1024", 1, "medium", "done", null, 0, null, null, null,
+                gid, 7L, "x", "1024x1024", 1, "medium", "done", null, 0, null, null, null,
                 null, List.of(), List.of()));
 
-        var row = jdbc.queryForMap("SELECT id, client_task_id, created_by FROM gallery.generation WHERE user_id = 7");
-        assertThat(((Number) row.get("id")).longValue()).isGreaterThan(1_000_000_000L); // 内部雪花代理键
-        assertThat(row.get("client_task_id")).isEqualTo("task-uuid-1"); // 对外标识不变
+        var row = jdbc.queryForMap("SELECT id, created_by FROM gallery.generation WHERE user_id = 7");
+        assertThat(((Number) row.get("id")).longValue()).isEqualTo(gid);
         assertThat(row.get("created_by")).isNull(); // 无请求上下文 → auditor empty
-        assertThat(generations.findCreatedAt("task-uuid-1", 7L)).isPresent(); // 端口语义仍按任务 uuid
     }
 
     @Test
     void generationListFallsBackToFirstImageWhenNoThumb() {
+        long gid = generations.nextId();
         generations.save(new GenerationRepository.SaveGeneration(
-                "g2", 7L, "x", "1024x1024", 1, "medium", "done", null, 0, null, null, null,
+                gid, 7L, "x", "1024x1024", 1, "medium", "done", null, 0, null, null, null,
                 null, // thumbKey null → 列表回退首图
-                List.of(new GenerationRepository.OutputImage(0, "gen/7/g2/0.png", 1)), List.of()));
-        assertThat(generations.list(7L, 1, 24).rows().get(0).thumbKey()).isEqualTo("gen/7/g2/0.png");
+                List.of(new GenerationRepository.OutputImage(0, "gen/7/" + gid + "/0.png", 1)), List.of()));
+        assertThat(generations.list(7L, 1, 24).rows().get(0).thumbKey()).isEqualTo("gen/7/" + gid + "/0.png");
     }
 }

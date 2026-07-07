@@ -1,7 +1,6 @@
 package me.supernb.gallery.infra.adapter.persistence.entity;
 
 import dev.linqibin.starter.jpa.entity.BaseJpaEntity;
-import dev.linqibin.starter.jpa.id.SnowflakeIdGenerator;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,19 +15,14 @@ import lombok.NoArgsConstructor;
 
 /// 生成历史 JPA 实体,映射 `gallery.generation`。
 ///
-/// 聚合根,继承 [BaseJpaEntity];雪花 id 仅为内部代理键,
-/// **对外与幂等标识是 `client_task_id`(前端任务 uuid,全局唯一)**——
-/// domain/app/API 说的 `id` 都指它,涟漪锁死在 infra 层。
+/// 聚合根,继承 [BaseJpaEntity];**雪花 id 即唯一身份(对内对外同一条,验收意见⑦)**,
+/// 由仓储 `nextId()` 预分配后传入——R2 对象键(`gen/{userId}/{id}/…`)需先于持久化确定。
 /// created_by 由审计自动填=生成发起用户。
 @Entity
 @Table(name = "generation", schema = "gallery")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GenerationEntity extends BaseJpaEntity {
-
-    /// 前端任务 uuid(对外标识 + 建单幂等键,全局唯一)。
-    @Column(name = "client_task_id", updatable = false)
-    private String clientTaskId;
 
     /// 生成发起用户(sub2api user id)。
     @Column(name = "user_id")
@@ -88,12 +82,11 @@ public class GenerationEntity extends BaseJpaEntity {
     @OrderBy("idx")
     private List<GenerationRefEntity> refs = new ArrayList<>();
 
-    /// 构造:新生成记录,雪花 id 应用层预分配;`clientTaskId` 为前端任务 uuid。
-    public GenerationEntity(String clientTaskId, long userId, String prompt, String size, int n, String quality,
+    /// 构造:新生成记录;id 为仓储 `nextId()` 预分配的雪花(R2 键已按它命名)。
+    public GenerationEntity(long id, long userId, String prompt, String size, int n, String quality,
                             String status, Double cost, int elapsedMs, String groupName, Long keyId,
                             String error, String thumbKey) {
-        setId(SnowflakeIdGenerator.getId());
-        this.clientTaskId = clientTaskId;
+        setId(id);
         this.userId = userId;
         this.prompt = prompt;
         this.size = size;

@@ -25,7 +25,7 @@ public class DeleteGenerationHandler implements CommandHandler<DeleteGenerationC
     @Override
     public Void handle(DeleteGenerationCommand command) {
         List<String> keys = repo.deleteReturningObjectKeys(command.id(), command.userId())
-                .orElseThrow(() -> GalleryException.generationNotFound(command.id()));
+                .orElseThrow(() -> GalleryException.generationNotFound(String.valueOf(command.id())));
         for (String key : keys) {
             storage.delete(key);
         }
