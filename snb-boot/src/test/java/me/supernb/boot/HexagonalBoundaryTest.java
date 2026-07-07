@@ -48,4 +48,10 @@ class HexagonalBoundaryTest {
             .that().resideInAPackage("..adapter..")
             .should().dependOnClassesThat().implement(CommandHandler.class)
             .as("adapter 写路径只注入 CommandBus,禁止直接依赖 CommandHandler 实现");
+
+    @ArchTest
+    static final ArchRule apiIsContractOnly = noClasses()
+            .that().resideInAPackage("me.supernb..api..")
+            .should().dependOnClassesThat().resideInAnyPackage("..domain..", "..app..", "..infra..", "..adapter..")
+            .as("api 契约模块不依赖任何实现层(domain/app/infra/adapter)");
 }

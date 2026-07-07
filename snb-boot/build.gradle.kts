@@ -9,8 +9,10 @@ springBoot {
 dependencies {
     implementation(project(":snb-activity:snb-activity-adapter"))
     implementation(project(":snb-activity:snb-activity-infra"))
+    implementation(project(":snb-activity:snb-activity-api"))
     implementation(project(":snb-gallery:snb-gallery-adapter"))
     implementation(project(":snb-gallery:snb-gallery-infra"))
+    implementation(project(":snb-gallery:snb-gallery-api"))
     implementation(project(":snb-common"))
     implementation(project(":snb-sub2api"))
 

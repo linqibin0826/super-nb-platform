@@ -14,10 +14,10 @@ Java 25 · Spring Boot 4 · Gradle 9.5 · JPA + Flyway · PostgreSQL · AWS SDK 
 ## 模块
 
 ```
-snb-common      纯 web 横切(限流等)
+snb-common      纯 web 横切(UnauthorizedException 等)
 snb-sub2api     sub2api 防腐层(introspect 鉴权 + 充值只读读模型)
-snb-activity/   {domain,app,infra,adapter}
-snb-gallery/    {domain,app,infra,adapter}
+snb-activity/   {domain,app,infra,adapter,api}
+snb-gallery/    {domain,app,infra,adapter,api}
 snb-boot        唯一 Spring Boot 组装入口 + Flyway 迁移
 ```
 

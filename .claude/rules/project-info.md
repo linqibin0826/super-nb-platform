@@ -24,7 +24,8 @@ snb-platform/
 │   ├── snb-activity-domain # model/(不变量) model/read/(读视图) port/{repository,read,功能}/ exception/
 │   ├── snb-activity-app    # usecase/{子域}/{Handler, command/, dto/, query/}
 │   ├── snb-activity-infra  # adapter/{persistence(+entity,dao), read, …} 按能力分包
-│   └── snb-activity-adapter# rest/{Controller, request/, response/} + web/
+│   ├── snb-activity-adapter# rest/{Controller, request/, response/} + web/
+│   └── snb-activity-api    # 对外契约(空壳预留,跨上下文调用契约进这里)
 ├── snb-gallery/            # 同上四模块（子域 prompt/interaction/generation）
 └── snb-boot/               # 唯一 @SpringBootApplication + application.yml + 守门测试
 ```
@@ -32,12 +33,12 @@ snb-platform/
 **依赖规则（ArchUnit 编译产物级门禁，`snb-boot` 的 `HexagonalBoundaryTest`）**:
 
 - 上下文内：adapter→app→domain；infra→app+domain；domain 零框架依赖
-- **上下文之间禁止互相依赖**；真有跨上下文调用需求再按 patra 方式补 per-context api 模块（当前 YAGNI）
+- **上下文之间禁止直接互相依赖**；跨上下文调用只经对方 **api 契约模块**（空壳已建），消费方 infra 薄适配（见 layers/api.md）
 - app 不感知持久化技术（jakarta.persistence / hibernate / spring-data 都不许碰）
 - `me.supernb.sub2api` 类型只进 infra/adapter，不进 domain/app
 - 写操作经 commons `CommandBus` 派发（命令/Handler 在 app，adapter 禁依赖 Handler 实现；读操作直接注入查询用例）——见 tech/commandbus.md
 
-**build-logic 约定插件**: `snb.java-base`（Lombok/JUnit/编码）、`snb.java-library`、`snb.spring-library`、`snb.hexagonal-{domain,app,infra,adapter,boot}`。⚠️ Gradle 9.5 预编译插件脚本只能用 `//` 注释（块注释会炸）。
+**build-logic 约定插件**: `snb.java-base`（Lombok/JUnit/编码）、`snb.java-library`、`snb.spring-library`、`snb.hexagonal-{domain,app,infra,adapter,api,boot}`。⚠️ Gradle 9.5 预编译插件脚本只能用 `//` 注释（块注释会炸）。
 
 ## API 形态
 
