@@ -5,10 +5,6 @@ spring:
     url: ${SNB_DB_URL:jdbc:postgresql://localhost:5432/snb}
     username: ${SNB_DB_USER:snb_app}
     password: ${SNB_DB_PASSWORD:}
-  jpa:
-    hibernate:
-      ddl-auto: none
-    open-in-view: false
   flyway:
     enabled: ${SNB_FLYWAY_ENABLED:true}
     locations: classpath:db/migration/activity,classpath:db/migration/gallery
