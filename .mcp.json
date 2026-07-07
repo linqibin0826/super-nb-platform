@@ -1,0 +1,40 @@
+{
+  "mcpServers": {
+    "snb-pg": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://${SNB_DB_USER:-snb_app}:${SNB_DB_PASSWORD:-}@${SNB_DB_HOST:-localhost}:${SNB_DB_PORT:-5432}/snb"
+      ],
+      "env": {}
+    },
+    "snb-pg-sub2api": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://${SUB2API_RO_USER:-snb_ro}:${SUB2API_RO_PASSWORD:-}@${SUB2API_RO_HOST:-localhost}:${SUB2API_RO_PORT:-5432}/sub2api"
+      ],
+      "env": {}
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project-from-cwd",
+        "--open-web-dashboard",
+        "false"
+      ],
+      "env": {}
+    }
+  }
+}
