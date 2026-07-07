@@ -6,7 +6,7 @@ import me.supernb.activity.domain.port.campaign.CampaignPort;
 import me.supernb.activity.domain.port.read.PoolReadPort;
 import org.springframework.stereotype.Service;
 
-/// 奖池实况(按档位份数)。无进行中活动 → 空(前端优雅降级)。
+/// 奖池实况,按档位统计余量份数。无进行中活动 → 空列表(前端优雅降级)。
 @Service
 public class PoolQueryService {
 
@@ -19,6 +19,7 @@ public class PoolQueryService {
         this.poolPort = poolPort;
     }
 
+    /// 取当前活动 id,委托 PoolReadPort 按档位取奖槽余量;无进行中活动 → 空列表。
     public List<PoolTier> pool() {
         return campaignPort.activeCampaign()
                 .map(c -> poolPort.pool(c.id()))

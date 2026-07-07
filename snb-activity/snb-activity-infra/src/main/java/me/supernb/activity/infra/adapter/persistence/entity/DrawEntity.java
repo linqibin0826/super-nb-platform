@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 /// 抽奖记录 JPA 实体,映射 `activity.draw`。
 ///
 /// 聚合根,继承 [BaseJpaEntity];created_at/created_by 由 JPA 审计自动填充
-/// (created_by 即发起抽奖的登录用户,见 boot 的 `auditorAware` 装配)。
+/// (created_by 即发起本次抽奖的登录用户,见 boot 的 `auditorAware` 装配)。
 @Entity
 @Table(name = "draw", schema = "activity")
 @Getter
@@ -32,7 +32,7 @@ public class DrawEntity extends BaseJpaEntity {
     @Column(name = "slot_id")
     private Long slotId;
 
-    /// 本次抽得金额。
+    /// 本次抽得金额(元)。
     @Column(name = "amount")
     private BigDecimal amount;
 
@@ -44,7 +44,7 @@ public class DrawEntity extends BaseJpaEntity {
     @Column(name = "is_consolation")
     private boolean consolation;
 
-    /// 构造:新抽奖记录,雪花 id 应用层预分配。
+    /// 构造:新抽奖记录,雪花 id 在此显式预分配。
     public DrawEntity(long campaignId, long userId, Long slotId, BigDecimal amount,
                       String redeemCode, boolean consolation) {
         setId(SnowflakeIdGenerator.getId());

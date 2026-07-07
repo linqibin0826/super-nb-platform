@@ -13,23 +13,25 @@ import me.supernb.activity.domain.port.read.RechargeReadPort;
 import me.supernb.sub2api.recharge.RechargeReadModel;
 import org.springframework.stereotype.Component;
 
-/// RechargeReadPort 实现:薄适配,委托 snb-sub2api 的 RechargeReadModel,把 sub2api 行映射为 activity app DTO。
+/// RechargeReadPort 实现:薄适配,委托 snb-sub2api 的 RechargeReadModel,把上游行映射为
+/// activity 自己的读视图。
 @Component
 public class RechargeReadAdapter implements RechargeReadPort {
 
     private final RechargeReadModel readModel;
 
-    /// 构造:注入 starter 充值读模型。
+    /// 构造:注入 starter 提供的充值读模型。
     public RechargeReadAdapter(RechargeReadModel readModel) {
         this.readModel = readModel;
     }
 
-    /// 委托 starter 读模型统计区间充值。
+    /// 委托 starter 读模型统计区间充值合计。
     @Override
     public BigDecimal totalRecharge(long userId, Instant start, Instant end) {
         return readModel.totalRecharge(userId, start, end);
     }
 
+    /// 委托 starter 读模型取区间充值榜 Top limit,映射为 [LeaderEntry](name 已在 starter 层脱敏)。
     @Override
     public List<LeaderEntry> leaderboard(Instant start, Instant end, int limit) {
         return readModel.leaderboard(start, end, limit).stream()
@@ -37,6 +39,7 @@ public class RechargeReadAdapter implements RechargeReadPort {
                 .toList();
     }
 
+    /// 委托 starter 读模型取区间最近充值流水,映射为 [RechargeEntry](name 已在 starter 层脱敏)。
     @Override
     public List<RechargeEntry> recentRecharges(Instant start, Instant end, int limit) {
         return readModel.recentRecharges(start, end, limit).stream()
@@ -44,11 +47,13 @@ public class RechargeReadAdapter implements RechargeReadPort {
                 .toList();
     }
 
+    /// 委托 starter 读模型批量取脱敏邮箱,原样透传;找不到的 id 不在返回 map 中。
     @Override
     public Map<Long, String> maskedEmailsByIds(Collection<Long> ids) {
         return readModel.maskedEmailsByIds(ids);
     }
 
+    /// 委托 starter 读模型批量取兑换码状态,映射为 [CodeStatus];找不到的 code 不在返回 map 中。
     @Override
     public Map<String, CodeStatus> codeStatuses(Collection<String> codes) {
         return readModel.codeStatuses(codes).entrySet().stream()

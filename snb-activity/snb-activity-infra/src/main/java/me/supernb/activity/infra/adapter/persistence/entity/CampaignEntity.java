@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 /// 活动 JPA 实体,映射 `activity.campaign`。
 ///
 /// 聚合根,继承 [BaseJpaEntity] 获得雪花 id 与全套审计列;
-/// 活动由运维 SQL 创建/收尾,应用侧只读,无业务构造器。
+/// 活动由运维 SQL 创建与收尾,应用侧只读,不写业务构造器。
 @Entity
 @Table(name = "campaign", schema = "activity")
 @Getter
@@ -36,7 +36,7 @@ public class CampaignEntity extends BaseJpaEntity {
     @Column(name = "status")
     private String status;
 
-    /// 安慰奖金额(奖池抽空后的兜底额度)。
+    /// 安慰奖金额(元;奖池抽空后的兜底额度)。
     @Column(name = "consolation_amount")
     private BigDecimal consolationAmount;
 }

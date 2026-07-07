@@ -9,32 +9,32 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-/// `@CurrentUser UserProfile` 参数解析器:Authorization → introspect →
-/// active 的 user/admin 账号,否则抛 401(commons UNAUTHORIZED trait 转 problem+json)。
+/// `@CurrentUser UserProfile` 参数解析器:Authorization 头 → introspect → 要求 active 的
+/// user/admin 账号,否则抛 [UnauthorizedException](commons UNAUTHORIZED trait,统一映射 401 problem+json)。
 ///
-/// 解析成功后同时把画像挂到当前请求属性 [#CURRENT_USER_ATTRIBUTE],
-/// 供 JPA 审计的 `AuditorAware`(boot 装配)取 created_by/updated_by。
+/// 解析成功后把画像挂到当前请求属性 [#CURRENT_USER_ATTRIBUTE],
+/// 供 JPA 审计的 `AuditorAware`(boot 层装配)取 created_by/updated_by。
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
 
-    /// 请求属性键:本次请求已通过鉴权的 [UserProfile]。
+    /// 请求属性键,挂载本次请求已鉴权通过的 [UserProfile]。
     public static final String CURRENT_USER_ATTRIBUTE = "me.supernb.sub2api.currentUser";
 
     private final Sub2apiIntrospectClient introspect;
 
-    /// 构造:注入 introspect 客户端。
+    /// 构造:注入 sub2api introspect 客户端。
     public CurrentUserArgumentResolver(Sub2apiIntrospectClient introspect) {
         this.introspect = introspect;
     }
 
-    /// 只接管标注 `@CurrentUser` 的 [UserProfile] 参数。
+    /// 只接管同时标注 `@CurrentUser`、参数类型可赋给 [UserProfile] 的方法参数。
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(CurrentUser.class)
                 && UserProfile.class.isAssignableFrom(parameter.getParameterType());
     }
 
-    /// 解析当前用户:introspect 失败或非 active 的 user/admin 账号一律 401;
-    /// 成功后把画像写入请求属性供审计消费。
+    /// 解析当前用户:introspect 失败、或账号非 active 的 user/admin,统一抛 401;
+    /// 成功则把画像写入请求属性,供审计消费。
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {

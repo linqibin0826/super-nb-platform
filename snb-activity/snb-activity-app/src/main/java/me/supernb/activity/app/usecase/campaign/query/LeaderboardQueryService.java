@@ -6,7 +6,7 @@ import me.supernb.activity.domain.port.campaign.CampaignPort;
 import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
 
-/// 活动期充值榜 Top10。无进行中活动 → 空榜(前端优雅降级)。
+/// 活动期充值榜,取充值总额 Top10。无进行中活动 → 空榜(前端优雅降级)。
 @Service
 public class LeaderboardQueryService {
 
@@ -21,6 +21,7 @@ public class LeaderboardQueryService {
         this.rechargePort = rechargePort;
     }
 
+    /// 按活动窗口 [startsAt,endsAt) 委托 RechargeReadPort 取充值总额 Top10;无进行中活动 → 空列表。
     public List<LeaderEntry> leaderboard() {
         return campaignPort.activeCampaign()
                 .map(c -> rechargePort.leaderboard(c.startsAt(), c.endsAt(), LIMIT))

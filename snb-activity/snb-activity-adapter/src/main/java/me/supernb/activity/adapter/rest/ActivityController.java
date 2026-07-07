@@ -24,9 +24,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/// 活动中心 REST 入口。公开端点(榜单/流水/奖池/近期中奖)免登录;
-/// status / draw / my-draws 需登录——@CurrentUser 由 sub2api starter 的解析器完成
-/// introspect 校验(active 的 user/admin 账号,否则 401)。写操作经 CommandBus 派发,读操作直接注入查询用例。
+/// 活动中心 REST 入口,路径 `/activity/v1/*`。`leaderboard`/`recharges`/`pool`/`recent-draws`
+/// 四个只读端点公开免登录;`status`/`draw`/`my-draws` 三个端点需要登录——`@CurrentUser` 由 sub2api
+/// starter 的解析器完成 introspect 校验(要求 active 的 user 或 admin 账号,否则 401)。写操作组装命令
+/// 经 `CommandBus` 派发,其余只读端点直接调用注入的查询用例。
 @RestController
 @RequestMapping("/activity/v1")
 public class ActivityController {
@@ -39,6 +40,7 @@ public class ActivityController {
     private final RecentDrawsQueryService recentDrawsQuery;
     private final MyDrawsQueryService myDrawsQuery;
 
+    /// 构造:注入 CommandBus 与六个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录)。
     public ActivityController(
             CommandBus commandBus,
             DrawStatusQueryService drawStatusQuery,
@@ -56,39 +58,47 @@ public class ActivityController {
         this.myDrawsQuery = myDrawsQuery;
     }
 
+    /// 活动期充值榜 Top10(公开)。无进行中活动 → 空列表,不是异常。
     @GetMapping("/leaderboard")
     public List<LeaderEntry> leaderboard() {
         return leaderboardQuery.leaderboard();
     }
 
+    /// 活动期最近充值动态 Top20(公开)。无进行中活动 → 空列表。
     @GetMapping("/recharges")
     public List<RechargeEntry> recharges() {
         return recentRechargesQuery.recentRecharges();
     }
 
+    /// 奖池实况,按档位返回余量(公开)。无进行中活动 → 空列表。
     @GetMapping("/pool")
     public List<PoolTier> pool() {
         return poolQuery.pool();
     }
 
+    /// 最近真实中奖信息流(公开),排除安慰奖,展示名是服务端脱敏后的邮箱。
+    /// 无进行中活动 → 空列表;查不到邮箱的中奖行(如账号已注销)直接跳过,不吐半条数据。
     @GetMapping("/recent-draws")
     public List<PublicDraw> recentDraws() {
         return recentDrawsQuery.recentDraws();
     }
 
-    /// 我的抽奖资格与剩余次数。
+    /// 我的抽奖资格与剩余次数(需登录)。无进行中活动 → 404,不像上面几个只读端点那样降级成空列表。
     @GetMapping("/status")
     public DrawStatus status(@CurrentUser UserProfile user) {
         return drawStatusQuery.status(user.id());
     }
 
-    /// 抽一次(经 CommandBus 派发)。
+    /// 抽一次(需登录)。无进行中活动 → 404;已无剩余抽奖次数 → 409;并发超发防护在 CommandBus
+    /// 派发到的 Handler 背后(advisory lock),这一层只做协议转换与结果映射。
     @PostMapping("/draw")
     public DrawResponse draw(@CurrentUser UserProfile user) {
         DrawResult r = commandBus.handle(new PerformDrawCommand(user.id()));
         return new DrawResponse(r.amount(), r.redeemCode(), r.consolation());
     }
 
+    /// 我在本活动的中奖历史(需登录),含安慰奖,enrich 兑换码当前状态,面向本人不做脱敏。
+    /// 无进行中活动 → 空列表。
     @GetMapping("/my-draws")
     public List<MyDrawView> myDraws(@CurrentUser UserProfile user) {
         return myDrawsQuery.myDraws(user.id());

@@ -12,8 +12,8 @@ import me.supernb.activity.domain.port.draw.DrawPort;
 import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
 
-/// 最近真实中奖信息流(排除安慰奖),服务端用脱敏邮箱做展示名。无活动 → 空。
-/// 找不到邮箱的行(如已注销)直接跳过,不返回半条数据。
+/// 最近真实中奖信息流(排除安慰奖),服务端用脱敏邮箱做展示名。无进行中活动 → 空列表(前端优雅降级)。
+/// 查无邮箱的行(如账号已注销)直接跳过,不拼出半条数据。
 @Service
 public class RecentDrawsQueryService {
 
@@ -30,6 +30,8 @@ public class RecentDrawsQueryService {
         this.rechargePort = rechargePort;
     }
 
+    /// 取活动内最近真实中奖(至多 500 条),按 userId 批量查脱敏邮箱后关联;查无邮箱的行在这一步被过滤掉。
+    /// 无进行中活动 → 空列表。
     public List<PublicDraw> recentDraws() {
         Campaign c = campaignPort.activeCampaign().orElse(null);
         if (c == null) {

@@ -36,9 +36,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/// 灵感库 REST 入口。prompts / categories 公开;互动与生成历史需登录——
-/// @CurrentUser 由 sub2api starter 的解析器完成 introspect 校验(active 的 user/admin 账号,否则 401)。
-/// 写操作经 CommandBus 派发,读操作直接注入查询用例。
+/// 灵感库 REST 入口,路径 `/gallery/v1/*`。`prompts`/`categories` 只读端点公开免登录;
+/// 互动(点赞/收藏)与生成历史端点需要登录——`@CurrentUser` 由 sub2api starter 的解析器
+/// 完成 introspect 校验(要求 active 的 user 或 admin 账号,否则 401)。写操作组装命令
+/// 经 `CommandBus` 派发,只读端点直接调用注入的查询用例。
 @RestController
 @RequestMapping("/gallery/v1")
 public class GalleryController {
@@ -48,6 +49,7 @@ public class GalleryController {
     private final InteractionQueryService interactionQueryService;
     private final GenerationQueryService generationQueryService;
 
+    /// 构造:注入 CommandBus 与三个查询用例(提示词、互动、生成历史)。
     public GalleryController(
             CommandBus commandBus,
             PromptQueryService promptQueryService,
@@ -61,6 +63,7 @@ public class GalleryController {
 
     // —— 公开只读 ——
 
+    /// 提示词列表(公开),按类目/关键字/排序分页。
     @GetMapping("/prompts")
     public Page<PromptSummary> listPrompts(
             @RequestParam(required = false) String category,
@@ -85,36 +88,37 @@ public class GalleryController {
 
     // —— 互动(需登录,写经 CommandBus)——
 
-    /// 点赞。
+    /// 点赞(需登录)。
     @PostMapping("/prompts/{id}/like")
     public LikeResult like(@PathVariable long id, @CurrentUser UserProfile user) {
         return commandBus.handle(new TogglePromptLikeCommand(id, user.id(), true));
     }
 
-    /// 取消点赞。
+    /// 取消点赞(需登录)。
     @DeleteMapping("/prompts/{id}/like")
     public LikeResult unlike(@PathVariable long id, @CurrentUser UserProfile user) {
         return commandBus.handle(new TogglePromptLikeCommand(id, user.id(), false));
     }
 
-    /// 收藏。
+    /// 收藏(需登录)。
     @PostMapping("/prompts/{id}/favorite")
     public FavResult favorite(@PathVariable long id, @CurrentUser UserProfile user) {
         return commandBus.handle(new TogglePromptFavoriteCommand(id, user.id(), true));
     }
 
-    /// 取消收藏。
+    /// 取消收藏(需登录)。
     @DeleteMapping("/prompts/{id}/favorite")
     public FavResult unfavorite(@PathVariable long id, @CurrentUser UserProfile user) {
         return commandBus.handle(new TogglePromptFavoriteCommand(id, user.id(), false));
     }
 
-    /// 批量互动态回显。
+    /// 批量互动态回显(需登录)。
     @GetMapping("/me/interactions")
     public MyInteractions myInteractions(@RequestParam String ids, @CurrentUser UserProfile user) {
         return interactionQueryService.myInteractions(parseIds(ids), user.id());
     }
 
+    /// 我的收藏分页(需登录)。
     @GetMapping("/me/favorites")
     public Page<PromptSummary> myFavorites(
             @RequestParam(defaultValue = "1") int page,
@@ -125,6 +129,9 @@ public class GalleryController {
 
     // —— 生成历史(需登录,写经 CommandBus)——
 
+    /// 创建一条生成记录(需登录)。把请求体里 base64 编码的输出图/参考图解码成字节数组,
+    /// 缺省(null)按空列表处理,组装成命令派发;没有创建幂等预检,重复提交各自落一行——
+    /// 防重复提交靠前端队列的单飞语义兜底,不在服务端做。
     // @RequestBody 在前、@CurrentUser 在后:保持「坏 JSON 先 400、再谈 401」的旧语义(参数按序解析)
     @PostMapping("/me/generations")
     public Created createGeneration(
@@ -146,6 +153,7 @@ public class GalleryController {
                 body.cost(), body.elapsedMs(), body.groupName(), body.keyId(), body.error(), outputs, refs));
     }
 
+    /// 生成历史分页列表(需登录)。
     @GetMapping("/me/generations")
     public Page<GenerationSummary> listGenerations(
             @RequestParam(defaultValue = "1") int page,
@@ -154,12 +162,14 @@ public class GalleryController {
         return generationQueryService.list(user.id(), Math.max(1, page), clampSize(pageSize));
     }
 
+    /// 生成记录详情(需登录)。不存在或不归属当前用户,统一 404。
     @GetMapping("/me/generations/{generationId}")
     public GenerationDetail getGeneration(
             @PathVariable long generationId, @CurrentUser UserProfile user) {
         return generationQueryService.detail(generationId, user.id());
     }
 
+    /// 删除本人一条生成记录(需登录),级联清理 R2 对象;不存在或不归属当前用户 → 404。
     @DeleteMapping("/me/generations/{generationId}")
     public DeleteResponse deleteGeneration(
             @PathVariable long generationId, @CurrentUser UserProfile user) {
@@ -172,6 +182,8 @@ public class GalleryController {
         return Math.min(48, Math.max(1, pageSize));
     }
 
+    /// 解析逗号分隔的 id 字符串:非 1~19 位纯数字的片段直接跳过(不抛异常),
+    /// 累计满 100 个即停止扫描,不再处理输入里剩余的部分——防御 `ids` 查询参数被喂超长串。
     private static List<Long> parseIds(String ids) {
         List<Long> result = new ArrayList<>();
         for (String part : ids.split(",")) {

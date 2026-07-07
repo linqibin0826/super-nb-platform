@@ -7,7 +7,8 @@ import me.supernb.gallery.domain.exception.GalleryException;
 import me.supernb.gallery.domain.port.repository.InteractionRepository;
 import org.springframework.stereotype.Service;
 
-/// 点赞开关。目标不存在/未发布 → 404;并发正确性由 InteractionRepository 实现(行锁 + 事务)保证。
+/// 点赞开关。目标不存在或未发布 → 404;toggle 的并发正确性与幂等由 InteractionRepository
+/// 实现保证(成员表唯一约束撞车 → 整事务回滚 → 事务外回读最新计数),本类只负责编排。
 @Service
 public class TogglePromptLikeHandler implements CommandHandler<TogglePromptLikeCommand, LikeResult> {
 
@@ -18,7 +19,7 @@ public class TogglePromptLikeHandler implements CommandHandler<TogglePromptLikeC
         this.repo = repo;
     }
 
-    /// 点赞开关,目标不存在/未发布 → 404。
+    /// 点赞开关,目标不存在或未发布 → 404。
     @Override
     public LikeResult handle(TogglePromptLikeCommand command) {
         int count = repo.toggleLike(command.promptId(), command.userId(), command.on())

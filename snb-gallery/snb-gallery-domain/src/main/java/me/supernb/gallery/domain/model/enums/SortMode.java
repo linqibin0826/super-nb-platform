@@ -1,13 +1,14 @@
 package me.supernb.gallery.domain.model.enums;
 
-/// 提示词列表排序。featured=收录序(id 倒序);newest=源发布时间倒序;likes/favorites=热度倒序。
+/// 提示词列表排序模式:FEATURED=收录序(id 倒序,即收录越新越靠前);NEWEST=源发布时间倒序;
+/// LIKES/FAVORITES=对应热度(点赞数/收藏数)倒序。
 public enum SortMode {
     FEATURED,
     NEWEST,
     LIKES,
     FAVORITES;
 
-    /// 解析请求字符串,未知值回退 FEATURED。
+    /// 请求字符串 → 排序模式;null 或未识别的值一律回退 FEATURED。
     public static SortMode from(String value) {
         if (value == null) {
             return FEATURED;

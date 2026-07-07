@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 
 /// 生成↔参考图引用 JPA 实体,映射 `gallery.generation_ref`。
 ///
-/// 值对象表,继承 [ValueObjectJpaEntity]:随 generation 聚合根级联,
-/// 引用 ref_image 靠 `(user_id, sha256)` 内容寻址(无外键);
+/// 值对象表,继承 [ValueObjectJpaEntity]:随 generation 聚合根级联生死;
+/// 对 ref_image 的引用靠 `(user_id, sha256)` 内容寻址(不建外键);
 /// `UNIQUE(generation_id, idx)`。
 @Entity
 @Table(name = "generation_ref", schema = "gallery")
@@ -23,20 +23,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GenerationRefEntity extends ValueObjectJpaEntity {
 
-    /// 所属生成记录。
+    /// 所属的生成记录。
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "generation_id")
     private GenerationEntity generation;
 
-    /// 参考图内容哈希(联合用户 id 定位 ref_image)。
+    /// 参考图内容哈希,联合所属用户 id 定位对应的 ref_image。
     @Column(name = "sha256")
     private String sha256;
 
-    /// 参考序号(0 起)。
+    /// 在参考图集合中的序号,0 起。
     @Column(name = "idx")
     private Integer idx;
 
-    /// 构造:新引用,雪花 id 应用层预分配;仅聚合根 `addRef` 调用。
+    /// 构造:新建参考图引用,雪花 id 由应用层预分配;仅供聚合根的 `addRef` 调用。
     GenerationRefEntity(GenerationEntity generation, int idx, String sha256) {
         setId(SnowflakeIdGenerator.getId());
         this.generation = generation;

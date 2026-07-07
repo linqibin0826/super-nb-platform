@@ -21,11 +21,12 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/// DrawPort 实现:抽奖的原子事务在此。
+/// DrawPort 实现:抽奖的原子事务收在这里。
 ///
-/// 移植 activity-svc draw.py 的并发安全语义:事务内先 pg_advisory_xact_lock(userId) 串行化该用户,
-/// 再现查剩余次数(充值总额走只读端口,弱一致可接受),然后 FOR UPDATE SKIP LOCKED 原子领槽;
-/// 池空则记 $5 安慰奖占位(不发码)。用 TransactionTemplate 而非 @Transactional 注解,免受自调用代理坑。
+/// 移植自 activity-svc draw.py 的并发安全语义:事务内先 pg_advisory_xact_lock(userId) 串行化
+/// 同一用户,现查剩余次数(充值总额走只读端口,接受弱一致),再 FOR UPDATE SKIP LOCKED 原子领槽;
+/// 池空则记安慰奖占位(campaign 配置的 consolationAmount,建表默认 5 元,不发码)。用
+/// TransactionTemplate 显式包裹而非 @Transactional 注解,规避同类自调用时代理失效的坑。
 @Repository
 public class DrawAdapter implements DrawPort {
 
@@ -34,6 +35,7 @@ public class DrawAdapter implements DrawPort {
     private final TransactionTemplate txTemplate;
     private final RechargeReadPort rechargePort;
 
+    /// 构造:注入抽奖与奖槽仓储、事务管理器(内部包成 TransactionTemplate)与充值只读端口。
     public DrawAdapter(DrawJpaRepository draws, PrizeSlotJpaRepository slots,
                        PlatformTransactionManager txManager, RechargeReadPort rechargePort) {
         this.draws = draws;
@@ -42,7 +44,7 @@ public class DrawAdapter implements DrawPort {
         this.rechargePort = rechargePort;
     }
 
-    /// 事务内执行一次抽奖(advisory lock 串行化同一用户)。
+    /// 事务内执行一次抽奖:advisory lock 串行化同一用户后委托 `doDraw`。
     @Override
     public DrawResult drawFor(Campaign campaign, long userId) {
         return txTemplate.execute(status -> doDraw(campaign, userId));
@@ -74,12 +76,14 @@ public class DrawAdapter implements DrawPort {
         return DrawResult.consolation(consolation);
     }
 
-    /// 该用户在该活动的已抽次数。
+    /// 该活动内该用户的已抽次数。
     @Override
     public int countDraws(long campaignId, long userId) {
         return draws.countByCampaignIdAndUserId(campaignId, userId);
     }
 
+    /// 该活动内本人的抽奖记录(含安慰奖),按创建时间倒序取最近 100 条并映射为 [RawDraw]
+    /// (未 enrich 兑换码状态)。
     @Override
     public List<RawDraw> myRawDraws(long campaignId, long userId) {
         return draws.findTop100ByCampaignIdAndUserIdOrderByCreatedAtDesc(campaignId, userId).stream()
@@ -88,6 +92,8 @@ public class DrawAdapter implements DrawPort {
                 .toList();
     }
 
+    /// 该活动排除安慰奖的中奖记录,按创建时间倒序取最近 limit 条并映射为 [RawWinner]
+    /// (仅 userId+金额,未 enrich 邮箱)。
     @Override
     public List<RawWinner> recentRealWinners(long campaignId, int limit) {
         return draws.findByCampaignIdAndConsolationFalseOrderByCreatedAtDesc(campaignId, Limit.of(limit)).stream()

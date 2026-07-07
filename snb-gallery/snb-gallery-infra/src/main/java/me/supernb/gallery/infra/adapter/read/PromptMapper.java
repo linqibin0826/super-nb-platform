@@ -6,20 +6,21 @@ import me.supernb.gallery.domain.model.read.PromptSummary;
 import me.supernb.gallery.infra.adapter.persistence.entity.CategoryEntity;
 import me.supernb.gallery.infra.adapter.persistence.entity.PromptEntity;
 
-/// PromptEntity → app DTO 映射(PromptReadAdapter / InteractionRepositoryAdapter 共用)。
+/// PromptEntity → domain 读视图的手写映射,[PromptReadAdapter] 与 `InteractionRepositoryAdapter` 共用。
 public final class PromptMapper {
 
-    /// 工具类不实例化。
+    /// 工具类,禁止实例化。
     private PromptMapper() {
     }
 
-    /// 实体 → 列表瘦身条目。
+    /// 实体 → 列表用的瘦身条目。
     public static PromptSummary toSummary(PromptEntity p) {
         return new PromptSummary(String.valueOf(p.getId()), p.getTitle(), p.getImageUrl(),
                 p.getImageW(), p.getImageH(), p.getAuthorName(), p.getLikeCount(), p.getFavCount());
     }
 
-    /// 调用方须保证 category 已随查询 fetch(或为 null)。
+    /// 实体 → 单条详情;category 是懒加载关联,调用方须保证查询已 join fetch(或该条目本就未挂类目、为 null),
+    /// 否则越界访问会触发懒加载异常。
     public static PromptDetail toDetail(PromptEntity p) {
         CategoryEntity c = p.getCategory();
         Category category = c == null ? null

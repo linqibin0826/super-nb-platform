@@ -9,19 +9,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/// 每 IP 令牌桶限流,只作用于 /gallery/ 路径(不碰 activity / 付费 API)。超限 429 + Retry-After。
+/// 每 IP 令牌桶限流,只作用于 `/gallery/` 路径前缀,绝不把限流逻辑套到 activity 或付费模型 API 路径上
+/// (那是上游 sub2api 的域)。超限返回 429 + `Retry-After` 头。
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final TokenBucket bucket;
 
+    /// 构造:接收令牌桶容量与每分钟补充速率(`gallery.ratelimit.*` 未配置时默认 burst=60、
+    /// perMinute=120),据此建一个 TokenBucket 实例。
     public RateLimitFilter(
             @Value("${gallery.ratelimit.burst:60}") double burst,
             @Value("${gallery.ratelimit.per-minute:120}") double perMinute) {
         this.bucket = new TokenBucket(burst, perMinute);
     }
 
-    /// 只对 /gallery/ 路径按 IP 限流,超限 429 + Retry-After。
+    /// 非 `/gallery/` 路径直接放行;命中的路径按 IP(取 X-Forwarded-For 最后一跳)过令牌桶,
+    /// 不足则 429 + Retry-After,不再继续走过滤器链。
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {

@@ -7,7 +7,8 @@ import me.supernb.gallery.domain.exception.GalleryException;
 import me.supernb.gallery.domain.port.repository.InteractionRepository;
 import org.springframework.stereotype.Service;
 
-/// 收藏开关。目标不存在/未发布 → 404;并发正确性由 InteractionRepository 实现(行锁 + 事务)保证。
+/// 收藏开关。目标不存在或未发布 → 404;toggle 的并发正确性与幂等由 InteractionRepository
+/// 实现保证(成员表唯一约束撞车 → 整事务回滚 → 事务外回读最新计数),本类只负责编排。
 @Service
 public class TogglePromptFavoriteHandler
         implements CommandHandler<TogglePromptFavoriteCommand, FavResult> {
@@ -19,7 +20,7 @@ public class TogglePromptFavoriteHandler
         this.repo = repo;
     }
 
-    /// 收藏开关,目标不存在/未发布 → 404。
+    /// 收藏开关,目标不存在或未发布 → 404。
     @Override
     public FavResult handle(TogglePromptFavoriteCommand command) {
         int count = repo.toggleFavorite(command.promptId(), command.userId(), command.on())

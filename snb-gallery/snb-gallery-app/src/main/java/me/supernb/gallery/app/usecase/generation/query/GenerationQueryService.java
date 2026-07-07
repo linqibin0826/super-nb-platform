@@ -11,10 +11,11 @@ import me.supernb.gallery.domain.port.repository.GenerationRepository;
 import me.supernb.gallery.domain.port.storage.ImageStoragePort;
 import org.springframework.stereotype.Service;
 
-/// 生成历史只读查询用例:列表(缩略图现签,无缩略图回退 null)、详情(输出/参考图现签)。
+/// 生成历史只读查询用例:列表(缩略图现签,缺失回退 null)、详情(输出/参考图逐张现签)。
 @Service
 public class GenerationQueryService {
 
+    /// presigned URL 有效期;过期后前端需重新拉列表/详情换新链接。
     private static final Duration PRESIGN_TTL = Duration.ofMinutes(10);
 
     private final GenerationRepository repo;
@@ -26,6 +27,8 @@ public class GenerationQueryService {
         this.storage = storage;
     }
 
+    /// 生成历史分页列表:按创建时刻倒序,时间相同按 id 倒序稳定排序。thumbUrl 现签,
+    /// 键来自仓储投影(可能是真缩略图,也可能是仓储侧对存量单的首图回退),两者都缺时为 null。
     public Page<GenerationSummary> list(long userId, int page, int pageSize) {
         GenerationRepository.PageRows rows = repo.list(userId, page, pageSize);
         List<GenerationSummary> items = rows.rows().stream()
@@ -37,7 +40,7 @@ public class GenerationQueryService {
         return Page.of(items, rows.total(), page, pageSize);
     }
 
-    /// 详情(输出/参考图现签 presigned),不存在/非本人 → 404。
+    /// 详情:输出图与参考图逐张现签 presigned URL;不存在或不归属本人 → 404。
     public GenerationDetail detail(long id, long userId) {
         GenerationRepository.DetailRow r = repo.detail(id, userId)
                 .orElseThrow(() -> GalleryException.generationNotFound(String.valueOf(id)));

@@ -23,11 +23,11 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/// 生成历史聚合仓储适配器:4 表(generation/generation_image/generation_ref/ref_image)
-/// 一个事务落库,级联随聚合根。
+/// GenerationRepository 实现:generation/generation_image/generation_ref/ref_image
+/// 四表一次事务落库,子表随聚合根级联持久化。
 ///
-/// 身份即雪花 id(经 [#nextId()] 预分配,插入不会撞主键);
-/// 撞唯一约束仅剩参考图 (user_id, sha256) 并发去重一种,重试一轮改走跳过。
+/// 身份即雪花 id,经 [#nextId()] 预分配后传入构造器,插入不会撞主键;
+/// 聚合内唯一还会撞唯一约束的场景是参考图 (user_id, sha256) 并发去重,撞约束重试一轮后转走跳过(见 `save`)。
 @Repository
 public class GenerationRepositoryAdapter implements GenerationRepository {
 
@@ -37,7 +37,7 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
     private final RefImageJpaRepository refImages;
     private final TransactionTemplate txTemplate;
 
-    /// 构造:注入 4 张表的 Spring Data 仓储与事务模板。
+    /// 构造:注入生成记录、输出图、参考图引用、参考图库四个仓储,事务管理器内部包成 TransactionTemplate。
     public GenerationRepositoryAdapter(GenerationJpaRepository generations,
                              GenerationImageJpaRepository generationImages,
                              GenerationRefJpaRepository generationRefs,
@@ -50,19 +50,20 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
         this.txTemplate = new TransactionTemplate(txManager);
     }
 
-    /// 预分配下一个生成记录 id(雪花)。
+    /// 预分配下一个生成记录 id(雪花算法)。
     @Override
     public long nextId() {
         return SnowflakeIdGenerator.getId();
     }
 
-    /// 用户参考图库中是否已有该内容哈希。
+    /// 用户参考图库中是否已存在该内容哈希。
     @Override
     public boolean refExists(long userId, String sha256) {
         return refImages.existsByUserIdAndSha256(userId, sha256);
     }
 
-    /// 落库:参考图 (user_id, sha256) 并发去重撞唯一约束时重试一次(重试轮 exists 命中改走跳过)。
+    /// 落库(四表一次事务);参考图按 (user_id, sha256) 并发去重撞唯一约束时整单重试一轮,
+    /// 重试轮 exists 命中即跳过该张参考图的插入、复用已有记录。
     @Override
     public Instant save(SaveGeneration c) {
         try {
@@ -72,7 +73,7 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
         }
     }
 
-    /// 事务体:组装聚合(输出图/参考图去重/引用)一次持久化。
+    /// 事务体:组装聚合(生成记录 + 输出图 + 参考图去重引用)后整单持久化。
     private Instant trySave(SaveGeneration c) {
         return txTemplate.execute(status -> {
             GenerationEntity g = new GenerationEntity(c.id(), c.userId(), c.prompt(), c.size(), c.n(),
@@ -92,13 +93,14 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
         });
     }
 
-    /// 用户生成历史分页(按创建时刻倒序),缩略图缺失的存量单回退首图键(整页一次批查,无 N+1)。
+    /// 用户生成历史分页,按创建时刻倒序;缩略图缺失的存量记录回退取首张输出图键,
+    /// 整页批量一次查询,不产生 N+1。
     @Override
     public PageRows list(long userId, int page, int pageSize) {
         Page<GenerationEntity> pg = generations.findByUserId(userId, PageRequest.of(page - 1, pageSize,
                 Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))));
 
-        // 缩略图回退:thumb_key 为空的存量单,取首张输出图的键(一次查整页,无 N+1)
+        // 缩略图回退:thumb_key 为空的存量记录批量取首张输出图键,一次查整页,避免逐行 N+1
         List<Long> needFallback = pg.getContent().stream()
                 .filter(g -> g.getThumbKey() == null).map(GenerationEntity::getId).toList();
         Map<Long, String> firstImageKey = new HashMap<>();
@@ -115,7 +117,7 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
         return new PageRows(rows, pg.getTotalElements());
     }
 
-    /// 单条详情:输出图预取 + 参考图键内容寻址联查;不存在或不归属该用户返回 empty。
+    /// 单条详情:输出图走 join fetch 预取,参考图键经内容寻址联查;不存在或不归属该用户返回 empty。
     @Override
     public Optional<DetailRow> detail(long id, long userId) {
         return generations.findWithImages(id, userId).map(g -> new DetailRow(
@@ -125,7 +127,7 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
                 generationRefs.refKeysOf(g.getId(), userId)));
     }
 
-    /// 删除生成记录并返回其全部 R2 对象键(含缩略图);不存在返回 empty,由用例转 404。
+    /// 删除生成记录,返回其全部 R2 对象键(输出图 + 缩略图,供调用方去 R2 清理);不存在返回 empty,由用例转 404。
     @Override
     public Optional<List<String>> deleteReturningObjectKeys(long id, long userId) {
         return txTemplate.execute(status -> {

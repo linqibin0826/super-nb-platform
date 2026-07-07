@@ -10,7 +10,7 @@ import me.supernb.activity.domain.port.draw.DrawPort;
 import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
 
-/// 查询当前用户的抽奖资格与剩余次数。无进行中活动 → CampaignNotActiveException(404)。
+/// 查询当前用户在本活动的抽奖资格与剩余次数。无进行中活动 → CampaignNotActiveException(404)。
 @Service
 public class DrawStatusQueryService {
 
@@ -25,7 +25,8 @@ public class DrawStatusQueryService {
         this.drawPort = drawPort;
     }
 
-    /// 按活动期充值额算资格档位,减去已抽次数。
+    /// 取活动窗口内充值总额与已抽次数:充值总额达 DrawEligibility 定义的门槛即算资格达标,
+    /// 剩余次数委托 DrawEligibility 计算。
     public DrawStatus status(long userId) {
         Campaign c = campaignPort.activeCampaign().orElseThrow(CampaignNotActiveException::new);
         BigDecimal total = rechargePort.totalRecharge(userId, c.startsAt(), c.endsAt());

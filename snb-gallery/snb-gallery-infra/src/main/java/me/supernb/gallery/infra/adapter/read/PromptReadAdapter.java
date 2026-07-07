@@ -22,8 +22,9 @@ import me.supernb.gallery.infra.adapter.persistence.entity.PromptEntity;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
-/// PromptReadPort 实现:gallery 库只读查询。
-/// 列表的过滤/排序组合是动态 HQL(片段全为常量拼接,参数一律绑定,无注入面)。
+/// [PromptReadPort] 实现:gallery 库只读查询(列表分页、详情、三轴类目树)。
+///
+/// 列表的过滤/排序组合走动态 HQL 现场拼接:拼接片段全为常量,入参一律走 `:param` 绑定,不留注入面。
 @Repository
 public class PromptReadAdapter implements PromptReadPort {
 
@@ -31,13 +32,15 @@ public class PromptReadAdapter implements PromptReadPort {
     private final CategoryJpaRepository categories;
     private final EntityManager em;
 
-    /// 构造:注入提示词/类目 DAO 与 EntityManager(动态 HQL 用)。
+    /// 构造:注入提示词/类目 DAO,以及拼动态 HQL 用的 EntityManager。
     public PromptReadAdapter(PromptJpaRepository prompts, CategoryJpaRepository categories, EntityManager em) {
         this.prompts = prompts;
         this.categories = categories;
         this.em = em;
     }
 
+    /// 已发布提示词分页(`page` 从 1 起);`categorySlug`/`q` 留空则不参与对应过滤维度,`q` 按标题/描述
+    /// 关键字大小写不敏感匹配,无匹配 → 空页而非异常。
     @Override
     public Page<PromptSummary> list(
             String categorySlug, String q, SortMode sort, int page, int pageSize) {
@@ -75,7 +78,8 @@ public class PromptReadAdapter implements PromptReadPort {
         return Page.of(items, total, page, pageSize);
     }
 
-    /// 排序模式 → ORDER BY 片段(常量拼接;启动期不校验,分支必须有测试遍历)。
+    /// 排序模式 → ORDER BY 片段;片段全为常量拼接、不嵌入参。动态拼接的 HQL 启动期不做语法校验,
+    /// 每个分支都必须有测试真正跑一遍,拼错的分支要等实际命中才会暴露。
     private static String orderHql(SortMode sort) {
         return switch (sort) {
             case NEWEST -> "p.sourcePublishedAt DESC NULLS LAST, p.id DESC";
@@ -85,12 +89,14 @@ public class PromptReadAdapter implements PromptReadPort {
         };
     }
 
+    /// 查询已 join-fetch 类目,满足 PromptMapper 对懒加载字段的前置假设;不存在或未发布 → empty。
     @Override
     public Optional<PromptDetail> detail(long id) {
         return prompts.findPublishedWithCategory(id).map(PromptMapper::toDetail);
     }
 
-    /// 三轴类目树:一次分组统计,无 N+1。
+    /// 三轴(scene/style/subject)类目树,附各类目已发布条目数;计数走一次 GROUP BY 分组统计,
+    /// 不逐类目单独查,避免 N+1。轴值不属于这三者的类目静默跳过,不进任何一支列表。
     @Override
     public CategoryTree categories() {
         Map<Long, Long> counts = new HashMap<>();

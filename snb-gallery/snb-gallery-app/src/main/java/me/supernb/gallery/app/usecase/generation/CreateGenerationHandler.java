@@ -14,29 +14,33 @@ import me.supernb.gallery.domain.port.thumbnail.ThumbnailPort;
 import org.springframework.stereotype.Service;
 
 /// 创建生成记录:输出图逐张上传 R2 + 首图缩略图(尽力而为)+ 参考图内容寻址去重 + 落 4 表(一个事务)。
+///
+/// 不做创建级幂等:id 在 `handle()` 内现取(`nextId()` 预分配),重复调用各生成一条新记录;
+/// 唯一的去重发生在参考图这一层(按内容哈希,已存在则跳过物理上传,但仍会新增一条关联行)。
 @Service
 public class CreateGenerationHandler implements CommandHandler<CreateGenerationCommand, Created> {
 
+    /// 列表缩略图长边上限(px);`ThumbnailPort` 保比例只缩不放。
     private static final int THUMB_EDGE = 256;
 
     private final GenerationRepository repo;
     private final ImageStoragePort storage;
     private final ThumbnailPort thumbnails;
 
-    /// 构造:注入生成仓储/对象存储/缩略图端口。
+    /// 构造:注入生成仓储、对象存储端口与缩略图端口。
     public CreateGenerationHandler(GenerationRepository repo, ImageStoragePort storage, ThumbnailPort thumbnails) {
         this.repo = repo;
         this.storage = storage;
         this.thumbnails = thumbnails;
     }
 
-    /// 幂等创建:上传输出图 + 首图缩略图(尽力而为)+ 参考图去重,再一个事务落 4 表。
+    /// 取号 → 逐张上传输出图 → 尽力生成首图缩略图 → 参考图去重上传 → 一个事务落 4 表,返回创建结果。
     @Override
     public Created handle(CreateGenerationCommand cmd) {
-        // 身份=服务端预分配雪花(验收意见⑦):R2 键按它命名,须先于上传/落库取号
+        // 身份 = 服务端预分配雪花(验收意见⑦):R2 键按它命名,必须先取号再上传/落库
         long id = repo.nextId();
 
-        // 1) 输出图逐张上传(png),留首图字节给缩略图
+        // 1) 输出图逐张上传(固定按 png 存,不转码/不探测实际格式),留首图字节给下面的缩略图用
         List<GenerationRepository.OutputImage> outputs = new ArrayList<>();
         byte[] firstBytes = null;
         List<ImageBytes> outImgs = cmd.outputImages() == null ? List.of() : cmd.outputImages();
@@ -50,7 +54,7 @@ public class CreateGenerationHandler implements CommandHandler<CreateGenerationC
             outputs.add(new GenerationRepository.OutputImage(idx, key, data.length));
         }
 
-        // 1b) 首图缩略图(尽力而为:坏图/异常不阻断,留 null 由列表回退首图)
+        // 1b) 首图缩略图,尽力而为:坏图或异常不阻断创建,留 null 交由列表查询回退到首张输出图
         String thumbKey = null;
         if (firstBytes != null) {
             try {
@@ -63,7 +67,7 @@ public class CreateGenerationHandler implements CommandHandler<CreateGenerationC
             }
         }
 
-        // 2) 参考图去重上传(key 由 sha 内容寻址)
+        // 2) 参考图内容寻址去重:key 由 sha 算出,库里已有该哈希就跳过物理上传(仍记关联行)
         List<GenerationRepository.RefImage> refs = new ArrayList<>();
         List<RefBytes> refImgs = cmd.refImages() == null ? List.of() : cmd.refImages();
         for (int idx = 0; idx < refImgs.size(); idx++) {
@@ -77,14 +81,14 @@ public class CreateGenerationHandler implements CommandHandler<CreateGenerationC
             refs.add(new GenerationRepository.RefImage(idx, sha, key, data.length));
         }
 
-        // 3) 落 4 表(一个事务)
+        // 3) 一个事务落 4 表
         Instant createdAt = repo.save(new GenerationRepository.SaveGeneration(
                 id, cmd.userId(), cmd.prompt(), cmd.size(), cmd.n(), cmd.quality(), cmd.status(),
                 cmd.cost(), cmd.elapsedMs(), cmd.groupName(), cmd.keyId(), cmd.error(), thumbKey, outputs, refs));
         return new Created(String.valueOf(id), createdAt);
     }
 
-    /// contentType → 存储键扩展名(未知回落 png)。
+    /// MIME 类型 → R2 键扩展名;只认 jpeg/webp,null 或其余一律回落 png。
     private static String extFor(String contentType) {
         if (contentType == null) {
             return "png";

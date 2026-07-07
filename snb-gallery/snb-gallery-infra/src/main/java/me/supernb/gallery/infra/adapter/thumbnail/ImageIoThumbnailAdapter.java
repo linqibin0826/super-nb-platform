@@ -11,10 +11,16 @@ import javax.imageio.ImageIO;
 import me.supernb.gallery.domain.port.thumbnail.ThumbnailPort;
 import org.springframework.stereotype.Component;
 
-/// ThumbnailPort 实现:JDK ImageIO 缩放为 PNG(避开 webp 编码依赖;前端只认 URL,格式无所谓)。
+/// [ThumbnailPort] 实现:JDK 内置 ImageIO 生成缩略图,统一输出 PNG。
+///
+/// 故意不出 webp——ImageIO 原生不带 webp 编码,引入等于多背一个依赖;前端只消费缩略图 URL,
+/// 不关心具体编码格式,输出格式与原图格式是否一致不影响功能。
 @Component
 public class ImageIoThumbnailAdapter implements ThumbnailPort {
 
+    /// 原图字节 → 长边缩到 maxEdge 的 PNG 字节,保持宽高比、只缩不放。解码失败(非受支持的图片格式)
+    /// 抛 IllegalArgumentException,编解码 IO 异常包成 UncheckedIOException——均为 RuntimeException,
+    /// 呼应 [ThumbnailPort] 契约:坏图抛运行期异常,由调用方尽力而为(捕获后放弃缩略图,不阻断主流程)。
     @Override
     public byte[] toPng(byte[] src, int maxEdge) {
         try {
@@ -24,7 +30,7 @@ public class ImageIoThumbnailAdapter implements ThumbnailPort {
             }
             int w = img.getWidth();
             int h = img.getHeight();
-            double scale = Math.min(1.0, (double) maxEdge / Math.max(w, h)); // 只缩不放
+            double scale = Math.min(1.0, (double) maxEdge / Math.max(w, h)); // scale 封顶 1.0,只缩不放
             int nw = Math.max(1, (int) Math.round(w * scale));
             int nh = Math.max(1, (int) Math.round(h * scale));
             BufferedImage scaled = new BufferedImage(nw, nh, BufferedImage.TYPE_INT_RGB);

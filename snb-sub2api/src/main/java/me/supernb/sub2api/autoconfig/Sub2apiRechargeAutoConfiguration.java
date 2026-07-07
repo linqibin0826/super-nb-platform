@@ -11,18 +11,19 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/// 充值只读读模型装配:按能力条件生效——不配 `sub2api.read-datasource.url` 就完全不装
-/// (不建只读 DataSource,不逼无关上下文/测试伺候它)。
+/// 充值只读读模型装配,按能力条件生效:不配 `sub2api.read-datasource.url` 就完全不装配——
+/// 不建只读 DataSource,不逼无关上下文/测试也要伺候它。
 ///
-/// 只读 DataSource 与 JdbcTemplate 在 @Bean 方法内部构建、不暴露为 bean:
-/// 避免多出一个 JdbcOperations 候选把 Boot 的主 jdbcTemplate 自动配置挤退(条件是
-/// @ConditionalOnMissingBean(JdbcOperations)),也免去 @Qualifier 纪律。
+/// 只读 DataSource 与 JdbcTemplate 只在 `@Bean` 方法内部现场构建,绝不对外暴露为 Bean:
+/// 一旦暴露,会多出一个 JdbcOperations 候选,把 Boot 主 jdbcTemplate 的自动配置
+/// (条件正是 `@ConditionalOnMissingBean(JdbcOperations)`)挤退;不暴露还顺带省掉了
+/// 到处加 `@Qualifier` 消歧义的负担。
 @AutoConfiguration(after = Sub2apiAutoConfiguration.class)
 @ConditionalOnProperty(prefix = "sub2api.read-datasource", name = "url")
 @EnableConfigurationProperties(Sub2apiProperties.class)
 public class Sub2apiRechargeAutoConfiguration {
 
-    /// 充值只读读模型:只读 DataSource 在方法内构建,绝不暴露为 Bean(防挤退 Boot 主 jdbcTemplate)。
+    /// 充值只读读模型 Bean:只读 DataSource 在本方法内现场构建,不对外暴露为 Bean(防挤退 Boot 主 jdbcTemplate,详见类注释)。
     @Bean
     @ConditionalOnMissingBean
     public RechargeReadModel rechargeReadModel(Sub2apiProperties props) {

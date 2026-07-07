@@ -9,8 +9,11 @@ import me.supernb.activity.domain.port.campaign.CampaignPort;
 import me.supernb.activity.domain.port.draw.DrawPort;
 import org.springframework.stereotype.Service;
 
-/// 执行一次抽奖。无进行中活动 → CampaignNotActiveException(404);无剩余次数 → NoDrawsLeftException(409)。
-/// 并发超额防护由 DrawPort 实现(advisory lock + 事务)保证——Handler 无事务注解(约定:事务在 infra)。
+/// 执行一次抽奖:取进行中活动,委托 DrawPort 完成实际发奖。无进行中活动 → CampaignNotActiveException(404);
+/// 无剩余抽奖次数 → NoDrawsLeftException(409),由 DrawPort 判定并抛出。
+///
+/// 并发超额防护(同一用户不超发)由 DrawPort 的实现保证(advisory lock + 事务);Handler 本身无事务注解——
+/// 事务边界按约定收在 infra,不放在这层。
 @Service
 public class PerformDrawHandler implements CommandHandler<PerformDrawCommand, DrawResult> {
 
@@ -23,7 +26,7 @@ public class PerformDrawHandler implements CommandHandler<PerformDrawCommand, Dr
         this.drawPort = drawPort;
     }
 
-    /// 取进行中活动并委托 DrawPort 执行抽奖。
+    /// 取进行中活动,委托 DrawPort 执行抽奖。
     @Override
     public DrawResult handle(PerformDrawCommand command) {
         Campaign c = campaignPort.activeCampaign().orElseThrow(CampaignNotActiveException::new);

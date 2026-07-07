@@ -12,7 +12,7 @@ import me.supernb.activity.domain.port.draw.DrawPort;
 import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
 
-/// 本人在本活动的中奖历史(含安慰奖),enrich 兑换码状态,面向本人不脱敏。无活动 → 空。
+/// 本人在本活动的中奖历史(含安慰奖),enrich 兑换码状态,面向本人展示不脱敏。无进行中活动 → 空列表(前端优雅降级)。
 @Service
 public class MyDrawsQueryService {
 
@@ -27,6 +27,8 @@ public class MyDrawsQueryService {
         this.rechargePort = rechargePort;
     }
 
+    /// 取本人原始抽奖记录,按非空兑换码批量查状态后 enrich 成 MyDrawView;安慰奖(redeemCode 为 null)与查无状态的
+    /// 兑换码同样体现为 codeStatus/expiresAt 为 null。无进行中活动 → 空列表。
     public List<MyDrawView> myDraws(long userId) {
         Campaign c = campaignPort.activeCampaign().orElse(null);
         if (c == null) {

@@ -6,7 +6,7 @@ import me.supernb.activity.domain.port.campaign.CampaignPort;
 import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
 
-/// 活动期最近充值动态 Top20。无进行中活动 → 空(前端优雅降级)。
+/// 活动期最近充值动态,取最新 Top20。无进行中活动 → 空列表(前端优雅降级)。
 @Service
 public class RecentRechargesQueryService {
 
@@ -21,6 +21,7 @@ public class RecentRechargesQueryService {
         this.rechargePort = rechargePort;
     }
 
+    /// 按活动窗口 [startsAt,endsAt) 委托 RechargeReadPort 取最近充值动态 Top20;无进行中活动 → 空列表。
     public List<RechargeEntry> recentRecharges() {
         return campaignPort.activeCampaign()
                 .map(c -> rechargePort.recentRecharges(c.startsAt(), c.endsAt(), LIMIT))

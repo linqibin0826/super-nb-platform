@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 /// 奖槽 JPA 实体,映射 `activity.prize_slot`。
 ///
 /// campaign 聚合的子实体,继承 [ChildJpaEntity](领奖是独立更新语义,乐观锁列随身);
-/// 槽位由运维 SQL 预生成,应用侧只经 `FOR UPDATE SKIP LOCKED` 认领。
+/// 槽位由运维 SQL 预生成,应用侧不写业务构造器,只经 `FOR UPDATE SKIP LOCKED` 认领。
 @Entity
 @Table(name = "prize_slot", schema = "activity")
 @Getter
@@ -24,7 +24,7 @@ public class PrizeSlotEntity extends ChildJpaEntity {
     @Column(name = "campaign_id")
     private Long campaignId;
 
-    /// 奖槽金额。
+    /// 奖槽金额(元)。
     @Column(name = "amount")
     private BigDecimal amount;
 
@@ -44,7 +44,7 @@ public class PrizeSlotEntity extends ChildJpaEntity {
     @Column(name = "claimed_at")
     private Instant claimedAt;
 
-    /// 把本槽标记为已被 `userId` 在 `at` 时刻领取。
+    /// 把本槽置为已领:记录领奖用户与时刻,状态转 `claimed`。
     public void claim(long userId, Instant at) {
         this.status = "claimed";
         this.claimedBy = userId;

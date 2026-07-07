@@ -11,20 +11,20 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
-/// RechargeReadModel 的 JdbcTemplate 实现,查 sub2api 库(通过独立只读 DataSource)。
+/// [RechargeReadModel] 的 JdbcTemplate 实现,经独立只读 DataSource 查 sub2api 库。
 ///
-/// 窗口口径与 activity-svc 完全一致:order_type='balance' AND status='COMPLETED'
-/// AND completed_at ∈ [start, end);榜单/流水仅 role='user',流水额外滤 <¥10 的测试单。
+/// 窗口口径与前身 activity-svc 完全一致:`order_type='balance' AND status='COMPLETED'
+/// AND completed_at ∈ [start, end)`;榜单/流水统计仅计入 role='user',流水额外滤掉 <¥10 的测试单。
 public class JdbcRechargeReadModel implements RechargeReadModel {
 
     private final NamedParameterJdbcTemplate jdbc;
 
-    /// 构造:注入指向 sub2api 只读源的 JdbcTemplate。
+    /// 构造:注入指向 sub2api 只读源的 JdbcTemplate(内部包成 NamedParameterJdbcTemplate,启用具名参数绑定)。
     public JdbcRechargeReadModel(JdbcTemplate jdbcTemplate) {
         this.jdbc = new NamedParameterJdbcTemplate(jdbcTemplate);
     }
 
-    /// 区间内 COMPLETED 余额充值合计(无记录返回 0)。
+    /// 窗口内该用户 COMPLETED 余额充值合计;无记录返回 0。
     @Override
     public BigDecimal totalRecharge(long userId, Instant start, Instant end) {
         MapSqlParameterSource p = new MapSqlParameterSource()
@@ -39,6 +39,7 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
         return total == null ? BigDecimal.ZERO : total;
     }
 
+    /// 按用户聚合窗口内 COMPLETED 余额单、金额倒序取前 limit(仅 role=user),name 经 `mask` 脱敏。
     @Override
     public List<LeaderRow> leaderboard(Instant start, Instant end, int limit) {
         MapSqlParameterSource p = new MapSqlParameterSource()
@@ -55,6 +56,7 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
                 (rs, i) -> new LeaderRow(mask(rs.getString("email")), rs.getBigDecimal("total")));
     }
 
+    /// 按完成时间倒序取窗口内 COMPLETED 余额单前 limit(仅 role=user、金额 ≥¥10 滤测试单),name 经 `mask` 脱敏。
     @Override
     public List<RechargeRow> recentRecharges(Instant start, Instant end, int limit) {
         MapSqlParameterSource p = new MapSqlParameterSource()
@@ -75,6 +77,7 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
                         rs.getTimestamp("completed_at").toInstant()));
     }
 
+    /// 空 ids 直接短路空 map(不发 SQL);否则按 id 查 role=user 的用户,email 经 `mask` 脱敏。
     @Override
     public Map<Long, String> maskedEmailsByIds(Collection<Long> ids) {
         if (ids.isEmpty()) {
@@ -90,6 +93,7 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
         return result;
     }
 
+    /// 空 codes 直接短路空 map;否则查 redeem_codes,expires_at 为空(NULL)时映射为 null。
     @Override
     public Map<String, RedeemCodeStatus> codeStatuses(Collection<String> codes) {
         if (codes.isEmpty()) {
@@ -107,7 +111,8 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
         return result;
     }
 
-    /// 邮箱脱敏:本地部分前 2 位 + *** + @域名(如 ab***@qq.com)。全名邮箱只在本方法内存在。
+    /// 邮箱脱敏:本地部分保留前 2 位(不足 2 位原样保留)+ `***` + @域名(如 ab***@qq.com);
+    /// null 输入原样返回 null。未脱敏的完整邮箱只在本方法作用域内出现过,不向外传播。
     static String mask(String email) {
         if (email == null) {
             return null;

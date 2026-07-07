@@ -12,11 +12,13 @@ public class PoolReadAdapter implements PoolReadPort {
 
     private final PrizeSlotJpaRepository slots;
 
-    /// 构造:注入奖槽 DAO。
+    /// 构造:注入奖槽仓储。
     public PoolReadAdapter(PrizeSlotJpaRepository slots) {
         this.slots = slots;
     }
 
+    /// 委托 `PrizeSlotJpaRepository` 的 GROUP BY 投影统计各档位余量,把 SQL 计数(long)收窄为
+    /// int 后映射为 [PoolTier]。
     @Override
     public List<PoolTier> pool(long campaignId) {
         return slots.poolByAmount(campaignId).stream()

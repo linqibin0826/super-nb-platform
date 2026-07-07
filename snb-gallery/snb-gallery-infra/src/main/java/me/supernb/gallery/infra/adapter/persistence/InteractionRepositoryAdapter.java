@@ -20,10 +20,10 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/// 点赞/收藏聚合仓储适配器:成员表写入 + 反规范化计数维护,全部动作进一个事务。
+/// InteractionRepository 实现:成员表写入与反规范化计数维护全部收在一个事务内。
 ///
-/// 幂等策略:插入撞成员唯一约束 `UNIQUE(prompt_id, user_id)` → 整事务回滚 →
-/// 外层回读当前计数;退出用 `@Modifying` 批量 DELETE,按行数决定是否减计数。
+/// 幂等策略:插入撞成员表唯一约束 `UNIQUE(prompt_id, user_id)` 时整个事务回滚,
+/// 在事务外回读当前计数返回;退出成员靠 `@Modifying` 批量 DELETE,按返回行数决定是否联动减计数。
 @Repository
 public class InteractionRepositoryAdapter implements InteractionRepository {
 
@@ -34,7 +34,7 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
     private final PromptFavoriteJpaRepository favorites;
     private final TransactionTemplate txTemplate;
 
-    /// 构造:注入三张表的 Spring Data 仓储与事务模板。
+    /// 构造:注入提示词、点赞、收藏三个仓储,事务管理器内部包成 TransactionTemplate。
     public InteractionRepositoryAdapter(PromptJpaRepository prompts, PromptLikeJpaRepository likes,
                               PromptFavoriteJpaRepository favorites, PlatformTransactionManager txManager) {
         this.prompts = prompts;
@@ -43,7 +43,8 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         this.txTemplate = new TransactionTemplate(txManager);
     }
 
-    /// 点赞/取消点赞,返回最新点赞数;条目不存在或未发布返回 empty。
+    /// 点赞开关(on=true 点赞、false 取消),返回最新点赞数;条目不存在或未发布返回 empty。
+    /// 并发插入撞成员唯一约束时捕获 DataIntegrityViolationException,直接回读当前计数返回,不重试插入。
     @Override
     public OptionalInt toggleLike(long promptId, long userId, boolean on) {
         try {
@@ -53,7 +54,8 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         }
     }
 
-    /// 收藏/取消收藏,返回最新收藏数;条目不存在或未发布返回 empty。
+    /// 收藏开关(on=true 收藏、false 取消),返回最新收藏数;条目不存在或未发布返回 empty。
+    /// 并发插入撞成员唯一约束时捕获 DataIntegrityViolationException,直接回读当前计数返回,不重试插入。
     @Override
     public OptionalInt toggleFavorite(long promptId, long userId, boolean on) {
         try {
@@ -63,7 +65,7 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         }
     }
 
-    /// 事务体:点赞成员增删 + 计数增减(幂等:已存在不重复插,删 0 行不减)。
+    /// 事务体:点赞成员行增删 + 计数原子增减;已存在则不重复插入,删除影响 0 行则不联动减计数。
     private OptionalInt doToggleLike(long promptId, long userId, boolean on) {
         if (!prompts.existsByIdAndStatus(promptId, PUBLISHED)) {
             return OptionalInt.empty();
@@ -79,7 +81,7 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         return currentCount(prompts.likeCountOf(promptId));
     }
 
-    /// 事务体:收藏成员增删 + 计数增减(幂等语义同点赞)。
+    /// 事务体:收藏成员行增删 + 计数原子增减,幂等语义同点赞。
     private OptionalInt doToggleFavorite(long promptId, long userId, boolean on) {
         if (!prompts.existsByIdAndStatus(promptId, PUBLISHED)) {
             return OptionalInt.empty();
@@ -95,12 +97,13 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         return currentCount(prompts.favCountOf(promptId));
     }
 
-    /// 把仓储的 Optional 计数折叠为 OptionalInt。
+    /// 把计数查询的 Optional 折叠为 OptionalInt,供点赞/收藏两条回读路径共用。
     private static OptionalInt currentCount(Optional<Integer> count) {
         return count.map(OptionalInt::of).orElse(OptionalInt.empty());
     }
 
-    /// 「我的收藏」分页:按收藏时刻倒序,只含仍在发布中的条目。
+    /// 「我的收藏」分页:按收藏时刻倒序,只含仍在发布中的条目;
+    /// Spring Data 的 Page 查询结果映射为读视图 Page 返回。
     @Override
     public Page<PromptSummary> myFavorites(long userId, int page, int pageSize) {
         org.springframework.data.domain.Page<PromptEntity> rows = favorites.favoritePrompts(userId, PageRequest.of(page - 1, pageSize));
@@ -109,7 +112,8 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
                 rows.getTotalElements(), page, pageSize);
     }
 
-    /// 批量回填:给定条目集合中当前用户点赞/收藏过的 id 清单。
+    /// 批量回填:给定 id 集合中当前用户点赞过/收藏过的子集,各自转字符串 id(对外 id 契约);
+    /// 空集合直接短路返回两个空列表,不查库。
     @Override
     public MyInteractions myInteractions(List<Long> promptIds, long userId) {
         if (promptIds.isEmpty()) {
