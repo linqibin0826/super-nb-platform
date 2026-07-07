@@ -1,41 +1,45 @@
 package me.supernb.gallery.infra.adapter.persistence.entity;
 
+import dev.linqibin.starter.jpa.entity.ChildJpaEntity;
+import dev.linqibin.starter.jpa.id.SnowflakeIdGenerator;
 import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Table;
-import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-/// gallery.ref_image 行实体:用户参考图去重库(sha256 按用户唯一,仅存 R2 键)。
+/// 参考图库 JPA 实体,映射 `gallery.ref_image`。
+///
+/// 用户参考图库的子实体,继承 [ChildJpaEntity];按 `UNIQUE(user_id, sha256)`
+/// 内容寻址去重,跨生成记录复用,created_at 由审计填充。
 @Entity
 @Table(name = "ref_image", schema = "gallery")
-@EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class RefImageEntity {
+public class RefImageEntity extends ChildJpaEntity {
 
-    @EmbeddedId
-    private RefImageId id;
+    /// 归属用户(sub2api user id)。
+    @Column(name = "user_id")
+    private Long userId;
 
+    /// 图片内容 sha256(与 user_id 联合唯一)。
+    @Column(name = "sha256")
+    private String sha256;
+
+    /// 图片 R2 对象键。
     @Column(name = "r2_key")
     private String r2Key;
 
+    /// 字节数。
     @Column(name = "bytes")
     private Integer bytes;
 
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
-    private Instant createdAt;
-
-    /// 新参考图记录((user,sha) 内容寻址)。
-    public RefImageEntity(RefImageId id, String r2Key, Integer bytes) {
-        this.id = id;
+    /// 构造:新参考图,雪花 id 应用层预分配。
+    public RefImageEntity(long userId, String sha256, String r2Key, Integer bytes) {
+        setId(SnowflakeIdGenerator.getId());
+        this.userId = userId;
+        this.sha256 = sha256;
         this.r2Key = r2Key;
         this.bytes = bytes;
     }

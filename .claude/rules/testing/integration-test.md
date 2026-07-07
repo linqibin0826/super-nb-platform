@@ -9,7 +9,7 @@ paths: snb-*/snb-*-infra/**/src/test/**/*.java, snb-boot/**/src/test/**/*.java, 
 1. **真实中间件**：Testcontainers PG（`postgres:16-alpine`）+ 真 Flyway 迁移，**禁止内存数据库**——infra 测试同时验证迁移脚本与实体映射一致（`ddl-auto=validate` 在测试里就会炸出漂移）
 2. `@Timeout` ≤ 30s；并发/锁类测试**必须**标注（锁 bug 的表现就是挂死）
 3. mock 注入用 `@MockitoBean`（`@MockBean` 已移除）
-4. 测试内准备数据允许直接用 `JdbcTemplate`（生产代码禁止，见 layers/adapter.md）；清场用 `TRUNCATE ... RESTART IDENTITY`
+4. 测试内准备数据允许直接用 `JdbcTemplate`（生产代码禁止，见 layers/adapter.md）；清场用 `TRUNCATE ...`。⚠️ 雪花基座后无数据库自增：**造数 INSERT 必须显式给 id**（审计列有 DDL DEFAULT 兜底不用给）
 
 ## infra 测试样板（TestApp 模式）
 

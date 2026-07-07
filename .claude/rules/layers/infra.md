@@ -36,4 +36,4 @@ paths: snb-*/snb-*-infra/**/*.java
 
 ## JPA 细则
 
-见 tech/jpa.md（不继承 BaseJpaEntity、PG 特有 SQL 的钦定形态、并发删除/计数、聚合级联、动态 HQL 测试义务）。
+见 tech/jpa.md（patra 审计基座选型、雪花 id 预分配、PG 特有 SQL 的钦定形态、并发删除/计数、聚合级联、动态 HQL 测试义务）。

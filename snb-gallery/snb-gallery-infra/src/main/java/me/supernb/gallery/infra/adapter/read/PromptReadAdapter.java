@@ -93,7 +93,7 @@ public class PromptReadAdapter implements PromptReadPort {
     /// 三轴类目树:一次分组统计,无 N+1。
     @Override
     public CategoryTree categories() {
-        Map<Integer, Long> counts = new HashMap<>();
+        Map<Long, Long> counts = new HashMap<>();
         for (CategoryJpaRepository.CategoryCountView v : categories.publishedCountByCategory()) {
             counts.put(v.getId(), v.getCnt());
         }

@@ -5,9 +5,9 @@ import java.util.List;
 import me.supernb.gallery.infra.adapter.persistence.entity.GenerationImageEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-/// gallery.generation_image 仓储。
+/// generation_image 表 Spring Data 仓储。
 public interface GenerationImageJpaRepository extends JpaRepository<GenerationImageEntity, Long> {
 
-    /// 列表页缩略图回退:一次取出整页生成的输出图(按 idx 升序,取首张用)。
-    List<GenerationImageEntity> findByGeneration_IdInOrderByIdxAsc(Collection<String> generationIds);
+    /// 批量取给定生成记录(内部雪花 id)的输出图,按序号升序(列表缩略图回退用)。
+    List<GenerationImageEntity> findByGeneration_IdInOrderByIdxAsc(Collection<Long> generationIds);
 }

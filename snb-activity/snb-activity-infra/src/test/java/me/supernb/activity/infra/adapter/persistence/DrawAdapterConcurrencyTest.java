@@ -13,10 +13,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.TimeUnit;
 import me.supernb.activity.domain.exception.NoDrawsLeftException;
 import me.supernb.activity.domain.model.Campaign;
 import me.supernb.activity.domain.model.DrawResult;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -30,6 +32,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /// 真实 Spring 上下文(JPA 适配器)+ Testcontainers PG + Flyway 建 activity schema。
 @SpringBootTest(classes = ActivityInfraTestApp.class)
 @Testcontainers
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 class DrawAdapterConcurrencyTest {
 
     @Container
@@ -54,15 +57,16 @@ class DrawAdapterConcurrencyTest {
     @Autowired
     JdbcTemplate jdbc;
 
+    /// 造数:id 显式给值(雪花基座后无数据库自增,纯 SQL 写入必须带 id)。
     Campaign seed(int slots) {
-        jdbc.execute("TRUNCATE activity.draw, activity.prize_slot, activity.campaign RESTART IDENTITY");
+        jdbc.execute("TRUNCATE activity.draw, activity.prize_slot, activity.campaign");
         Long cid = jdbc.queryForObject(
-                "INSERT INTO activity.campaign (name, starts_at, ends_at, status, consolation_amount) "
-                        + "VALUES ('c', ?, ?, 'active', 5) RETURNING id",
+                "INSERT INTO activity.campaign (id, name, starts_at, ends_at, status, consolation_amount) "
+                        + "VALUES (1, 'c', ?, ?, 'active', 5) RETURNING id",
                 Long.class, java.sql.Timestamp.from(START), java.sql.Timestamp.from(END));
         for (int i = 0; i < slots; i++) {
-            jdbc.update("INSERT INTO activity.prize_slot (campaign_id, amount, redeem_code, status) "
-                    + "VALUES (?, 10, ?, 'available')", cid, "CODE" + i);
+            jdbc.update("INSERT INTO activity.prize_slot (id, campaign_id, amount, redeem_code, status) "
+                    + "VALUES (?, ?, 10, ?, 'available')", 1000 + i, cid, "CODE" + i);
         }
         return new Campaign(cid, "c", START, END, "active", new BigDecimal("5"));
     }
@@ -120,5 +124,19 @@ class DrawAdapterConcurrencyTest {
         assertThat(tally.getOrDefault("NO_DRAWS", 0L)).isEqualTo(7);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM activity.draw WHERE user_id = ?", Integer.class, USER))
                 .isEqualTo(3);
+    }
+
+    @Test
+    void drawRowsCarrySnowflakeIdAndAuditColumns() throws Exception {
+        Campaign campaign = seed(10);
+        raceDraw(campaign, 1);
+
+        Map<String, Object> row = jdbc.queryForMap(
+                "SELECT id, created_at, updated_at, version, created_by FROM activity.draw WHERE user_id = ?", USER);
+        assertThat(((Number) row.get("id")).longValue()).isGreaterThan(1_000_000_000L); // 雪花量级,非小自增
+        assertThat(row.get("created_at")).isNotNull();
+        assertThat(row.get("updated_at")).isNotNull();
+        assertThat(((Number) row.get("version")).longValue()).isZero();
+        assertThat(row.get("created_by")).isNull(); // 无请求上下文 → auditor empty → 留 NULL
     }
 }

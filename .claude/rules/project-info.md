@@ -50,6 +50,7 @@ snb-platform/
 
 - 单库 `snb`，双 PG schema `activity` + `gallery`，**单 Flyway 历史 → 版本号全局唯一**（V1 已用于 activity、V2 已用于 gallery，新迁移从 V3 起）
 - 迁移脚本放各 infra 模块 `resources/db/migration/{context}/`，boot 靠 classpath 聚合
+- 全部实体继承 patra 审计基座（Base/Child/ValueObject，雪花 id 应用层预分配 + 审计列；`@CreatedBy` 接 `@CurrentUser`，见 tech/jpa.md）
 - sub2api 库 = 第二只读数据源，仅 snb-sub2api 模块消费（见 tech/sub2api.md）
 
 ## 常用命令

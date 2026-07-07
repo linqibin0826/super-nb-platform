@@ -1,6 +1,5 @@
 package me.supernb.gallery.infra.adapter.persistence;
 
-import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,7 +14,6 @@ import me.supernb.gallery.infra.adapter.persistence.dao.RefImageJpaRepository;
 import me.supernb.gallery.infra.adapter.persistence.entity.GenerationEntity;
 import me.supernb.gallery.infra.adapter.persistence.entity.GenerationImageEntity;
 import me.supernb.gallery.infra.adapter.persistence.entity.RefImageEntity;
-import me.supernb.gallery.infra.adapter.persistence.entity.RefImageId;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,10 +22,12 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/// GenerationRepository 实现:生成历史聚合落库/查库/回收键。
+/// 生成历史聚合仓储适配器:4 表(generation/generation_image/generation_ref/ref_image)
+/// 一个事务落库,级联随聚合根。
 ///
-/// save 幂等:同 id 已存在直接返回其 created_at(首次落库即整单同事务成功,不存在半截单);
-/// 参考图去重库 (user_id, sha256) 并发撞 PK 时重试一次——重试轮 exists 命中改走跳过。
+/// 端口语义里的 `id` = 前端任务 uuid,落到实体的 `client_task_id` 列;
+/// 雪花主键只在本适配器内部做关联(缩略图回退批查、参考图键联查)。
+/// 建单幂等:先按 (client_task_id, user_id) 回查,撞唯一约束重试一次转回读。
 @Repository
 public class GenerationRepositoryAdapter implements GenerationRepository {
 
@@ -36,34 +36,33 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
     private final GenerationRefJpaRepository generationRefs;
     private final RefImageJpaRepository refImages;
     private final TransactionTemplate txTemplate;
-    private final EntityManager em;
 
+    /// 构造:注入 4 张表的 Spring Data 仓储与事务模板。
     public GenerationRepositoryAdapter(GenerationJpaRepository generations,
                              GenerationImageJpaRepository generationImages,
                              GenerationRefJpaRepository generationRefs,
                              RefImageJpaRepository refImages,
-                             PlatformTransactionManager txManager,
-                             EntityManager em) {
+                             PlatformTransactionManager txManager) {
         this.generations = generations;
         this.generationImages = generationImages;
         this.generationRefs = generationRefs;
         this.refImages = refImages;
         this.txTemplate = new TransactionTemplate(txManager);
-        this.em = em;
     }
 
+    /// 按任务 uuid + 归属用户取创建时刻(建单幂等预检)。
     @Override
     public Optional<Instant> findCreatedAt(String id, long userId) {
-        return generations.findByIdAndUserId(id, userId).map(GenerationEntity::getCreatedAt);
+        return generations.findByClientTaskIdAndUserId(id, userId).map(GenerationEntity::getCreatedAt);
     }
 
-    /// 该用户是否已存过同内容参考图。
+    /// 用户参考图库中是否已有该内容哈希。
     @Override
     public boolean refExists(long userId, String sha256) {
-        return refImages.existsById(new RefImageId(userId, sha256));
+        return refImages.existsByUserIdAndSha256(userId, sha256);
     }
 
-    /// 幂等落库:已存在返回原 createdAt;参考图撞 PK 重试一次。
+    /// 落库(幂等):任务 uuid 撞唯一约束时重试一次,第二次直接命中回查。
     @Override
     public Instant save(SaveGeneration c) {
         try {
@@ -73,12 +72,12 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
         }
     }
 
-    /// 单次落库尝试(聚合级联,一个事务)。
+    /// 事务体:已存在直接返回创建时刻,否则组装聚合(输出图/参考图去重/引用)一次持久化。
     private Instant trySave(SaveGeneration c) {
         return txTemplate.execute(status -> {
-            GenerationEntity existing = em.find(GenerationEntity.class, c.id());
-            if (existing != null) {
-                return existing.getCreatedAt();
+            Optional<GenerationEntity> existing = generations.findByClientTaskIdAndUserId(c.id(), c.userId());
+            if (existing.isPresent()) {
+                return existing.get().getCreatedAt();
             }
             GenerationEntity g = new GenerationEntity(c.id(), c.userId(), c.prompt(), c.size(), c.n(),
                     c.quality(), c.status(), c.cost(), c.elapsedMs(), c.groupName(), c.keyId(),
@@ -87,27 +86,26 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
                 g.addImage(o.idx(), o.r2Key(), o.bytes());
             }
             for (RefImage r : c.refs()) {
-                RefImageId refId = new RefImageId(c.userId(), r.sha256());
-                if (!refImages.existsById(refId)) {
-                    refImages.save(new RefImageEntity(refId, r.r2Key(), r.bytes()));
+                if (!refImages.existsByUserIdAndSha256(c.userId(), r.sha256())) {
+                    refImages.save(new RefImageEntity(c.userId(), r.sha256(), r.r2Key(), r.bytes()));
                 }
                 g.addRef(r.idx(), r.sha256());
             }
-            em.persist(g);
+            generations.save(g);
             return g.getCreatedAt();
         });
     }
 
-    /// 分页列表行(created_at 倒序)。
+    /// 用户生成历史分页(按创建时刻倒序),缩略图缺失的存量单回退首图键(整页一次批查,无 N+1)。
     @Override
     public PageRows list(long userId, int page, int pageSize) {
         Page<GenerationEntity> pg = generations.findByUserId(userId, PageRequest.of(page - 1, pageSize,
                 Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))));
 
         // 缩略图回退:thumb_key 为空的存量单,取首张输出图的键(一次查整页,无 N+1)
-        List<String> needFallback = pg.getContent().stream()
+        List<Long> needFallback = pg.getContent().stream()
                 .filter(g -> g.getThumbKey() == null).map(GenerationEntity::getId).toList();
-        Map<String, String> firstImageKey = new HashMap<>();
+        Map<Long, String> firstImageKey = new HashMap<>();
         if (!needFallback.isEmpty()) {
             for (GenerationImageEntity img : generationImages.findByGeneration_IdInOrderByIdxAsc(needFallback)) {
                 firstImageKey.putIfAbsent(img.getGeneration().getId(), img.getR2Key());
@@ -115,21 +113,23 @@ public class GenerationRepositoryAdapter implements GenerationRepository {
         }
 
         List<ListRow> rows = pg.getContent().stream().map(g -> new ListRow(
-                g.getId(), g.getCreatedAt(), g.getPrompt(), g.getSize(), g.getN(), g.getQuality(),
+                g.getClientTaskId(), g.getCreatedAt(), g.getPrompt(), g.getSize(), g.getN(), g.getQuality(),
                 g.getStatus(), g.getCost(), g.getElapsedMs(), g.getError(),
                 g.getThumbKey() != null ? g.getThumbKey() : firstImageKey.get(g.getId()))).toList();
         return new PageRows(rows, pg.getTotalElements());
     }
 
+    /// 单条详情:输出图预取 + 参考图键内容寻址联查;不存在或不归属该用户返回 empty。
     @Override
     public Optional<DetailRow> detail(String id, long userId) {
         return generations.findWithImages(id, userId).map(g -> new DetailRow(
-                g.getId(), g.getCreatedAt(), g.getPrompt(), g.getSize(), g.getN(), g.getQuality(),
+                g.getClientTaskId(), g.getCreatedAt(), g.getPrompt(), g.getSize(), g.getN(), g.getQuality(),
                 g.getStatus(), g.getCost(), g.getElapsedMs(), g.getGroupName(), g.getKeyId(), g.getError(),
                 g.getImages().stream().map(GenerationImageEntity::getR2Key).toList(),
-                generationRefs.refKeysOf(id, userId)));
+                generationRefs.refKeysOf(g.getId(), userId)));
     }
 
+    /// 删除生成记录并返回其全部 R2 对象键(含缩略图);不存在返回 empty,由用例转 404。
     @Override
     public Optional<List<String>> deleteReturningObjectKeys(String id, long userId) {
         return txTemplate.execute(status -> {

@@ -10,7 +10,6 @@ import me.supernb.gallery.domain.port.repository.InteractionRepository;
 import me.supernb.gallery.infra.adapter.persistence.dao.PromptFavoriteJpaRepository;
 import me.supernb.gallery.infra.adapter.persistence.dao.PromptJpaRepository;
 import me.supernb.gallery.infra.adapter.persistence.dao.PromptLikeJpaRepository;
-import me.supernb.gallery.infra.adapter.persistence.entity.InteractionId;
 import me.supernb.gallery.infra.adapter.persistence.entity.PromptEntity;
 import me.supernb.gallery.infra.adapter.persistence.entity.PromptFavoriteEntity;
 import me.supernb.gallery.infra.adapter.persistence.entity.PromptLikeEntity;
@@ -21,12 +20,10 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/// InteractionRepository 实现:点赞/收藏。
+/// 点赞/收藏聚合仓储适配器:成员表写入 + 反规范化计数维护,全部动作进一个事务。
 ///
-/// toggle 语义:成员变更与计数 ±1 同一事务,幂等、计数不为负、只认 published;
-/// 目标不存在 → 空(服务转 404)。并发同键插入撞 PK 时整个事务回滚(计数一并还原),
-/// 外层按「目标态已达成」回读计数返回。退出侧用批量 DELETE 的真实行数决定是否减计数,
-/// 行锁保证并发双删只有一方计入。
+/// 幂等策略:插入撞成员唯一约束 `UNIQUE(prompt_id, user_id)` → 整事务回滚 →
+/// 外层回读当前计数;退出用 `@Modifying` 批量 DELETE,按行数决定是否减计数。
 @Repository
 public class InteractionRepositoryAdapter implements InteractionRepository {
 
@@ -37,6 +34,7 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
     private final PromptFavoriteJpaRepository favorites;
     private final TransactionTemplate txTemplate;
 
+    /// 构造:注入三张表的 Spring Data 仓储与事务模板。
     public InteractionRepositoryAdapter(PromptJpaRepository prompts, PromptLikeJpaRepository likes,
                               PromptFavoriteJpaRepository favorites, PlatformTransactionManager txManager) {
         this.prompts = prompts;
@@ -45,7 +43,7 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         this.txTemplate = new TransactionTemplate(txManager);
     }
 
-    /// 点赞开关(事务 + 撞 PK 幂等回读);目标不存在 → empty。
+    /// 点赞/取消点赞,返回最新点赞数;条目不存在或未发布返回 empty。
     @Override
     public OptionalInt toggleLike(long promptId, long userId, boolean on) {
         try {
@@ -55,7 +53,7 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         }
     }
 
-    /// 收藏开关(事务 + 撞 PK 幂等回读);目标不存在 → empty。
+    /// 收藏/取消收藏,返回最新收藏数;条目不存在或未发布返回 empty。
     @Override
     public OptionalInt toggleFavorite(long promptId, long userId, boolean on) {
         try {
@@ -65,15 +63,14 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         }
     }
 
-    /// 事务体:成员表增删 + 计数原子增减。
+    /// 事务体:点赞成员增删 + 计数增减(幂等:已存在不重复插,删 0 行不减)。
     private OptionalInt doToggleLike(long promptId, long userId, boolean on) {
         if (!prompts.existsByIdAndStatus(promptId, PUBLISHED)) {
             return OptionalInt.empty();
         }
         if (on) {
-            InteractionId key = new InteractionId(promptId, userId);
-            if (!likes.existsById(key)) {
-                likes.save(new PromptLikeEntity(key));
+            if (!likes.existsByPromptIdAndUserId(promptId, userId)) {
+                likes.save(new PromptLikeEntity(promptId, userId));
                 prompts.adjustLikeCount(promptId, 1);
             }
         } else if (likes.deleteMembership(promptId, userId) > 0) {
@@ -82,15 +79,14 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         return currentCount(prompts.likeCountOf(promptId));
     }
 
-    /// 事务体:成员表增删 + 计数原子增减。
+    /// 事务体:收藏成员增删 + 计数增减(幂等语义同点赞)。
     private OptionalInt doToggleFavorite(long promptId, long userId, boolean on) {
         if (!prompts.existsByIdAndStatus(promptId, PUBLISHED)) {
             return OptionalInt.empty();
         }
         if (on) {
-            InteractionId key = new InteractionId(promptId, userId);
-            if (!favorites.existsById(key)) {
-                favorites.save(new PromptFavoriteEntity(key));
+            if (!favorites.existsByPromptIdAndUserId(promptId, userId)) {
+                favorites.save(new PromptFavoriteEntity(promptId, userId));
                 prompts.adjustFavCount(promptId, 1);
             }
         } else if (favorites.deleteMembership(promptId, userId) > 0) {
@@ -99,11 +95,12 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
         return currentCount(prompts.favCountOf(promptId));
     }
 
-    /// Optional<Integer> → OptionalInt。
+    /// 把仓储的 Optional 计数折叠为 OptionalInt。
     private static OptionalInt currentCount(Optional<Integer> count) {
         return count.map(OptionalInt::of).orElse(OptionalInt.empty());
     }
 
+    /// 「我的收藏」分页:按收藏时刻倒序,只含仍在发布中的条目。
     @Override
     public Page<PromptSummary> myFavorites(long userId, int page, int pageSize) {
         org.springframework.data.domain.Page<PromptEntity> rows = favorites.favoritePrompts(userId, PageRequest.of(page - 1, pageSize));
@@ -112,16 +109,16 @@ public class InteractionRepositoryAdapter implements InteractionRepository {
                 rows.getTotalElements(), page, pageSize);
     }
 
-    /// 批量查我在这批 id 上的赞/藏。
+    /// 批量回填:给定条目集合中当前用户点赞/收藏过的 id 清单。
     @Override
     public MyInteractions myInteractions(List<Long> promptIds, long userId) {
         if (promptIds.isEmpty()) {
             return new MyInteractions(List.of(), List.of());
         }
-        List<Long> liked = likes.findById_UserIdAndId_PromptIdIn(userId, promptIds).stream()
-                .map(l -> l.getId().getPromptId()).toList();
-        List<Long> favorited = favorites.findById_UserIdAndId_PromptIdIn(userId, promptIds).stream()
-                .map(f -> f.getId().getPromptId()).toList();
+        List<Long> liked = likes.findByUserIdAndPromptIdIn(userId, promptIds).stream()
+                .map(PromptLikeEntity::getPromptId).toList();
+        List<Long> favorited = favorites.findByUserIdAndPromptIdIn(userId, promptIds).stream()
+                .map(PromptFavoriteEntity::getPromptId).toList();
         return new MyInteractions(liked, favorited);
     }
 }

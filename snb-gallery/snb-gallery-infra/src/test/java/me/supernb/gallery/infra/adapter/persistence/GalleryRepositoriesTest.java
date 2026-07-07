@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import me.supernb.gallery.domain.model.enums.SortMode;
 import me.supernb.gallery.domain.model.read.CategoryTree;
 import me.supernb.gallery.domain.model.read.MyInteractions;
@@ -14,6 +15,7 @@ import me.supernb.gallery.domain.port.repository.GenerationRepository;
 import me.supernb.gallery.infra.adapter.read.PromptReadAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,6 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /// gallery 三适配器(JPA)对真实 Flyway schema(Testcontainers PG)的集成测试。
 @SpringBootTest(classes = GalleryInfraTestApp.class)
 @Testcontainers
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 class GalleryRepositoriesTest {
 
     @Container
@@ -56,25 +59,28 @@ class GalleryRepositoriesTest {
     long p2;
     long p3;
 
+    long nextPromptId;
+
+    /// 造数:id 显式给值(雪花基座后无数据库自增,纯 SQL 写入必须带 id)。
     @BeforeEach
     void seed() {
         jdbc.execute("TRUNCATE gallery.category, gallery.prompt, gallery.prompt_like, gallery.prompt_favorite, "
-                + "gallery.generation, gallery.generation_image, gallery.generation_ref, gallery.ref_image "
-                + "RESTART IDENTITY");
-        jdbc.update("INSERT INTO gallery.category (slug, axis, name_en, name_zh) VALUES "
-                + "('portrait','scene','Portrait','人像'),('anime','style','Anime','动漫'),('animal','subject','Animal','动物')");
+                + "gallery.generation, gallery.generation_image, gallery.generation_ref, gallery.ref_image");
+        jdbc.update("INSERT INTO gallery.category (id, slug, axis, name_en, name_zh) VALUES "
+                + "(1,'portrait','scene','Portrait','人像'),(2,'anime','style','Anime','动漫'),(3,'animal','subject','Animal','动物')");
+        nextPromptId = 1;
         p1 = insertPrompt("s1", "a cat", "portrait");
         p2 = insertPrompt("s2", "a dog", "anime");
         p3 = insertPrompt("s3", "sunset", null);
     }
 
     long insertPrompt(String sourceId, String title, String categorySlug) {
-        Integer catId = categorySlug == null ? null
-                : jdbc.queryForObject("SELECT id FROM gallery.category WHERE slug = ?", Integer.class, categorySlug);
+        Long catId = categorySlug == null ? null
+                : jdbc.queryForObject("SELECT id FROM gallery.category WHERE slug = ?", Long.class, categorySlug);
         return jdbc.queryForObject(
-                "INSERT INTO gallery.prompt (source, source_id, title, prompt_text, author_name, category_id, image_w, image_h) "
-                        + "VALUES ('own', ?, ?, 'PROMPT', 'alice', ?, 512, 512) RETURNING id",
-                Long.class, sourceId, title, catId);
+                "INSERT INTO gallery.prompt (id, source, source_id, title, prompt_text, author_name, category_id, image_w, image_h) "
+                        + "VALUES (?, 'own', ?, ?, 'PROMPT', 'alice', ?, 512, 512) RETURNING id",
+                Long.class, nextPromptId++, sourceId, title, catId);
     }
 
     @Test
@@ -165,6 +171,31 @@ class GalleryRepositoriesTest {
         assertThat(deletedKeys).isPresent();
         assertThat(deletedKeys.get()).containsExactlyInAnyOrder("gen/7/g1/0.png", "gen/7/g1/thumb.png");
         assertThat(generations.findCreatedAt("g1", 7L)).isEmpty();
+    }
+
+    @Test
+    void membershipRowsCarrySnowflakeIdAndAuditColumns() {
+        interactions.toggleLike(p1, 7L, true);
+
+        var row = jdbc.queryForMap(
+                "SELECT id, created_at, updated_at, version FROM gallery.prompt_like WHERE prompt_id = ? AND user_id = 7", p1);
+        assertThat(((Number) row.get("id")).longValue()).isGreaterThan(1_000_000_000L); // 雪花量级
+        assertThat(row.get("created_at")).isNotNull(); // 点赞时刻,由审计填充
+        assertThat(row.get("updated_at")).isNotNull();
+        assertThat(((Number) row.get("version")).longValue()).isZero();
+    }
+
+    @Test
+    void generationKeepsClientTaskIdAsExternalIdentity() {
+        generations.save(new GenerationRepository.SaveGeneration(
+                "task-uuid-1", 7L, "x", "1024x1024", 1, "medium", "done", null, 0, null, null, null,
+                null, List.of(), List.of()));
+
+        var row = jdbc.queryForMap("SELECT id, client_task_id, created_by FROM gallery.generation WHERE user_id = 7");
+        assertThat(((Number) row.get("id")).longValue()).isGreaterThan(1_000_000_000L); // 内部雪花代理键
+        assertThat(row.get("client_task_id")).isEqualTo("task-uuid-1"); // 对外标识不变
+        assertThat(row.get("created_by")).isNull(); // 无请求上下文 → auditor empty
+        assertThat(generations.findCreatedAt("task-uuid-1", 7L)).isPresent(); // 端口语义仍按任务 uuid
     }
 
     @Test
