@@ -50,7 +50,7 @@ public class GenerationEntity extends BaseJpaEntity {
     @Column(name = "quality")
     private String quality;
 
-    /// 任务终态:`succeeded` | `failed`。
+    /// 任务终态:`done` | `error`。
     @Column(name = "status")
     private String status;
 

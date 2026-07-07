@@ -32,7 +32,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class GalleryRepositoriesTest {
 
     @Container
-    static final PostgreSQLContainer<?> PG = new PostgreSQLContainer<>("postgres:16-alpine");
+    static final PostgreSQLContainer<?> PG = new PostgreSQLContainer<>("postgres:18-alpine");
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry r) {
@@ -171,6 +171,15 @@ class GalleryRepositoriesTest {
         assertThat(deletedKeys).isPresent();
         assertThat(deletedKeys.get()).containsExactlyInAnyOrder("gen/7/g1/0.png", "gen/7/g1/thumb.png");
         assertThat(generations.findCreatedAt("g1", 7L)).isEmpty();
+    }
+
+    @Test
+    void readsRowsCarryingJsonObjectRemarks() {
+        // 迁移回填会往 record_remarks(JSONB)写对象;基座把它映射为 String,FormatMapper 必须透传
+        // (commons d5172b0c1 修复的回归钉:缺透传时所有水合该行的读路径 500)
+        jdbc.update("UPDATE gallery.prompt SET record_remarks = '{\"migrated_from\":\"gallery-svc\"}'::jsonb WHERE id = ?", p1);
+
+        assertThat(prompts.detail(p1)).isPresent();
     }
 
     @Test

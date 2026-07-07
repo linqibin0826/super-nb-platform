@@ -30,7 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class GalleryWiringTest {
 
     @Container
-    static final PostgreSQLContainer<?> PG = new PostgreSQLContainer<>("postgres:16-alpine");
+    static final PostgreSQLContainer<?> PG = new PostgreSQLContainer<>("postgres:18-alpine");
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry r) {

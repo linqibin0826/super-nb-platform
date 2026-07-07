@@ -19,7 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class JdbcRechargeReadModelTest {
 
     @Container
-    static final PostgreSQLContainer<?> PG = new PostgreSQLContainer<>("postgres:16-alpine");
+    static final PostgreSQLContainer<?> PG = new PostgreSQLContainer<>("postgres:18-alpine");
 
     static final Instant START = Instant.parse("2026-07-01T00:00:00Z");
     static final Instant END = Instant.parse("2026-08-01T00:00:00Z");
