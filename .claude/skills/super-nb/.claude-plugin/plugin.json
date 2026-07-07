@@ -1,0 +1,22 @@
+{
+  "name": "super-nb",
+  "description": "super-nb-platform 项目专属能力 plugin：14 个 skills（brainstorming / writing-plans / executing-plans / subagent-driven-development / dispatching-parallel-agents / test-driven-development / systematic-debugging / verification-before-completion / requesting-code-review / receiving-code-review / finishing-a-development-branch / using-git-worktrees / using-superpowers / release-planning），由 patra plugin 精简并按 super-nb-platform 的六边形架构（Java 25 / Spring Boot 4 / Gradle 9.5 多模块单体，activity + gallery 限界上下文）深度定制。设计文档产出为纯 Markdown（docs/），发布/部署/割接属生产操作、需站长明确点头。",
+  "version": "0.1.0",
+  "author": {
+    "name": "linqibin0826",
+    "url": "https://github.com/linqibin0826"
+  },
+  "homepage": "https://github.com/linqibin0826/super-nb-platform",
+  "license": "MIT",
+  "keywords": [
+    "super-nb",
+    "super-nb-platform",
+    "skills",
+    "tdd",
+    "debugging",
+    "chinese",
+    "中文",
+    "hexagonal",
+    "ddd"
+  ]
+}
