@@ -39,7 +39,7 @@ Domain + Infra
 
 ## Query 端策略(与 patra 同款)
 
-**查询不走 CommandBus**:读操作直接注入查询用例(本仓命名 `Get*UseCase` / `{Thing}Queries`,见 layers/app.md)——无副作用,不需要横切派发。
+**查询不走 CommandBus**:读操作直接注入查询服务(`{View}QueryService`,见 tech/port-service.md)——无副作用,不需要横切派发。
 
 | 操作 | 路由 |
 |------|------|

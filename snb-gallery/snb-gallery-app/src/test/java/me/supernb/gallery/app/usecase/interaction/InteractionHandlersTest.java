@@ -11,7 +11,7 @@ import me.supernb.gallery.app.usecase.interaction.command.TogglePromptLikeComman
 import me.supernb.gallery.app.usecase.interaction.dto.FavResult;
 import me.supernb.gallery.app.usecase.interaction.dto.LikeResult;
 import me.supernb.gallery.domain.exception.GalleryException;
-import me.supernb.gallery.domain.port.InteractionRepository;
+import me.supernb.gallery.domain.port.repository.InteractionRepository;
 import org.junit.jupiter.api.Test;
 
 /// 点赞/收藏 Handler(mock 仓储端口)。

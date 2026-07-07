@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Optional;
-import me.supernb.gallery.domain.port.ImageStoragePort;
+import me.supernb.gallery.domain.port.storage.ImageStoragePort;
 import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
 import me.supernb.sub2api.auth.UserProfile;
 import org.junit.jupiter.api.Test;

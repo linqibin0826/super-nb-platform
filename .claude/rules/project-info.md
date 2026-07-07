@@ -21,7 +21,7 @@ snb-platform/
 ├── snb-common/             # 纯 web 横切（UnauthorizedException）
 ├── snb-sub2api/            # sub2api 防腐层 starter（唯一知道 sub2api 细节的模块）
 ├── snb-activity/           # 包组织照 patra-catalog（2026-07-07 验收意见③）
-│   ├── snb-activity-domain # model/(不变量) model/read/(读视图) port/(全部端口) exception/
+│   ├── snb-activity-domain # model/(不变量) model/read/(读视图) port/{repository,read,功能}/ exception/
 │   ├── snb-activity-app    # usecase/{子域}/{Handler, command/, dto/, query/}
 │   ├── snb-activity-infra  # adapter/{persistence(+entity,dao), read, …} 按能力分包
 │   └── snb-activity-adapter# rest/{Controller, request/, response/} + web/

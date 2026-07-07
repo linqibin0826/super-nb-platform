@@ -14,10 +14,12 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
 
     private final Sub2apiIntrospectClient introspect;
 
+    /// 构造:注入 introspect 客户端。
     public CurrentUserArgumentResolver(Sub2apiIntrospectClient introspect) {
         this.introspect = introspect;
     }
 
+    /// 只处理标注 @CurrentUser 的 UserProfile 参数。
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(CurrentUser.class)

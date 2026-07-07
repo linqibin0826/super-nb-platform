@@ -19,10 +19,12 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
 
     private final NamedParameterJdbcTemplate jdbc;
 
+    /// 构造:注入指向 sub2api 只读源的 JdbcTemplate。
     public JdbcRechargeReadModel(JdbcTemplate jdbcTemplate) {
         this.jdbc = new NamedParameterJdbcTemplate(jdbcTemplate);
     }
 
+    /// 区间内 COMPLETED 余额充值合计(无记录返回 0)。
     @Override
     public BigDecimal totalRecharge(long userId, Instant start, Instant end) {
         MapSqlParameterSource p = new MapSqlParameterSource()

@@ -17,6 +17,7 @@ public class Sub2apiIntrospectClient {
     private final long cacheMillis;
     private final ConcurrentHashMap<String, Cached> cache = new ConcurrentHashMap<>();
 
+    /// 构造:注入底层 RestClient 与缓存 TTL(秒)。
     public Sub2apiIntrospectClient(RestClient restClient, long cacheSeconds) {
         this.restClient = restClient;
         this.cacheMillis = Duration.ofSeconds(cacheSeconds).toMillis();
@@ -59,6 +60,7 @@ public class Sub2apiIntrospectClient {
         }
     }
 
+    /// 任意 JSON 值安全转字符串(null 安全)。
     private static String asString(Object value) {
         return value == null ? null : value.toString();
     }

@@ -14,7 +14,7 @@ import me.supernb.gallery.domain.model.read.CategoryTree;
 import me.supernb.gallery.domain.model.read.Page;
 import me.supernb.gallery.domain.model.read.PromptDetail;
 import me.supernb.gallery.domain.model.read.PromptSummary;
-import me.supernb.gallery.domain.port.PromptRepository;
+import me.supernb.gallery.domain.port.read.PromptReadPort;
 import me.supernb.gallery.infra.adapter.persistence.dao.CategoryJpaRepository;
 import me.supernb.gallery.infra.adapter.persistence.dao.PromptJpaRepository;
 import me.supernb.gallery.infra.adapter.persistence.entity.CategoryEntity;
@@ -22,16 +22,17 @@ import me.supernb.gallery.infra.adapter.persistence.entity.PromptEntity;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
-/// PromptRepository 实现:gallery 库只读查询。
+/// PromptReadPort 实现:gallery 库只读查询。
 /// 列表的过滤/排序组合是动态 HQL(片段全为常量拼接,参数一律绑定,无注入面)。
 @Repository
-public class PromptAdapter implements PromptRepository {
+public class PromptReadAdapter implements PromptReadPort {
 
     private final PromptJpaRepository prompts;
     private final CategoryJpaRepository categories;
     private final EntityManager em;
 
-    public PromptAdapter(PromptJpaRepository prompts, CategoryJpaRepository categories, EntityManager em) {
+    /// 构造:注入提示词/类目 DAO 与 EntityManager(动态 HQL 用)。
+    public PromptReadAdapter(PromptJpaRepository prompts, CategoryJpaRepository categories, EntityManager em) {
         this.prompts = prompts;
         this.categories = categories;
         this.em = em;
@@ -74,6 +75,7 @@ public class PromptAdapter implements PromptRepository {
         return Page.of(items, total, page, pageSize);
     }
 
+    /// 排序模式 → ORDER BY 片段(常量拼接;启动期不校验,分支必须有测试遍历)。
     private static String orderHql(SortMode sort) {
         return switch (sort) {
             case NEWEST -> "p.sourcePublishedAt DESC NULLS LAST, p.id DESC";
@@ -88,6 +90,7 @@ public class PromptAdapter implements PromptRepository {
         return prompts.findPublishedWithCategory(id).map(PromptMapper::toDetail);
     }
 
+    /// 三轴类目树:一次分组统计,无 N+1。
     @Override
     public CategoryTree categories() {
         Map<Integer, Long> counts = new HashMap<>();

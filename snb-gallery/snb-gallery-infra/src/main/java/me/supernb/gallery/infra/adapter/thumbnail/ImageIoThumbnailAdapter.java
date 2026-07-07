@@ -8,7 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import javax.imageio.ImageIO;
-import me.supernb.gallery.domain.port.ThumbnailPort;
+import me.supernb.gallery.domain.port.thumbnail.ThumbnailPort;
 import org.springframework.stereotype.Component;
 
 /// ThumbnailPort 实现:JDK ImageIO 缩放为 PNG(避开 webp 编码依赖;前端只认 URL,格式无所谓)。

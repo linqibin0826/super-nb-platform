@@ -6,7 +6,7 @@ import java.util.OptionalInt;
 import me.supernb.gallery.domain.model.read.MyInteractions;
 import me.supernb.gallery.domain.model.read.Page;
 import me.supernb.gallery.domain.model.read.PromptSummary;
-import me.supernb.gallery.domain.port.InteractionRepository;
+import me.supernb.gallery.domain.port.repository.InteractionRepository;
 import me.supernb.gallery.infra.adapter.persistence.dao.PromptFavoriteJpaRepository;
 import me.supernb.gallery.infra.adapter.persistence.dao.PromptJpaRepository;
 import me.supernb.gallery.infra.adapter.persistence.dao.PromptLikeJpaRepository;
@@ -28,7 +28,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 /// 外层按「目标态已达成」回读计数返回。退出侧用批量 DELETE 的真实行数决定是否减计数,
 /// 行锁保证并发双删只有一方计入。
 @Repository
-public class InteractionAdapter implements InteractionRepository {
+public class InteractionRepositoryAdapter implements InteractionRepository {
 
     private static final String PUBLISHED = "published";
 
@@ -37,7 +37,7 @@ public class InteractionAdapter implements InteractionRepository {
     private final PromptFavoriteJpaRepository favorites;
     private final TransactionTemplate txTemplate;
 
-    public InteractionAdapter(PromptJpaRepository prompts, PromptLikeJpaRepository likes,
+    public InteractionRepositoryAdapter(PromptJpaRepository prompts, PromptLikeJpaRepository likes,
                               PromptFavoriteJpaRepository favorites, PlatformTransactionManager txManager) {
         this.prompts = prompts;
         this.likes = likes;
@@ -45,6 +45,7 @@ public class InteractionAdapter implements InteractionRepository {
         this.txTemplate = new TransactionTemplate(txManager);
     }
 
+    /// 点赞开关(事务 + 撞 PK 幂等回读);目标不存在 → empty。
     @Override
     public OptionalInt toggleLike(long promptId, long userId, boolean on) {
         try {
@@ -54,6 +55,7 @@ public class InteractionAdapter implements InteractionRepository {
         }
     }
 
+    /// 收藏开关(事务 + 撞 PK 幂等回读);目标不存在 → empty。
     @Override
     public OptionalInt toggleFavorite(long promptId, long userId, boolean on) {
         try {
@@ -63,6 +65,7 @@ public class InteractionAdapter implements InteractionRepository {
         }
     }
 
+    /// 事务体:成员表增删 + 计数原子增减。
     private OptionalInt doToggleLike(long promptId, long userId, boolean on) {
         if (!prompts.existsByIdAndStatus(promptId, PUBLISHED)) {
             return OptionalInt.empty();
@@ -79,6 +82,7 @@ public class InteractionAdapter implements InteractionRepository {
         return currentCount(prompts.likeCountOf(promptId));
     }
 
+    /// 事务体:成员表增删 + 计数原子增减。
     private OptionalInt doToggleFavorite(long promptId, long userId, boolean on) {
         if (!prompts.existsByIdAndStatus(promptId, PUBLISHED)) {
             return OptionalInt.empty();
@@ -95,6 +99,7 @@ public class InteractionAdapter implements InteractionRepository {
         return currentCount(prompts.favCountOf(promptId));
     }
 
+    /// Optional<Integer> → OptionalInt。
     private static OptionalInt currentCount(Optional<Integer> count) {
         return count.map(OptionalInt::of).orElse(OptionalInt.empty());
     }
@@ -107,6 +112,7 @@ public class InteractionAdapter implements InteractionRepository {
                 rows.getTotalElements(), page, pageSize);
     }
 
+    /// 批量查我在这批 id 上的赞/藏。
     @Override
     public MyInteractions myInteractions(List<Long> promptIds, long userId) {
         if (promptIds.isEmpty()) {

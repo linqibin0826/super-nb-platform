@@ -9,20 +9,22 @@ import java.util.stream.Collectors;
 import me.supernb.activity.domain.model.read.CodeStatus;
 import me.supernb.activity.domain.model.read.LeaderEntry;
 import me.supernb.activity.domain.model.read.RechargeEntry;
-import me.supernb.activity.domain.port.RechargeQueryPort;
+import me.supernb.activity.domain.port.read.RechargeReadPort;
 import me.supernb.sub2api.recharge.RechargeReadModel;
 import org.springframework.stereotype.Component;
 
-/// RechargeQueryPort 实现:薄适配,委托 snb-sub2api 的 RechargeReadModel,把 sub2api 行映射为 activity app DTO。
+/// RechargeReadPort 实现:薄适配,委托 snb-sub2api 的 RechargeReadModel,把 sub2api 行映射为 activity app DTO。
 @Component
-public class RechargeQueryAdapter implements RechargeQueryPort {
+public class RechargeReadAdapter implements RechargeReadPort {
 
     private final RechargeReadModel readModel;
 
-    public RechargeQueryAdapter(RechargeReadModel readModel) {
+    /// 构造:注入 starter 充值读模型。
+    public RechargeReadAdapter(RechargeReadModel readModel) {
         this.readModel = readModel;
     }
 
+    /// 委托 starter 读模型统计区间充值。
     @Override
     public BigDecimal totalRecharge(long userId, Instant start, Instant end) {
         return readModel.totalRecharge(userId, start, end);

@@ -33,6 +33,7 @@ public class RefImageEntity {
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
+    /// 新参考图记录((user,sha) 内容寻址)。
     public RefImageEntity(RefImageId id, String r2Key, Integer bytes) {
         this.id = id;
         this.r2Key = r2Key;

@@ -95,10 +95,12 @@ public class GenerationEntity {
         this.thumbKey = thumbKey;
     }
 
+    /// 追加一张输出图(级联随聚合落库)。
     public void addImage(int idx, String r2Key, Integer bytes) {
         images.add(new GenerationImageEntity(this, idx, r2Key, bytes));
     }
 
+    /// 追加一条参考图引用。
     public void addRef(int idx, String sha256) {
         refs.add(new GenerationRefEntity(this, idx, sha256));
     }

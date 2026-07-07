@@ -11,13 +11,13 @@ import me.supernb.gallery.app.usecase.generation.command.DeleteGenerationCommand
 import me.supernb.gallery.app.usecase.generation.command.ImageBytes;
 import me.supernb.gallery.app.usecase.generation.command.RefBytes;
 import me.supernb.gallery.app.usecase.generation.dto.Created;
-import me.supernb.gallery.app.usecase.generation.query.GenerationQueries;
+import me.supernb.gallery.app.usecase.generation.query.GenerationQueryService;
 import me.supernb.gallery.app.usecase.interaction.command.TogglePromptFavoriteCommand;
 import me.supernb.gallery.app.usecase.interaction.command.TogglePromptLikeCommand;
 import me.supernb.gallery.app.usecase.interaction.dto.FavResult;
 import me.supernb.gallery.app.usecase.interaction.dto.LikeResult;
-import me.supernb.gallery.app.usecase.interaction.query.InteractionQueries;
-import me.supernb.gallery.app.usecase.prompt.query.PromptQueries;
+import me.supernb.gallery.app.usecase.interaction.query.InteractionQueryService;
+import me.supernb.gallery.app.usecase.prompt.query.PromptQueryService;
 import me.supernb.gallery.domain.model.read.CategoryTree;
 import me.supernb.gallery.domain.model.read.GenerationDetail;
 import me.supernb.gallery.domain.model.read.GenerationSummary;
@@ -44,19 +44,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class GalleryController {
 
     private final CommandBus commandBus;
-    private final PromptQueries promptQueries;
-    private final InteractionQueries interactionQueries;
-    private final GenerationQueries generationQueries;
+    private final PromptQueryService promptQueryService;
+    private final InteractionQueryService interactionQueryService;
+    private final GenerationQueryService generationQueryService;
 
     public GalleryController(
             CommandBus commandBus,
-            PromptQueries promptQueries,
-            InteractionQueries interactionQueries,
-            GenerationQueries generationQueries) {
+            PromptQueryService promptQueryService,
+            InteractionQueryService interactionQueryService,
+            GenerationQueryService generationQueryService) {
         this.commandBus = commandBus;
-        this.promptQueries = promptQueries;
-        this.interactionQueries = interactionQueries;
-        this.generationQueries = generationQueries;
+        this.promptQueryService = promptQueryService;
+        this.interactionQueryService = interactionQueryService;
+        this.generationQueryService = generationQueryService;
     }
 
     // —— 公开只读 ——
@@ -68,44 +68,51 @@ public class GalleryController {
             @RequestParam(defaultValue = "featured") String sort,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "24") int pageSize) {
-        return promptQueries.list(category, q, sort, Math.max(1, page), clampSize(pageSize));
+        return promptQueryService.list(category, q, sort, Math.max(1, page), clampSize(pageSize));
     }
 
+    /// 提示词详情(公开)。
     @GetMapping("/prompts/{id}")
     public PromptDetail getPrompt(@PathVariable long id) {
-        return promptQueries.detail(id);
+        return promptQueryService.detail(id);
     }
 
+    /// 三轴类目树(公开)。
     @GetMapping("/categories")
     public CategoryTree categories() {
-        return promptQueries.categories();
+        return promptQueryService.categories();
     }
 
     // —— 互动(需登录,写经 CommandBus)——
 
+    /// 点赞。
     @PostMapping("/prompts/{id}/like")
     public LikeResult like(@PathVariable long id, @CurrentUser UserProfile user) {
         return commandBus.handle(new TogglePromptLikeCommand(id, user.id(), true));
     }
 
+    /// 取消点赞。
     @DeleteMapping("/prompts/{id}/like")
     public LikeResult unlike(@PathVariable long id, @CurrentUser UserProfile user) {
         return commandBus.handle(new TogglePromptLikeCommand(id, user.id(), false));
     }
 
+    /// 收藏。
     @PostMapping("/prompts/{id}/favorite")
     public FavResult favorite(@PathVariable long id, @CurrentUser UserProfile user) {
         return commandBus.handle(new TogglePromptFavoriteCommand(id, user.id(), true));
     }
 
+    /// 取消收藏。
     @DeleteMapping("/prompts/{id}/favorite")
     public FavResult unfavorite(@PathVariable long id, @CurrentUser UserProfile user) {
         return commandBus.handle(new TogglePromptFavoriteCommand(id, user.id(), false));
     }
 
+    /// 批量互动态回显。
     @GetMapping("/me/interactions")
     public MyInteractions myInteractions(@RequestParam String ids, @CurrentUser UserProfile user) {
-        return interactionQueries.myInteractions(parseIds(ids), user.id());
+        return interactionQueryService.myInteractions(parseIds(ids), user.id());
     }
 
     @GetMapping("/me/favorites")
@@ -113,7 +120,7 @@ public class GalleryController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "24") int pageSize,
             @CurrentUser UserProfile user) {
-        return interactionQueries.myFavorites(user.id(), Math.max(1, page), clampSize(pageSize));
+        return interactionQueryService.myFavorites(user.id(), Math.max(1, page), clampSize(pageSize));
     }
 
     // —— 生成历史(需登录,写经 CommandBus)——
@@ -144,13 +151,13 @@ public class GalleryController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "24") int pageSize,
             @CurrentUser UserProfile user) {
-        return generationQueries.list(user.id(), Math.max(1, page), clampSize(pageSize));
+        return generationQueryService.list(user.id(), Math.max(1, page), clampSize(pageSize));
     }
 
     @GetMapping("/me/generations/{generationId}")
     public GenerationDetail getGeneration(
             @PathVariable String generationId, @CurrentUser UserProfile user) {
-        return generationQueries.detail(generationId, user.id());
+        return generationQueryService.detail(generationId, user.id());
     }
 
     @DeleteMapping("/me/generations/{generationId}")
@@ -160,6 +167,7 @@ public class GalleryController {
         return new DeleteResponse(true);
     }
 
+    /// 页大小钳制到 [1,48]。
     private static int clampSize(int pageSize) {
         return Math.min(48, Math.max(1, pageSize));
     }

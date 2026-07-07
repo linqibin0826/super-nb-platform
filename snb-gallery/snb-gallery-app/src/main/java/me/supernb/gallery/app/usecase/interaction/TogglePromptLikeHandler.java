@@ -4,7 +4,7 @@ import dev.linqibin.commons.cqrs.CommandHandler;
 import me.supernb.gallery.app.usecase.interaction.command.TogglePromptLikeCommand;
 import me.supernb.gallery.app.usecase.interaction.dto.LikeResult;
 import me.supernb.gallery.domain.exception.GalleryException;
-import me.supernb.gallery.domain.port.InteractionRepository;
+import me.supernb.gallery.domain.port.repository.InteractionRepository;
 import org.springframework.stereotype.Service;
 
 /// 点赞开关。目标不存在/未发布 → 404;并发正确性由 InteractionRepository 实现(行锁 + 事务)保证。
@@ -13,10 +13,12 @@ public class TogglePromptLikeHandler implements CommandHandler<TogglePromptLikeC
 
     private final InteractionRepository repo;
 
+    /// 构造:注入互动仓储端口。
     public TogglePromptLikeHandler(InteractionRepository repo) {
         this.repo = repo;
     }
 
+    /// 点赞开关,目标不存在/未发布 → 404。
     @Override
     public LikeResult handle(TogglePromptLikeCommand command) {
         int count = repo.toggleLike(command.promptId(), command.userId(), command.on())

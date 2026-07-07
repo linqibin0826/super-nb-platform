@@ -19,9 +19,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @ConditionalOnBean(Sub2apiIntrospectClient.class)
 public class Sub2apiWebAutoConfiguration {
 
+    /// 向 MVC 注册 @CurrentUser 参数解析器。
     @Bean
     public WebMvcConfigurer sub2apiCurrentUserResolverConfigurer(Sub2apiIntrospectClient introspect) {
         return new WebMvcConfigurer() {
+            /// 挂载 CurrentUserArgumentResolver。
             @Override
             public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
                 resolvers.add(new CurrentUserArgumentResolver(introspect));

@@ -8,7 +8,7 @@ import java.util.Map;
 import me.supernb.activity.domain.model.read.CodeStatus;
 import me.supernb.activity.domain.model.read.LeaderEntry;
 import me.supernb.activity.domain.model.read.RechargeEntry;
-import me.supernb.activity.domain.port.RechargeQueryPort;
+import me.supernb.activity.domain.port.read.RechargeReadPort;
 import me.supernb.activity.infra.adapter.persistence.DrawAdapter;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -23,8 +23,8 @@ import org.springframework.context.annotation.Import;
 class ActivityInfraTestApp {
 
     @Bean
-    RechargeQueryPort rechargeQueryPort() {
-        return new RechargeQueryPort() {
+    RechargeReadPort rechargeQueryPort() {
+        return new RechargeReadPort() {
             @Override
             public BigDecimal totalRecharge(long userId, Instant start, Instant end) {
                 return new BigDecimal("300");

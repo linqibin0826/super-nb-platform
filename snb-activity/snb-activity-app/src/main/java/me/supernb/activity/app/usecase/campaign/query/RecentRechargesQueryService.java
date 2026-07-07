@@ -2,20 +2,21 @@ package me.supernb.activity.app.usecase.campaign.query;
 
 import java.util.List;
 import me.supernb.activity.domain.model.read.RechargeEntry;
-import me.supernb.activity.domain.port.CampaignPort;
-import me.supernb.activity.domain.port.RechargeQueryPort;
+import me.supernb.activity.domain.port.campaign.CampaignPort;
+import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
 
 /// 活动期最近充值动态 Top20。无进行中活动 → 空(前端优雅降级)。
 @Service
-public class GetRecentRechargesUseCase {
+public class RecentRechargesQueryService {
 
     private static final int LIMIT = 20;
 
     private final CampaignPort campaignPort;
-    private final RechargeQueryPort rechargePort;
+    private final RechargeReadPort rechargePort;
 
-    public GetRecentRechargesUseCase(CampaignPort campaignPort, RechargeQueryPort rechargePort) {
+    /// 构造:注入活动与充值读端口。
+    public RecentRechargesQueryService(CampaignPort campaignPort, RechargeReadPort rechargePort) {
         this.campaignPort = campaignPort;
         this.rechargePort = rechargePort;
     }

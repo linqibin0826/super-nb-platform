@@ -10,8 +10,8 @@ import me.supernb.gallery.domain.model.read.MyInteractions;
 import me.supernb.gallery.domain.model.read.Page;
 import me.supernb.gallery.domain.model.read.PromptDetail;
 import me.supernb.gallery.domain.model.read.PromptSummary;
-import me.supernb.gallery.domain.port.GenerationRepository;
-import me.supernb.gallery.infra.adapter.read.PromptAdapter;
+import me.supernb.gallery.domain.port.repository.GenerationRepository;
+import me.supernb.gallery.infra.adapter.read.PromptReadAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,13 +44,13 @@ class GalleryRepositoriesTest {
     JdbcTemplate jdbc;
 
     @Autowired
-    PromptAdapter prompts;
+    PromptReadAdapter prompts;
 
     @Autowired
-    InteractionAdapter interactions;
+    InteractionRepositoryAdapter interactions;
 
     @Autowired
-    GenerationAdapter generations;
+    GenerationRepositoryAdapter generations;
 
     long p1;
     long p2;

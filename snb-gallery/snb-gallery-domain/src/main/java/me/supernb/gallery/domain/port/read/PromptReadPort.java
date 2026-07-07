@@ -1,4 +1,4 @@
-package me.supernb.gallery.domain.port;
+package me.supernb.gallery.domain.port.read;
 
 import java.util.Optional;
 import me.supernb.gallery.domain.model.enums.SortMode;
@@ -8,7 +8,7 @@ import me.supernb.gallery.domain.model.read.PromptDetail;
 import me.supernb.gallery.domain.model.read.PromptSummary;
 
 /// 提示词只读仓储端口(gallery 库)。
-public interface PromptRepository {
+public interface PromptReadPort {
 
     /// 已发布提示词分页(类目 slug 过滤 + q 标题/描述 ILIKE 搜索 + 排序)。
     Page<PromptSummary> list(

@@ -53,7 +53,7 @@ commons 升级 = 改 `gradle.properties` 的 `patraRef`（钉 patra commit）→
 
 - `rules/project-info.md` — 模块地图 / 依赖规则 / API 与数据形态（架构决策先读它）
 - `rules/layers/` — domain / app / infra / adapter / boot 各层规范（**包组织照 patra-catalog**：端口在 domain/port、读视图在 domain/model/read、app 按 usecase/{子域} 分包；事务在 infra 用 TransactionTemplate 是与 patra 的差异，以 rules 为准）
-- `rules/tech/` — JPA（含 PG 特有 SQL 钦定形态与并发坑）、异常处理、**CommandBus**（写经 bus 派发/读直注）、**sub2api 防腐层 starter**（交互决策矩阵）
+- `rules/tech/` — JPA（含 PG 特有 SQL 钦定形态与并发坑）、异常处理、**CommandBus**（写经 bus 派发/读直注）、**port-service**（端口/查询服务命名与包位置）、**sub2api 防腐层 starter**（交互决策矩阵）
 - `rules/testing/` — 测试规范四篇：总纲（风格/超时/覆盖口径）+ 单测 + 集成（Testcontainers、TestApp 模式、并发语义）+ 契约（standalone MockMvc）
 
 新增限界上下文 = 拷某上下文四模块骨架（domain/app/infra/adapter）→ `settings.gradle.kts` 注册 → Flyway 用全局唯一版本号 → boot 组装 + WiringTest → ArchUnit 门禁自动覆盖。

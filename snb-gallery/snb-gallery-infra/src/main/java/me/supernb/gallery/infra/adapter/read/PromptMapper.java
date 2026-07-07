@@ -6,12 +6,14 @@ import me.supernb.gallery.domain.model.read.PromptSummary;
 import me.supernb.gallery.infra.adapter.persistence.entity.CategoryEntity;
 import me.supernb.gallery.infra.adapter.persistence.entity.PromptEntity;
 
-/// PromptEntity → app DTO 映射(PromptAdapter / InteractionAdapter 共用)。
+/// PromptEntity → app DTO 映射(PromptReadAdapter / InteractionRepositoryAdapter 共用)。
 public final class PromptMapper {
 
+    /// 工具类不实例化。
     private PromptMapper() {
     }
 
+    /// 实体 → 列表瘦身条目。
     public static PromptSummary toSummary(PromptEntity p) {
         return new PromptSummary(p.getId(), p.getTitle(), p.getImageUrl(),
                 p.getImageW(), p.getImageH(), p.getAuthorName(), p.getLikeCount(), p.getFavCount());

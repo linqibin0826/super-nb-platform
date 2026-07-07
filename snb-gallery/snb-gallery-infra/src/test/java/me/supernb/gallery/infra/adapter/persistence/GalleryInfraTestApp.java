@@ -1,8 +1,8 @@
 package me.supernb.gallery.infra.adapter.persistence;
 
-import me.supernb.gallery.infra.adapter.persistence.GenerationAdapter;
-import me.supernb.gallery.infra.adapter.persistence.InteractionAdapter;
-import me.supernb.gallery.infra.adapter.read.PromptAdapter;
+import me.supernb.gallery.infra.adapter.persistence.GenerationRepositoryAdapter;
+import me.supernb.gallery.infra.adapter.persistence.InteractionRepositoryAdapter;
+import me.supernb.gallery.infra.adapter.read.PromptReadAdapter;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Import;
@@ -11,6 +11,6 @@ import org.springframework.context.annotation.Import;
 /// R2Config 不在装配内(未配 endpoint),存储/缩略图适配器不参与。
 @SpringBootConfiguration
 @EnableAutoConfiguration
-@Import({PromptAdapter.class, InteractionAdapter.class, GenerationAdapter.class})
+@Import({PromptReadAdapter.class, InteractionRepositoryAdapter.class, GenerationRepositoryAdapter.class})
 class GalleryInfraTestApp {
 }

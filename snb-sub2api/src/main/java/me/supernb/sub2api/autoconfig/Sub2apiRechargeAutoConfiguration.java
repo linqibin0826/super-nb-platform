@@ -22,6 +22,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @EnableConfigurationProperties(Sub2apiProperties.class)
 public class Sub2apiRechargeAutoConfiguration {
 
+    /// 充值只读读模型:只读 DataSource 在方法内构建,绝不暴露为 Bean(防挤退 Boot 主 jdbcTemplate)。
     @Bean
     @ConditionalOnMissingBean
     public RechargeReadModel rechargeReadModel(Sub2apiProperties props) {

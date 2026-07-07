@@ -16,11 +16,11 @@ import java.util.List;
 import java.util.Optional;
 import me.supernb.gallery.app.usecase.generation.command.CreateGenerationCommand;
 import me.supernb.gallery.app.usecase.generation.dto.Created;
-import me.supernb.gallery.app.usecase.generation.query.GenerationQueries;
+import me.supernb.gallery.app.usecase.generation.query.GenerationQueryService;
 import me.supernb.gallery.app.usecase.interaction.command.TogglePromptLikeCommand;
 import me.supernb.gallery.app.usecase.interaction.dto.LikeResult;
-import me.supernb.gallery.app.usecase.interaction.query.InteractionQueries;
-import me.supernb.gallery.app.usecase.prompt.query.PromptQueries;
+import me.supernb.gallery.app.usecase.interaction.query.InteractionQueryService;
+import me.supernb.gallery.app.usecase.prompt.query.PromptQueryService;
 import me.supernb.gallery.domain.model.read.Page;
 import me.supernb.gallery.domain.model.read.PromptSummary;
 import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
@@ -38,9 +38,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class GalleryControllerTest {
 
     private final CommandBus commandBus = mock(CommandBus.class);
-    private final PromptQueries promptQueries = mock(PromptQueries.class);
-    private final InteractionQueries interactionQueries = mock(InteractionQueries.class);
-    private final GenerationQueries generationQueries = mock(GenerationQueries.class);
+    private final PromptQueryService promptQueryService = mock(PromptQueryService.class);
+    private final InteractionQueryService interactionQueryService = mock(InteractionQueryService.class);
+    private final GenerationQueryService generationQueryService = mock(GenerationQueryService.class);
     private final Sub2apiIntrospectClient introspect = mock(Sub2apiIntrospectClient.class);
 
     private MockMvc mvc;
@@ -48,14 +48,14 @@ class GalleryControllerTest {
     @BeforeEach
     void setup() {
         mvc = MockMvcBuilders.standaloneSetup(new GalleryController(
-                        commandBus, promptQueries, interactionQueries, generationQueries))
+                        commandBus, promptQueryService, interactionQueryService, generationQueryService))
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
     }
 
     @Test
     void listPromptsIsPublic() throws Exception {
-        when(promptQueries.list("style", null, "featured", 1, 24)).thenReturn(
+        when(promptQueryService.list("style", null, "featured", 1, 24)).thenReturn(
                 Page.of(List.of(new PromptSummary(
                         1, "a cat", "http://img", 512, 512, "alice", 3, 1)), 1, 1, 24));
         mvc.perform(get("/gallery/v1/prompts").param("category", "style"))

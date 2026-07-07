@@ -1,4 +1,4 @@
-package me.supernb.gallery.domain.port;
+package me.supernb.gallery.domain.port.repository;
 
 import java.util.List;
 import java.util.OptionalInt;

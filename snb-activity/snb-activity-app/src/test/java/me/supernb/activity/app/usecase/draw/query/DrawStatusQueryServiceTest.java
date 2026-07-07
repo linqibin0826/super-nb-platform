@@ -11,17 +11,17 @@ import java.util.Optional;
 import me.supernb.activity.domain.exception.CampaignNotActiveException;
 import me.supernb.activity.domain.model.Campaign;
 import me.supernb.activity.domain.model.read.DrawStatus;
-import me.supernb.activity.domain.port.CampaignPort;
-import me.supernb.activity.domain.port.DrawPort;
-import me.supernb.activity.domain.port.RechargeQueryPort;
+import me.supernb.activity.domain.port.campaign.CampaignPort;
+import me.supernb.activity.domain.port.draw.DrawPort;
+import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.junit.jupiter.api.Test;
 
-class GetDrawStatusUseCaseTest {
+class DrawStatusQueryServiceTest {
 
     private final CampaignPort campaignPort = mock(CampaignPort.class);
-    private final RechargeQueryPort rechargePort = mock(RechargeQueryPort.class);
+    private final RechargeReadPort rechargePort = mock(RechargeReadPort.class);
     private final DrawPort drawPort = mock(DrawPort.class);
-    private final GetDrawStatusUseCase useCase = new GetDrawStatusUseCase(campaignPort, rechargePort, drawPort);
+    private final DrawStatusQueryService useCase = new DrawStatusQueryService(campaignPort, rechargePort, drawPort);
 
     private final Campaign campaign = new Campaign(
             1, "c", Instant.parse("2026-07-01T00:00:00Z"), Instant.parse("2026-08-01T00:00:00Z"),

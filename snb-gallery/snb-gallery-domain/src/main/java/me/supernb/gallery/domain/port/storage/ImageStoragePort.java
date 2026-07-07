@@ -1,4 +1,4 @@
-package me.supernb.gallery.domain.port;
+package me.supernb.gallery.domain.port.storage;
 
 import java.time.Duration;
 

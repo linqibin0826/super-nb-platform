@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import me.supernb.gallery.app.usecase.generation.command.DeleteGenerationCommand;
 import me.supernb.gallery.domain.exception.GalleryException;
-import me.supernb.gallery.domain.port.GenerationRepository;
-import me.supernb.gallery.domain.port.ImageStoragePort;
+import me.supernb.gallery.domain.port.repository.GenerationRepository;
+import me.supernb.gallery.domain.port.storage.ImageStoragePort;
 import org.junit.jupiter.api.Test;
 
 /// 删除生成记录 Handler:删行后清 R2、不存在 404。

@@ -9,24 +9,24 @@ import me.supernb.gallery.domain.exception.GalleryException;
 import me.supernb.gallery.domain.model.enums.SortMode;
 import me.supernb.gallery.domain.model.read.Page;
 import me.supernb.gallery.domain.model.read.PromptSummary;
-import me.supernb.gallery.domain.port.PromptRepository;
+import me.supernb.gallery.domain.port.read.PromptReadPort;
 import org.junit.jupiter.api.Test;
 
 /// 提示词查询用例(mock 仓储端口)。
-class PromptQueriesTest {
+class PromptQueryServiceTest {
 
-    private final PromptRepository promptRepo = mock(PromptRepository.class);
+    private final PromptReadPort promptRepo = mock(PromptReadPort.class);
 
     @Test
     void detailNotFoundThrows() {
         when(promptRepo.detail(99L)).thenReturn(java.util.Optional.empty());
-        assertThatThrownBy(() -> new PromptQueries(promptRepo).detail(99L)).isInstanceOf(GalleryException.class);
+        assertThatThrownBy(() -> new PromptQueryService(promptRepo).detail(99L)).isInstanceOf(GalleryException.class);
     }
 
     @Test
     void listParsesSortAndDelegates() {
         Page<PromptSummary> empty = Page.of(java.util.List.of(), 0, 1, 24);
         when(promptRepo.list("style", "cat", SortMode.LIKES, 1, 24)).thenReturn(empty);
-        assertThat(new PromptQueries(promptRepo).list("style", "cat", "likes", 1, 24)).isSameAs(empty);
+        assertThat(new PromptQueryService(promptRepo).list("style", "cat", "likes", 1, 24)).isSameAs(empty);
     }
 }

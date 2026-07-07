@@ -11,13 +11,13 @@ import dev.linqibin.commons.cqrs.CommandBus;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import me.supernb.activity.app.usecase.campaign.query.GetLeaderboardUseCase;
-import me.supernb.activity.app.usecase.campaign.query.GetPoolUseCase;
-import me.supernb.activity.app.usecase.campaign.query.GetRecentRechargesUseCase;
+import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
+import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
+import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
 import me.supernb.activity.app.usecase.draw.command.PerformDrawCommand;
-import me.supernb.activity.app.usecase.draw.query.GetDrawStatusUseCase;
-import me.supernb.activity.app.usecase.draw.query.GetMyDrawsUseCase;
-import me.supernb.activity.app.usecase.draw.query.GetRecentDrawsUseCase;
+import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
+import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
+import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.read.DrawStatus;
 import me.supernb.activity.domain.model.read.PoolTier;
@@ -34,12 +34,12 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class ActivityControllerTest {
 
     private final CommandBus commandBus = mock(CommandBus.class);
-    private final GetDrawStatusUseCase getDrawStatus = mock(GetDrawStatusUseCase.class);
-    private final GetLeaderboardUseCase getLeaderboard = mock(GetLeaderboardUseCase.class);
-    private final GetRecentRechargesUseCase getRecentRecharges = mock(GetRecentRechargesUseCase.class);
-    private final GetPoolUseCase getPool = mock(GetPoolUseCase.class);
-    private final GetRecentDrawsUseCase getRecentDraws = mock(GetRecentDrawsUseCase.class);
-    private final GetMyDrawsUseCase getMyDraws = mock(GetMyDrawsUseCase.class);
+    private final DrawStatusQueryService drawStatusQuery = mock(DrawStatusQueryService.class);
+    private final LeaderboardQueryService leaderboardQuery = mock(LeaderboardQueryService.class);
+    private final RecentRechargesQueryService recentRechargesQuery = mock(RecentRechargesQueryService.class);
+    private final PoolQueryService poolQuery = mock(PoolQueryService.class);
+    private final RecentDrawsQueryService recentDrawsQuery = mock(RecentDrawsQueryService.class);
+    private final MyDrawsQueryService myDrawsQuery = mock(MyDrawsQueryService.class);
     private final Sub2apiIntrospectClient introspect = mock(Sub2apiIntrospectClient.class);
 
     private MockMvc mvc;
@@ -47,8 +47,8 @@ class ActivityControllerTest {
     @BeforeEach
     void setup() {
         ActivityController controller = new ActivityController(
-                commandBus, getDrawStatus, getLeaderboard, getRecentRecharges,
-                getPool, getRecentDraws, getMyDraws);
+                commandBus, drawStatusQuery, leaderboardQuery, recentRechargesQuery,
+                poolQuery, recentDrawsQuery, myDrawsQuery);
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
@@ -56,7 +56,7 @@ class ActivityControllerTest {
 
     @Test
     void poolIsPublicAndReturnsTiers() throws Exception {
-        when(getPool.pool()).thenReturn(List.of(new PoolTier(new BigDecimal("10"), 5, 3)));
+        when(poolQuery.pool()).thenReturn(List.of(new PoolTier(new BigDecimal("10"), 5, 3)));
         mvc.perform(get("/activity/v1/pool"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].amount").value(10))
@@ -67,7 +67,7 @@ class ActivityControllerTest {
     @Test
     void statusWithValidTokenReturnsEligibility() throws Exception {
         when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
-        when(getDrawStatus.status(7)).thenReturn(new DrawStatus(true, 2));
+        when(drawStatusQuery.status(7)).thenReturn(new DrawStatus(true, 2));
         mvc.perform(get("/activity/v1/status").header("Authorization", "Bearer T"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.eligible").value(true))

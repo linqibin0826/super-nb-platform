@@ -1,4 +1,4 @@
-package me.supernb.activity.domain.port;
+package me.supernb.activity.domain.port.draw;
 
 import java.util.List;
 import me.supernb.activity.domain.model.Campaign;

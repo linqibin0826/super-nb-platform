@@ -20,7 +20,7 @@ paths: snb-*/snb-*-infra/**/src/test/**/*.java, snb-boot/**/src/test/**/*.java, 
 @EnableAutoConfiguration
 @Import(DrawAdapter.class)
 class ActivityInfraTestApp {
-    @Bean RechargeQueryPort fixedRecharge() { /* 固定假数据 */ }
+    @Bean RechargeReadPort fixedRecharge() { /* 固定假数据 */ }
 }
 ```
 

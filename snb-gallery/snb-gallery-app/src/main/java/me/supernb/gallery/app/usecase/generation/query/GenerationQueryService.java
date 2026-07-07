@@ -7,20 +7,21 @@ import me.supernb.gallery.domain.model.read.GenerationDetail;
 import me.supernb.gallery.domain.model.read.GenerationSummary;
 import me.supernb.gallery.domain.model.read.Image;
 import me.supernb.gallery.domain.model.read.Page;
-import me.supernb.gallery.domain.port.GenerationRepository;
-import me.supernb.gallery.domain.port.ImageStoragePort;
+import me.supernb.gallery.domain.port.repository.GenerationRepository;
+import me.supernb.gallery.domain.port.storage.ImageStoragePort;
 import org.springframework.stereotype.Service;
 
 /// 生成历史只读查询用例:列表(缩略图现签,无缩略图回退 null)、详情(输出/参考图现签)。
 @Service
-public class GenerationQueries {
+public class GenerationQueryService {
 
     private static final Duration PRESIGN_TTL = Duration.ofMinutes(10);
 
     private final GenerationRepository repo;
     private final ImageStoragePort storage;
 
-    public GenerationQueries(GenerationRepository repo, ImageStoragePort storage) {
+    /// 构造:注入生成仓储与对象存储端口。
+    public GenerationQueryService(GenerationRepository repo, ImageStoragePort storage) {
         this.repo = repo;
         this.storage = storage;
     }
@@ -36,6 +37,7 @@ public class GenerationQueries {
         return Page.of(items, rows.total(), page, pageSize);
     }
 
+    /// 详情(输出/参考图现签 presigned),不存在/非本人 → 404。
     public GenerationDetail detail(String id, long userId) {
         GenerationRepository.DetailRow r = repo.detail(id, userId)
                 .orElseThrow(() -> GalleryException.generationNotFound(id));

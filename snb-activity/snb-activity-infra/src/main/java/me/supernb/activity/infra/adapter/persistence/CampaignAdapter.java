@@ -2,7 +2,7 @@ package me.supernb.activity.infra.adapter.persistence;
 
 import java.util.Optional;
 import me.supernb.activity.domain.model.Campaign;
-import me.supernb.activity.domain.port.CampaignPort;
+import me.supernb.activity.domain.port.campaign.CampaignPort;
 import me.supernb.activity.infra.adapter.persistence.dao.CampaignJpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +12,7 @@ public class CampaignAdapter implements CampaignPort {
 
     private final CampaignJpaRepository campaigns;
 
+    /// 构造:注入活动 DAO。
     public CampaignAdapter(CampaignJpaRepository campaigns) {
         this.campaigns = campaigns;
     }

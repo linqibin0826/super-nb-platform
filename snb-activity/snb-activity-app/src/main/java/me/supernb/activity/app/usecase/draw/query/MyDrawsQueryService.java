@@ -7,20 +7,21 @@ import me.supernb.activity.domain.model.Campaign;
 import me.supernb.activity.domain.model.read.CodeStatus;
 import me.supernb.activity.domain.model.read.MyDrawView;
 import me.supernb.activity.domain.model.read.RawDraw;
-import me.supernb.activity.domain.port.CampaignPort;
-import me.supernb.activity.domain.port.DrawPort;
-import me.supernb.activity.domain.port.RechargeQueryPort;
+import me.supernb.activity.domain.port.campaign.CampaignPort;
+import me.supernb.activity.domain.port.draw.DrawPort;
+import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
 
 /// 本人在本活动的中奖历史(含安慰奖),enrich 兑换码状态,面向本人不脱敏。无活动 → 空。
 @Service
-public class GetMyDrawsUseCase {
+public class MyDrawsQueryService {
 
     private final CampaignPort campaignPort;
     private final DrawPort drawPort;
-    private final RechargeQueryPort rechargePort;
+    private final RechargeReadPort rechargePort;
 
-    public GetMyDrawsUseCase(CampaignPort campaignPort, DrawPort drawPort, RechargeQueryPort rechargePort) {
+    /// 构造:注入活动/抽奖/充值读端口。
+    public MyDrawsQueryService(CampaignPort campaignPort, DrawPort drawPort, RechargeReadPort rechargePort) {
         this.campaignPort = campaignPort;
         this.drawPort = drawPort;
         this.rechargePort = rechargePort;

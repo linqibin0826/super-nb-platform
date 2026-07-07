@@ -5,25 +5,27 @@ import me.supernb.activity.domain.exception.CampaignNotActiveException;
 import me.supernb.activity.domain.model.Campaign;
 import me.supernb.activity.domain.model.DrawEligibility;
 import me.supernb.activity.domain.model.read.DrawStatus;
-import me.supernb.activity.domain.port.CampaignPort;
-import me.supernb.activity.domain.port.DrawPort;
-import me.supernb.activity.domain.port.RechargeQueryPort;
+import me.supernb.activity.domain.port.campaign.CampaignPort;
+import me.supernb.activity.domain.port.draw.DrawPort;
+import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
 
 /// 查询当前用户的抽奖资格与剩余次数。无进行中活动 → CampaignNotActiveException(404)。
 @Service
-public class GetDrawStatusUseCase {
+public class DrawStatusQueryService {
 
     private final CampaignPort campaignPort;
-    private final RechargeQueryPort rechargePort;
+    private final RechargeReadPort rechargePort;
     private final DrawPort drawPort;
 
-    public GetDrawStatusUseCase(CampaignPort campaignPort, RechargeQueryPort rechargePort, DrawPort drawPort) {
+    /// 构造:注入活动/充值读/抽奖端口。
+    public DrawStatusQueryService(CampaignPort campaignPort, RechargeReadPort rechargePort, DrawPort drawPort) {
         this.campaignPort = campaignPort;
         this.rechargePort = rechargePort;
         this.drawPort = drawPort;
     }
 
+    /// 按活动期充值额算资格档位,减去已抽次数。
     public DrawStatus status(long userId) {
         Campaign c = campaignPort.activeCampaign().orElseThrow(CampaignNotActiveException::new);
         BigDecimal total = rechargePort.totalRecharge(userId, c.startsAt(), c.endsAt());

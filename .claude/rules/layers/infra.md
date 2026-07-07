@@ -26,7 +26,7 @@ paths: snb-*/snb-*-infra/**/*.java
 
 ## 消费 sub2api 防腐层
 
-薄适配模式（`RechargeQueryAdapter` 为样板，位于 `infra/adapter/read/`）：注入 starter 的读模型/客户端 → 把上游 DTO 映射为**本上下文的读视图**（domain/model/read）→ 上下文互不感知 sub2api 细节。规范见 tech/sub2api.md。
+薄适配模式（`RechargeReadAdapter` 为样板，位于 `infra/adapter/read/`）：注入 starter 的读模型/客户端 → 把上游 DTO 映射为**本上下文的读视图**（domain/model/read）→ 上下文互不感知 sub2api 细节。规范见 tech/sub2api.md。
 
 ## R2 / 外部凭据
 

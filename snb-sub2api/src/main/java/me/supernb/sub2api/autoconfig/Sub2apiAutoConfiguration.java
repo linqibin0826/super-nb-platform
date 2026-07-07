@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClient;
 @EnableConfigurationProperties(Sub2apiProperties.class)
 public class Sub2apiAutoConfiguration {
 
+    /// introspect 客户端(常开能力,宿主可用自有 Bean 覆盖)。
     @Bean
     @ConditionalOnMissingBean
     public Sub2apiIntrospectClient sub2apiIntrospectClient(Sub2apiProperties props) {

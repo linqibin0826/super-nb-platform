@@ -9,9 +9,9 @@ import me.supernb.gallery.app.usecase.generation.command.CreateGenerationCommand
 import me.supernb.gallery.app.usecase.generation.command.ImageBytes;
 import me.supernb.gallery.app.usecase.generation.command.RefBytes;
 import me.supernb.gallery.app.usecase.generation.dto.Created;
-import me.supernb.gallery.domain.port.GenerationRepository;
-import me.supernb.gallery.domain.port.ImageStoragePort;
-import me.supernb.gallery.domain.port.ThumbnailPort;
+import me.supernb.gallery.domain.port.repository.GenerationRepository;
+import me.supernb.gallery.domain.port.storage.ImageStoragePort;
+import me.supernb.gallery.domain.port.thumbnail.ThumbnailPort;
 import org.springframework.stereotype.Service;
 
 /// 创建生成记录:输出图逐张上传 R2 + 首图缩略图(尽力而为)+ 参考图内容寻址去重 + 落 4 表(一个事务)。
@@ -24,12 +24,14 @@ public class CreateGenerationHandler implements CommandHandler<CreateGenerationC
     private final ImageStoragePort storage;
     private final ThumbnailPort thumbnails;
 
+    /// 构造:注入生成仓储/对象存储/缩略图端口。
     public CreateGenerationHandler(GenerationRepository repo, ImageStoragePort storage, ThumbnailPort thumbnails) {
         this.repo = repo;
         this.storage = storage;
         this.thumbnails = thumbnails;
     }
 
+    /// 幂等创建:上传输出图 + 首图缩略图(尽力而为)+ 参考图去重,再一个事务落 4 表。
     @Override
     public Created handle(CreateGenerationCommand cmd) {
         // 幂等:本人已有该 id 直接返回,不重复上传/写库
@@ -86,6 +88,7 @@ public class CreateGenerationHandler implements CommandHandler<CreateGenerationC
         return new Created(cmd.id(), createdAt);
     }
 
+    /// contentType → 存储键扩展名(未知回落 png)。
     private static String extFor(String contentType) {
         if (contentType == null) {
             return "png";

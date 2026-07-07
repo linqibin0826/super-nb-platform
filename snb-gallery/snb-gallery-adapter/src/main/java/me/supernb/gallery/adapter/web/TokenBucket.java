@@ -14,6 +14,7 @@ public class TokenBucket {
     // key -> [剩余令牌, 上次结算秒]
     private final ConcurrentHashMap<String, double[]> buckets = new ConcurrentHashMap<>();
 
+    /// 构造:burst=桶容量,perMinute=每分钟补充令牌数。
     public TokenBucket(double burst, double perMinute) {
         this.capacity = burst;
         this.refillPerSecond = perMinute / 60.0;
@@ -39,6 +40,7 @@ public class TokenBucket {
         return true;
     }
 
+    /// 回收长期不活跃 IP 的桶,防内存膨胀。
     private void prune(double nowSec) {
         buckets.entrySet().removeIf(e -> nowSec - e.getValue()[1] > IDLE_TTL_SEC);
     }

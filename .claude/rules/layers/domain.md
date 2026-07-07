@@ -15,7 +15,7 @@ paths: snb-*/snb-*-domain/**/*.java
 - `domain/model/` — 业务规则与不变量的纯计算（`Campaign`、`DrawResult`、`DrawEligibility`）
 - `domain/model/read/` — **读侧视图 record，一文件一类**（`LeaderEntry`、`PromptSummary`、`Page`…）：不属于聚合、无业务逻辑，只承载查询数据（patra Read Model 同款）
 - `domain/model/enums/` — 枚举（`SortMode`）
-- `domain/port/` — **全部端口**（仓储 `{Entity}Repository` + 外部能力 `{Thing}Port`，纯接口）：端口形状仍由用例需求决定（说「资格金额」，不说原始订单行），实现在 infra
+- `domain/port/{repository,read,功能}/` — **全部端口**（纯接口），按类型分子包：`repository/`（聚合持久化 `{Entity}Repository`）、`read/`（读投影 `{Entity}ReadPort`）、`{function}/`（外部能力/领域动作 `{Function}Port`，如 `draw/`、`storage/`）。端口形状仍由用例需求决定（说「资格金额」，不说原始订单行），实现在 infra；命名细则见 tech/port-service.md
 - `domain/exception/` — 业务异常
 
 ## 异常

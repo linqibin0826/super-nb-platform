@@ -7,23 +7,24 @@ import java.util.stream.Collectors;
 import me.supernb.activity.domain.model.Campaign;
 import me.supernb.activity.domain.model.read.PublicDraw;
 import me.supernb.activity.domain.model.read.RawWinner;
-import me.supernb.activity.domain.port.CampaignPort;
-import me.supernb.activity.domain.port.DrawPort;
-import me.supernb.activity.domain.port.RechargeQueryPort;
+import me.supernb.activity.domain.port.campaign.CampaignPort;
+import me.supernb.activity.domain.port.draw.DrawPort;
+import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
 
 /// 最近真实中奖信息流(排除安慰奖),服务端用脱敏邮箱做展示名。无活动 → 空。
 /// 找不到邮箱的行(如已注销)直接跳过,不返回半条数据。
 @Service
-public class GetRecentDrawsUseCase {
+public class RecentDrawsQueryService {
 
     private static final int LIMIT = 500;
 
     private final CampaignPort campaignPort;
     private final DrawPort drawPort;
-    private final RechargeQueryPort rechargePort;
+    private final RechargeReadPort rechargePort;
 
-    public GetRecentDrawsUseCase(CampaignPort campaignPort, DrawPort drawPort, RechargeQueryPort rechargePort) {
+    /// 构造:注入活动/抽奖/充值读端口。
+    public RecentDrawsQueryService(CampaignPort campaignPort, DrawPort drawPort, RechargeReadPort rechargePort) {
         this.campaignPort = campaignPort;
         this.drawPort = drawPort;
         this.rechargePort = rechargePort;

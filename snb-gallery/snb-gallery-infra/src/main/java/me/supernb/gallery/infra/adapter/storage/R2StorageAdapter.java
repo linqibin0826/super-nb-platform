@@ -3,7 +3,7 @@ package me.supernb.gallery.infra.adapter.storage;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
-import me.supernb.gallery.domain.port.ImageStoragePort;
+import me.supernb.gallery.domain.port.storage.ImageStoragePort;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -21,12 +21,14 @@ public class R2StorageAdapter implements ImageStoragePort {
     private final S3Presigner presigner;
     private final String bucket;
 
+    /// 构造:注入 S3 客户端/签名器与桶名。
     public R2StorageAdapter(S3Client s3, S3Presigner presigner, String bucket) {
         this.s3 = s3;
         this.presigner = presigner;
         this.bucket = bucket;
     }
 
+    /// 上传对象。
     @Override
     public void put(String key, byte[] data, String contentType) {
         s3.putObject(
@@ -34,6 +36,7 @@ public class R2StorageAdapter implements ImageStoragePort {
                 RequestBody.fromBytes(data));
     }
 
+    /// 生成限时下载 URL。
     @Override
     public String presignGet(String key, Duration ttl) {
         GetObjectRequest get = GetObjectRequest.builder().bucket(bucket).key(key).build();
@@ -42,11 +45,13 @@ public class R2StorageAdapter implements ImageStoragePort {
                 .url().toString();
     }
 
+    /// 删除对象(容忍不存在)。
     @Override
     public void delete(String key) {
         s3.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
     }
 
+    /// 内容寻址摘要(hex)。
     @Override
     public String sha256(byte[] data) {
         try {

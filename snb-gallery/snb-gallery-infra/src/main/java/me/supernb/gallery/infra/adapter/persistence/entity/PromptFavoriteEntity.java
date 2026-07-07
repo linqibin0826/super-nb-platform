@@ -27,6 +27,7 @@ public class PromptFavoriteEntity {
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
+    /// 新收藏成员(created_at 走审计填充)。
     public PromptFavoriteEntity(InteractionId id) {
         this.id = id;
     }

@@ -10,8 +10,8 @@ import me.supernb.activity.domain.model.DrawEligibility;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.read.RawDraw;
 import me.supernb.activity.domain.model.read.RawWinner;
-import me.supernb.activity.domain.port.DrawPort;
-import me.supernb.activity.domain.port.RechargeQueryPort;
+import me.supernb.activity.domain.port.draw.DrawPort;
+import me.supernb.activity.domain.port.read.RechargeReadPort;
 import me.supernb.activity.infra.adapter.persistence.dao.DrawJpaRepository;
 import me.supernb.activity.infra.adapter.persistence.dao.PrizeSlotJpaRepository;
 import me.supernb.activity.infra.adapter.persistence.entity.DrawEntity;
@@ -32,21 +32,23 @@ public class DrawAdapter implements DrawPort {
     private final DrawJpaRepository draws;
     private final PrizeSlotJpaRepository slots;
     private final TransactionTemplate txTemplate;
-    private final RechargeQueryPort rechargePort;
+    private final RechargeReadPort rechargePort;
 
     public DrawAdapter(DrawJpaRepository draws, PrizeSlotJpaRepository slots,
-                       PlatformTransactionManager txManager, RechargeQueryPort rechargePort) {
+                       PlatformTransactionManager txManager, RechargeReadPort rechargePort) {
         this.draws = draws;
         this.slots = slots;
         this.txTemplate = new TransactionTemplate(txManager);
         this.rechargePort = rechargePort;
     }
 
+    /// 事务内执行一次抽奖(advisory lock 串行化同一用户)。
     @Override
     public DrawResult drawFor(Campaign campaign, long userId) {
         return txTemplate.execute(status -> doDraw(campaign, userId));
     }
 
+    /// 事务体:校验资格 → SKIP LOCKED 随机领槽 → 落中奖/安慰奖记录。
     private DrawResult doDraw(Campaign campaign, long userId) {
         // 事务级 advisory lock:随事务结束自动释放,防并发超额
         draws.acquireUserXactLock(userId);
@@ -72,6 +74,7 @@ public class DrawAdapter implements DrawPort {
         return DrawResult.consolation(consolation);
     }
 
+    /// 该用户在该活动的已抽次数。
     @Override
     public int countDraws(long campaignId, long userId) {
         return draws.countByCampaignIdAndUserId(campaignId, userId);

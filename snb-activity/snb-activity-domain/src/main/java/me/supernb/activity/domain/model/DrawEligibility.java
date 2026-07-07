@@ -11,6 +11,7 @@ public final class DrawEligibility {
     /// 每次抽奖所需的充值门槛(元)。
     public static final BigDecimal DRAW_THRESHOLD = new BigDecimal("100");
 
+    /// 工具类不实例化。
     private DrawEligibility() {
     }
 

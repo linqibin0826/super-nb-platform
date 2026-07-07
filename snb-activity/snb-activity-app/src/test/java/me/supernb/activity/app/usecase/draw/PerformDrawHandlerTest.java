@@ -13,8 +13,8 @@ import me.supernb.activity.domain.exception.CampaignNotActiveException;
 import me.supernb.activity.domain.exception.NoDrawsLeftException;
 import me.supernb.activity.domain.model.Campaign;
 import me.supernb.activity.domain.model.DrawResult;
-import me.supernb.activity.domain.port.CampaignPort;
-import me.supernb.activity.domain.port.DrawPort;
+import me.supernb.activity.domain.port.campaign.CampaignPort;
+import me.supernb.activity.domain.port.draw.DrawPort;
 import org.junit.jupiter.api.Test;
 
 /// 抽奖 Handler:委托 DrawPort、领域异常按契约直接传播。

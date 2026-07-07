@@ -27,6 +27,7 @@ public class PromptLikeEntity {
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
+    /// 新点赞成员(created_at 走审计填充)。
     public PromptLikeEntity(InteractionId id) {
         this.id = id;
     }

@@ -11,16 +11,16 @@ import java.util.Optional;
 import me.supernb.gallery.domain.exception.GalleryException;
 import me.supernb.gallery.domain.model.read.GenerationSummary;
 import me.supernb.gallery.domain.model.read.Page;
-import me.supernb.gallery.domain.port.GenerationRepository;
-import me.supernb.gallery.domain.port.ImageStoragePort;
+import me.supernb.gallery.domain.port.repository.GenerationRepository;
+import me.supernb.gallery.domain.port.storage.ImageStoragePort;
 import org.junit.jupiter.api.Test;
 
 /// 生成历史查询用例:列表缩略图现签/无缩略图回退 null、详情 404。
-class GenerationQueriesTest {
+class GenerationQueryServiceTest {
 
     private final GenerationRepository repo = mock(GenerationRepository.class);
     private final ImageStoragePort storage = mock(ImageStoragePort.class);
-    private final GenerationQueries queries = new GenerationQueries(repo, storage);
+    private final GenerationQueryService queries = new GenerationQueryService(repo, storage);
 
     @Test
     void listPresignsThumbAndFallsBackToNull() {

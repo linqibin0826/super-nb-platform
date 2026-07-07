@@ -15,9 +15,9 @@ import me.supernb.gallery.app.usecase.generation.command.CreateGenerationCommand
 import me.supernb.gallery.app.usecase.generation.command.ImageBytes;
 import me.supernb.gallery.app.usecase.generation.command.RefBytes;
 import me.supernb.gallery.app.usecase.generation.dto.Created;
-import me.supernb.gallery.domain.port.GenerationRepository;
-import me.supernb.gallery.domain.port.ImageStoragePort;
-import me.supernb.gallery.domain.port.ThumbnailPort;
+import me.supernb.gallery.domain.port.repository.GenerationRepository;
+import me.supernb.gallery.domain.port.storage.ImageStoragePort;
+import me.supernb.gallery.domain.port.thumbnail.ThumbnailPort;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 

@@ -21,6 +21,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         this.bucket = new TokenBucket(burst, perMinute);
     }
 
+    /// 只对 /gallery/ 路径按 IP 限流,超限 429 + Retry-After。
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {

@@ -1,8 +1,12 @@
 package me.supernb.sub2api.autoconfig;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /// sub2api 防腐层配置(前缀 sub2api.*)。
+@Getter
+@Setter
 @ConfigurationProperties("sub2api")
 public class Sub2apiProperties {
 
@@ -15,53 +19,12 @@ public class Sub2apiProperties {
     /// sub2api 只读 DataSource(独立只读角色,仅 SELECT)。
     private final ReadDatasource readDatasource = new ReadDatasource();
 
-    public String getBaseUrl() {
-        return baseUrl;
-    }
-
-    public void setBaseUrl(String baseUrl) {
-        this.baseUrl = baseUrl;
-    }
-
-    public int getIntrospectCacheSeconds() {
-        return introspectCacheSeconds;
-    }
-
-    public void setIntrospectCacheSeconds(int introspectCacheSeconds) {
-        this.introspectCacheSeconds = introspectCacheSeconds;
-    }
-
-    public ReadDatasource getReadDatasource() {
-        return readDatasource;
-    }
-
+    /// 只读源连接参数(不配 url 则充值读模型能力不装配)。
+    @Getter
+    @Setter
     public static class ReadDatasource {
         private String url;
         private String username;
         private String password;
-
-        public String getUrl() {
-            return url;
-        }
-
-        public void setUrl(String url) {
-            this.url = url;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
     }
 }

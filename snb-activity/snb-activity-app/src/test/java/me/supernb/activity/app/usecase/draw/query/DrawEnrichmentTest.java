@@ -15,17 +15,17 @@ import me.supernb.activity.domain.model.read.MyDrawView;
 import me.supernb.activity.domain.model.read.PublicDraw;
 import me.supernb.activity.domain.model.read.RawDraw;
 import me.supernb.activity.domain.model.read.RawWinner;
-import me.supernb.activity.domain.port.CampaignPort;
-import me.supernb.activity.domain.port.DrawPort;
-import me.supernb.activity.domain.port.RechargeQueryPort;
+import me.supernb.activity.domain.port.campaign.CampaignPort;
+import me.supernb.activity.domain.port.draw.DrawPort;
+import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.junit.jupiter.api.Test;
 
 /// recent-draws / my-draws 的 enrich 与降级逻辑。
-class DrawEnrichmentUseCaseTest {
+class DrawEnrichmentTest {
 
     private final CampaignPort campaignPort = mock(CampaignPort.class);
     private final DrawPort drawPort = mock(DrawPort.class);
-    private final RechargeQueryPort rechargePort = mock(RechargeQueryPort.class);
+    private final RechargeReadPort rechargePort = mock(RechargeReadPort.class);
 
     private final Campaign campaign = new Campaign(
             1, "c", Instant.parse("2026-07-01T00:00:00Z"), Instant.parse("2026-08-01T00:00:00Z"),
@@ -33,7 +33,7 @@ class DrawEnrichmentUseCaseTest {
 
     @Test
     void recentDrawsSkipsWinnersWithoutEmail() {
-        GetRecentDrawsUseCase useCase = new GetRecentDrawsUseCase(campaignPort, drawPort, rechargePort);
+        RecentDrawsQueryService useCase = new RecentDrawsQueryService(campaignPort, drawPort, rechargePort);
         when(campaignPort.activeCampaign()).thenReturn(Optional.of(campaign));
         when(drawPort.recentRealWinners(1, 500)).thenReturn(List.of(
                 new RawWinner(10, new BigDecimal("20")),
@@ -50,14 +50,14 @@ class DrawEnrichmentUseCaseTest {
 
     @Test
     void recentDrawsEmptyWhenNoCampaign() {
-        GetRecentDrawsUseCase useCase = new GetRecentDrawsUseCase(campaignPort, drawPort, rechargePort);
+        RecentDrawsQueryService useCase = new RecentDrawsQueryService(campaignPort, drawPort, rechargePort);
         when(campaignPort.activeCampaign()).thenReturn(Optional.empty());
         assertThat(useCase.recentDraws()).isEmpty();
     }
 
     @Test
     void myDrawsEnrichesCodeStatusAndConsolationHasNone() {
-        GetMyDrawsUseCase useCase = new GetMyDrawsUseCase(campaignPort, drawPort, rechargePort);
+        MyDrawsQueryService useCase = new MyDrawsQueryService(campaignPort, drawPort, rechargePort);
         when(campaignPort.activeCampaign()).thenReturn(Optional.of(campaign));
         Instant t = Instant.parse("2026-07-15T00:00:00Z");
         when(drawPort.myRawDraws(1, 7)).thenReturn(List.of(

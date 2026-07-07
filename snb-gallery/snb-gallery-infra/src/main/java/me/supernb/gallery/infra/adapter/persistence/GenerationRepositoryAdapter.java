@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import me.supernb.gallery.domain.port.GenerationRepository;
+import me.supernb.gallery.domain.port.repository.GenerationRepository;
 import me.supernb.gallery.infra.adapter.persistence.dao.GenerationImageJpaRepository;
 import me.supernb.gallery.infra.adapter.persistence.dao.GenerationJpaRepository;
 import me.supernb.gallery.infra.adapter.persistence.dao.GenerationRefJpaRepository;
@@ -29,7 +29,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 /// save 幂等:同 id 已存在直接返回其 created_at(首次落库即整单同事务成功,不存在半截单);
 /// 参考图去重库 (user_id, sha256) 并发撞 PK 时重试一次——重试轮 exists 命中改走跳过。
 @Repository
-public class GenerationAdapter implements GenerationRepository {
+public class GenerationRepositoryAdapter implements GenerationRepository {
 
     private final GenerationJpaRepository generations;
     private final GenerationImageJpaRepository generationImages;
@@ -38,7 +38,7 @@ public class GenerationAdapter implements GenerationRepository {
     private final TransactionTemplate txTemplate;
     private final EntityManager em;
 
-    public GenerationAdapter(GenerationJpaRepository generations,
+    public GenerationRepositoryAdapter(GenerationJpaRepository generations,
                              GenerationImageJpaRepository generationImages,
                              GenerationRefJpaRepository generationRefs,
                              RefImageJpaRepository refImages,
@@ -57,11 +57,13 @@ public class GenerationAdapter implements GenerationRepository {
         return generations.findByIdAndUserId(id, userId).map(GenerationEntity::getCreatedAt);
     }
 
+    /// 该用户是否已存过同内容参考图。
     @Override
     public boolean refExists(long userId, String sha256) {
         return refImages.existsById(new RefImageId(userId, sha256));
     }
 
+    /// 幂等落库:已存在返回原 createdAt;参考图撞 PK 重试一次。
     @Override
     public Instant save(SaveGeneration c) {
         try {
@@ -71,6 +73,7 @@ public class GenerationAdapter implements GenerationRepository {
         }
     }
 
+    /// 单次落库尝试(聚合级联,一个事务)。
     private Instant trySave(SaveGeneration c) {
         return txTemplate.execute(status -> {
             GenerationEntity existing = em.find(GenerationEntity.class, c.id());
@@ -95,6 +98,7 @@ public class GenerationAdapter implements GenerationRepository {
         });
     }
 
+    /// 分页列表行(created_at 倒序)。
     @Override
     public PageRows list(long userId, int page, int pageSize) {
         Page<GenerationEntity> pg = generations.findByUserId(userId, PageRequest.of(page - 1, pageSize,

@@ -13,7 +13,7 @@ paths: snb-*/snb-*-app/**/*.java
 - `app/usecase/{子域}/` — 写处理器 `{Action}{Entity}Handler`（实现 `CommandHandler<C,R>`，如 `PerformDrawHandler`、`CreateGenerationHandler`）
 - `app/usecase/{子域}/command/` — 命令 `{Action}{Entity}Command`（record，实现 `Command<R>`）+ 命令自有载体（`ImageBytes`、`RefBytes`）
 - `app/usecase/{子域}/dto/` — **写结果** record（`LikeResult`、`FavResult`、`Created`）
-- `app/usecase/{子域}/query/` — 查询用例，两式跟随所在上下文既有风格：动作型 `{Action}{...}UseCase`（activity）或内聚服务 `{Thing}Queries`（gallery）
+- `app/usecase/{子域}/query/` — 查询用例，统一命名 `{View}QueryService`（`PoolQueryService`、`MyDrawsQueryService`、`PromptQueryService`），无接口、被 controller 直接注入（细则见 tech/port-service.md）
 - 现有子域：activity = `draw`、`campaign`；gallery = `prompt`、`interaction`、`generation`
 - **读视图 record 在 domain/model/read**（不在 app）；app 没有 DTO 容器类
 - 写经 CommandBus、读被 controller 直接注入（规范见 tech/commandbus.md）

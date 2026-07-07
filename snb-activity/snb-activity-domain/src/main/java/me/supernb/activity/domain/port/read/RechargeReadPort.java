@@ -1,4 +1,4 @@
-package me.supernb.activity.domain.port;
+package me.supernb.activity.domain.port.read;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -10,7 +10,7 @@ import me.supernb.activity.domain.model.read.LeaderEntry;
 import me.supernb.activity.domain.model.read.RechargeEntry;
 
 /// 充值只读查询端口(infra 委托 snb-sub2api 的 RechargeReadModel 实现)。窗口 [start, end)。
-public interface RechargeQueryPort {
+public interface RechargeReadPort {
 
     BigDecimal totalRecharge(long userId, Instant start, Instant end);
 

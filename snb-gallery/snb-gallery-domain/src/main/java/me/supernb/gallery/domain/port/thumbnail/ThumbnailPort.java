@@ -1,4 +1,4 @@
-package me.supernb.gallery.domain.port;
+package me.supernb.gallery.domain.port.thumbnail;
 
 /// 缩略图生成端口。
 public interface ThumbnailPort {
