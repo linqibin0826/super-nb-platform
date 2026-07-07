@@ -1,43 +1,51 @@
 package me.supernb.gallery.adapter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dev.linqibin.commons.cqrs.CommandBus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import me.supernb.gallery.app.CreateGenerationCommand;
 import me.supernb.gallery.app.GalleryDto;
-import me.supernb.gallery.app.Generations;
-import me.supernb.gallery.app.Interactions;
+import me.supernb.gallery.app.GenerationQueries;
+import me.supernb.gallery.app.InteractionQueries;
 import me.supernb.gallery.app.PromptQueries;
+import me.supernb.gallery.app.TogglePromptLikeCommand;
 import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
 import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
 import me.supernb.sub2api.auth.UserProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 /// 灵感库控制器映射 + JSON 契约(standalone MockMvc,happy path)。
+/// 写端点 mock CommandBus——命令是 record,equals 精确匹配即断言了派发参数。
 class GalleryControllerTest {
 
+    private final CommandBus commandBus = mock(CommandBus.class);
     private final PromptQueries promptQueries = mock(PromptQueries.class);
-    private final Interactions interactions = mock(Interactions.class);
-    private final Generations generations = mock(Generations.class);
+    private final InteractionQueries interactionQueries = mock(InteractionQueries.class);
+    private final GenerationQueries generationQueries = mock(GenerationQueries.class);
     private final Sub2apiIntrospectClient introspect = mock(Sub2apiIntrospectClient.class);
 
     private MockMvc mvc;
 
     @BeforeEach
     void setup() {
-        mvc = MockMvcBuilders.standaloneSetup(
-                        new GalleryController(promptQueries, interactions, generations))
+        mvc = MockMvcBuilders.standaloneSetup(new GalleryController(
+                        commandBus, promptQueries, interactionQueries, generationQueries))
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
     }
@@ -55,9 +63,10 @@ class GalleryControllerTest {
     }
 
     @Test
-    void likeRequiresTokenAndReturnsCount() throws Exception {
+    void likeRequiresTokenAndDispatchesCommand() throws Exception {
         when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
-        when(interactions.like(5L, 7L, true)).thenReturn(new Interactions.LikeResult(4, true));
+        when(commandBus.handle(new TogglePromptLikeCommand(5L, 7L, true)))
+                .thenReturn(new GalleryDto.LikeResult(4, true));
         mvc.perform(post("/gallery/v1/prompts/5/like").header("Authorization", "Bearer T"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.likeCount").value(4))
@@ -65,9 +74,10 @@ class GalleryControllerTest {
     }
 
     @Test
-    void createGenerationDecodesBase64AndReturnsId() throws Exception {
+    void createGenerationDecodesBase64AndDispatchesCommand() throws Exception {
         when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
-        when(generations.create(any())).thenReturn(new Generations.Created("task-1", Instant.parse("2026-07-06T00:00:00Z")));
+        when(commandBus.handle(any(CreateGenerationCommand.class)))
+                .thenReturn(new GalleryDto.Created("task-1", Instant.parse("2026-07-06T00:00:00Z")));
         String body = "{\"id\":\"task-1\",\"prompt\":\"p\",\"size\":\"1024x1024\",\"n\":1,"
                 + "\"quality\":\"medium\",\"status\":\"done\",\"elapsedMs\":0,"
                 + "\"outputImages\":[{\"b64\":\"AQID\"}]}";
@@ -76,5 +86,11 @@ class GalleryControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("task-1"));
+
+        ArgumentCaptor<CreateGenerationCommand> dispatched = ArgumentCaptor.forClass(CreateGenerationCommand.class);
+        verify(commandBus).handle(dispatched.capture());
+        assertThat(dispatched.getValue().userId()).isEqualTo(7L);
+        assertThat(dispatched.getValue().outputImages()).hasSize(1);
+        assertThat(dispatched.getValue().outputImages().get(0).data()).containsExactly(1, 2, 3);
     }
 }

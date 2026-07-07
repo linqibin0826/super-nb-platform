@@ -35,6 +35,7 @@ snb-platform/
 - **上下文之间禁止互相依赖**；真有跨上下文调用需求再按 patra 方式补 per-context api 模块（当前 YAGNI）
 - app 不感知持久化技术（jakarta.persistence / hibernate / spring-data 都不许碰）
 - `me.supernb.sub2api` 类型只进 infra/adapter，不进 domain/app
+- 写操作经 commons `CommandBus` 派发（命令/Handler 在 app，adapter 禁依赖 Handler 实现；读操作直接注入查询用例）——见 tech/commandbus.md
 
 **build-logic 约定插件**: `snb.java-base`（Lombok/JUnit/编码）、`snb.java-library`、`snb.spring-library`、`snb.hexagonal-{domain,app,infra,adapter,boot}`。⚠️ Gradle 9.5 预编译插件脚本只能用 `//` 注释（块注释会炸）。
 

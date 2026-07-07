@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dev.linqibin.commons.cqrs.CommandBus;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +18,7 @@ import me.supernb.activity.app.GetMyDrawsUseCase;
 import me.supernb.activity.app.GetPoolUseCase;
 import me.supernb.activity.app.GetRecentDrawsUseCase;
 import me.supernb.activity.app.GetRecentRechargesUseCase;
-import me.supernb.activity.app.PerformDrawUseCase;
+import me.supernb.activity.app.PerformDrawCommand;
 import me.supernb.activity.domain.DrawResult;
 import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
 import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
@@ -28,10 +29,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 /// 控制器映射 + JSON 契约(standalone MockMvc,happy path)。错误状态码在 boot 装配测试里验。
+/// 写端点 mock CommandBus——命令是 record,equals 精确匹配即断言了派发参数。
 class ActivityControllerTest {
 
+    private final CommandBus commandBus = mock(CommandBus.class);
     private final GetDrawStatusUseCase getDrawStatus = mock(GetDrawStatusUseCase.class);
-    private final PerformDrawUseCase performDraw = mock(PerformDrawUseCase.class);
     private final GetLeaderboardUseCase getLeaderboard = mock(GetLeaderboardUseCase.class);
     private final GetRecentRechargesUseCase getRecentRecharges = mock(GetRecentRechargesUseCase.class);
     private final GetPoolUseCase getPool = mock(GetPoolUseCase.class);
@@ -44,7 +46,7 @@ class ActivityControllerTest {
     @BeforeEach
     void setup() {
         ActivityController controller = new ActivityController(
-                getDrawStatus, performDraw, getLeaderboard, getRecentRecharges,
+                commandBus, getDrawStatus, getLeaderboard, getRecentRecharges,
                 getPool, getRecentDraws, getMyDraws);
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
@@ -72,9 +74,9 @@ class ActivityControllerTest {
     }
 
     @Test
-    void drawReturnsPrizeResult() throws Exception {
+    void drawDispatchesCommandAndReturnsPrizeResult() throws Exception {
         when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
-        when(performDraw.draw(7)).thenReturn(DrawResult.prize(new BigDecimal("20"), "CODE1"));
+        when(commandBus.handle(new PerformDrawCommand(7))).thenReturn(DrawResult.prize(new BigDecimal("20"), "CODE1"));
         mvc.perform(post("/activity/v1/draw").header("Authorization", "Bearer T"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.redeemCode").value("CODE1"))

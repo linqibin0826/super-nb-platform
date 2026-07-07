@@ -7,7 +7,7 @@ paths: snb-*/snb-*-domain/**/src/test/**/*.java, snb-*/snb-*-app/**/src/test/**/
 ## 适用范围
 
 - domain：纯单测，无 mock（规则计算直接断言，覆盖全部分支）
-- app：单测 + Mockito mock 端口（验编排、异常传播、降级语义）
+- app：单测 + Mockito mock 端口（验编排、异常传播、降级语义）；Handler 直接 `new`、直接 `handle(command)`，不经 CommandBus
 - snb-common：纯单测（如令牌桶的时间推进用注入时钟，不真 sleep）
 
 ## 硬性要求
@@ -16,21 +16,21 @@ paths: snb-*/snb-*-domain/**/src/test/**/*.java, snb-*/snb-*-app/**/src/test/**/
 2. **不碰库、不碰网络、不真 sleep**；`@Timeout` ≤ 2s
 3. 领域异常断言到**具体类型**（`isInstanceOf(NoDrawsLeftException.class)`），不断言消息文案
 
-## app 用例测试样板（真实代码 `PerformDrawUseCaseTest`）
+## app Handler 测试样板（真实代码 `PerformDrawHandlerTest`）
 
 ```java
-class PerformDrawUseCaseTest {
+class PerformDrawHandlerTest {
 
     private final CampaignPort campaignPort = mock(CampaignPort.class);
     private final DrawPort drawPort = mock(DrawPort.class);
-    private final PerformDrawUseCase useCase = new PerformDrawUseCase(campaignPort, drawPort);
+    private final PerformDrawHandler handler = new PerformDrawHandler(campaignPort, drawPort);
 
     @Test
     void delegatesToDrawPort() {
         when(campaignPort.activeCampaign()).thenReturn(Optional.of(campaign));
         when(drawPort.drawFor(campaign, 7)).thenReturn(DrawResult.prize(new BigDecimal("20"), "CODE1"));
 
-        DrawResult r = useCase.draw(7);
+        DrawResult r = handler.handle(new PerformDrawCommand(7));
 
         assertThat(r.redeemCode()).isEqualTo("CODE1");
     }
@@ -39,7 +39,8 @@ class PerformDrawUseCaseTest {
     void propagatesNoDrawsLeft() {
         when(campaignPort.activeCampaign()).thenReturn(Optional.of(campaign));
         when(drawPort.drawFor(campaign, 7)).thenThrow(new NoDrawsLeftException());
-        assertThatThrownBy(() -> useCase.draw(7)).isInstanceOf(NoDrawsLeftException.class);
+        assertThatThrownBy(() -> handler.handle(new PerformDrawCommand(7)))
+                .isInstanceOf(NoDrawsLeftException.class);
     }
 }
 ```

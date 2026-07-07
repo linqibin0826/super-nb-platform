@@ -12,12 +12,13 @@ paths: snb-*/snb-*-app/**/*.java
 ## 包与命名
 
 - 平包 `me.supernb.{context}.app`，无子包仪式
-- 用例两式，**新代码跟随所在上下文的既有风格**：
-  - 动作型用例类 `{Action}{...}UseCase`（activity 风格：`PerformDrawUseCase`、`GetPoolUseCase`）
-  - 内聚服务复数名词（gallery 风格：`PromptQueries`、`Interactions`、`Generations`）
+- **写路径（经 CommandBus，规范见 tech/commandbus.md）**：命令 `{Action}{Entity}Command`（record，实现 `Command<R>`，顶级类型）+ 处理器 `{Action}{Entity}Handler`（实现 `CommandHandler<C,R>`，如 `PerformDrawHandler`、`CreateGenerationHandler`）
+- **读路径（不走 bus，被 controller 直接注入）**，两式跟随所在上下文既有风格：
+  - 动作型查询用例 `{Action}{...}UseCase`（activity 风格：`GetPoolUseCase`、`GetMyDrawsUseCase`）
+  - 内聚查询服务 `{Thing}Queries`（gallery 风格：`PromptQueries`、`InteractionQueries`、`GenerationQueries`）
 - 端口：外部能力 `{Thing}Port`（`PoolPort`、`ImageStoragePort`）；持久化 `{Entity}Repository`（`PromptRepository`）
-- DTO：聚在 `{Context}Dto` 容器类里，全部 record
-- Bean 注解：`@Service`
+- DTO：聚在 `{Context}Dto` 容器类里，全部 record；命令不进容器类
+- Bean 注解：`@Service`（Handler 与查询用例同）
 
 ## 事务（与 patra 的差异）
 

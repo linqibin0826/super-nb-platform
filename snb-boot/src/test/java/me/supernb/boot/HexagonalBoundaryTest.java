@@ -3,6 +3,7 @@ package me.supernb.boot;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.core.importer.ImportOption;
+import dev.linqibin.commons.cqrs.CommandHandler;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -41,4 +42,10 @@ class HexagonalBoundaryTest {
             .that().resideInAnyPackage("..domain..", "..app..")
             .should().dependOnClassesThat().resideInAPackage("me.supernb.sub2api..")
             .as("sub2api 防腐层类型只进 infra/adapter,不进 domain/app(各上下文用自己的端口适配)");
+
+    @ArchTest
+    static final ArchRule adapterInjectsBusNotHandlers = noClasses()
+            .that().resideInAPackage("..adapter..")
+            .should().dependOnClassesThat().implement(CommandHandler.class)
+            .as("adapter 写路径只注入 CommandBus,禁止直接依赖 CommandHandler 实现");
 }

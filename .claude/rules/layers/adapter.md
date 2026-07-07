@@ -7,7 +7,7 @@ paths: snb-*/snb-*-adapter/**/*.java
 ## 核心职责
 
 - 入站适配：每上下文单 `@RestController`（`{Context}Controller`），路径 `/{context}/v1/*`
-- 协议转换：HTTP 参数/JSON → app 用例调用 → 响应 DTO
+- 协议转换：HTTP 参数/JSON → **写操作组命令经 `CommandBus.handle()` 派发，读操作调注入的查询用例** → 响应 DTO（规范见 tech/commandbus.md）
 
 ## 鉴权
 
@@ -32,5 +32,6 @@ paths: snb-*/snb-*-adapter/**/*.java
 ## 禁止行为
 
 1. 禁止业务逻辑（判断/计算归 app 或 domain）
-2. 禁止直接注入 `{Entity}JpaRepository` / `JdbcTemplate` / `EntityManager`——只经 app 用例
-3. 禁止跨上下文依赖
+2. 禁止直接注入 `CommandHandler` 实现——写操作只经 `CommandBus`（ArchUnit 门禁 `adapterInjectsBusNotHandlers`）
+3. 禁止直接注入 `{Entity}JpaRepository` / `JdbcTemplate` / `EntityManager`——只经 app 用例
+4. 禁止跨上下文依赖

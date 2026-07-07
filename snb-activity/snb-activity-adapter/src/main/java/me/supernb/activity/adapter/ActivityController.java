@@ -1,5 +1,6 @@
 package me.supernb.activity.adapter;
 
+import dev.linqibin.commons.cqrs.CommandBus;
 import java.math.BigDecimal;
 import java.util.List;
 import me.supernb.activity.app.ActivityDto;
@@ -9,7 +10,7 @@ import me.supernb.activity.app.GetMyDrawsUseCase;
 import me.supernb.activity.app.GetPoolUseCase;
 import me.supernb.activity.app.GetRecentDrawsUseCase;
 import me.supernb.activity.app.GetRecentRechargesUseCase;
-import me.supernb.activity.app.PerformDrawUseCase;
+import me.supernb.activity.app.PerformDrawCommand;
 import me.supernb.activity.domain.DrawResult;
 import me.supernb.sub2api.auth.CurrentUser;
 import me.supernb.sub2api.auth.UserProfile;
@@ -20,13 +21,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 /// 活动中心 REST 入口。公开端点(榜单/流水/奖池/近期中奖)免登录;
 /// status / draw / my-draws 需登录——@CurrentUser 由 sub2api starter 的解析器完成
-/// introspect 校验(active 终端用户,否则 401)。
+/// introspect 校验(active 终端用户,否则 401)。写操作经 CommandBus 派发,读操作直接注入查询用例。
 @RestController
 @RequestMapping("/activity/v1")
 public class ActivityController {
 
+    private final CommandBus commandBus;
     private final GetDrawStatusUseCase getDrawStatus;
-    private final PerformDrawUseCase performDraw;
     private final GetLeaderboardUseCase getLeaderboard;
     private final GetRecentRechargesUseCase getRecentRecharges;
     private final GetPoolUseCase getPool;
@@ -34,15 +35,15 @@ public class ActivityController {
     private final GetMyDrawsUseCase getMyDraws;
 
     public ActivityController(
+            CommandBus commandBus,
             GetDrawStatusUseCase getDrawStatus,
-            PerformDrawUseCase performDraw,
             GetLeaderboardUseCase getLeaderboard,
             GetRecentRechargesUseCase getRecentRecharges,
             GetPoolUseCase getPool,
             GetRecentDrawsUseCase getRecentDraws,
             GetMyDrawsUseCase getMyDraws) {
+        this.commandBus = commandBus;
         this.getDrawStatus = getDrawStatus;
-        this.performDraw = performDraw;
         this.getLeaderboard = getLeaderboard;
         this.getRecentRecharges = getRecentRecharges;
         this.getPool = getPool;
@@ -81,7 +82,7 @@ public class ActivityController {
 
     @PostMapping("/draw")
     public DrawResponse draw(@CurrentUser UserProfile user) {
-        DrawResult r = performDraw.draw(user.id());
+        DrawResult r = commandBus.handle(new PerformDrawCommand(user.id()));
         return new DrawResponse(r.amount(), r.redeemCode(), r.consolation());
     }
 

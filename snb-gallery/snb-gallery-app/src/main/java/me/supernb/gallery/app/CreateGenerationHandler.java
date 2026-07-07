@@ -1,38 +1,34 @@
 package me.supernb.gallery.app;
 
-import java.time.Duration;
+import dev.linqibin.commons.cqrs.CommandHandler;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import me.supernb.gallery.domain.GalleryException;
 import org.springframework.stereotype.Service;
 
-/// studio 生成历史用例:创建(上传 R2 + 落 4 表,幂等)、列表/详情(现签 presigned)、删除(清 R2 + 删行)。
+/// 创建生成记录:输出图逐张上传 R2 + 首图缩略图(尽力而为)+ 参考图内容寻址去重 + 落 4 表(一个事务)。
 @Service
-public class Generations {
+public class CreateGenerationHandler implements CommandHandler<CreateGenerationCommand, GalleryDto.Created> {
 
     private static final int THUMB_EDGE = 256;
-    private static final Duration PRESIGN_TTL = Duration.ofMinutes(10);
 
     private final GenerationRepository repo;
     private final ImageStoragePort storage;
     private final ThumbnailPort thumbnails;
 
-    public Generations(GenerationRepository repo, ImageStoragePort storage, ThumbnailPort thumbnails) {
+    public CreateGenerationHandler(GenerationRepository repo, ImageStoragePort storage, ThumbnailPort thumbnails) {
         this.repo = repo;
         this.storage = storage;
         this.thumbnails = thumbnails;
     }
 
-    public record Created(String id, Instant createdAt) {
-    }
-
-    public Created create(GalleryDto.CreateGenerationCommand cmd) {
+    @Override
+    public GalleryDto.Created handle(CreateGenerationCommand cmd) {
         // 幂等:本人已有该 id 直接返回,不重复上传/写库
         Optional<Instant> existing = repo.findCreatedAt(cmd.id(), cmd.userId());
         if (existing.isPresent()) {
-            return new Created(cmd.id(), existing.get());
+            return new GalleryDto.Created(cmd.id(), existing.get());
         }
 
         // 1) 输出图逐张上传(png),留首图字节给缩略图
@@ -80,40 +76,7 @@ public class Generations {
         Instant createdAt = repo.save(new GenerationRepository.SaveGeneration(
                 cmd.id(), cmd.userId(), cmd.prompt(), cmd.size(), cmd.n(), cmd.quality(), cmd.status(),
                 cmd.cost(), cmd.elapsedMs(), cmd.groupName(), cmd.keyId(), cmd.error(), thumbKey, outputs, refs));
-        return new Created(cmd.id(), createdAt);
-    }
-
-    public GalleryDto.Page<GalleryDto.GenerationSummary> list(long userId, int page, int pageSize) {
-        GenerationRepository.PageRows rows = repo.list(userId, page, pageSize);
-        List<GalleryDto.GenerationSummary> items = rows.rows().stream()
-                .map(r -> new GalleryDto.GenerationSummary(
-                        r.id(), r.createdAt(), r.prompt(), r.size(), r.n(), r.quality(), r.status(),
-                        r.cost(), r.elapsedMs(), r.error(),
-                        r.thumbKey() == null ? null : storage.presignGet(r.thumbKey(), PRESIGN_TTL)))
-                .toList();
-        return GalleryDto.Page.of(items, rows.total(), page, pageSize);
-    }
-
-    public GalleryDto.GenerationDetail detail(String id, long userId) {
-        GenerationRepository.DetailRow r = repo.detail(id, userId)
-                .orElseThrow(() -> GalleryException.generationNotFound(id));
-        List<GalleryDto.Image> outputs = r.outputKeys().stream()
-                .map(k -> new GalleryDto.Image(storage.presignGet(k, PRESIGN_TTL), null, null))
-                .toList();
-        List<GalleryDto.Image> refs = r.refKeys().stream()
-                .map(k -> new GalleryDto.Image(storage.presignGet(k, PRESIGN_TTL), null, null))
-                .toList();
-        return new GalleryDto.GenerationDetail(
-                r.id(), r.createdAt(), r.prompt(), r.size(), r.n(), r.quality(), r.status(),
-                r.cost(), r.elapsedMs(), r.groupName(), r.keyId(), r.error(), outputs, refs);
-    }
-
-    public void delete(String id, long userId) {
-        List<String> keys = repo.deleteReturningObjectKeys(id, userId)
-                .orElseThrow(() -> GalleryException.generationNotFound(id));
-        for (String key : keys) {
-            storage.delete(key);
-        }
+        return new GalleryDto.Created(cmd.id(), createdAt);
     }
 
     private static String extFor(String contentType) {

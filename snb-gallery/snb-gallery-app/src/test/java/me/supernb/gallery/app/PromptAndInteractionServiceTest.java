@@ -10,6 +10,7 @@ import me.supernb.gallery.domain.GalleryException;
 import me.supernb.gallery.domain.SortMode;
 import org.junit.jupiter.api.Test;
 
+/// 提示词查询用例 + 点赞/收藏 Handler(mock 仓储端口)。
 class PromptAndInteractionServiceTest {
 
     private final PromptRepository promptRepo = mock(PromptRepository.class);
@@ -31,7 +32,8 @@ class PromptAndInteractionServiceTest {
     @Test
     void likeReturnsCountAndFlag() {
         when(interactionRepo.toggleLike(5L, 7L, true)).thenReturn(OptionalInt.of(3));
-        Interactions.LikeResult r = new Interactions(interactionRepo).like(5L, 7L, true);
+        GalleryDto.LikeResult r = new TogglePromptLikeHandler(interactionRepo)
+                .handle(new TogglePromptLikeCommand(5L, 7L, true));
         assertThat(r.likeCount()).isEqualTo(3);
         assertThat(r.liked()).isTrue();
     }
@@ -39,14 +41,16 @@ class PromptAndInteractionServiceTest {
     @Test
     void likeOnMissingPromptThrows() {
         when(interactionRepo.toggleLike(5L, 7L, true)).thenReturn(OptionalInt.empty());
-        assertThatThrownBy(() -> new Interactions(interactionRepo).like(5L, 7L, true))
+        assertThatThrownBy(() -> new TogglePromptLikeHandler(interactionRepo)
+                .handle(new TogglePromptLikeCommand(5L, 7L, true)))
                 .isInstanceOf(GalleryException.class);
     }
 
     @Test
     void favoriteReturnsCountAndFlag() {
         when(interactionRepo.toggleFavorite(5L, 7L, false)).thenReturn(OptionalInt.of(0));
-        Interactions.FavResult r = new Interactions(interactionRepo).favorite(5L, 7L, false);
+        GalleryDto.FavResult r = new TogglePromptFavoriteHandler(interactionRepo)
+                .handle(new TogglePromptFavoriteCommand(5L, 7L, false));
         assertThat(r.favCount()).isZero();
         assertThat(r.favorited()).isFalse();
     }

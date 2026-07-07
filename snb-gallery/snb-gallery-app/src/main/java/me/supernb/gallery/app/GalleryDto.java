@@ -3,7 +3,7 @@ package me.supernb.gallery.app;
 import java.time.Instant;
 import java.util.List;
 
-/// 灵感库应用层 DTO 汇总(读侧 + 写侧命令)。
+/// 灵感库应用层 DTO 汇总(读侧视图 + 写侧结果/字节载体;命令是顶级类型,不在此)。
 public final class GalleryDto {
 
     private GalleryDto() {
@@ -48,6 +48,18 @@ public final class GalleryDto {
     public record MyInteractions(List<Long> liked, List<Long> favorited) {
     }
 
+    /// 点赞结果(计数 + 当前态)。
+    public record LikeResult(int likeCount, boolean liked) {
+    }
+
+    /// 收藏结果(计数 + 当前态)。
+    public record FavResult(int favCount, boolean favorited) {
+    }
+
+    /// 生成记录创建结果(幂等:已存在返回原 createdAt)。
+    public record Created(String id, Instant createdAt) {
+    }
+
     /// 生成历史列表条目(thumbUrl 已现签)。
     public record GenerationSummary(
             String id, Instant createdAt, String prompt, String size, int n, String quality,
@@ -65,17 +77,11 @@ public final class GalleryDto {
             List<Image> outputImages, List<Image> refImages) {
     }
 
-    // —— 写侧命令(base64 已由 adapter 解码为字节)——
+    // —— 写侧字节载体(base64 已由 adapter 解码为字节)——
 
     public record ImageBytes(byte[] data) {
     }
 
     public record RefBytes(byte[] data, String contentType) {
-    }
-
-    public record CreateGenerationCommand(
-            String id, long userId, String prompt, String size, int n, String quality, String status,
-            Double cost, int elapsedMs, String groupName, Long keyId, String error,
-            List<ImageBytes> outputImages, List<RefBytes> refImages) {
     }
 }

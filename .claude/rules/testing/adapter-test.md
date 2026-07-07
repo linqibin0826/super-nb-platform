@@ -9,8 +9,8 @@ paths: snb-*/snb-*-adapter/**/src/test/**/*.java
 standalone MockMvc（**不起 Spring 上下文**，比 `@WebMvcTest` 更快更可控）：controller `new` 出来、app 用例全 mock、鉴权解析器手动挂载。`@Timeout` ≤ 2s。
 
 ```java
-mvc = MockMvcBuilders.standaloneSetup(
-                new GalleryController(promptQueries, interactions, generations))
+mvc = MockMvcBuilders.standaloneSetup(new GalleryController(
+                commandBus, promptQueries, interactionQueries, generationQueries))
         .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
         .build();
 ```
@@ -23,14 +23,16 @@ mvc = MockMvcBuilders.standaloneSetup(
 | JSON 契约形状 | `jsonPath` 断言字段名与值（`$.items[0].likeCount`、`$.total`）——字段名是前端契约，改名即破坏 |
 | 鉴权语义 | mock `Sub2apiIntrospectClient` 给两路：有效 token → 200；解析失败路径由 WiringTest 在真栈里验 401 |
 | 400/401 次序 | `@RequestBody` 在 `@CurrentUser` 前：坏 JSON 先 400、再谈 401（该参数次序是契约，见 layers/adapter.md） |
+| 写端点派发 | mock `CommandBus`；命令是 record，`when(bus.handle(new XxxCommand(精确参数)))` 用 equals 匹配即断言了派发参数 |
 
-## 鉴权两路样板（真实代码 `GalleryControllerTest`）
+## 写端点样板（真实代码 `GalleryControllerTest`）
 
 ```java
 @Test
-void likeRequiresTokenAndReturnsCount() throws Exception {
+void likeRequiresTokenAndDispatchesCommand() throws Exception {
     when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
-    when(interactions.like(5L, 7L, true)).thenReturn(new Interactions.LikeResult(4, true));
+    when(commandBus.handle(new TogglePromptLikeCommand(5L, 7L, true)))
+            .thenReturn(new GalleryDto.LikeResult(4, true));
     mvc.perform(post("/gallery/v1/prompts/5/like").header("Authorization", "Bearer T"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.likeCount").value(4));

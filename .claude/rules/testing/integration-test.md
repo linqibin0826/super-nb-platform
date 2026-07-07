@@ -56,5 +56,5 @@ class DrawAdapterConcurrencyTest {
 
 ## boot 守门测试
 
-- `{Context}WiringTest`：`@SpringBootTest` + `@AutoConfigureMockMvc` + Testcontainers，真组装冒烟——公开端点可达、未带 token 的登录端点经 commons 错误处理回 401；sub2api 只读源可指同一容器（仅需能连上）
+- `{Context}WiringTest`：`@SpringBootTest` + `@AutoConfigureMockMvc` + Testcontainers，真组装冒烟——公开端点可达、未带 token 的登录端点经 commons 错误处理回 401、**每上下文至少一条带 token 的写请求真经 CommandBus 派发到 Handler**（bus 路由表是运行期按泛型构建的，必须真跑一次；空库按契约 404 即证明全链通）；sub2api 只读源可指同一容器（仅需能连上）；mock 的 introspect 未 stub 时返回 Optional.empty，401 路径天然成立
 - `HexagonalBoundaryTest`（ArchUnit）：依赖边界的编译产物级门禁，新增依赖规则往这里加

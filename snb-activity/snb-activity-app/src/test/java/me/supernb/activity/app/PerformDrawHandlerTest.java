@@ -14,11 +14,12 @@ import me.supernb.activity.domain.DrawResult;
 import me.supernb.activity.domain.NoDrawsLeftException;
 import org.junit.jupiter.api.Test;
 
-class PerformDrawUseCaseTest {
+/// 抽奖 Handler:委托 DrawPort、领域异常按契约直接传播。
+class PerformDrawHandlerTest {
 
     private final CampaignPort campaignPort = mock(CampaignPort.class);
     private final DrawPort drawPort = mock(DrawPort.class);
-    private final PerformDrawUseCase useCase = new PerformDrawUseCase(campaignPort, drawPort);
+    private final PerformDrawHandler handler = new PerformDrawHandler(campaignPort, drawPort);
 
     private final Campaign campaign = new Campaign(
             1, "c", Instant.parse("2026-07-01T00:00:00Z"), Instant.parse("2026-08-01T00:00:00Z"),
@@ -29,7 +30,7 @@ class PerformDrawUseCaseTest {
         when(campaignPort.activeCampaign()).thenReturn(Optional.of(campaign));
         when(drawPort.drawFor(campaign, 7)).thenReturn(DrawResult.prize(new BigDecimal("20"), "CODE1"));
 
-        DrawResult r = useCase.draw(7);
+        DrawResult r = handler.handle(new PerformDrawCommand(7));
 
         assertThat(r.consolation()).isFalse();
         assertThat(r.redeemCode()).isEqualTo("CODE1");
@@ -39,12 +40,14 @@ class PerformDrawUseCaseTest {
     void propagatesNoDrawsLeft() {
         when(campaignPort.activeCampaign()).thenReturn(Optional.of(campaign));
         when(drawPort.drawFor(campaign, 7)).thenThrow(new NoDrawsLeftException());
-        assertThatThrownBy(() -> useCase.draw(7)).isInstanceOf(NoDrawsLeftException.class);
+        assertThatThrownBy(() -> handler.handle(new PerformDrawCommand(7)))
+                .isInstanceOf(NoDrawsLeftException.class);
     }
 
     @Test
-    void throwsWhenNoActiveCampaign() {
+    void noActiveCampaignIsNotActive() {
         when(campaignPort.activeCampaign()).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> useCase.draw(7)).isInstanceOf(CampaignNotActiveException.class);
+        assertThatThrownBy(() -> handler.handle(new PerformDrawCommand(7)))
+                .isInstanceOf(CampaignNotActiveException.class);
     }
 }
