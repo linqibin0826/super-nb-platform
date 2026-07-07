@@ -1,0 +1,53 @@
+# 发布链路(照 sub2api fork 模式):推 v* tag → 云端构建 → 推 GHCR
+# 产出 ghcr.io/linqibin0826/super-nb-platform:<tag 去 v 前缀>,amd64(生产 VPS 架构)
+# 手动触发(workflow_dispatch)产出 <短 SHA> tag,用于验证流水线。
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: bootstrap commons(patra@patraRef → mavenLocal)
+        run: bash scripts/bootstrap-commons.sh
+
+      # 完成定义同本地:编译 + 全部测试(Testcontainers 用 runner 自带 Docker)+ ArchUnit 门禁
+      - name: build
+        run: ./gradlew build --no-daemon
+
+      - name: 决定镜像 tag(tag 推送去 v 前缀;手动触发用短 SHA)
+        id: meta
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "tag=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/super-nb-platform:${{ steps.meta.outputs.tag }}
