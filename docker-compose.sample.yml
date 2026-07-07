@@ -1,0 +1,22 @@
+# 部署样例(占位环境变量,真实值走 ai-relay 私有 + 服务器 env,绝不入库)。
+# 生产旁挂:加入 sub2api docker 网络,容器名互访 sub2api:8080。
+services:
+  snb-platform:
+    image: ghcr.io/linqibin0826/snb-platform:latest
+    container_name: snb-platform
+    restart: unless-stopped
+    environment:
+      SNB_DB_URL: jdbc:postgresql://sub2api-postgres:5432/snb
+      SNB_DB_USER: snb_app
+      SNB_DB_PASSWORD: __FROM_SECRET__
+      SUB2API_BASE_URL: http://sub2api:8080
+      SUB2API_RO_URL: jdbc:postgresql://sub2api-postgres:5432/sub2api
+      SUB2API_RO_USER: snb_ro
+      SUB2API_RO_PASSWORD: __FROM_SECRET__
+      R2_ENDPOINT: __FROM_SECRET__
+      R2_BUCKET: snb-studio-private
+      R2_ACCESS_KEY_ID: __FROM_SECRET__
+      R2_SECRET_ACCESS_KEY: __FROM_SECRET__
+    mem_limit: 1g
+    ports:
+      - "127.0.0.1:8090:8080"

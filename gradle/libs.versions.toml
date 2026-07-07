@@ -1,0 +1,38 @@
+[versions]
+java = "25"
+spring-boot = "4.0.6"
+spring-dependency-management = "1.1.7"
+commons = "0.1.0-SNAPSHOT"
+lombok = "1.18.40"
+aws-sdk = "2.25.36"
+junit = "5.11.4"
+mockito = "5.15.2"
+assertj = "3.27.3"
+testcontainers = "1.21.4"
+archunit = "1.4.1"
+jacoco = "0.8.14"
+
+[libraries]
+# —— linqibin commons(mavenLocal 外部产物,来自 patra@patraRef)——
+commons-core = { module = "dev.linqibin.commons:linqibin-commons-core", version.ref = "commons" }
+commons-starter-core = { module = "dev.linqibin.commons:linqibin-spring-boot-starter-core", version.ref = "commons" }
+commons-starter-web = { module = "dev.linqibin.commons:linqibin-spring-boot-starter-web", version.ref = "commons" }
+commons-starter-jpa = { module = "dev.linqibin.commons:linqibin-spring-boot-starter-jpa", version.ref = "commons" }
+commons-starter-test = { module = "dev.linqibin.commons:linqibin-spring-boot-starter-test", version.ref = "commons" }
+# —— Lombok(仅 infra JPA 实体用)——
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+# —— AWS SDK v2(gallery R2:S3Client + S3Presigner)——
+aws-s3 = { module = "software.amazon.awssdk:s3", version.ref = "aws-sdk" }
+# —— 测试 ——
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
