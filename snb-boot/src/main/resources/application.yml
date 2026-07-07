@@ -30,13 +30,8 @@ sub2api:
     password: ${SUB2API_RO_PASSWORD:}
 
 gallery:
-  r2:
-    endpoint: ${R2_ENDPOINT:}
-    public-endpoint: ${R2_PUBLIC_ENDPOINT:}
-    bucket: ${R2_BUCKET:}
-    access-key: ${R2_ACCESS_KEY_ID:}
-    secret-key: ${R2_SECRET_ACCESS_KEY:}
-    presign-ttl-seconds: 600
+  # R2 凭据仅经环境变量注入(GALLERY_R2_ENDPOINT / GALLERY_R2_BUCKET / GALLERY_R2_ACCESS_KEY /
+  # GALLERY_R2_SECRET_KEY / GALLERY_R2_PUBLIC_ENDPOINT)。缺 endpoint 时 R2Config 不激活(如测试)。
   ratelimit:
     burst: 60
     per-minute: 120

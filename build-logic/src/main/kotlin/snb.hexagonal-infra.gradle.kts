@@ -14,4 +14,7 @@ dependencies {
     "testImplementation"(libs.findLibrary("commons-starter-test").get())
     "testImplementation"(libs.findLibrary("testcontainers-postgresql").get())
     "testImplementation"(libs.findLibrary("testcontainers-junit").get())
+    // infra 测试用真实 Flyway 迁移在 Testcontainers 上建 schema
+    "testImplementation"("org.flywaydb:flyway-core")
+    "testImplementation"("org.flywaydb:flyway-database-postgresql")
 }

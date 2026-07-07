@@ -13,10 +13,10 @@ services:
       SUB2API_RO_URL: jdbc:postgresql://sub2api-postgres:5432/sub2api
       SUB2API_RO_USER: snb_ro
       SUB2API_RO_PASSWORD: __FROM_SECRET__
-      R2_ENDPOINT: __FROM_SECRET__
-      R2_BUCKET: snb-studio-private
-      R2_ACCESS_KEY_ID: __FROM_SECRET__
-      R2_SECRET_ACCESS_KEY: __FROM_SECRET__
+      GALLERY_R2_ENDPOINT: __FROM_SECRET__
+      GALLERY_R2_BUCKET: snb-studio-private
+      GALLERY_R2_ACCESS_KEY: __FROM_SECRET__
+      GALLERY_R2_SECRET_KEY: __FROM_SECRET__
     mem_limit: 1g
     ports:
       - "127.0.0.1:8090:8080"

@@ -1,14 +1,15 @@
 package me.supernb.boot;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import me.supernb.gallery.app.ImageStoragePort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import me.supernb.gallery.app.ImageStoragePort;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -17,12 +18,12 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/// 活动上下文全栈装配:真实 Spring 上下文 + Testcontainers PG + Flyway 建 activity schema。
-/// 验证公开端点可达、登录端点未带 token 走 commons 错误处理返回 401。
+/// 灵感库全栈装配:真实上下文 + Testcontainers PG + Flyway 建 gallery schema。
+/// R2 未配(mock ImageStoragePort);验证公开端点可达、登录端点未带 token 401。
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
-class ActivityWiringTest {
+class GalleryWiringTest {
 
     @Container
     static final PostgreSQLContainer<?> PG = new PostgreSQLContainer<>("postgres:16-alpine");
@@ -32,7 +33,6 @@ class ActivityWiringTest {
         r.add("spring.datasource.url", PG::getJdbcUrl);
         r.add("spring.datasource.username", PG::getUsername);
         r.add("spring.datasource.password", PG::getPassword);
-        // sub2api 只读源在本测试指向同一容器(仅需能连上;登录端点未带 token 会先短路)
         r.add("sub2api.read-datasource.url", PG::getJdbcUrl);
         r.add("sub2api.read-datasource.username", PG::getUsername);
         r.add("sub2api.read-datasource.password", PG::getPassword);
@@ -41,20 +41,36 @@ class ActivityWiringTest {
     @Autowired
     MockMvc mvc;
 
-    // gallery 生成服务依赖 R2(测试不配),提供 mock 让全上下文可装配
     @MockitoBean
     ImageStoragePort imageStoragePort;
 
     @Test
-    void poolIsPublicAndEmptyWhenNoActiveCampaign() throws Exception {
-        mvc.perform(get("/activity/v1/pool"))
+    void categoriesIsPublicAndReturnsThreeAxes() throws Exception {
+        mvc.perform(get("/gallery/v1/categories"))
                 .andExpect(status().isOk())
-                .andExpect(content().json("[]"));
+                .andExpect(jsonPath("$.scene").isArray())
+                .andExpect(jsonPath("$.style").isArray())
+                .andExpect(jsonPath("$.subject").isArray());
     }
 
     @Test
-    void statusWithoutTokenIsUnauthorized() throws Exception {
-        mvc.perform(get("/activity/v1/status"))
+    void promptsPublicEmpty() throws Exception {
+        mvc.perform(get("/gallery/v1/prompts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
+    void myFavoritesWithoutTokenIsUnauthorized() throws Exception {
+        mvc.perform(get("/gallery/v1/me/favorites"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void createGenerationWithoutTokenIsUnauthorized() throws Exception {
+        mvc.perform(post("/gallery/v1/me/generations")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"id\":\"x\",\"prompt\":\"p\",\"size\":\"1024x1024\",\"n\":1,\"quality\":\"medium\",\"status\":\"done\",\"elapsedMs\":0}"))
                 .andExpect(status().isUnauthorized());
     }
 }
