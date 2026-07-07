@@ -32,7 +32,7 @@ mvc = MockMvcBuilders.standaloneSetup(new GalleryController(
 void likeRequiresTokenAndDispatchesCommand() throws Exception {
     when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
     when(commandBus.handle(new TogglePromptLikeCommand(5L, 7L, true)))
-            .thenReturn(new GalleryDto.LikeResult(4, true));
+            .thenReturn(new LikeResult(4, true));
     mvc.perform(post("/gallery/v1/prompts/5/like").header("Authorization", "Bearer T"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.likeCount").value(4));

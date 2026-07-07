@@ -6,18 +6,19 @@ paths: snb-*/snb-*-infra/**/*.java
 
 ## 核心职责
 
-- 实现 app 层端口：持久化、外部存储（R2）、图像处理、防腐层委托
-- JPA 实体 ↔ app DTO 的映射**手写**（如 `PromptMapper`），本项目无 MapStruct
+- 实现 domain/port 的端口：持久化、读投影、外部存储（R2）、图像处理、防腐层委托
+- JPA 实体 ↔ 读视图（domain/model/read）的映射**手写**（如 `PromptMapper`），本项目无 MapStruct
 
-## 命名与注解
+## 包结构与命名（照 patra-catalog，`infra/adapter/` 下按能力分包）
 
 | 组件 | 命名 | 注解 | 位置 |
 |------|------|------|------|
-| 持久化端口实现 | `{Thing}Adapter` | `@Repository`（享数据层异常翻译） | `infra/` |
-| 非持久化能力实现 | `{Thing}Adapter` | `@Component` | `infra/` |
-| JPA 实体 | `{Entity}Entity` | `@Entity` | `infra/jpa/` |
-| Spring Data 仓储 | `{Entity}JpaRepository` | 无（接口） | `infra/jpa/` |
-| 共享映射 | `{Entity}Mapper` | 无（静态方法） | `infra/` |
+| 写侧持久化适配器（事务/锁） | `{Thing}Adapter` | `@Repository`（享数据层异常翻译） | `infra/adapter/persistence/` |
+| 读侧适配器（投影/统计） | `{Thing}Adapter` | `@Repository` 或 `@Component` | `infra/adapter/read/` |
+| 其他能力适配器 | `{Thing}Adapter` | `@Component` | `infra/adapter/{storage,thumbnail,…}/` |
+| JPA 实体 | `{Entity}Entity` | `@Entity` | `infra/adapter/persistence/entity/` |
+| Spring Data 仓储 | `{Entity}JpaRepository` | 无（接口） | `infra/adapter/persistence/dao/` |
+| 共享映射 | `{Entity}Mapper` | public 静态方法 | `infra/adapter/read/` |
 
 ## 事务
 
@@ -25,7 +26,7 @@ paths: snb-*/snb-*-infra/**/*.java
 
 ## 消费 sub2api 防腐层
 
-薄适配模式（`RechargeQueryAdapter` 为样板）：注入 starter 的读模型/客户端 → 把上游 DTO 映射为**本上下文 app 层 DTO** → 上下文互不感知 sub2api 细节。规范见 tech/sub2api.md。
+薄适配模式（`RechargeQueryAdapter` 为样板，位于 `infra/adapter/read/`）：注入 starter 的读模型/客户端 → 把上游 DTO 映射为**本上下文的读视图**（domain/model/read）→ 上下文互不感知 sub2api 细节。规范见 tech/sub2api.md。
 
 ## R2 / 外部凭据
 

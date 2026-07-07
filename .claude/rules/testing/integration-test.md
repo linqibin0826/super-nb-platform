@@ -13,7 +13,7 @@ paths: snb-*/snb-*-infra/**/src/test/**/*.java, snb-boot/**/src/test/**/*.java, 
 
 ## infra 测试样板（TestApp 模式）
 
-测试源里放最小装配类（**不叫 `*Test` 结尾**，命名 `{Context}InfraTestApp`），只挂被测适配器 + 假端口：
+测试源里放最小装配类（**不叫 `*Test` 结尾**，命名 `{Context}InfraTestApp`，与被测适配器同包，如 `infra/adapter/persistence/`），只挂被测适配器 + 假端口：
 
 ```java
 @SpringBootConfiguration

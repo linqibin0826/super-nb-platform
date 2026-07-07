@@ -1,2 +1,3 @@
-/// me.supernb.gallery.adapter
 package me.supernb.gallery.adapter;
+
+/// me.supernb.gallery.adapter

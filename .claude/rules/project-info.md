@@ -18,14 +18,14 @@
 ```
 snb-platform/
 ├── build-logic/            # 约定插件（各层依赖在插件里锁定）
-├── snb-common/             # 纯 web 横切（UnauthorizedException、令牌桶）
+├── snb-common/             # 纯 web 横切（UnauthorizedException）
 ├── snb-sub2api/            # sub2api 防腐层 starter（唯一知道 sub2api 细节的模块）
-├── snb-activity/
-│   ├── snb-activity-domain # 纯 Java 业务规则，零框架
-│   ├── snb-activity-app    # 用例编排 + 驱动端口定义
-│   ├── snb-activity-infra  # JPA 实体/端口实现/事务边界
-│   └── snb-activity-adapter# REST controller + DTO + Filter
-├── snb-gallery/            # 同上四模块
+├── snb-activity/           # 包组织照 patra-catalog（2026-07-07 验收意见③）
+│   ├── snb-activity-domain # model/(不变量) model/read/(读视图) port/(全部端口) exception/
+│   ├── snb-activity-app    # usecase/{子域}/{Handler, command/, dto/, query/}
+│   ├── snb-activity-infra  # adapter/{persistence(+entity,dao), read, …} 按能力分包
+│   └── snb-activity-adapter# rest/{Controller, request/, response/} + web/
+├── snb-gallery/            # 同上四模块（子域 prompt/interaction/generation）
 └── snb-boot/               # 唯一 @SpringBootApplication + application.yml + 守门测试
 ```
 

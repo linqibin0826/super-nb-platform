@@ -30,8 +30,8 @@ Domain + Infra
 ## 命名约定
 
 - 命令 `{Action}{Entity}Command`、处理器 `{Action}{Entity}Handler`(本仓现有:`PerformDraw`、`TogglePromptLike`、`TogglePromptFavorite`、`CreateGeneration`、`DeleteGeneration`)
-- 返回类型 R **优先复用既有类型**(领域结果 `DrawResult`、DTO `GalleryDto.LikeResult`),只在结果确属新形状时才立 `{Action}{Entity}Result`
-- 命令是顶级类型(不塞进 `{Context}Dto` 容器);record 的 equals 让测试用精确匹配断言派发参数
+- 返回类型 R **优先复用既有类型**(领域结果 `DrawResult`、写结果 DTO `LikeResult`),只在结果确属新形状时才立 `{Action}{Entity}Result`
+- 位置:命令在 `app/usecase/{子域}/command/`,写结果 DTO 在同子域 `dto/`;record 的 equals 让测试用精确匹配断言派发参数
 
 ## Void 返回
 

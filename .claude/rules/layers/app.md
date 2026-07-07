@@ -6,18 +6,17 @@ paths: snb-*/snb-*-app/**/*.java
 
 ## 核心职责
 
-- 用例编排：校验 → 调端口 → 组装 DTO
-- **驱动端口定义**：本上下文需要的外部能力全部在这里定义接口（与 patra 的差异——patra 端口在 domain）。端口按用例需求定形状（如 activity 的 `RechargeQueryPort` 说"资格金额"，不说原始订单行），实现放 infra
+- 用例编排：校验 → 调端口（定义在 domain/port，见 layers/domain.md）→ 组装读视图/写结果
 
-## 包与命名
+## 包结构（照 patra-catalog，按子域分包）
 
-- 平包 `me.supernb.{context}.app`，无子包仪式
-- **写路径（经 CommandBus，规范见 tech/commandbus.md）**：命令 `{Action}{Entity}Command`（record，实现 `Command<R>`，顶级类型）+ 处理器 `{Action}{Entity}Handler`（实现 `CommandHandler<C,R>`，如 `PerformDrawHandler`、`CreateGenerationHandler`）
-- **读路径（不走 bus，被 controller 直接注入）**，两式跟随所在上下文既有风格：
-  - 动作型查询用例 `{Action}{...}UseCase`（activity 风格：`GetPoolUseCase`、`GetMyDrawsUseCase`）
-  - 内聚查询服务 `{Thing}Queries`（gallery 风格：`PromptQueries`、`InteractionQueries`、`GenerationQueries`）
-- 端口：外部能力 `{Thing}Port`（`PoolPort`、`ImageStoragePort`）；持久化 `{Entity}Repository`（`PromptRepository`）
-- DTO：聚在 `{Context}Dto` 容器类里，全部 record；命令不进容器类
+- `app/usecase/{子域}/` — 写处理器 `{Action}{Entity}Handler`（实现 `CommandHandler<C,R>`，如 `PerformDrawHandler`、`CreateGenerationHandler`）
+- `app/usecase/{子域}/command/` — 命令 `{Action}{Entity}Command`（record，实现 `Command<R>`）+ 命令自有载体（`ImageBytes`、`RefBytes`）
+- `app/usecase/{子域}/dto/` — **写结果** record（`LikeResult`、`FavResult`、`Created`）
+- `app/usecase/{子域}/query/` — 查询用例，两式跟随所在上下文既有风格：动作型 `{Action}{...}UseCase`（activity）或内聚服务 `{Thing}Queries`（gallery）
+- 现有子域：activity = `draw`、`campaign`；gallery = `prompt`、`interaction`、`generation`
+- **读视图 record 在 domain/model/read**（不在 app）；app 没有 DTO 容器类
+- 写经 CommandBus、读被 controller 直接注入（规范见 tech/commandbus.md）
 - Bean 注解：`@Service`（Handler 与查询用例同）
 
 ## 事务（与 patra 的差异）

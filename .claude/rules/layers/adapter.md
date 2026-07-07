@@ -9,6 +9,13 @@ paths: snb-*/snb-*-adapter/**/*.java
 - 入站适配：每上下文单 `@RestController`（`{Context}Controller`），路径 `/{context}/v1/*`
 - 协议转换：HTTP 参数/JSON → **写操作组命令经 `CommandBus.handle()` 派发，读操作调注入的查询用例** → 响应 DTO（规范见 tech/commandbus.md）
 
+## 包结构（照 patra-catalog）
+
+- `adapter/rest/` — Controller
+- `adapter/rest/request/` — 请求 DTO record（一文件一类；请求自有载体可嵌套，如 `CreateGenerationRequest.ImagePayload`）
+- `adapter/rest/response/` — 响应 DTO record（`DrawResponse`、`DeleteResponse`）
+- `adapter/web/` — 上下文级 web 横切（`RateLimitFilter`、`TokenBucket`）
+
 ## 鉴权
 
 - 需登录的端点在方法签名声明 `@CurrentUser UserProfile user` 即完成鉴权（解析器在 snb-sub2api starter：Authorization → introspect → active 终端用户，否则 401 problem+json）
@@ -17,7 +24,7 @@ paths: snb-*/snb-*-adapter/**/*.java
 
 ## DTO
 
-- 请求/响应 DTO 用 record 定义在 adapter 模块，禁止透出领域对象 / JPA 实体
+- 请求/响应 DTO 用 record 定义在 `rest/request/`、`rest/response/`，禁止透出 JPA 实体；读端点直接返回 domain/model/read 的读视图（本平台约定：读视图即对外契约的中间形态）
 - 分页响应统一 `{items, total}` 形状
 
 ## 横切 Filter

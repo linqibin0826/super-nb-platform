@@ -3,10 +3,10 @@ package me.supernb.boot;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.core.importer.ImportOption;
-import dev.linqibin.commons.cqrs.CommandHandler;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
+import dev.linqibin.commons.cqrs.CommandHandler;
 
 /// 六边形依赖边界(编译产物级)。domain 纯净、app 不反向依赖 infra/adapter。
 @AnalyzeClasses(packages = "me.supernb", importOptions = ImportOption.DoNotIncludeTests.class)

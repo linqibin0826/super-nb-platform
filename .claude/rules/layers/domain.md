@@ -7,12 +7,16 @@ paths: snb-*/snb-*-domain/**/*.java
 ## 核心原则
 
 - **纯 Java**：禁止依赖 Spring / JPA / Hibernate / spring-data（ArchUnit 门禁强制）
-- **刻意薄**（与 patra 的差异）：本平台聚合生命周期简单，domain 只放业务规则与不变量的**纯计算**（如 `DrawEligibility`、`Campaign` 状态判断、`SortMode`），不搞聚合根基类 / 版本锁 / 领域事件那套仪式
+- **刻意薄**（与 patra 的差异）：本平台聚合生命周期简单，domain 只放业务规则与不变量的**纯计算**（如 `DrawEligibility`、`Campaign` 状态判断），不搞聚合根基类 / 版本锁 / 领域事件那套仪式
 - record 优先；无 Lombok 需求
 
-## 端口位置（与 patra 的差异）
+## 包结构（照 patra-catalog，2026-07-07 验收意见③）
 
-patra 端口定义在 domain；**本平台端口定义在 app 层**——domain 薄，端口形状由用例需求决定（见 layers/app.md）。domain 不定义接口。
+- `domain/model/` — 业务规则与不变量的纯计算（`Campaign`、`DrawResult`、`DrawEligibility`）
+- `domain/model/read/` — **读侧视图 record，一文件一类**（`LeaderEntry`、`PromptSummary`、`Page`…）：不属于聚合、无业务逻辑，只承载查询数据（patra Read Model 同款）
+- `domain/model/enums/` — 枚举（`SortMode`）
+- `domain/port/` — **全部端口**（仓储 `{Entity}Repository` + 外部能力 `{Thing}Port`，纯接口）：端口形状仍由用例需求决定（说「资格金额」，不说原始订单行），实现在 infra
+- `domain/exception/` — 业务异常
 
 ## 异常
 
