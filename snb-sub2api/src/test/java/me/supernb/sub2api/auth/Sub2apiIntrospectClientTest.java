@@ -29,7 +29,7 @@ class Sub2apiIntrospectClientTest {
 
         assertThat(p).isPresent();
         assertThat(p.get().id()).isEqualTo(7L);
-        assertThat(p.get().isActiveUser()).isTrue();
+        assertThat(p.get().isActiveAccount()).isTrue();
         server.verify();
     }
 
@@ -44,7 +44,11 @@ class Sub2apiIntrospectClientTest {
         UserProfile p = new Sub2apiIntrospectClient(builder.build(), 30).introspect("Bearer X").orElseThrow();
 
         assertThat(p.id()).isEqualTo(9L);
-        assertThat(p.isActiveUser()).isFalse(); // admin 不是终端用户
+        // admin 也是可用账号(对齐旧 gallery-svc:站长生成历史记在 admin 名下,拒了就是割接回归);
+        // 充值榜排除 admin 属读模型业务口径,另有测试钉住
+        assertThat(p.isActiveAccount()).isTrue();
+        assertThat(new UserProfile(9, "admin", "banned").isActiveAccount()).isFalse();
+        assertThat(new UserProfile(9, "viewer", "active").isActiveAccount()).isFalse();
     }
 
     @Test

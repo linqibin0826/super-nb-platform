@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /// 活动中心 REST 入口。公开端点(榜单/流水/奖池/近期中奖)免登录;
 /// status / draw / my-draws 需登录——@CurrentUser 由 sub2api starter 的解析器完成
-/// introspect 校验(active 终端用户,否则 401)。写操作经 CommandBus 派发,读操作直接注入查询用例。
+/// introspect 校验(active 的 user/admin 账号,否则 401)。写操作经 CommandBus 派发,读操作直接注入查询用例。
 @RestController
 @RequestMapping("/activity/v1")
 public class ActivityController {

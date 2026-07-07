@@ -18,7 +18,7 @@ paths: snb-*/snb-*-adapter/**/*.java
 
 ## 鉴权
 
-- 需登录的端点在方法签名声明 `@CurrentUser UserProfile user` 即完成鉴权（解析器在 snb-sub2api starter：Authorization → introspect → active 终端用户，否则 401 problem+json）
+- 需登录的端点在方法签名声明 `@CurrentUser UserProfile user` 即完成鉴权（解析器在 snb-sub2api starter：Authorization → introspect → active 的 user/admin 账号，否则 401 problem+json）
 - 公开端点不加该参数，不读 Authorization 头
 - `@RequestBody` 参数写在 `@CurrentUser` **前面**，保持"坏 JSON 先 400、再谈 401"的语义
 

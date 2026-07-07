@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /// 灵感库 REST 入口。prompts / categories 公开;互动与生成历史需登录——
-/// @CurrentUser 由 sub2api starter 的解析器完成 introspect 校验(active 终端用户,否则 401)。
+/// @CurrentUser 由 sub2api starter 的解析器完成 introspect 校验(active 的 user/admin 账号,否则 401)。
 /// 写操作经 CommandBus 派发,读操作直接注入查询用例。
 @RestController
 @RequestMapping("/gallery/v1")
