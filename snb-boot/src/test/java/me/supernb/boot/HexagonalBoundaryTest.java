@@ -49,9 +49,11 @@ class HexagonalBoundaryTest {
             .should().dependOnClassesThat().implement(CommandHandler.class)
             .as("adapter 写路径只注入 CommandBus,禁止直接依赖 CommandHandler 实现");
 
+    // api 模块当前是空壳(仅 package-info),allowEmptyShould 让门禁空转;契约类出现后自动生效
     @ArchTest
     static final ArchRule apiIsContractOnly = noClasses()
             .that().resideInAPackage("me.supernb..api..")
             .should().dependOnClassesThat().resideInAnyPackage("..domain..", "..app..", "..infra..", "..adapter..")
+            .allowEmptyShould(true)
             .as("api 契约模块不依赖任何实现层(domain/app/infra/adapter)");
 }
