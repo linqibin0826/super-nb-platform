@@ -29,5 +29,13 @@ jobs:
       - name: Bootstrap linqibin-commons from patra
         if: steps.cache-commons.outputs.cache-hit != 'true'
         run: bash scripts/bootstrap-commons.sh
+      # Build Cache:改哪个模块只重跑哪个的测试,未改模块从 cache 恢复"已通过"(key 用 sha 累积、前缀 restore 最近)
+      - name: 缓存 Gradle Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-buildcache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            gradle-buildcache-${{ runner.os }}-
       - name: Build & Test
         run: ./gradlew build --console=plain

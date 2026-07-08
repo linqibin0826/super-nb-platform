@@ -40,6 +40,15 @@ jobs:
         if: steps.cache-commons.outputs.cache-hit != 'true'
         run: bash scripts/bootstrap-commons.sh
 
+      # Build Cache:改哪个模块只重跑哪个的测试,未改模块从 cache 恢复"已通过"(key 用 sha 累积、前缀 restore 最近)
+      - name: 缓存 Gradle Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-buildcache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            gradle-buildcache-${{ runner.os }}-
+
       # 完成定义同本地:编译 + 全部测试(Testcontainers 用 runner 自带 Docker)+ ArchUnit 门禁
       - name: build
         run: ./gradlew build --no-daemon
