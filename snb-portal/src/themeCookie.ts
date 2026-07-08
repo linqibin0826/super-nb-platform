@@ -3,6 +3,8 @@
  *   fork utils/themeCookie.ts ↔ help .vitepress/{config.mts, theme/Layout.vue} ↔ activity activity.html
  * 语义：'dark'/'light'=显式选择；cookie 缺席=跟随系统。studio 是独立 origin，靠 cookie + 聚焦对账跟随主站/活动/指南。
  */
+import { PARENT_DOMAIN, isParentDomainHost } from './config'
+
 export type Theme = 'dark' | 'light'
 
 const THEME_COOKIE_NAME = 'snb_theme'
@@ -10,8 +12,7 @@ const MAX_AGE = 365 * 24 * 3600
 
 /** 生产（*.super-nb.me）种父域 cookie 全子域共享；本地开发落 host-only。与 auth cookie domainAttr 同款。 */
 function domainAttr(): string {
-  const h = location.hostname
-  return h === 'super-nb.me' || h.endsWith('.super-nb.me') ? '; Domain=.super-nb.me' : ''
+  return isParentDomainHost(location.hostname) ? `; Domain=.${PARENT_DOMAIN}` : ''
 }
 
 export function readThemeCookie(): Theme | null {

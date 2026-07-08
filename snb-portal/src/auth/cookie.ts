@@ -9,6 +9,8 @@
 // 无法区分，后者要做 localStorage→cookie 的迁移镜像，会把刚登出的会话复活。
 // 服务端撤销 refresh token 才是真登出，墓碑只负责让各源的 UI 尽快跟上。
 
+import { PARENT_DOMAIN, isParentDomainHost } from '../config'
+
 export interface AuthCookieSession {
   v: 1
   /** access token（JWT） */
@@ -39,8 +41,7 @@ export function isTombstone(v: AuthCookieValue): v is AuthCookieTombstone {
 
 /** 生产（*.super-nb.me）种父域 cookie 全子域共享；本地开发/测试落 host-only */
 function domainAttr(): string {
-  const h = location.hostname
-  return h === 'super-nb.me' || h.endsWith('.super-nb.me') ? '; Domain=.super-nb.me' : ''
+  return isParentDomainHost(location.hostname) ? `; Domain=.${PARENT_DOMAIN}` : ''
 }
 
 export function readAuthCookie(): AuthCookieValue | null {
