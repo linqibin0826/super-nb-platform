@@ -22,8 +22,22 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
+          cache: gradle
+
+      - name: 读 patraRef(commons 缓存键)
+        id: patra
+        run: echo "ref=$(grep '^patraRef=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+
+      # patraRef 钉死(commit sha),产物不变即复用,免每次 clone+编译 patra(占了原耗时最大头)
+      - name: 缓存 commons 产物(mavenLocal)
+        id: cache-commons
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/dev/linqibin
+          key: commons-${{ runner.os }}-${{ steps.patra.outputs.ref }}
 
       - name: bootstrap commons(patra@patraRef → mavenLocal)
+        if: steps.cache-commons.outputs.cache-hit != 'true'
         run: bash scripts/bootstrap-commons.sh
 
       # 完成定义同本地:编译 + 全部测试(Testcontainers 用 runner 自带 Docker)+ ArchUnit 门禁

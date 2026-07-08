@@ -15,7 +15,19 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
+          cache: gradle
+      - name: 读 patraRef(commons 缓存键)
+        id: patra
+        run: echo "ref=$(grep '^patraRef=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      # patraRef 钉死,产物不变即复用,免每次 clone+编译 patra(与 release.yml 同 key 跨 workflow 共享)
+      - name: 缓存 commons 产物(mavenLocal)
+        id: cache-commons
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/dev/linqibin
+          key: commons-${{ runner.os }}-${{ steps.patra.outputs.ref }}
       - name: Bootstrap linqibin-commons from patra
+        if: steps.cache-commons.outputs.cache-hit != 'true'
         run: bash scripts/bootstrap-commons.sh
       - name: Build & Test
         run: ./gradlew build --console=plain
