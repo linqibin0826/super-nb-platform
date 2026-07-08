@@ -3,8 +3,8 @@ import react from '@vitejs/plugin-react'
 import fs from 'node:fs'
 import path from 'node:path'
 
-// 本地 dev 直读同级 super-nb-gallery 仓库（生产由 Caddy /playground-gallery/* 静态路由提供）
-const GALLERY_DIR = path.resolve(__dirname, '../super-nb-gallery')
+// 本地 dev 直读 super-nb/ 下的 super-nb-gallery 仓库（生产由 Caddy /playground-gallery/* 静态路由提供）
+const GALLERY_DIR = path.resolve(__dirname, '../../super-nb-gallery')
 const MIME: Record<string, string> = {
   '.json': 'application/json',
   '.webp': 'image/webp',
@@ -34,7 +34,7 @@ function devGallery(): Plugin {
 // 生产形态由 Caddy 负责静态页与反代，这段只服务本地测试环境。
 const ACTIVITY_HTML =
   process.env.ACTIVITY_HTML ||
-  path.resolve(__dirname, '../ai-relay/deployment/files/activity-svc/static/activity.html')
+  path.resolve(__dirname, '../../ai-relay/deployment/files/activity-svc/static/activity.html')
 
 function devActivity(): Plugin {
   return {
