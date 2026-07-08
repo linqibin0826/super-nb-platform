@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#17110D" />
+    <title>创作工坊 · SUPER NB</title>
+    <meta name="description" content="SUPER·NB 创作工坊：描述画面、选好规格，用 gpt-image-2 按官方价生成图片，逛灵感库找参考，生成的每一张都归你。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SUPER·NB 创作工坊" />
+    <meta property="og:title" content="创作工坊 · SUPER NB" />
+    <meta property="og:description" content="描述画面、选好规格，按官方价生成图片，逛灵感库找参考。" />
+    <meta property="og:url" content="https://studio.super-nb.me/" />
+    <meta property="og:image" content="https://studio.super-nb.me/og.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <link rel="preconnect" href="https://media.super-nb.me" crossorigin />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // 首屏预取：与主 JS 并行发起灵感库首页请求，主逻辑就绪时直接消费，省一跳串行等待。
+      // 查询串须与 src/lib/galleryApi.ts 的 buildPromptsQuery 默认输出逐字节一致（page=1&pageSize=24）。
+      window.__SNB_PREFETCH__ = {
+        prompts: fetch('/gallery/v1/prompts?page=1&pageSize=24').then(function (r) { return r.ok ? r.json() : null }).catch(function () { return null }),
+        categories: fetch('/gallery/v1/categories').then(function (r) { return r.ok ? r.json() : null }).catch(function () { return null }),
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

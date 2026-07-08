@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /$
+Allow: /assets/
+Disallow: /gallery/api/
+Sitemap: https://studio.super-nb.me/
