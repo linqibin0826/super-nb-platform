@@ -54,16 +54,11 @@ function devActivity(): Plugin {
 export default defineConfig({
   // 路径部署（api.super-nb.me/studio）默认 /studio/；子域名部署构建时 STUDIO_BASE=/ 覆盖
   base: process.env.STUDIO_BASE || '/studio/',
-  // ⚠️ @super-nb/ui 走 link: 联包，它的 react 会解析到自己 node_modules 的物理副本——
-  // 生产 Rollup 会把两份 React 都打进去（双实例 → hooks dispatcher 为 null，白屏 useId 崩），
-  // dev 有 optimizeDeps 兜底看不出来。dedupe 强制全部归到本仓副本。
-  resolve: { dedupe: ['react', 'react-dom'] },
   build: {
     rollupOptions: {
       output: {
         // vendor 分包：react/motion 各自独立，发版只业务 chunk 变哈希，回头客命中长缓存。
-        // @super-nb/ui 不显式分组：它是 link: 源码包、Rollup 按引用自然归并，强分组反而可能与
-        // dedupe 后的 react 引用纠缠（双实例白屏红线）。
+        // 设计系统组件已 vendor 进 src/ui（非 node_modules 包），自然随业务 chunk，无需显式分组。
         manualChunks(id) {
           if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react'
           if (/node_modules\/motion\//.test(id)) return 'motion'

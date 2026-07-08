@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent as ReactDragEvent } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { Button } from '@super-nb/ui'
+import { Button } from '../ui'
 import { RefPicker } from './RefPicker'
 import { RefStrip } from './RefStrip'
 import { MAX_REFS } from './useRefImages'

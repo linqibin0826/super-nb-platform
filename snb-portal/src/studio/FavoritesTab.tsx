@@ -1,7 +1,7 @@
 // 我的收藏：登录用户的灵感库收藏清单（收藏的是灵感条目/提示词，服务端 gallery 库）。
 // 未登录 → 空态引导登录；登录 → 拉 /me/favorites 瀑布流（分页续读）。桌面 hover 浮层 + 触屏抽屉兜底。
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, Button, MasonryCard, MasonryGrid, Skeleton } from '@super-nb/ui'
+import { Alert, Button, MasonryCard, MasonryGrid, Skeleton } from '../ui'
 import { fetchMyFavorites, fetchPromptDetail, type PromptListItem } from '../lib/galleryApi'
 import { useInteractions } from './useInteractions'
 import { useAuthUser } from '../auth/useAuth'

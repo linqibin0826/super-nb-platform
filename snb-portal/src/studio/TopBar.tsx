@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AppHeader, ThemeSwitch, type SiteNavItem } from '@super-nb/ui'
+import { AppHeader, ThemeSwitch, type SiteNavItem } from '../ui'
 import { useAuthUser } from '../auth/useAuth'
 import { apiFetch, loginUrl } from '../auth/apiFetch'
 import { t } from '../i18n'

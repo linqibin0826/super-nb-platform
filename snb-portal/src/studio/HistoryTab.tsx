@@ -1,6 +1,6 @@
 // 按 Claude Design 行卡 + 「创作详情」Modal；数据改走服务端 generationsApi（含 presigned URL）。
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Button, Modal, QuoteLine } from '@super-nb/ui'
+import { Alert, Button, Modal, QuoteLine } from '../ui'
 import {
   listGenerations,
   getGeneration,

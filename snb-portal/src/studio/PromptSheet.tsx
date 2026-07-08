@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, useReducedMotion } from 'motion/react'
-import { Button } from '@super-nb/ui'
+import { Button } from '../ui'
 import { fetchPromptDetail, type PromptListItem } from '../lib/galleryApi'
 import { t } from '../i18n'
 

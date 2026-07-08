@@ -1,0 +1,31 @@
+/* super-nb 品牌语义槽位：:root = editorial 浅色，.dark = 夜色余晖暗色。
+   暗色值蒸馏自 learn custom.css（夜色面层/发丝线/玻璃），浅色值蒸馏自 fork（paper/暖褐阴影）。
+   将来重调暗色 = 只改 .dark 块。三元组变量配 tailwind-preset 的 rgb(var() / <alpha-value>)。 */
+:root {
+  --snb-bg: 240 238 230;        /* paper #F0EEE6 */
+  --snb-panel: 250 249 245;     /* paper-card #FAF9F5 */
+  --snb-elv: 255 255 255;
+  --snb-t1: 17 13 9;            /* dark-950 #110D09 */
+  --snb-t2: 59 51 44;           /* dark-700 #3B332C */
+  --snb-t3: 115 99 86;          /* dark-500 #736356 */
+  --snb-hairline: rgba(0, 0, 0, 0.07);
+  --snb-hairline-strong: rgba(0, 0, 0, 0.12);
+  --snb-glass-bg: rgba(255, 255, 255, 0.7);
+  --snb-glass-border: rgba(255, 255, 255, 0.2);
+  --snb-shadow-card: 0 1px 3px rgba(70, 50, 38, 0.05), 0 1px 2px rgba(70, 50, 38, 0.07);
+  --snb-shadow-card-hover: 0 12px 40px rgba(70, 50, 38, 0.12);
+}
+.dark {
+  --snb-bg: 23 17 13;           /* night #17110D */
+  --snb-panel: 30 22 17;        /* #1E1611（learn night-panel） */
+  --snb-elv: 42 32 24;          /* #2A2018（learn night-elv） */
+  --snb-t1: 240 234 228;        /* #F0EAE4（learn 暗色主文字） */
+  --snb-t2: 194 179 165;        /* #C2B3A5 */
+  --snb-t3: 166 149 138;        /* #A6958A */
+  --snb-hairline: rgba(240, 234, 228, 0.14);
+  --snb-hairline-strong: rgba(255, 255, 255, 0.2);
+  --snb-glass-bg: rgba(38, 28, 21, 0.45);
+  --snb-glass-border: rgba(255, 236, 224, 0.2);
+  --snb-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --snb-shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.45);
+}

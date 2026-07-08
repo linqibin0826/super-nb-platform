@@ -12,7 +12,7 @@ import {
   MasonryGrid,
   Skeleton,
   type MasonryCardProps,
-} from '@super-nb/ui'
+} from '../ui'
 import {
   categoryName,
   fetchCategories,

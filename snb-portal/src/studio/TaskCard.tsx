@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
-import { Alert, Button, MasonryCard } from '@super-nb/ui'
+import { Alert, Button, MasonryCard } from '../ui'
 // 懒加载：余烬画布只在展开的 running 卡挂载，收起的多任务不堆 canvas
 const PaintingCanvas = lazy(() => import('./PaintingCanvas').then((m) => ({ default: m.PaintingCanvas })))
 import { t } from '../i18n'

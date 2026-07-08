@@ -11,7 +11,6 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@super-nb/ui": "link:../../super-nb-ui",
     "canvas-confetti": "^1.9.4",
     "motion": "^12.42.2",
     "react": "^19.2.7",

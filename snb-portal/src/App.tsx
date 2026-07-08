@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence } from 'motion/react'
-import { AmbientBackground, Lightbox, Tabs, ThemeScope } from '@super-nb/ui'
+import { AmbientBackground, Lightbox, Tabs, ThemeScope } from './ui'
 import { TopBar } from './studio/TopBar'
 import { Composer } from './studio/Composer'
 import { ResultsTray } from './studio/ResultsTray'
