@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
@@ -80,5 +81,39 @@ class Sub2apiIntrospectClientTest {
     @Test
     void blankTokenEmpty() {
         assertThat(new Sub2apiIntrospectClient(RestClient.builder().build(), 30).introspect("  ")).isEmpty();
+    }
+
+    @Test
+    void cacheStaysBoundedUnderManyDistinctTokens() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("http://sub2api");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        server.expect(ExpectedCount.manyTimes(), requestTo("http://sub2api/api/v1/user/profile"))
+                .andRespond(withSuccess(
+                        "{\"data\":{\"id\":1,\"role\":\"user\",\"status\":\"active\"}}",
+                        MediaType.APPLICATION_JSON));
+
+        // 上限 4、TTL 300s(窗口内不过期):塞 20 个不同 token,缓存不该随 token 数无限膨胀
+        Sub2apiIntrospectClient client = new Sub2apiIntrospectClient(builder.build(), 300, 4);
+        for (int i = 0; i < 20; i++) {
+            assertThat(client.introspect("Bearer t" + i)).isPresent();
+        }
+        assertThat(client.cacheSize()).isLessThanOrEqualTo(4);
+    }
+
+    @Test
+    void expiredEntriesArePurgedNotAccumulated() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("http://sub2api");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        server.expect(ExpectedCount.manyTimes(), requestTo("http://sub2api/api/v1/user/profile"))
+                .andRespond(withSuccess(
+                        "{\"data\":{\"id\":1,\"role\":\"user\",\"status\":\"active\"}}",
+                        MediaType.APPLICATION_JSON));
+
+        // TTL=0:每个条目落库即过期。塞 20 个不同 token,过期条目应被清理而非无限堆积
+        Sub2apiIntrospectClient client = new Sub2apiIntrospectClient(builder.build(), 0, 4);
+        for (int i = 0; i < 20; i++) {
+            client.introspect("Bearer t" + i);
+        }
+        assertThat(client.cacheSize()).isLessThanOrEqualTo(4);
     }
 }
