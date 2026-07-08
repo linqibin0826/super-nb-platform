@@ -4,6 +4,19 @@
 
 **super-nb-platform** — super-nb 业务自写后端统一平台。单体多模块 DDD（六边形架构），照 [patra](https://github.com/linqibin0826/patra) 架构，复用其 `linqibin-commons` 基建。当前收编 **activity**（活动中心）与 **gallery**（灵感库）两个限界上下文；未来新后端业务一律以新上下文进本平台，不再起散装服务。
 
+## 系统上下文（这后端在哪、上下游是谁）
+
+本平台是 super-nb 中转站系统里的**自写业务后端**，不是全部。后续开发主要集中在本仓，先记住系统全景：
+
+- **上游/主站**：**sub2api**（Go 开源 fork）——账号/鉴权/充值/上游代理的真源；本平台借它的鉴权（introspect）与充值只读数据，走 `snb-sub2api` 防腐层 starter（见 `rules/tech/sub2api.md`）。
+- **本平台**：对外 `/activity/v1`（抽奖/充值榜/奖池） + `/gallery/v1`（提示词库/点赞收藏/生成历史）。
+- **前端**（都在别的仓、独立部署，浏览器经**同源反代**访问本平台，无 CORS）：控制台（在 sub2api fork，根域）、studio SPA（`studio.super-nb.me`）、learn 文档站（`help.super-nb.me`）、活动页（静态）。
+- **图片**：R2（S3 协议对象存储），浏览器直连、字节不经本平台。
+
+完整架构全景见 [ARCHITECTURE.md](ARCHITECTURE.md) §1「在整个 super-nb 系统里的位置」。
+
+⚠️ **仓库将开源**：部署拓扑、服务器地址、运维参数、收款/成本等敏感背景**不进本仓**，只活在私有资料库（ai-relay）；本仓只留代码与公开安全的架构叙述（见下方安全红线）。
+
 ## 角色定位
 
 系统架构师 / 高级 Java 开发者 / TDD 专家，精通六边形架构 + DDD + TDD。

@@ -17,6 +17,27 @@ super-nb-platform 是 super-nb 中转站生意的自写后端统一平台:一个
 
 `linqibin-commons` 不在 Maven Central,`scripts/bootstrap-commons.sh` 按 `gradle.properties` 里 `patraRef` 钉的 commit,从公开 patra 仓库现场 build 出来发布到 mavenLocal——这是 CI 和本地开发都要先跑一次的前置步骤,不是可选项。
 
+### 在整个 super-nb 系统里的位置
+
+super-nb-platform 只是整个 super-nb 系统里的**一个后端**,不是全部。把镜头拉远,系统由这几块组成(下面是逻辑关系,不含部署细节):
+
+**后端(两条腿)**
+- **sub2api**(Go,开源 fork)——中转站主站,管用户账号、鉴权、充值、上游 API 代理与计费。它是整个系统里"账号与钱"的真源;本平台向它借鉴权与充值数据,通过 `snb-sub2api` 防腐层(第 7 节)。
+- **super-nb-platform**(本仓,Java)——自写业务后端,对外暴露 `/activity/v1/*` 与 `/gallery/v1/*` 两组 API,承载 activity 与 gallery 两个上下文。
+
+**前端(各自独立的代码库与部署,浏览器侧经同源反向代理访问后端,无 CORS)**
+- **控制台**——中转站用户后台(登录/充值/用量),在 sub2api fork 内,根域。
+- **studio**——独立的创作工坊 SPA(`studio.super-nb.me`),生图与画布,消费 `/gallery/v1`。
+- **learn**——使用指南文档站(`help.super-nb.me`),纯静态。
+- **活动页**——静态页,消费 `/activity/v1`。
+
+**共享基础设施**
+- 图片/媒体走 **R2**(S3 协议对象存储,CDN `media.super-nb.me`):首页视频、灵感库预览图、studio 生成历史的私有图(presigned URL,浏览器直连、字节不经本平台)。
+
+**本平台在这张图里的边界**:只负责 activity/gallery 的业务逻辑与数据;账号/鉴权/充值**不归本平台**(借自 sub2api);前端**不在本仓**(独立部署);图片字节**不经本平台**(签发 presigned URL 后浏览器直连 R2)。
+
+> 部署拓扑、服务器地址、运维参数、收款/成本等敏感背景**不在本仓库**——本仓面向开源,只留代码与公开安全的架构叙述;那些落在私有运维/资料仓库。见第 12 节开源安全红线。
+
 ## 2. 六边形分层与依赖方向
 
 标准 ports-and-adapters,每个上下文五个模块:
