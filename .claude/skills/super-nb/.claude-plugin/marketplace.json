@@ -1,0 +1,20 @@
+{
+  "name": "super-nb",
+  "description": "super-nb-platform 项目专属 Claude Code marketplace:vendored 在仓库内、随 git 一起分发（单插件）",
+  "owner": {
+    "name": "linqibin0826",
+    "url": "https://github.com/linqibin0826"
+  },
+  "plugins": [
+    {
+      "name": "super-nb",
+      "description": "super-nb-platform 项目专属能力 plugin：14 个工程方法论 skills（brainstorming / writing-plans / executing-plans / subagent-driven-development / dispatching-parallel-agents / test-driven-development / systematic-debugging / verification-before-completion / requesting-code-review / receiving-code-review / finishing-a-development-branch / using-git-worktrees / using-superpowers / release-planning）+ SessionStart hook，由 patra plugin 精简并按六边形架构（Java 25 / Spring Boot 4 / Gradle 9.5 多模块单体，activity + gallery 限界上下文）深度定制。",
+      "version": "0.1.0",
+      "source": "./",
+      "author": {
+        "name": "linqibin0826",
+        "url": "https://github.com/linqibin0826"
+      }
+    }
+  ]
+}
