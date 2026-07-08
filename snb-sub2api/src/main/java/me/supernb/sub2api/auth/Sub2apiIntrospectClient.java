@@ -24,7 +24,7 @@ public class Sub2apiIntrospectClient {
     }
 
     /// 转发 Authorization 头验证身份,authorizationHeader 形如 `"Bearer xxx"`;
-    /// 空值/无效凭证/请求失败一律返回 empty,该结果(含失败)按类文档所述 TTL 一并缓存。
+    /// 空值直接返回 empty,不经过缓存;无效凭证/请求失败得到的 empty 结果会按类文档所述 TTL 写入负缓存。
     public Optional<UserProfile> introspect(String authorizationHeader) {
         if (authorizationHeader == null || authorizationHeader.isBlank()) {
             return Optional.empty();

@@ -6,8 +6,8 @@ import me.supernb.gallery.domain.model.read.MyInteractions;
 import me.supernb.gallery.domain.model.read.Page;
 import me.supernb.gallery.domain.model.read.PromptSummary;
 
-/// 点赞/收藏仓储端口(gallery 库):成员关系(赞/藏)与反规范化计数(±1)的读写,
-/// toggle 语义幂等,只认状态为 published 的提示词。
+/// 点赞/收藏仓储端口(gallery 库):成员关系(赞/藏)与反规范化计数(±1)的读写,toggle 语义幂等;
+/// toggle 与 myFavorites 只认状态为 published 的提示词,myInteractions 是纯成员表回填,不重新校验提示词当前状态。
 public interface InteractionRepository {
 
     /// 点赞开关:on=true 建立点赞、false 取消,返回最新点赞数;目标不存在或未发布 → empty(由用例转 404)。

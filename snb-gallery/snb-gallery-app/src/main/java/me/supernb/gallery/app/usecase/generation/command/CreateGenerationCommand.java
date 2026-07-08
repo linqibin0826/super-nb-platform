@@ -16,13 +16,13 @@ import me.supernb.gallery.app.usecase.generation.dto.Created;
 /// @param n            出图张数
 /// @param quality      画质档
 /// @param status       任务终态:`done` | `error`
-/// @param cost         本次消耗额度(USD 名义计价)
+/// @param cost         本次消耗额度(USD 名义计价),可空
 /// @param elapsedMs    生成耗时毫秒
 /// @param groupName    计费分组名
-/// @param keyId        使用的 API Key id
+/// @param keyId        使用的 API Key id,可空
 /// @param error        失败原因(成功为 NULL)
-/// @param outputImages 输出图字节列表(base64 已由 adapter 解码)
-/// @param refImages    参考图字节列表(base64 已由 adapter 解码)
+/// @param outputImages 输出图字节列表(base64 已由 adapter 解码),可为 null(按空列表处理)
+/// @param refImages    参考图字节列表(base64 已由 adapter 解码),可为 null(按空列表处理)
 public record CreateGenerationCommand(
         long userId, String prompt, String size, int n, String quality, String status,
         Double cost, int elapsedMs, String groupName, Long keyId, String error,

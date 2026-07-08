@@ -182,8 +182,9 @@ public class GalleryController {
         return Math.min(48, Math.max(1, pageSize));
     }
 
-    /// 解析逗号分隔的 id 字符串:非 1~19 位纯数字的片段直接跳过(不抛异常),
-    /// 累计满 100 个即停止扫描,不再处理输入里剩余的部分——防御 `ids` 查询参数被喂超长串。
+    /// 解析逗号分隔的 id 字符串:非 1~19 位纯数字的片段直接跳过(不抛异常);
+    /// 一旦收集满 100 个合法 id 就提前退出循环,但这个上限只对合法 id 计数生效——
+    /// `split(",")` 本身及跳过非法片段的扫描不受此约束,纯垃圾片段撑起的超长串仍会被完整遍历。
     private static List<Long> parseIds(String ids) {
         List<Long> result = new ArrayList<>();
         for (String part : ids.split(",")) {

@@ -1,6 +1,6 @@
 # super-nb-platform
 
-super-nb-platform 是 AI API 中转站 super-nb 的自写后端统一平台:一个部署单元(单体),内部按限界上下文(bounded context)与六边形架构(hexagonal / ports-and-adapters)+ DDD 分层。架构照 [patra](https://github.com/linqibin0826/patra)(同一作者的另一个项目)落地,复用其 `linqibin-commons` 基建——CQRS 总线、JPA 审计基座、统一错误处理这些横切能力不在本仓重新发明。patra 是微服务形态,本仓库把同一套六边形骨架改造成单体,这层取舍见 [ARCHITECTURE.md](ARCHITECTURE.md) 第 11 节。
+super-nb-platform 是 super-nb 中转站生意的自写后端统一平台:一个部署单元(单体),内部按限界上下文(bounded context)与六边形架构(hexagonal / ports-and-adapters)+ DDD 分层。架构照 [patra](https://github.com/linqibin0826/patra)(同一作者的另一个项目)落地,复用其 `linqibin-commons` 基建——CQRS 总线、JPA 审计基座、统一错误处理这些横切能力不在本仓重新发明。patra 是微服务形态,本仓库把同一套六边形骨架改造成单体,这层取舍见 [ARCHITECTURE.md](ARCHITECTURE.md) 第 11 节。
 
 仓库当前收编两个此前各自独立部署的自写业务服务;未来任何新的自写后端业务都在这里长出新的限界上下文,不再起新服务。
 
@@ -53,9 +53,12 @@ bash scripts/bootstrap-commons.sh
 # 2. 完成定义:编译 + 全部测试 + ArchUnit 门禁全绿
 ./gradlew build
 
-# 3. 起服务(无 DB 冒烟;接 PG 需配 SNB_DB_URL / SNB_DB_USER / SNB_DB_PASSWORD 等环境变量,
-#    完整变量清单见 snb-boot/src/main/resources/application.yml)
-SNB_FLYWAY_ENABLED=false ./gradlew :snb-boot:bootRun
+# 3. 起服务:需要一个可连接的 PostgreSQL(SNB_DB_URL / SNB_DB_USER / SNB_DB_PASSWORD)+ gallery 模块
+#    必装的 R2 端口配置(GALLERY_R2_ENDPOINT / GALLERY_R2_BUCKET / GALLERY_R2_ACCESS_KEY / GALLERY_R2_SECRET_KEY,
+#    冒烟可填占位值,S3Client 构建不校验真实连通性)——两者缺一都会在装配阶段启动失败,不存在"无 DB 冒烟"这回事。
+#    Flyway 默认开启,连一个全新空库会自动建 schema、跑迁移;SNB_FLYWAY_ENABLED=false 是给 schema 已经
+#    在别处迁移好的库跳过重复迁移用的,不是"免 DB"开关。完整变量清单见 snb-boot/src/main/resources/application.yml
+./gradlew :snb-boot:bootRun
 ```
 
 另开一个终端验证:
@@ -82,7 +85,7 @@ snb-activity-app      (用例编排:Command/Handler、QueryService)
         │ api                              │ api
         ▼                                  ▼
 snb-activity-adapter                 snb-activity-infra
-(REST 入站,只做协议转换)          (端口实现:JPA / R2 / sub2api,框架细节全在这层)
+(REST 入站,只做协议转换)          (端口实现:JPA / sub2api,框架细节全在这层)
         │                                  │
         └────────────────┬─────────────────┘
                           ▼

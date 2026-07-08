@@ -7,7 +7,8 @@
 /// generation_image、generation_ref。
 ///
 /// 六边形边界上的纯技术细节层:实体类型不出这一层——`persistence/dao/` 下的
-/// Spring Data 仓储与 `persistence/` 下的写侧适配器是仅有的直接依赖方;跨聚合的
-/// 读投影(`read/`)靠手写 mapper 把实体转换成 domain/model/read 的读视图;
+/// Spring Data 仓储、`persistence/` 下的写侧适配器,以及 `read/` 包的
+/// `PromptReadAdapter`/`PromptMapper` 都直接依赖实体类型;经 `read/` 的手写 mapper
+/// 转换成 domain/model/read 的读视图后,实体类型才不再继续往上传递;
 /// domain/app 全程不感知 JPA 的存在。
 package me.supernb.gallery.infra.adapter.persistence.entity;
