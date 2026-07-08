@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* 底色/文字色交给 ThemeScope（bg-snb-bg text-snb-t1），氛围光交给 AmbientBackground 组件 */
+  body {
+    @apply min-h-screen antialiased;
+  }
+  /* 选区文字用语义 token，双主题下都保持可读（固定浅色阶在纸面主题会与背景趋同） */
+  ::selection {
+    @apply bg-primary-500/30 text-snb-t1;
+  }
+
+  /* 滚动条适配：color-scheme 让原生控件（滚动条等）跟随主题，暗色下不再蹦出白色滚动条。
+     .dark 管 ThemeScope 子树内的滚动容器（托盘/输入框）；页面级滚动条在 <html> 上，
+     由 useTheme 同步 documentElement.style.colorScheme（class 只盖在 ThemeScope div 上够不到它） */
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+  /* 细滚动条 + 品牌墨色滑块（Firefox 全版本 / Chromium 121+；其余浏览器退回 color-scheme 原生深浅） */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--snb-t3) / 0.4) transparent;
+  }
+}
+
+/* 灵感库「直接使用」后创作票据的一次性赤陶光晕（Composer 覆盖层 animate-[snbComposerPulse_…] 引用） */
+@keyframes snbComposerPulse {
+  from {
+    box-shadow: 0 0 0 0 rgba(204, 120, 92, 0.5);
+  }
+  to {
+    box-shadow: 0 0 0 20px rgba(204, 120, 92, 0);
+  }
+}
+
+/* 「开始生成」按钮的流光扫过（Composer animate-[snbSheen_…] 引用）：扫一遍歇一会儿再扫 */
+@keyframes snbSheen {
+  0% {
+    transform: translateX(-100%);
+  }
+  55% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 「开始生成」外圈环绕光（Composer animate-[snbOrbit_…] 引用）：conic 彗尾绕按钮一圈圈转 */
+@keyframes snbOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 画墙图片加载淡入（BalancedMasonry 打标 data-snb-loaded；未加载完 = 透明，
+   露出卡片底色当占位）。缓存命中由组件补扫 complete，出错也打标防永久隐身 */
+.snb-wall img {
+  transition: opacity 0.45s ease;
+}
+.snb-wall img:not([data-snb-loaded]) {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .snb-wall img {
+    transition: none;
+  }
+}
+
+/* 参考图样片骨架的暖调扫光（RefThumb loading 态高光条横扫，示意「正在处理」）*/
+@keyframes snbShimmer {
+  from {
+    transform: translateX(-130%);
+  }
+  to {
+    transform: translateX(130%);
+  }
+}
+
+/* 参考图样片就位的一次性赤陶微光（RefThumb 由骨架变真图那一刻，确认「加好了」）*/
+@keyframes snbRefLand {
+  from {
+    box-shadow: 0 0 0 0 rgba(204, 120, 92, 0.45);
+  }
+  to {
+    box-shadow: 0 0 0 7px rgba(204, 120, 92, 0);
+  }
+}
+
+/* 样片行横滑容器隐藏滚动条：全局 * { scrollbar-width: thin } 会给它加一条细滚动条，
+   正是之前被误当卡住的「上传进度条」的那条灰杠——这里彻底藏掉，改用右缘渐隐提示可滑 */
+.snb-scrollbar-none {
+  scrollbar-width: none;
+}
+.snb-scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
