@@ -141,7 +141,7 @@ digraph process {
 **所有 subagent（implementer / spec reviewer / code quality reviewer）统一使用最强的 Opus 模型（撰写时为 Opus 4.8，`claude-opus-4-8`）。**
 
 理由：
-- super-nb-platform 是单人开发、质量优先的项目，CLAUDE.md 明确"质量优先 — 可投入任何必要时间实现最优方案"
+- super-nb-platform 是单人开发、质量优先的项目，CLAUDE.md 明确"单人开发，质量优先，按最终形态设计""禁止以时间限制为由采用次优方案"
 - 不在乎模型成本与单任务延迟，只追求每次产出最高质量
 - 避免不同模型间的能力波动给 spec / quality review 引入噪声
 

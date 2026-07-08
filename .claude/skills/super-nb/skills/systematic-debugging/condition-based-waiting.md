@@ -49,10 +49,10 @@ Awaitility.await()
 
 ## super-nb-platform 推荐：用 Awaitility
 
-测试依赖走 version catalog（本仓约定，见 `gradle/libs.versions.toml`）：
+测试依赖走 version catalog；**本仓当前尚未引入 awaitility**，如需使用先在 `gradle/libs.versions.toml` 新增以下条目（照 catalog 既有 `[versions]`/`[libraries]` 风格）：
 
 ```toml
-# gradle/libs.versions.toml
+# gradle/libs.versions.toml —— 新增（当前未添加）
 [versions]
 awaitility = "4.2.2"
 

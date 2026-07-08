@@ -62,7 +62,9 @@ for CLASS in $TEST_CLASSES; do
   echo "[$COUNT/$TOTAL] 运行：$CLASS"
 
   # 跑单个测试类（--no-daemon 避免 Gradle daemon 缓存状态）
-  ./gradlew test --tests "$CLASS" --no-daemon > /dev/null 2>&1 || true
+  # --continue：本仓多模块，目标类只在某一个子模块里；不加 --continue 时其它子模块
+  # 因 --tests 无匹配而 FAILED 会触发 Gradle fail-fast，目标模块的 test 根本不被调度
+  ./gradlew test --tests "$CLASS" --no-daemon --continue > /dev/null 2>&1 || true
 
   # 污染出现 → 找到了
   if [ -e "$POLLUTION_CHECK" ]; then

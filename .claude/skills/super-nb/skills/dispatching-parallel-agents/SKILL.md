@@ -67,12 +67,12 @@ digraph when_to_use {
 按故障分组——关键是**问题域而非测试文件**：
 
 ```
-模块 A: snb-gallery-app TogglePromptFavoriteHandlerTest（Handler 单测断言失败）
-模块 B: snb-activity-infra DrawAdapterConcurrencyTest（TestContainers PG 连接超时）
+模块 A: snb-gallery-app InteractionHandlersTest（Handler 单测断言失败）
+模块 B: snb-activity-infra DrawAdapterConcurrencyTest（Testcontainers PG 连接超时）
 模块 C: snb-gallery-adapter GalleryControllerTest（契约测试次序失败）
 ```
 
-每个问题域是独立的——修 Handler 编排逻辑不会影响 TestContainers 并发配置。
+每个问题域是独立的——修 Handler 编排逻辑不会影响 Testcontainers 并发配置。
 
 ### 2. 创建聚焦的智能体任务
 
@@ -89,7 +89,7 @@ digraph when_to_use {
 
 ```
 Task tool (general-purpose, 并发 1):
-  description: "修复 snb-gallery-app TogglePromptFavoriteHandlerTest 失败"
+  description: "修复 snb-gallery-app InteractionHandlersTest 失败"
   prompt: <见下方提示词结构>
 
 Task tool (general-purpose, 并发 2):
@@ -121,18 +121,18 @@ Task tool (general-purpose, 并发 3):
 **模板示例：**
 
 ```markdown
-修复 `:snb-gallery:snb-gallery-app:test --tests "TogglePromptFavoriteHandlerTest"` 中的 3 个失败：
+修复 `:snb-gallery:snb-gallery-app:test --tests "InteractionHandlersTest"` 中的 3 个失败：
 
-1. `delegatesToInteractionRepository()` —— 期望 `interactionRepository.toggleFavorite(promptId, userId)` 按此参数顺序调用，实际颠倒
-2. `returnsCountFromRepository()` —— 期望返回值取自仓储回读的最新收藏计数，实际返回了请求里携带的旧计数
-3. `propagatesRepositoryException()` —— 期望仓储抛出的领域异常原样传播到调用方，实际被吞
+1. `favoriteReturnsCountAndFlag()` —— 期望按 `interactionRepo.toggleFavorite(promptId, userId, favorited)` 三参顺序调用，实际把后两参颠倒
+2. `likeReturnsCountAndFlag()` —— 期望返回值取自仓储回读的最新计数（`OptionalInt`），实际返回了请求里携带的旧计数
+3. `likeOnMissingPromptThrows()` —— 期望 prompt 不存在（`toggleLike` 返回 `OptionalInt.empty()`）时抛领域异常，实际被吞
 
 你的任务：
 
-1. 阅读 `snb-gallery/snb-gallery-app/src/test/java/.../TogglePromptFavoriteHandlerTest.java`，理解每个测试验证的不变式
+1. 阅读 `snb-gallery/snb-gallery-app/src/test/java/.../InteractionHandlersTest.java`，理解每个测试验证的不变式
 2. 阅读 `snb-gallery/snb-gallery-app/src/main/java/.../TogglePromptFavoriteHandler.java`，找到根因
 3. 修复方式（按优先级）：
-   - 调用 `interactionRepository.toggleFavorite(...)` 时改对参数顺序
+   - 调用 `interactionRepo.toggleFavorite(promptId, userId, favorited)` 时改对三参顺序
    - 返回值改用仓储调用的返回结果，不要用请求里携带的旧值
    - 去掉误加的 try-catch，让领域异常原样传播（app 层不包装不吞异常，见 `tech/error-handling.md`）
 4. 守 TDD 红-绿循环：每个修复完成后，必须确认对应测试从红变绿；如果可以，临时回退实现重跑确认测试真的能抓 bug。
@@ -145,13 +145,13 @@ Task tool (general-purpose, 并发 3):
 **返回：**
 - 根因分析（哪一行有问题、为什么）
 - 修改的文件清单（`File:line` 格式）
-- 跑 `./gradlew :snb-gallery:snb-gallery-app:test --tests "TogglePromptFavoriteHandlerTest"` 的最终输出
+- 跑 `./gradlew :snb-gallery:snb-gallery-app:test --tests "InteractionHandlersTest"` 的最终输出
 ```
 
 ## 常见错误
 
 **错误做法：太宽泛：** "修复所有测试" - 智能体会迷失方向
-**正确做法：具体明确：** "修复 `:snb-gallery:snb-gallery-app:test --tests \"TogglePromptFavoriteHandlerTest\"`" - 聚焦到 task + filter
+**正确做法：具体明确：** "修复 `:snb-gallery:snb-gallery-app:test --tests \"InteractionHandlersTest\"`" - 聚焦到 task + filter
 
 **错误做法：无上下文：** "修复 Handler 编排 bug" - 智能体不知道在哪里
 **正确做法：提供上下文：** 粘贴 `./gradlew :snb-gallery:snb-gallery-app:test` 输出 + 涉及的 Handler/Command 路径
@@ -172,29 +172,29 @@ Task tool (general-purpose, 并发 3):
 **同一模块内多处失败：** 通常共享同一 bug
 **需要完整上下文：** 理解问题需要看到整个系统
 **探索性调试：** 你还不知道什么坏了
-**共享状态：** 智能体会互相干扰（编辑同一文件、操作同一 DB schema / TestContainers 资源）
+**共享状态：** 智能体会互相干扰（编辑同一文件、操作同一 DB schema / Testcontainers 资源）
 
 ## 实际案例
 
 **场景：** 大规模重构（统一异常体系）后，3 个无关模块出现独立测试失败
 
 **失败情况：**
-- `snb-gallery-app` `TogglePromptFavoriteHandlerTest`：3 个失败（Handler 单测断言错误）
-- `snb-activity-infra` `DrawAdapterConcurrencyTest`：2 个失败（TestContainers PG 连接超时）
+- `snb-gallery-app` `InteractionHandlersTest`：3 个失败（Handler 单测断言错误）
+- `snb-activity-infra` `DrawAdapterConcurrencyTest`：2 个失败（Testcontainers PG 连接超时）
 - `snb-gallery-adapter` `GalleryControllerTest`：1 个失败（400/401 次序颠倒）
 
-**决策：** 独立的问题域——Handler 编排、TestContainers 配置、契约层参数次序分别在不同模块的不同层，无共享状态
+**决策：** 独立的问题域——Handler 编排、Testcontainers 配置、契约层参数次序分别在不同模块的不同层，无共享状态
 
 **分派（同一条消息 3 个 Task 调用并发）：**
 ```
-智能体 1 → 修复 snb-gallery-app TogglePromptFavoriteHandlerTest（Handler 参数顺序/返回值/异常传播三处编排 bug）
-智能体 2 → 修复 snb-activity-infra DrawAdapterConcurrencyTest（TestContainers 启动超时调整）
+智能体 1 → 修复 snb-gallery-app InteractionHandlersTest（Handler 参数顺序/返回值/异常传播三处编排 bug）
+智能体 2 → 修复 snb-activity-infra DrawAdapterConcurrencyTest（Testcontainers 启动超时调整）
 智能体 3 → 修复 snb-gallery-adapter GalleryControllerTest（Controller 方法参数次序）
 ```
 
 **结果：**
 - 智能体 1：改对参数顺序、改用仓储返回值、去掉误加的 try-catch；红-绿循环验证通过
-- 智能体 2：TestContainers `withStartupTimeout(Duration.ofMinutes(2))`；集成测试通过
+- 智能体 2：Testcontainers `withStartupTimeout(Duration.ofMinutes(2))`；集成测试通过
 - 智能体 3：把 `@RequestBody` 参数挪到 `@CurrentUser` 前面，恢复 400 先于 401 的契约次序（见 `layers/adapter.md`）；契约测试通过
 
 **集成：** `git diff --stat` 三组改动落在三个不同模块，零交叉；`./gradlew build` 全栈门控通过

@@ -98,26 +98,26 @@ plan.md 末尾：
 
 **每个任务的节奏：**
 ```
---- 任务 2/5：添加提示词收藏用例 ---
-目标：在 snb-gallery-app 中为收藏/取消收藏添加 Command + Handler
-完成标准：所有测试通过，重复收藏走唯一约束幂等（不抛给用户）
+--- 任务 2/5：（逐任务节奏的格式示例）改动某交互用例 Handler ---
+目标：在 snb-gallery-app 调整交互用例的 Command + Handler
+完成标准：所有测试通过，重复操作走唯一约束幂等（不抛给用户）
 
 [实现]
-- 添加 TogglePromptFavoriteCommand + TogglePromptFavoriteHandler（走 CommandBus）
-- 编写 3 个测试（首次收藏、重复收藏幂等、取消收藏）
+- 改 TogglePromptFavoriteHandler（走 CommandBus，命令 TogglePromptFavoriteCommand）
+- 在 InteractionHandlersTest 补/改断言
 - 每做完一步勾 - [x]
 
 [验证]
-$ ./gradlew :snb-gallery:snb-gallery-app:test --tests "*Favorite*"
-  TogglePromptFavoriteHandlerTest > should_favorite_first_time PASSED
-  TogglePromptFavoriteHandlerTest > should_be_idempotent_on_duplicate PASSED
-  TogglePromptFavoriteHandlerTest > should_unfavorite PASSED
+$ ./gradlew :snb-gallery:snb-gallery-app:test --tests "*InteractionHandlersTest*"
+  InteractionHandlersTest > likeReturnsCountAndFlag PASSED
+  InteractionHandlersTest > likeOnMissingPromptThrows PASSED
+  InteractionHandlersTest > favoriteReturnsCountAndFlag PASSED
   BUILD SUCCESSFUL
 
 [提交]
 $ git add snb-gallery/snb-gallery-app/...
-$ git commit -m "feat(gallery): 添加提示词收藏用例（任务 2/5）"
---- 任务 2/5 完成（5 个步骤全 - [x]）---
+$ git commit -m "test(gallery): 调整交互用例 Handler 单测（任务 2/5）"
+--- 任务 2/5 完成（步骤全 - [x]）---
 ```
 
 **批量审查检查点：**
@@ -157,17 +157,17 @@ $ git commit -m "feat(gallery): 添加提示词收藏用例（任务 2/5）"
 
 **完成报告模板：**
 ```
-## 执行报告
+## 执行报告　（以下为格式示例，任务/类名为假想演示、非本仓真实待办）
 
-**计划：** <git-root>/docs/plans/2026-07-08-prompt-favorite.md
-**分支：** feat/gallery-prompt-favorite
+**计划：** <git-root>/docs/plans/2026-07-08-prompt-tag-filter.md
+**分支：** feat/gallery-prompt-tag-filter
 **任务：** 5/5 已完成
 
 ### 完成的任务
-1. ✅ 添加 prompt_favorite 表 Flyway 迁移（V3）
-2. ✅ 添加收藏用例 Command + Handler
-3. ✅ 添加 FavoriteRepository + Adapter（唯一约束幂等）
-4. ✅ REST 端点 /gallery/v1/prompts/{id}/favorite
+1. ✅ 添加 prompt_tag 表 Flyway 迁移（V3，全局唯一版本号）
+2. ✅ 标签筛选读投影 ReadPort + ReadAdapter
+3. ✅ 列表查询用例接标签过滤（QueryService）
+4. ✅ REST 端点 `GET /gallery/v1/prompts?tags=...`
 5. ✅ 集成测试（Testcontainers）
 
 ### 验证结果

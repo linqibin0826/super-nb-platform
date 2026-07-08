@@ -145,26 +145,26 @@ public SaveGeneration {
 
 它会按 Gradle 测试模式逐批运行，二分定位污染来源测试类。详见脚本内使用说明。
 
-## 真实案例：空 prompt 穿透 4 层
+## 示例场景：空 prompt 若穿透到底层会怎样（教学演练，非本仓当前实现）
 
-**症状：** boot 守门测试 `GalleryWiringTest`（真实装配 + Testcontainers，写请求真经 `CommandBus` 派发到 Handler）期望 `400`，实际返回 `500 IllegalArgumentException`。注意：`GalleryControllerTest` 这类 adapter 契约测试 mock 了 `CommandBus`，请求根本到不了 domain record，看不到这个症状——只有真派发到 Handler 的测试才能复现。
+> **说明：** 本仓 gallery 生成接口当前**未**对空 `prompt` 做校验（`CreateGenerationRequest` 无 `@NotBlank`、Controller 无 `@Valid`、`SaveGeneration` 是纯 record 无紧凑构造器校验）。下面是一次**假想**的反向追踪 + 纵深防御设计演练——用真实类名讲清"把错误值从底层反追到源头、在源头修"的方法，不代表已实现的行为。
 
-**追踪链：**
-1. `SaveGeneration` 紧凑构造器抛 `IllegalArgumentException` ← domain record 校验
-2. `CreateGenerationHandler.handle(cmd)` 构造 `SaveGeneration` 时触发
-3. `CommandBus.handle(command)` 没捕获，直接抛出
+**假想症状：** 若某天空 `prompt` 一路穿到底层触发 `500`，adapter 契约测试（`GalleryControllerTest` mock 了 `CommandBus`，请求到不了 domain）看不到——只有真派发到 Handler 的装配测试（如 `GalleryWiringTest`）才能复现。
+
+**反向追踪（从症状追到源头）：**
+1. 底层某处抛异常（如给落库 record 补了校验后，构造时抛 `IllegalArgumentException`）
+2. `CreateGenerationHandler.handle(cmd)` 构造落库请求时触发
+3. `CommandBus.handle(command)` 不捕获，直接抛出
 4. `GalleryController.createGeneration(@RequestBody CreateGenerationRequest)` —— 没有 `@Valid`
 5. `CreateGenerationRequest` 字段没注解 ← **最初触发点**
 
-**根本原因：** DTO 字段缺少 `@NotBlank`、Controller 方法缺少 `@Valid`，校验完全没触发，空字符串穿透到 domain record。
+**根本原因：** 校验没在入口触发，空值穿透到底层。**在源头修**（入口加校验），而不是在症状处（底层）打补丁。
 
-**修复：** 给 Controller 方法加 `@Valid`，给 `CreateGenerationRequest.prompt` 加 `@NotBlank`。
-
-**同时添加了纵深防御：**
-- 第 1 层：`CreateGenerationRequest.prompt` 字段 `@NotBlank`，Controller 加 `@Valid`（入口校验）
-- 第 2 层：`CreateGenerationHandler` 用 `Objects.requireNonNull` 兜底（应用层）
-- 第 3 层：`SaveGeneration` 紧凑构造器自身校验（domain record 层，保留）
-- 第 4 层：契约测试 `GalleryControllerTest` 覆盖 `@NotBlank` 触发路径
+**纵深防御可以这样布局**（若要根治，自上而下逐层设防）：
+- 第 1 层（入口）：`CreateGenerationRequest.prompt` 加 `@NotBlank`、Controller 方法加 `@Valid` → 直接 400
+- 第 2 层（应用）：`CreateGenerationHandler` 对关键字段兜底校验，不完全依赖 `@Valid` 生效
+- 第 3 层（domain）：落库 record 紧凑构造器守不变式
+- 第 4 层（测试）：契约测试（`GalleryControllerTest`）+ 装配测试（`GalleryWiringTest`）各覆盖一条路径
 
 ## 关键原则
 

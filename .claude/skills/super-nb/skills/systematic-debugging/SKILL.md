@@ -88,33 +88,33 @@ description: 遇到任何 bug、测试失败或异常行为时使用，在提出
 
    **示例（super-nb-platform 多层日志追踪）：**
 
-   场景：REST 调用返回 `{}`，但数据库里明明有数据。在六边形分层每一层加埋点：
+   场景：`GET /gallery/v1/prompts/{id}` 返回 404 / 空，但数据库里明明有这条 prompt。在六边形分层每一层加埋点（真实读链：GalleryController → PromptQueryService → PromptReadPort）：
 
    ```java
-   // 第 1 层：Adapter（Controller）— 请求入口（id 为字符串，雪花超 JS 安全整数）
-   @GetMapping("/activity/v1/campaigns/{id}")
-   public CampaignResponse query(@PathVariable long id) {
-       log.debug("[adapter] received campaignId={}", id);
-       var result = queryService.findById(id);
+   // 第 1 层：Adapter（GalleryController.getPrompt）— 请求入口（id 路径参数收 long）
+   @GetMapping("/prompts/{id}")   // 类基路径 /gallery/v1
+   public PromptDetail getPrompt(@PathVariable long id) {
+       log.debug("[adapter] received promptId={}", id);
+       var result = promptQueryService.detail(id);
        log.debug("[adapter] returning result: {}", result);
-       return mapper.toResponse(result);
+       return result;
    }
 
-   // 第 2 层：App（QueryService）— 编排层
-   public CampaignView findById(long id) {
+   // 第 2 层：App（PromptQueryService.detail(long)）— 编排层，读端口返回 empty → 转 404
+   public PromptDetail detail(long id) {
        log.debug("[app] before read-port query, id={}", id);
-       var view = campaignReadPort.findById(id);
+       var view = repo.detail(id);   // repo 为注入的 PromptReadPort
        log.debug("[app] read-port returned: {}", view);
-       return view;
+       return view.orElseThrow(() -> GalleryException.promptNotFound(id));
    }
 
-   // 第 3 层：Infra（ReadAdapter）— 持久化
+   // 第 3 层：Infra（PromptReadAdapter implements PromptReadPort）— 持久化
    @Override
-   public Optional<CampaignView> findById(long id) {
+   public Optional<PromptDetail> detail(long id) {
        log.debug("[infra] JPA query: id={}", id);
        var entity = dao.findById(id);
-       log.debug("[infra] JPA result: entity={}", entity);
-       return entity.map(mapper::toView);
+       log.debug("[infra] JPA result present={}", entity.isPresent());
+       return entity.map(mapper::toDetail);
    }
 
    // 第 4 层：JPA / Hibernate（开 SQL 日志）
@@ -122,7 +122,7 @@ description: 遇到任何 bug、测试失败或异常行为时使用，在提出
    //                  logging.level.org.hibernate.orm.jdbc.bind=TRACE
    ```
 
-   **由此可以看出：** 哪一层数据没正确传递（adapter ✓ → app ✓ → infra 返回 Optional.empty() ✗）。重点排查 infra 层：是 WHERE 条件错？`status` 之类的过滤条件把目标行筛掉了？看 Hibernate SQL 即可定位。
+   **由此可以看出：** 哪一层数据没正确传递（adapter ✓ → app ✓ → infra 返回 Optional.empty() ✗）。重点排查 infra 层：是 WHERE 条件错？（如"未发布"之类的过滤条件把目标行筛掉了？）看 Hibernate SQL 即可定位。
 
 5. **跟踪数据流**
 

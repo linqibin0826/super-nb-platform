@@ -93,7 +93,7 @@ Task tool（general-purpose）:
 
     | 检查项 | ✅ 正确 | ❌ 错误 |
     |--------|--------|--------|
-    | 方法签名 | `commandBus.handle(PerformDrawCommand.of(...))` | `draw(long campaignId, long userId, String mode)` |
+    | 方法签名 | `commandBus.handle(new PerformDrawCommand(userId))` | `draw(long campaignId, long userId, String mode)` |
     | 返回值 | `DrawResult` / `Optional<Entity>` | 裸 `Long` / `boolean`（除非确实无语义） |
     | DTO 转换 | Adapter: request → Command | Application 处理 HTTP DTO |
 
@@ -230,14 +230,14 @@ Task tool（general-purpose）:
 ```
 ### 优点
 - 六边形架构守得干净，`snb-gallery-domain` 内无 Spring 依赖（`./gradlew build` ArchUnit 全绿）
-- `TogglePromptFavoriteCommand` 参数验证集中在紧凑构造器，Adapter 不重复（PromptInteractionController.java:42）
-- Testcontainers 集成测试覆盖 toggle 幂等的唯一约束回滚路径（PromptFavoriteIT.java）
+- `TogglePromptFavoriteCommand` 参数验证集中在紧凑构造器，Adapter 不重复（GalleryController.java:42）
+- Testcontainers 集成测试覆盖 toggle 幂等的唯一约束回滚路径（GalleryRepositoriesTest.java）
 
 ### 问题
 
 #### Critical
 1. **Controller 直接注入 Handler，绕过 CommandBus**
-   - File: `PromptFavoriteController.java:28`
+   - File: `GalleryController.java:28`
    - 问题：`@Autowired private TogglePromptFavoriteHandler handler;` —— 违反 CommandBus 模式（`rules/tech/commandbus.md`）
    - 修复：改注入 `CommandBus`，`commandBus.handle(command)`
 
@@ -249,9 +249,9 @@ Task tool（general-purpose）:
 
 #### Important
 1. **Record VO 缺少防御性拷贝**
-   - File: `DrawResult.java:8`
-   - 问题：紧凑构造器未对 `List<String> tags` 做 `List.copyOf`（`rules/code-style.md`）
-   - 修复：`tags = tags != null ? List.copyOf(tags) : List.of();`
+   - File: `ValidationResult.java:8`（含 `List<String> errors` 字段的 record）
+   - 问题：紧凑构造器未对 `List<String> errors` 做 `List.copyOf`（`rules/code-style.md` 防御性拷贝规范）
+   - 修复：`errors = errors != null ? List.copyOf(errors) : List.of();`
 
 2. **事务用了 `@Transactional`**
    - File: `TogglePromptFavoriteHandler.java:19`

@@ -152,7 +152,7 @@ digraph release_planning {
 **优秀示例**：
 - tag 存独立 `prompt_tag` 关联表，不在 prompt 行内塞数组（影响所有相关 BE Issue 的数据层与 Flyway 迁移）
 - 复用 snb-gallery 现有 ReadPort，不新建上下文（影响所有"提示词读"相关 Issue）
-- 筛选参数契约 `?tags=a,b&page=0&size=20`（跨 BE/FE Issue 的约定）
+- 筛选参数契约 `?tags=a,b&page=1&pageSize=20`（跨 BE/FE Issue 的约定；本仓分页 page 从 1 起、参数名 pageSize，见 GalleryController）
 
 **反例（不该写在字段 4）**：
 - "PromptQueryService 内部用某写法" — 属单 Issue Tech Design
