@@ -2,7 +2,7 @@
 
 super-nb-platform 是 super-nb 中转站生意的自写后端统一平台:一个部署单元(单体),内部按限界上下文(bounded context)与六边形架构(hexagonal / ports-and-adapters)+ DDD 分层。架构照 [patra](https://github.com/linqibin0826/patra)(同一作者的另一个项目)落地,复用其 `linqibin-commons` 基建——CQRS 总线、JPA 审计基座、统一错误处理这些横切能力不在本仓重新发明。patra 是微服务形态,本仓库把同一套六边形骨架改造成单体,这层取舍见 [ARCHITECTURE.md](ARCHITECTURE.md) 第 11 节。
 
-仓库当前收编两个此前各自独立部署的自写业务服务;未来任何新的自写后端业务都在这里长出新的限界上下文,不再起新服务。
+仓库当前收编两个此前各自独立部署的自写业务服务;未来任何新的自写后端业务都在这里长出新的限界上下文,不再起新服务。前端 `snb-portal`(统一 React 前端)也在同仓、松耦合并存,详见下文「前端 snb-portal」节。
 
 ## 能力
 
@@ -40,6 +40,17 @@ Java 25 · Spring Boot 4(4.0.6)· Spring Data JPA(Hibernate 7)+ Flyway · Postgr
 | `snb-gallery-api` | api | 对外契约,当前空壳 |
 | `snb-boot` | boot | 唯一 Spring Boot 组装入口(composition root):装配全部模块、聚合 Flyway 迁移,ArchUnit 门禁与装配冒烟测试住这里 |
 | `build-logic` | 构建 | Gradle convention plugin,编译期锁定各层可声明的依赖坐标 |
+
+## 前端 snb-portal
+
+`snb-portal/` 是本平台的统一前端(React 19 + Vite + TypeScript 单页应用),与后端同仓、松耦合——照 [patra](https://github.com/linqibin0826/patra) 的 `patra-portal` 模式:
+
+- **独立构建**:自带 pnpm/vite 工具链,不进 Gradle、不打进后端镜像。`pnpm build` 出静态产物,与后端 `./gradlew build` 互不相干。
+- **独立部署**:静态产物 rsync 上线,与后端镜像发布完全解耦——前端改动不触发后端发版。
+- **设计系统**:UI 组件 vendor 自品牌设计系统仓 `super-nb-ui`(见 `snb-portal/src/ui/`),该仓独立服务多站,portal 持组件快照、与其手动同步。
+- **配置外置**:域名等经 `VITE_*` 环境变量注入(见 `snb-portal/.env.example`),缺省即生产值,fork 自部署改这里即可、无需动源码。
+
+首块承载 studio 生图创作工坊;后续前端能力都在此生长。开发起步见 [`snb-portal/README.md`](snb-portal/README.md)。
 
 ## 快速开始
 
