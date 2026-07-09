@@ -7,6 +7,7 @@ import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
 import me.supernb.activity.app.usecase.draw.command.PerformDrawCommand;
+import me.supernb.activity.app.usecase.draw.command.PerformDrawAllCommand;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
@@ -95,6 +96,16 @@ public class ActivityController {
     public DrawResponse draw(@CurrentUser UserProfile user) {
         DrawResult r = commandBus.handle(new PerformDrawCommand(user.id()));
         return new DrawResponse(r.amount(), r.redeemCode(), r.consolation());
+    }
+
+    /// 一次批量抽奖(需登录):原子抽 min(剩余, 10) 次,逐张返回。无进行中活动 → 404;
+    /// 已无剩余次数 → 409;并发超发防护在 Handler 背后(advisory lock)。端点无请求体、无次数入参。
+    @PostMapping("/draw/all")
+    public List<DrawResponse> drawAll(@CurrentUser UserProfile user) {
+        List<DrawResult> results = commandBus.handle(new PerformDrawAllCommand(user.id()));
+        return results.stream()
+                .map(r -> new DrawResponse(r.amount(), r.redeemCode(), r.consolation()))
+                .toList();
     }
 
     /// 我在本活动的中奖历史(需登录),含安慰奖,enrich 兑换码当前状态,面向本人不做脱敏。

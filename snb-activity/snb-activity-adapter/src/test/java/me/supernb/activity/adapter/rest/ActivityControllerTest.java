@@ -15,6 +15,7 @@ import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
 import me.supernb.activity.app.usecase.draw.command.PerformDrawCommand;
+import me.supernb.activity.app.usecase.draw.command.PerformDrawAllCommand;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
@@ -82,5 +83,19 @@ class ActivityControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.redeemCode").value("CODE1"))
                 .andExpect(jsonPath("$.consolation").value(false));
+    }
+
+    @Test
+    void drawAllDispatchesCommandAndReturnsResultArray() throws Exception {
+        when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
+        when(commandBus.handle(new PerformDrawAllCommand(7))).thenReturn(List.of(
+                DrawResult.prize(new BigDecimal("20"), "CODE1"),
+                DrawResult.consolation(new BigDecimal("5"))));
+        mvc.perform(post("/activity/v1/draw/all").header("Authorization", "Bearer T"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].redeemCode").value("CODE1"))
+                .andExpect(jsonPath("$[0].consolation").value(false))
+                .andExpect(jsonPath("$[1].consolation").value(true));
     }
 }
