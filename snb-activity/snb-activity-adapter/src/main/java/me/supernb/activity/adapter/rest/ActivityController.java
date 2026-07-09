@@ -11,12 +11,15 @@ import me.supernb.activity.app.usecase.draw.command.PerformDrawAllCommand;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
+import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.read.DrawStatus;
 import me.supernb.activity.domain.model.read.LeaderEntry;
 import me.supernb.activity.domain.model.read.MyDrawView;
 import me.supernb.activity.domain.model.read.PoolTier;
 import me.supernb.activity.domain.model.read.PublicDraw;
+import me.supernb.activity.domain.model.read.ReferralInviteEntry;
+import me.supernb.activity.domain.model.read.ReferralRechargeEntry;
 import me.supernb.activity.domain.model.read.RechargeEntry;
 import me.supernb.sub2api.auth.CurrentUser;
 import me.supernb.sub2api.auth.UserProfile;
@@ -40,6 +43,7 @@ public class ActivityController {
     private final PoolQueryService poolQuery;
     private final RecentDrawsQueryService recentDrawsQuery;
     private final MyDrawsQueryService myDrawsQuery;
+    private final ReferralLeaderboardQueryService referralQuery;
 
     /// 构造:注入 CommandBus 与六个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录)。
     public ActivityController(
@@ -49,7 +53,8 @@ public class ActivityController {
             RecentRechargesQueryService recentRechargesQuery,
             PoolQueryService poolQuery,
             RecentDrawsQueryService recentDrawsQuery,
-            MyDrawsQueryService myDrawsQuery) {
+            MyDrawsQueryService myDrawsQuery,
+            ReferralLeaderboardQueryService referralQuery) {
         this.commandBus = commandBus;
         this.drawStatusQuery = drawStatusQuery;
         this.leaderboardQuery = leaderboardQuery;
@@ -57,6 +62,7 @@ public class ActivityController {
         this.poolQuery = poolQuery;
         this.recentDrawsQuery = recentDrawsQuery;
         this.myDrawsQuery = myDrawsQuery;
+        this.referralQuery = referralQuery;
     }
 
     /// 活动期充值榜 Top10(公开)。无进行中活动 → 空列表,不是异常。
@@ -113,5 +119,17 @@ public class ActivityController {
     @GetMapping("/my-draws")
     public List<MyDrawView> myDraws(@CurrentUser UserProfile user) {
         return myDrawsQuery.myDraws(user.id());
+    }
+
+    /// 拉新充值榜 Top3(公开):被邀请新用户充值总额按邀请人聚合,原始总额降序,name 已脱敏。
+    @GetMapping("/referral/recharge-board")
+    public List<ReferralRechargeEntry> referralRechargeBoard() {
+        return referralQuery.rechargeBoard();
+    }
+
+    /// 拉新人数榜 Top3(公开):曾开通新人组的被邀请人数按邀请人聚合,人数降序,name 已脱敏。
+    @GetMapping("/referral/invite-board")
+    public List<ReferralInviteEntry> referralInviteBoard() {
+        return referralQuery.inviteBoard();
     }
 }
