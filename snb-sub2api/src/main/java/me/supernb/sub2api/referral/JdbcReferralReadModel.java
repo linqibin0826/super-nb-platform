@@ -35,7 +35,7 @@ public class JdbcReferralReadModel implements ReferralReadModel {
                 "SELECT iu.email AS inviter_email, SUM(po.amount) AS total "
                         + "FROM user_affiliates ua "
                         + "JOIN users iu ON iu.id = ua.inviter_id AND iu.role = 'user' AND iu.deleted_at IS NULL "
-                        + "JOIN users u ON u.id = ua.user_id "
+                        + "JOIN users u ON u.id = ua.user_id AND u.deleted_at IS NULL "
                         + "JOIN payment_orders po ON po.user_id = u.id "
                         + "WHERE ua.inviter_id IS NOT NULL AND ua.inviter_id <> 1 "
                         + "AND u.created_at >= :start AND u.created_at < :end "
@@ -60,6 +60,7 @@ public class JdbcReferralReadModel implements ReferralReadModel {
                 "SELECT iu.email AS inviter_email, COUNT(DISTINCT ua.user_id) AS cnt "
                         + "FROM user_subscriptions us "
                         + "JOIN user_affiliates ua ON ua.user_id = us.user_id "
+                        + "JOIN users u ON u.id = ua.user_id AND u.deleted_at IS NULL "
                         + "JOIN users iu ON iu.id = ua.inviter_id AND iu.role = 'user' AND iu.deleted_at IS NULL "
                         + "WHERE us.group_id = :gid AND ua.inviter_id IS NOT NULL AND ua.inviter_id <> 1 "
                         + "GROUP BY ua.inviter_id, iu.email ORDER BY cnt DESC LIMIT :limit",

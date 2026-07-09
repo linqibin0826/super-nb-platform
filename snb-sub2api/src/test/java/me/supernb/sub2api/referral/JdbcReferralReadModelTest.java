@@ -73,6 +73,12 @@ class JdbcReferralReadModelTest {
         sub(jdbc, 201, 77, "2026-07-13T00:00:00Z"); // 组过期软删,仍算曾开通
         sub(jdbc, 101, 99, null);                   // 别的组,不计入 77 榜
 
+        // 软删被邀请人(alice 邀、窗口内注册、充值500、开77组,但已被删):其充值/订阅都不该计入 alice
+        user(jdbc, 103, "103@qq.com", "user", "2026-07-10T00:00:00Z", "2026-07-14T00:00:00Z");
+        aff(jdbc, 103, 10);
+        order(jdbc, 103, "500", "2026-07-11T01:00:00Z");
+        sub(jdbc, 103, 77, null);
+
         readModel = new JdbcReferralReadModel(jdbc);
     }
 
