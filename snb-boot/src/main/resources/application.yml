@@ -43,7 +43,7 @@ gallery:
 
 activity:
   referral:
-    start: ${QQ_CAMPAIGN_START:2026-07-09T14:00:00Z}
+    start: ${QQ_CAMPAIGN_START:2026-07-09T16:00:00Z}
     end: ${QQ_CAMPAIGN_END:2026-07-16T16:00:00Z}
     newcomer-group-id: ${QQ_CAMPAIGN_GROUP_ID:77}
     cap: 288

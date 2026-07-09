@@ -19,8 +19,8 @@ public class ReferralProperties {
 
     /// 构造:@Value 注入(start/end 收 ISO 字符串再 parse;冒号后为占位符默认值,Spring 按首个冒号分隔)。
     public ReferralProperties(
-            @Value("${activity.referral.start:2026-07-09T14:00:00Z}") String start,
-            @Value("${activity.referral.end:2026-07-16T16:00:00Z}") String end,
+            @Value("${activity.referral.start:2026-07-09T16:00:00Z}") String start,
+            @Value("${activity.referral.end:2026-07-16T15:59:59Z}") String end,
             @Value("${activity.referral.newcomer-group-id:77}") long newcomerGroupId,
             @Value("${activity.referral.cap:288}") BigDecimal cap,
             @Value("${activity.referral.limit:3}") int limit) {
