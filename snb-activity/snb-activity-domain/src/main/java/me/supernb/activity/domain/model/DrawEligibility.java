@@ -12,6 +12,9 @@ public final class DrawEligibility {
     /// 每次抽奖所需的充值门槛(元)。
     public static final BigDecimal DRAW_THRESHOLD = new BigDecimal("100");
 
+    /// 单次「全抽」最多抽的次数(服务端硬上限,端点无客户端次数入参,防一次抽空奖池)。
+    public static final int BATCH_MAX = 10;
+
     /// 工具类,禁止实例化。
     private DrawEligibility() {
     }

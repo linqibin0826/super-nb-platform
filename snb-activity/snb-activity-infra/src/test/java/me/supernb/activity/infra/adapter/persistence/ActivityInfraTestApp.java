@@ -22,12 +22,15 @@ import org.springframework.context.annotation.Import;
 @Import(DrawAdapter.class)
 class ActivityInfraTestApp {
 
+    /// 桩充值额(默认 ¥300 = 应得 3 次);批量测试可改此字段调整 earned。
+    static volatile java.math.BigDecimal recharge = new java.math.BigDecimal("300");
+
     @Bean
     RechargeReadPort rechargeQueryPort() {
         return new RechargeReadPort() {
             @Override
             public BigDecimal totalRecharge(long userId, Instant start, Instant end) {
-                return new BigDecimal("300");
+                return recharge;
             }
 
             @Override

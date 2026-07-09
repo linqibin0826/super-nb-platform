@@ -2,6 +2,7 @@ package me.supernb.activity.infra.adapter.persistence;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import me.supernb.activity.domain.exception.NoDrawsLeftException;
@@ -74,6 +75,43 @@ public class DrawAdapter implements DrawPort {
         BigDecimal consolation = campaign.consolationAmount();
         draws.save(new DrawEntity(campaign.id(), userId, null, consolation, null, true));
         return DrawResult.consolation(consolation);
+    }
+
+    /// 事务内执行批量抽奖:advisory lock 串行化同一用户后委托 `doDrawAll`。
+    @Override
+    public List<DrawResult> drawAllFor(Campaign campaign, long userId) {
+        return txTemplate.execute(status -> doDrawAll(campaign, userId));
+    }
+
+    /// 批量事务体:一把锁 → 现查剩余 → 循环 min(剩余, BATCH_MAX) 次领槽/记安慰奖。
+    /// 每领一槽显式 slots.flush() 落库,否则下一次 native SKIP LOCKED 会重选同一槽(重复发码)。
+    private List<DrawResult> doDrawAll(Campaign campaign, long userId) {
+        draws.acquireUserXactLock(userId);
+
+        BigDecimal total = rechargePort.totalRecharge(userId, campaign.startsAt(), campaign.endsAt());
+        int used = countDraws(campaign.id(), userId);
+        int quota = Math.min(DrawEligibility.BATCH_MAX, DrawEligibility.remainingDraws(total, used));
+        if (quota <= 0) {
+            throw new NoDrawsLeftException();
+        }
+
+        List<DrawResult> results = new ArrayList<>(quota);
+        for (int i = 0; i < quota; i++) {
+            Optional<PrizeSlotEntity> claimed = slots.lockRandomAvailable(campaign.id());
+            if (claimed.isPresent()) {
+                PrizeSlotEntity slot = claimed.get();
+                slot.claim(userId, Instant.now());
+                draws.save(new DrawEntity(campaign.id(), userId, slot.getId(), slot.getAmount(),
+                        slot.getRedeemCode(), false));
+                slots.flush();
+                results.add(DrawResult.prize(slot.getAmount(), slot.getRedeemCode()));
+            } else {
+                BigDecimal consolation = campaign.consolationAmount();
+                draws.save(new DrawEntity(campaign.id(), userId, null, consolation, null, true));
+                results.add(DrawResult.consolation(consolation));
+            }
+        }
+        return results;
     }
 
     /// 该活动内该用户的已抽次数。
