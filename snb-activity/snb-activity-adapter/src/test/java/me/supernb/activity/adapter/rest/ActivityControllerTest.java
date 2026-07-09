@@ -19,9 +19,12 @@ import me.supernb.activity.app.usecase.draw.command.PerformDrawAllCommand;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
+import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.read.DrawStatus;
 import me.supernb.activity.domain.model.read.PoolTier;
+import me.supernb.activity.domain.model.read.ReferralInviteEntry;
+import me.supernb.activity.domain.model.read.ReferralRechargeEntry;
 import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
 import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
 import me.supernb.sub2api.auth.UserProfile;
@@ -41,6 +44,7 @@ class ActivityControllerTest {
     private final PoolQueryService poolQuery = mock(PoolQueryService.class);
     private final RecentDrawsQueryService recentDrawsQuery = mock(RecentDrawsQueryService.class);
     private final MyDrawsQueryService myDrawsQuery = mock(MyDrawsQueryService.class);
+    private final ReferralLeaderboardQueryService referralQuery = mock(ReferralLeaderboardQueryService.class);
     private final Sub2apiIntrospectClient introspect = mock(Sub2apiIntrospectClient.class);
 
     private MockMvc mvc;
@@ -49,7 +53,7 @@ class ActivityControllerTest {
     void setup() {
         ActivityController controller = new ActivityController(
                 commandBus, drawStatusQuery, leaderboardQuery, recentRechargesQuery,
-                poolQuery, recentDrawsQuery, myDrawsQuery);
+                poolQuery, recentDrawsQuery, myDrawsQuery, referralQuery);
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
@@ -97,5 +101,25 @@ class ActivityControllerTest {
                 .andExpect(jsonPath("$[0].redeemCode").value("CODE1"))
                 .andExpect(jsonPath("$[0].consolation").value(false))
                 .andExpect(jsonPath("$[1].consolation").value(true));
+    }
+
+    @Test
+    void referralRechargeBoardIsPublicAndReturnsEntries() throws Exception {
+        when(referralQuery.rechargeBoard()).thenReturn(List.of(
+                new ReferralRechargeEntry("al***@qq.com", new BigDecimal("390"), new BigDecimal("288"))));
+        mvc.perform(get("/activity/v1/referral/recharge-board"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("al***@qq.com"))
+                .andExpect(jsonPath("$[0].total").value(390))
+                .andExpect(jsonPath("$[0].capped").value(288));
+    }
+
+    @Test
+    void referralInviteBoardIsPublicAndReturnsEntries() throws Exception {
+        when(referralQuery.inviteBoard()).thenReturn(List.of(new ReferralInviteEntry("al***@qq.com", 2)));
+        mvc.perform(get("/activity/v1/referral/invite-board"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("al***@qq.com"))
+                .andExpect(jsonPath("$[0].count").value(2));
     }
 }
