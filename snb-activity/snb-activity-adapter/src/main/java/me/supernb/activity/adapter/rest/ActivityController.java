@@ -2,6 +2,7 @@ package me.supernb.activity.adapter.rest;
 
 import dev.linqibin.commons.cqrs.CommandBus;
 import java.util.List;
+import java.util.Locale;
 import me.supernb.activity.adapter.rest.response.DrawResponse;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
@@ -12,6 +13,7 @@ import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
+import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.read.DrawStatus;
 import me.supernb.activity.domain.model.read.LeaderEntry;
@@ -22,15 +24,21 @@ import me.supernb.activity.domain.model.read.ReferralInviteEntry;
 import me.supernb.activity.domain.model.read.ReferralRechargeEntry;
 import me.supernb.activity.domain.model.read.ReferralStats;
 import me.supernb.activity.domain.model.read.RechargeEntry;
+import me.supernb.activity.domain.model.read.usage.BoardMetric;
+import me.supernb.activity.domain.model.read.usage.BoardPeriod;
+import me.supernb.activity.domain.model.read.usage.BoardView;
 import me.supernb.sub2api.auth.CurrentUser;
 import me.supernb.sub2api.auth.UserProfile;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /// 活动中心 REST 入口,路径 `/activity/v1/*`。`leaderboard`/`recharges`/`pool`/`recent-draws`
-/// 四个只读端点公开免登录;`status`/`draw`/`my-draws` 三个端点需要登录——`@CurrentUser` 由 sub2api
+/// 四个只读端点公开免登录;`status`/`draw`/`my-draws`/`usage-leaderboard` 四个端点需要登录——`@CurrentUser` 由 sub2api
 /// starter 的解析器完成 introspect 校验(要求 active 的 user 或 admin 账号,否则 401)。写操作组装命令
 /// 经 `CommandBus` 派发,其余只读端点直接调用注入的查询用例。
 @RestController
@@ -45,8 +53,9 @@ public class ActivityController {
     private final RecentDrawsQueryService recentDrawsQuery;
     private final MyDrawsQueryService myDrawsQuery;
     private final ReferralLeaderboardQueryService referralQuery;
+    private final UsageLeaderboardQueryService usageLeaderboardQuery;
 
-    /// 构造:注入 CommandBus 与六个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录)。
+    /// 构造:注入 CommandBus 与八个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、拉新榜、用量榜)。
     public ActivityController(
             CommandBus commandBus,
             DrawStatusQueryService drawStatusQuery,
@@ -55,7 +64,8 @@ public class ActivityController {
             PoolQueryService poolQuery,
             RecentDrawsQueryService recentDrawsQuery,
             MyDrawsQueryService myDrawsQuery,
-            ReferralLeaderboardQueryService referralQuery) {
+            ReferralLeaderboardQueryService referralQuery,
+            UsageLeaderboardQueryService usageLeaderboardQuery) {
         this.commandBus = commandBus;
         this.drawStatusQuery = drawStatusQuery;
         this.leaderboardQuery = leaderboardQuery;
@@ -64,6 +74,7 @@ public class ActivityController {
         this.recentDrawsQuery = recentDrawsQuery;
         this.myDrawsQuery = myDrawsQuery;
         this.referralQuery = referralQuery;
+        this.usageLeaderboardQuery = usageLeaderboardQuery;
     }
 
     /// 活动期充值榜 Top10(公开)。无进行中活动 → 空列表,不是异常。
@@ -138,5 +149,35 @@ public class ActivityController {
     @GetMapping("/referral/stats")
     public ReferralStats referralStats() {
         return referralQuery.stats();
+    }
+
+    /// 用量排行榜(Token/金额双榜,需登录)。period=day|week|month|all,metric=tokens|amount;
+    /// 参数非法 → 400;缓存未预热 → 503(spec §12)。
+    @GetMapping("/usage-leaderboard")
+    public BoardView usageLeaderboard(@RequestParam String period, @RequestParam String metric,
+            @CurrentUser UserProfile user) {
+        BoardView view = usageLeaderboardQuery.board(parsePeriod(period), parseMetric(metric), user.id());
+        if (view == null) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "board warming up");
+        }
+        return view;
+    }
+
+    /// 解析周期参数(小写枚举名);非法值 → 400。解析放 adapter 层:domain 枚举不得依赖 spring-web。
+    private static BoardPeriod parsePeriod(String raw) {
+        try {
+            return BoardPeriod.valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid period: " + raw);
+        }
+    }
+
+    /// 解析指标参数(小写枚举名);非法值 → 400。
+    private static BoardMetric parseMetric(String raw) {
+        try {
+            return BoardMetric.valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid metric: " + raw);
+        }
     }
 }
