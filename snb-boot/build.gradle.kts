@@ -13,6 +13,9 @@ dependencies {
     implementation(project(":snb-gallery:snb-gallery-adapter"))
     implementation(project(":snb-gallery:snb-gallery-infra"))
     implementation(project(":snb-gallery:snb-gallery-api"))
+    implementation(project(":snb-content:snb-content-adapter"))
+    implementation(project(":snb-content:snb-content-infra"))
+    implementation(project(":snb-content:snb-content-api"))
     implementation(project(":snb-common"))
     implementation(project(":snb-sub2api"))
 

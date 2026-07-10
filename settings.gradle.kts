@@ -39,4 +39,11 @@ includeAt(":snb-gallery:snb-gallery-adapter", "snb-gallery/snb-gallery-adapter")
 includeAt(":snb-gallery:snb-gallery-api", "snb-gallery/snb-gallery-api")
 project(":snb-gallery").projectDir = file("snb-gallery")
 
+includeAt(":snb-content:snb-content-domain", "snb-content/snb-content-domain")
+includeAt(":snb-content:snb-content-app", "snb-content/snb-content-app")
+includeAt(":snb-content:snb-content-infra", "snb-content/snb-content-infra")
+includeAt(":snb-content:snb-content-adapter", "snb-content/snb-content-adapter")
+includeAt(":snb-content:snb-content-api", "snb-content/snb-content-api")
+project(":snb-content").projectDir = file("snb-content")
+
 includeAt(":snb-boot", "snb-boot")
