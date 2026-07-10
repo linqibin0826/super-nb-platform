@@ -9,6 +9,11 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         login: '登录',
         theme: '切换明暗主题',
       },
+      reader: {
+        back: '返回',
+        openNew: '新窗口打开',
+        missing: '电子书文件缺失，请稍后再试',
+      },
       article: {
         notFound: '内容不存在或已下架',
         backHome: '返回内容中心',
@@ -259,6 +264,11 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       nav: {
         login: 'Sign in',
         theme: 'Toggle light / dark theme',
+      },
+      reader: {
+        back: 'Back',
+        openNew: 'Open in new tab',
+        missing: 'eBook file missing, please retry later',
       },
       article: {
         notFound: 'Content not found or unpublished',
