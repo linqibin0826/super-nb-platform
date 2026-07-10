@@ -34,6 +34,7 @@ export default {
           bg: 'rgb(var(--snb-bg) / <alpha-value>)',
           panel: 'rgb(var(--snb-panel) / <alpha-value>)',
           elv: 'rgb(var(--snb-elv) / <alpha-value>)',
+          well: 'rgb(var(--snb-well) / <alpha-value>)',
           t1: 'rgb(var(--snb-t1) / <alpha-value>)',
           t2: 'rgb(var(--snb-t2) / <alpha-value>)',
           t3: 'rgb(var(--snb-t3) / <alpha-value>)',

@@ -2,3 +2,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 墨色黄铜：重点卡顶线（黄铜纪律：数据强调/主指标标记/激活指示专用，禁按钮链接） */
+.snb-brass-top {
+  border-top: 2px solid rgba(217, 163, 92, 0.55);
+}
