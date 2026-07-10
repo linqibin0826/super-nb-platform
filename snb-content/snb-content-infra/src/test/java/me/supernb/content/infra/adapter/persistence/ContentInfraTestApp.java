@@ -1,5 +1,6 @@
 package me.supernb.content.infra.adapter.persistence;
 
+import me.supernb.content.infra.adapter.read.ContentReadAdapter;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Import;
@@ -7,6 +8,6 @@ import org.springframework.context.annotation.Import;
 /// content infra 层最小测试装配：只挂本上下文的持久化适配器（照 GalleryInfraTestApp）。
 @SpringBootConfiguration
 @EnableAutoConfiguration
-@Import({ArticleRepositoryAdapter.class, CategoryRepositoryAdapter.class})
+@Import({ArticleRepositoryAdapter.class, CategoryRepositoryAdapter.class, ContentReadAdapter.class})
 class ContentInfraTestApp {
 }
