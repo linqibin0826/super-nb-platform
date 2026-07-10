@@ -9,6 +9,16 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         login: '登录',
         theme: '切换明暗主题',
       },
+      list: {
+        all: '全部',
+        ebook: '电子书',
+        empty: '这里还没有内容',
+        error: '加载失败',
+        retry: '重试',
+        loadMore: '加载更多',
+        loading: '加载中…',
+        noMore: '没有更多了',
+      },
     },
     studio: {
       title: '创作工坊',
@@ -243,6 +253,16 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       nav: {
         login: 'Sign in',
         theme: 'Toggle light / dark theme',
+      },
+      list: {
+        all: 'All',
+        ebook: 'eBook',
+        empty: 'Nothing here yet',
+        error: 'Failed to load',
+        retry: 'Retry',
+        loadMore: 'Load more',
+        loading: 'Loading…',
+        noMore: 'No more',
       },
     },
     studio: {
