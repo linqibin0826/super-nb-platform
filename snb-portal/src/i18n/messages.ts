@@ -8,6 +8,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       nav: {
         console: '控制台',
         help: '使用指南',
+        hub: '内容中心',
         activity: '充值活动',
         login: '登录',
         balance: '余额',
@@ -235,6 +236,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       nav: {
         console: 'Console',
         help: 'Guide',
+        hub: 'Content Hub',
         activity: 'Promotions',
         login: 'Sign in',
         balance: 'Balance',
