@@ -23,7 +23,7 @@ public class ReferralProperties {
             @Value("${activity.referral.end:2026-07-16T15:59:59Z}") String end,
             @Value("${activity.referral.newcomer-group-id:77}") long newcomerGroupId,
             @Value("${activity.referral.cap:288}") BigDecimal cap,
-            @Value("${activity.referral.limit:3}") int limit) {
+            @Value("${activity.referral.limit:10}") int limit) {
         this.start = Instant.parse(start);
         this.end = Instant.parse(end);
         this.newcomerGroupId = newcomerGroupId;

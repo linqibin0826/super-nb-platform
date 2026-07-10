@@ -68,8 +68,9 @@ public class JdbcReferralReadModel implements ReferralReadModel {
                 (rs, i) -> new InviteRow(mask(rs.getString("inviter_email")), rs.getInt("cnt")));
     }
 
-    /// 邮箱脱敏:本地部分保留前 2 位(不足 2 位原样)+ `***` + @域名(如 ab***@qq.com);null 原样返回。
-    /// 与 recharge 读模型口径一致;未脱敏邮箱只在本方法作用域内出现。
+    /// 邮箱脱敏:本地部分保留前 2 位 + `***` + 后 2 位 + @域名(如 12***89@qq.com)。后缀仅在本地
+    /// 部分 ≥5 位时保留(保证至少遮 1 位)——拉新榜全是纯数字 QQ 邮箱,同前缀号码靠后缀区分;
+    /// 比 recharge 读模型(仅前 2 位)多留后缀。null 原样返回;未脱敏邮箱只在本方法作用域内出现。
     static String mask(String email) {
         if (email == null) {
             return null;
@@ -78,6 +79,7 @@ public class JdbcReferralReadModel implements ReferralReadModel {
         String local = at >= 0 ? email.substring(0, at) : email;
         String domain = at >= 0 ? email.substring(at) : "";
         String prefix = local.length() >= 2 ? local.substring(0, 2) : local;
-        return prefix + "***" + domain;
+        String suffix = local.length() >= 5 ? local.substring(local.length() - 2) : "";
+        return prefix + "***" + suffix + domain;
     }
 }
