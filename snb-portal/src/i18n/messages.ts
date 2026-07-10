@@ -3,6 +3,13 @@ import type { LocaleDict } from './core'
 // playground 段拷自 sub2api fork@4f873b56 locales（zh.ts:1204-1280 / en.ts:1200-1276），与主站文案保持一致
 export const messages: Record<'zh' | 'en', LocaleDict> = {
   zh: {
+    hub: {
+      title: '内容中心',
+      nav: {
+        login: '登录',
+        theme: '切换明暗主题',
+      },
+    },
     studio: {
       title: '创作工坊',
       nav: {
@@ -231,6 +238,13 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
     },
   },
   en: {
+    hub: {
+      title: 'Content Hub',
+      nav: {
+        login: 'Sign in',
+        theme: 'Toggle light / dark theme',
+      },
+    },
     studio: {
       title: 'Creative Studio',
       nav: {
