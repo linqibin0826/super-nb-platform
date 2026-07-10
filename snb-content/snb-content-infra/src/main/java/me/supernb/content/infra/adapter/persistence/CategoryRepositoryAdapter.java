@@ -3,8 +3,8 @@ package me.supernb.content.infra.adapter.persistence;
 import me.supernb.content.domain.exception.ContentException;
 import me.supernb.content.domain.port.repository.CategoryRepository;
 import me.supernb.content.infra.adapter.persistence.dao.ArticleJpaRepository;
-import me.supernb.content.infra.adapter.persistence.dao.CategoryJpaRepository;
-import me.supernb.content.infra.adapter.persistence.entity.CategoryEntity;
+import me.supernb.content.infra.adapter.persistence.dao.ContentCategoryJpaRepository;
+import me.supernb.content.infra.adapter.persistence.entity.ContentCategoryEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -17,12 +17,12 @@ import java.util.Set;
 @Repository
 public class CategoryRepositoryAdapter implements CategoryRepository {
 
-    private final CategoryJpaRepository categories;
+    private final ContentCategoryJpaRepository categories;
     private final ArticleJpaRepository articles;
     private final TransactionTemplate txTemplate;
 
     /// 构造：注入分类/文章 DAO（文章 DAO 只用于拒删守卫的引用计数）。
-    public CategoryRepositoryAdapter(CategoryJpaRepository categories, ArticleJpaRepository articles,
+    public CategoryRepositoryAdapter(ContentCategoryJpaRepository categories, ArticleJpaRepository articles,
                                      PlatformTransactionManager txManager) {
         this.categories = categories;
         this.articles = articles;
@@ -45,10 +45,10 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
                 categories.findById(c.slug())
                         .ifPresentOrElse(
                                 e -> e.rename(c.name(), c.sortOrder()),
-                                () -> categories.save(new CategoryEntity(c.slug(), c.name(), c.sortOrder())));
+                                () -> categories.save(new ContentCategoryEntity(c.slug(), c.name(), c.sortOrder())));
             }
             int deleted = 0;
-            for (CategoryEntity existing : categories.findAll()) {
+            for (ContentCategoryEntity existing : categories.findAll()) {
                 if (incomingSlugs.contains(existing.getSlug())) {
                     continue;
                 }

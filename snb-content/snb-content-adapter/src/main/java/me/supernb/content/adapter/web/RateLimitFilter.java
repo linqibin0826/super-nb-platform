@@ -12,7 +12,9 @@ import java.io.IOException;
 
 /// 每 IP 令牌桶限流，只作用于 `/content/v1/` 公开路径（admin 前缀豁免——它有 token 门且发布管线
 /// 批量 upsert 不该被节流），绝不把限流套到其他上下文或付费模型 API 路径上。超限 429 + Retry-After。
-@Component
+///
+/// bean 名显式带上下文前缀：gallery 有同类名 filter，默认名 `rateLimitFilter` 在 boot 全栈上下文会撞车。
+@Component("contentRateLimitFilter")
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final TokenBucket bucket;

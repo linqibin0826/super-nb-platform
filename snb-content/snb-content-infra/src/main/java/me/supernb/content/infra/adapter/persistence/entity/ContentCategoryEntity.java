@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "category", schema = "content")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CategoryEntity {
+public class ContentCategoryEntity {
 
     /// 分类键（categories.yml 的 slug）。
     @Id
@@ -27,7 +27,7 @@ public class CategoryEntity {
     private int sortOrder;
 
     /// 新建一条分类。
-    public CategoryEntity(String slug, String name, int sortOrder) {
+    public ContentCategoryEntity(String slug, String name, int sortOrder) {
         this.slug = slug;
         this.name = name;
         this.sortOrder = sortOrder;

@@ -23,6 +23,7 @@ services:
       GALLERY_R2_BUCKET: ${GALLERY_R2_BUCKET:?}
       GALLERY_R2_ACCESS_KEY: ${GALLERY_R2_ACCESS_KEY:?}
       GALLERY_R2_SECRET_KEY: ${GALLERY_R2_SECRET_KEY:?}
+      CONTENT_ADMIN_TOKEN: ${CONTENT_ADMIN_TOKEN:?}
     # 调试直连口(反代走容器网,不依赖这条)
     ports:
       - "127.0.0.1:8090:8080"
