@@ -32,4 +32,7 @@ public interface ReferralReadModel {
     /// 人数榜 Top limit:曾开通新人组(group_id=newcomerGroupId,不滤 deleted_at,曾开通即算)的
     /// 被邀请人数按邀请人聚合,人数降序。
     List<InviteRow> inviteBoard(long newcomerGroupId, int limit);
+
+    /// 新人总数:窗口内注册([start,end))且未软删的用户数;只看注册,不要求进群/开通新人组/有邀请人。
+    int newcomerTotal(Instant start, Instant end);
 }

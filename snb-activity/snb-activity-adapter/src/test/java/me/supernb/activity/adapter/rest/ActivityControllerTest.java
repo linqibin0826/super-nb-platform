@@ -24,6 +24,7 @@ import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.read.DrawStatus;
 import me.supernb.activity.domain.model.read.PoolTier;
 import me.supernb.activity.domain.model.read.ReferralInviteEntry;
+import me.supernb.activity.domain.model.read.ReferralStats;
 import me.supernb.activity.domain.model.read.ReferralRechargeEntry;
 import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
 import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
@@ -112,6 +113,14 @@ class ActivityControllerTest {
                 .andExpect(jsonPath("$[0].name").value("al***@qq.com"))
                 .andExpect(jsonPath("$[0].total").value(390))
                 .andExpect(jsonPath("$[0].capped").value(288));
+    }
+
+    @Test
+    void referralStatsIsPublicAndReturnsNewcomerTotal() throws Exception {
+        when(referralQuery.stats()).thenReturn(new ReferralStats(42));
+        mvc.perform(get("/activity/v1/referral/stats"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.newcomers").value(42));
     }
 
     @Test

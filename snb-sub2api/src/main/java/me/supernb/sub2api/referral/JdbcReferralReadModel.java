@@ -68,6 +68,19 @@ public class JdbcReferralReadModel implements ReferralReadModel {
                 (rs, i) -> new InviteRow(mask(rs.getString("inviter_email")), rs.getInt("cnt")));
     }
 
+    /// 新人总数:窗口内注册且未软删的用户数(只看注册,不看开组/邀请关系)。
+    @Override
+    public int newcomerTotal(Instant start, Instant end) {
+        MapSqlParameterSource p = new MapSqlParameterSource()
+                .addValue("start", Timestamp.from(start))
+                .addValue("end", Timestamp.from(end));
+        Integer n = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM users u "
+                        + "WHERE u.created_at >= :start AND u.created_at < :end AND u.deleted_at IS NULL",
+                p, Integer.class);
+        return n == null ? 0 : n;
+    }
+
     /// 邮箱脱敏:本地部分保留前 2 位 + `***` + 后 2 位 + @域名(如 12***89@qq.com)。后缀仅在本地
     /// 部分 ≥5 位时保留(保证至少遮 1 位)——拉新榜全是纯数字 QQ 邮箱,同前缀号码靠后缀区分;
     /// 比 recharge 读模型(仅前 2 位)多留后缀。null 原样返回;未脱敏邮箱只在本方法作用域内出现。

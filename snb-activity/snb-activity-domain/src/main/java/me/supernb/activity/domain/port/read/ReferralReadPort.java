@@ -14,4 +14,7 @@ public interface ReferralReadPort {
 
     /// 人数榜 Top limit:曾开通新人组(group_id=newcomerGroupId)的被邀请人数按邀请人聚合,人数降序,name 已脱敏。
     List<ReferralInviteEntry> inviteBoard(long newcomerGroupId, int limit);
+
+    /// 新人总数:窗口内注册([start,end))且未软删的用户数(只看注册,不要求开组或有邀请人)。
+    long newcomerTotal(Instant start, Instant end);
 }

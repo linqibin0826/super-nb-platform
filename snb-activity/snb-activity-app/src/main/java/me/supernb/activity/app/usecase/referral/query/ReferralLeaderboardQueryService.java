@@ -4,6 +4,7 @@ import java.util.List;
 import me.supernb.activity.app.usecase.referral.config.ReferralProperties;
 import me.supernb.activity.domain.model.read.ReferralInviteEntry;
 import me.supernb.activity.domain.model.read.ReferralRechargeEntry;
+import me.supernb.activity.domain.model.read.ReferralStats;
 import me.supernb.activity.domain.port.read.ReferralReadPort;
 import org.springframework.stereotype.Service;
 
@@ -29,5 +30,10 @@ public class ReferralLeaderboardQueryService {
     /// 人数榜 Top(配置 limit):曾开通新人组的被邀请人数按邀请人聚合,人数降序。
     public List<ReferralInviteEntry> inviteBoard() {
         return port.inviteBoard(props.getNewcomerGroupId(), props.getLimit());
+    }
+
+    /// 全场统计:本期新人总数(活动窗口内注册的用户数,只看注册不看开组)。
+    public ReferralStats stats() {
+        return new ReferralStats(port.newcomerTotal(props.getStart(), props.getEnd()));
     }
 }

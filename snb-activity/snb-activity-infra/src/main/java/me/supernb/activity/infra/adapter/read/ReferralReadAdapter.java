@@ -36,4 +36,10 @@ public class ReferralReadAdapter implements ReferralReadPort {
                 .map(r -> new ReferralInviteEntry(r.name(), r.count()))
                 .toList();
     }
+
+    /// 委托 starter 读模型取新人总数。
+    @Override
+    public long newcomerTotal(Instant start, Instant end) {
+        return readModel.newcomerTotal(start, end);
+    }
 }

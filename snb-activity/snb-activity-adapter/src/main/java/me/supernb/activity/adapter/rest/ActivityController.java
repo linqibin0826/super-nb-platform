@@ -20,6 +20,7 @@ import me.supernb.activity.domain.model.read.PoolTier;
 import me.supernb.activity.domain.model.read.PublicDraw;
 import me.supernb.activity.domain.model.read.ReferralInviteEntry;
 import me.supernb.activity.domain.model.read.ReferralRechargeEntry;
+import me.supernb.activity.domain.model.read.ReferralStats;
 import me.supernb.activity.domain.model.read.RechargeEntry;
 import me.supernb.sub2api.auth.CurrentUser;
 import me.supernb.sub2api.auth.UserProfile;
@@ -121,15 +122,21 @@ public class ActivityController {
         return myDrawsQuery.myDraws(user.id());
     }
 
-    /// 拉新充值榜 Top3(公开):被邀请新用户充值总额按邀请人聚合,原始总额降序,name 已脱敏。
+    /// 拉新充值榜 Top(配置榜长,公开):被邀请新用户充值总额按邀请人聚合,原始总额降序,name 已脱敏。
     @GetMapping("/referral/recharge-board")
     public List<ReferralRechargeEntry> referralRechargeBoard() {
         return referralQuery.rechargeBoard();
     }
 
-    /// 拉新人数榜 Top3(公开):曾开通新人组的被邀请人数按邀请人聚合,人数降序,name 已脱敏。
+    /// 拉新人数榜 Top(配置榜长,公开):曾开通新人组的被邀请人数按邀请人聚合,人数降序,name 已脱敏。
     @GetMapping("/referral/invite-board")
     public List<ReferralInviteEntry> referralInviteBoard() {
         return referralQuery.inviteBoard();
+    }
+
+    /// 拉新全场统计(公开):本期新人总数(活动窗口内注册的用户数)。
+    @GetMapping("/referral/stats")
+    public ReferralStats referralStats() {
+        return referralQuery.stats();
     }
 }

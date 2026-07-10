@@ -79,6 +79,9 @@ class JdbcReferralReadModelTest {
         order(jdbc, 103, "500", "2026-07-11T01:00:00Z");
         sub(jdbc, 103, 77, null);
 
+        // 窗口内注册但从未开通新人组(没进群):按「注册新用户」口径计入新人总数
+        user(jdbc, 950, "95000001@qq.com", "user", "2026-07-12T00:00:00Z", null);
+
         readModel = new JdbcReferralReadModel(jdbc);
     }
 
@@ -126,6 +129,12 @@ class JdbcReferralReadModelTest {
         assertThat(board.get(0).count()).isEqualTo(2);
         assertThat(board.get(1).name()).isEqualTo("bo***@gmail.com");
         assertThat(board.get(1).count()).isEqualTo(1);
+    }
+
+    @Test
+    void newcomerTotalCountsWindowRegistrationsExcludingDeleted() {
+        // 窗口内注册且未软删:101/102/201/950(未开组也算) → 4;103/910 软删排除;900 与各邀请人窗口外
+        assertThat(readModel.newcomerTotal(START, END)).isEqualTo(4);
     }
 
     @Test
