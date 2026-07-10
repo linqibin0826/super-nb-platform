@@ -9,6 +9,12 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         login: '登录',
         theme: '切换明暗主题',
       },
+      article: {
+        notFound: '内容不存在或已下架',
+        backHome: '返回内容中心',
+        source: '来源：',
+        original: '原文链接',
+      },
       list: {
         all: '全部',
         ebook: '电子书',
@@ -253,6 +259,12 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       nav: {
         login: 'Sign in',
         theme: 'Toggle light / dark theme',
+      },
+      article: {
+        notFound: 'Content not found or unpublished',
+        backHome: 'Back to Content Hub',
+        source: 'Source: ',
+        original: 'Original',
       },
       list: {
         all: 'All',

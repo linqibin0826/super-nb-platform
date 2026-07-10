@@ -1,1 +1,86 @@
-/* hub 专属全局样式：正文排版 .hub-prose 在 Task 10 充实（用 token 变量，明暗自动跟随） */
+/* hub 专属全局样式。.hub-prose = 文章正文排版：全部用 token 变量，明暗主题自动跟随。 */
+
+.hub-prose {
+  font-size: 15px;
+  line-height: 1.8;
+  color: rgb(var(--snb-t1));
+}
+.hub-prose h1,
+.hub-prose h2,
+.hub-prose h3,
+.hub-prose h4 {
+  margin: 1.6em 0 0.6em;
+  font-weight: 700;
+  line-height: 1.35;
+  color: rgb(var(--snb-t1));
+}
+.hub-prose h1 { font-size: 1.5em; }
+.hub-prose h2 {
+  font-size: 1.3em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid rgb(var(--snb-hairline));
+}
+.hub-prose h3 { font-size: 1.15em; }
+.hub-prose p { margin: 0.9em 0; }
+.hub-prose ul,
+.hub-prose ol {
+  margin: 0.9em 0;
+  padding-left: 1.6em;
+}
+.hub-prose ul { list-style: disc; }
+.hub-prose ol { list-style: decimal; }
+.hub-prose li { margin: 0.3em 0; }
+.hub-prose a {
+  color: rgb(var(--snb-t1));
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: rgb(var(--snb-t3));
+}
+.hub-prose a:hover { text-decoration-color: rgb(var(--snb-t1)); }
+.hub-prose img {
+  max-width: 100%;
+  margin: 1.2em 0;
+  border-radius: 12px;
+}
+.hub-prose blockquote {
+  margin: 1.2em 0;
+  padding: 0.2em 1em;
+  border-left: 3px solid rgb(var(--snb-hairline-strong));
+  color: rgb(var(--snb-t2));
+}
+.hub-prose code {
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+  background: rgb(var(--snb-well));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+}
+.hub-prose pre {
+  margin: 1.2em 0;
+  padding: 1em;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: rgb(var(--snb-well));
+}
+.hub-prose pre code {
+  padding: 0;
+  background: none;
+}
+.hub-prose hr {
+  margin: 2em 0;
+  border: none;
+  border-top: 1px solid rgb(var(--snb-hairline));
+}
+.hub-prose table {
+  margin: 1.2em 0;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92em;
+}
+.hub-prose th,
+.hub-prose td {
+  padding: 0.5em 0.8em;
+  border: 1px solid rgb(var(--snb-hairline));
+  text-align: left;
+}
+.hub-prose th { background: rgb(var(--snb-well)); }
