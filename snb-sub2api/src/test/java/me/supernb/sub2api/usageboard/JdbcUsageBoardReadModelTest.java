@@ -34,7 +34,7 @@ class JdbcUsageBoardReadModelTest {
         jdbc.execute("CREATE TABLE user_avatars (user_id BIGINT UNIQUE, url TEXT NOT NULL DEFAULT '')");
         jdbc.execute("CREATE TABLE usage_logs (id BIGSERIAL PRIMARY KEY, user_id BIGINT, "
                 + "input_tokens INT, output_tokens INT, cache_creation_tokens INT, cache_read_tokens INT, "
-                + "actual_cost DOUBLE PRECISION, created_at TIMESTAMPTZ)");
+                + "actual_cost DOUBLE PRECISION, billing_type SMALLINT NOT NULL DEFAULT 0, created_at TIMESTAMPTZ)");
         jdbc.execute("CREATE TABLE payment_orders (id BIGSERIAL PRIMARY KEY, user_id BIGINT, "
                 + "order_type TEXT, status TEXT)");
 
@@ -60,6 +60,7 @@ class JdbcUsageBoardReadModelTest {
         log(jdbc, 50, 1, 1, 1, 1, 0.1, "2026-07-07T02:00:00Z");
         log(jdbc, 60, 1, 1, 1, 1, 0.1, "2026-07-07T02:00:00Z");
         log(jdbc, 10, 999, 0, 0, 0, 9.9, "2026-07-13T16:00:00Z"); // == END,排他不计
+        billedLog(jdbc, 10, 200, 100, 0, 0, 5.0, 1, "2026-07-08T02:00:00Z"); // 订阅计费:tokens 计,cost 不计
         readModel = new JdbcUsageBoardReadModel(jdbc);
     }
 
@@ -69,9 +70,14 @@ class JdbcUsageBoardReadModelTest {
     }
 
     static void log(JdbcTemplate j, long uid, int in, int out, int cc, int cr, double cost, String at) {
+        billedLog(j, uid, in, out, cc, cr, cost, 0, at);
+    }
+
+    /// billing_type:0=余额扣费,1=订阅套餐(fork usage_log.go 常量)
+    static void billedLog(JdbcTemplate j, long uid, int in, int out, int cc, int cr, double cost, int billingType, String at) {
         j.update("INSERT INTO usage_logs(user_id, input_tokens, output_tokens, cache_creation_tokens, "
-                + "cache_read_tokens, actual_cost, created_at) VALUES (?,?,?,?,?,?,?)",
-                uid, in, out, cc, cr, cost, Timestamp.from(Instant.parse(at)));
+                + "cache_read_tokens, actual_cost, billing_type, created_at) VALUES (?,?,?,?,?,?,?,?)",
+                uid, in, out, cc, cr, cost, billingType, Timestamp.from(Instant.parse(at)));
     }
 
     @Test
@@ -79,9 +85,9 @@ class JdbcUsageBoardReadModelTest {
         List<UsageBoardReadModel.UsageRow> rows = readModel.aggregate(START, END);
         assertThat(rows).hasSize(2); // 只剩 10 和 20
         UsageBoardReadModel.UsageRow u10 = rows.stream().filter(r -> r.userId() == 10).findFirst().orElseThrow();
-        assertThat(u10.tokens()).isEqualTo(100 + 50 + 10 + 40 + 200 + 100); // 500,窗口外那条不计
-        assertThat(u10.requests()).isEqualTo(2);
-        assertThat(u10.cost()).isEqualTo(4.0);
+        assertThat(u10.tokens()).isEqualTo(100 + 50 + 10 + 40 + 200 + 100 + 300); // 800,窗口外不计,订阅行 tokens 计入
+        assertThat(u10.requests()).isEqualTo(3);
+        assertThat(u10.cost()).isEqualTo(4.0); // 订阅行 5.0 不进金额(billing_type=1)
         assertThat(u10.displayName()).isEqualTo("老王");        // username 优先
         assertThat(u10.avatarUrl()).isEqualTo("https://cdn/a.png");
     }

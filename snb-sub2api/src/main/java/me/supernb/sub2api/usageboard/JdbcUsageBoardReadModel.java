@@ -25,7 +25,10 @@ public class JdbcUsageBoardReadModel implements UsageBoardReadModel {
         return jdbc.query(
                 "SELECT u.id AS user_id, u.email, u.username, NULLIF(av.url, '') AS avatar_url, "
                         + "COALESCE(SUM(l.input_tokens + l.output_tokens + l.cache_creation_tokens + l.cache_read_tokens), 0) AS tokens, "
-                        + "COUNT(*) AS requests, COALESCE(SUM(l.actual_cost), 0) AS cost "
+                        + "COUNT(*) AS requests, "
+                        // 金额只计余额扣费(billing_type=0):订阅套餐(=1)烧的是套餐额度非真钱,
+                        // 混入会让赠送订阅刷高氪金榜;tokens/requests 保持全量(生产力不问钱从哪来)
+                        + "COALESCE(SUM(CASE WHEN l.billing_type = 0 THEN l.actual_cost ELSE 0 END), 0) AS cost "
                         + "FROM usage_logs l "
                         + "JOIN users u ON u.id = l.user_id "
                         + "AND u.role = 'user' AND u.status = 'active' AND u.deleted_at IS NULL "

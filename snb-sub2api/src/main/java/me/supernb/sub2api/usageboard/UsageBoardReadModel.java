@@ -6,6 +6,7 @@ import java.util.List;
 /// 用量排行榜只读读模型:窗口内(左闭右开)逐用户聚合 tokens/requests/actual_cost。
 /// 口径:只收 role='user' AND status='active' AND deleted_at IS NULL 且历史有
 /// COMPLETED balance 充值(payment_orders,家族红线:绝不用 users.total_recharged)的用户;
+/// cost 仅计余额扣费(billing_type=0),订阅套餐消耗不计入金额(tokens/requests 全量);
 /// displayName 服务端择名+脱敏(username 优先,否则邮箱前2+***+后2),原始邮箱不出本层。
 public interface UsageBoardReadModel {
 
