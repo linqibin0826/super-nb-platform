@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Import;
 /// 门槛端口用可变 map 桩(测试直接改静态字段模拟复核时指标涨跌),不连 sub2api。
 @SpringBootConfiguration
 @EnableAutoConfiguration
-@Import({RaffleCampaignAdapter.class, RaffleEntryAdapter.class, RafflePrizeAdapter.class})
+@Import({RaffleCampaignAdapter.class, RaffleEntryAdapter.class, RafflePrizeAdapter.class, RaffleDrawAdapter.class})
 class RaffleInfraTestApp {
 
     /// 可变门槛桩:userId -> 指标值;测试用例按需增删改。
