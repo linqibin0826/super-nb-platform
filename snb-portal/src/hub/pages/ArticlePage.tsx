@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { Chip, Skeleton } from '../../ui'
 import { t } from '../../i18n'
@@ -21,8 +21,14 @@ function formatDate(iso: string): string {
 
 /** 文章详情页：编辑部式阅读版式（进度线/速览面板/编号分节）。正文=管线预渲染 HTML + DOMPurify 兜底（纵深防御，照公告口径默认白名单）；电子书同版式，正文位换书体纸面卡（站长拍板：当普通教程，不做独立阅读器）。 */
 export function ArticlePage() {
-  const { slug = '' } = useParams()
+  const { slug = '', chapter: chapterRaw } = useParams()
+  const chapter = chapterRaw && /^\d+$/.test(chapterRaw) ? Number(chapterRaw) : undefined
   const [state, setState] = useState<State>({ kind: 'loading' })
+
+  // 章节切换/换文回到页顶（路由变化 React Router 不自动滚）
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [slug, chapterRaw])
 
   useEffect(() => {
     let alive = true
@@ -70,6 +76,9 @@ export function ArticlePage() {
 
   const a = state.article
   const isEbook = a.type === 'ebook'
+  if (!isEbook && chapterRaw) {
+    return <Navigate to={`/a/${a.slug}`} replace /> // 章节段只对电子书有意义
+  }
   const minutes = isEbook ? null : readingMinutes(a.bodyHtml ?? '')
   const bookUrl = a.ebookPath ? '/' + a.ebookPath : ''
 
@@ -143,7 +152,7 @@ export function ArticlePage() {
       )}
 
       {isEbook ? (
-        <EbookBody title={a.title} path={bookUrl} />
+        <EbookBody slug={a.slug} title={a.title} path={bookUrl} chapter={chapter} />
       ) : (
         <article
           className="hub-prose"

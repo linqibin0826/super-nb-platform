@@ -9,6 +9,12 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         login: '登录',
         theme: '切换明暗主题',
       },
+      book: {
+        toc: '目录',
+        untitled: '第 {n} 节',
+        prev: '上一章',
+        next: '下一章',
+      },
       reader: {
         openNew: '新窗口打开',
         missing: '电子书文件缺失，请稍后再试',
@@ -265,6 +271,12 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       nav: {
         login: 'Sign in',
         theme: 'Toggle light / dark theme',
+      },
+      book: {
+        toc: 'Contents',
+        untitled: 'Section {n}',
+        prev: 'Previous chapter',
+        next: 'Next chapter',
       },
       reader: {
         openNew: 'Open in new tab',

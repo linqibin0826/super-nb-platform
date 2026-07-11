@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ArticlePage } from '../pages/ArticlePage'
 
@@ -31,14 +31,33 @@ function stubDetailAndHead(body: unknown, opts: { headOk?: boolean } = {}) {
   }))
 }
 
-function renderAt(slug: string) {
+function renderAt(slugPath: string) {
   return render(
-    <MemoryRouter initialEntries={[`/a/${slug}`]}>
+    <MemoryRouter initialEntries={[`/a/${slugPath}`]}>
       <Routes>
-        <Route path="/a/:slug" element={<ArticlePage />} />
+        <Route path="/a/:slug/:chapter?" element={<ArticlePage />} />
       </Routes>
     </MemoryRouter>,
   )
+}
+
+/** 往 jsdom 的同源 iframe 塞一本假书（封面+书内目录页+两章），再触发 load 走分章逻辑。 */
+const FAKE_BOOK = `
+  <div class="cover">封面块</div>
+  <div class="content"><h2 id="toc">目录</h2></div>
+  <div class="content"><h2 id="ch1">第一章标题</h2><p>正文A</p></div>
+  <div class="content"><h2 id="ch2">第二章标题</h2><p>正文B</p></div>`
+
+async function loadFakeBook(): Promise<HTMLIFrameElement> {
+  await waitFor(() => expect(screen.getByTitle('你好 Codex')).toBeTruthy())
+  const iframe = screen.getByTitle('你好 Codex') as HTMLIFrameElement
+  // jsdom 不加载 src：手工初始化 iframe 文档再触发 load
+  const doc = iframe.contentDocument ?? iframe.contentWindow!.document
+  doc.open()
+  doc.write(`<!doctype html><html><body>${FAKE_BOOK}</body></html>`)
+  doc.close()
+  fireEvent.load(iframe)
+  return iframe
 }
 
 describe('ArticlePage', () => {
@@ -119,5 +138,51 @@ describe('ArticlePage', () => {
     stubDetailAndHead(EBOOK, { headOk: false })
     renderAt('hello')
     await waitFor(() => expect(screen.getByTestId('hub-reader-missing')).toBeTruthy())
+  })
+
+  it('ebook 书首页：目录卡列出章节（跳过封面与书内目录页），章内容隐藏只留封面', async () => {
+    stubDetailAndHead(EBOOK)
+    renderAt('hello')
+    const iframe = await loadFakeBook()
+
+    await waitFor(() => expect(screen.getByTestId('hub-book-toc')).toBeTruthy())
+    const links = Array.from(screen.getByTestId('hub-book-toc').querySelectorAll('a'))
+    expect(links.map((a) => a.textContent?.trim())).toEqual(['第一章标题', '第二章标题'])
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(['/a/hello/1', '/a/hello/2'])
+
+    const doc = iframe.contentDocument!
+    expect((doc.querySelector('.cover') as HTMLElement).style.display).toBe('')
+    expect((doc.getElementById('ch1')!.parentElement as HTMLElement).style.display).toBe('none')
+  })
+
+  it('ebook 章节页：只显示当前章，顶条 k/N，上一/下一章导航就位', async () => {
+    stubDetailAndHead(EBOOK)
+    renderAt('hello/1')
+    const iframe = await loadFakeBook()
+
+    await waitFor(() => expect(screen.getByTestId('hub-book-strip')).toBeTruthy())
+    expect(screen.getByTestId('hub-book-strip').textContent).toContain('1 / 2')
+    expect(screen.queryByTestId('hub-book-toc')).toBeNull()
+
+    const doc = iframe.contentDocument!
+    expect((doc.getElementById('ch1')!.parentElement as HTMLElement).style.display).toBe('')
+    expect((doc.getElementById('ch2')!.parentElement as HTMLElement).style.display).toBe('none')
+    expect((doc.querySelector('.cover') as HTMLElement).style.display).toBe('none')
+
+    const pager = screen.getByTestId('hub-book-pager')
+    const nextLink = Array.from(pager.querySelectorAll('a')).find((a) => a.textContent?.includes('第二章标题'))!
+    expect(nextLink.getAttribute('href')).toBe('/a/hello/2')
+  })
+
+  it('普通文章带章节段重定向净化回 /a/:slug', async () => {
+    stubDetail(DETAIL)
+    render(
+      <MemoryRouter initialEntries={['/a/hello/3']}>
+        <Routes>
+          <Route path="/a/:slug/:chapter?" element={<ArticlePage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(screen.getByText('正文段落')).toBeTruthy())
   })
 })
