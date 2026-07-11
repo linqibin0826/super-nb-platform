@@ -156,7 +156,14 @@ public class ActivityController {
     @GetMapping("/usage-leaderboard")
     public BoardView usageLeaderboard(@RequestParam String period, @RequestParam String metric,
             @CurrentUser UserProfile user) {
-        BoardView view = usageLeaderboardQuery.board(parsePeriod(period), parseMetric(metric), user.id());
+        BoardPeriod p = parsePeriod(period);
+        BoardMetric m = parseMetric(metric);
+        // 金额榜只开日/周(站长 2026-07-11 拍板):历史累计氪金=鲸鱼终身消费公开账本,
+        // 敏感且头部永久固化;后端必须封死,只藏前端 tab 挡不住 devtools。
+        if (m == BoardMetric.AMOUNT && (p == BoardPeriod.MONTH || p == BoardPeriod.ALL)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "amount board supports day/week only");
+        }
+        BoardView view = usageLeaderboardQuery.board(p, m, user.id());
         if (view == null) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "board warming up");
         }

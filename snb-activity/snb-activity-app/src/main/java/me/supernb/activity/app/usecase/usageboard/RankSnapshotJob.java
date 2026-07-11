@@ -44,7 +44,10 @@ public class RankSnapshotJob {
                 Instant end = period == BoardPeriod.DAY ? todayStart : now;
                 List<UsageBoardRow> rows = readPort.aggregate(start, end);
                 snapshotPort.save(today, period, BoardMetric.TOKENS, BoardAssembler.rankByTokens(rows));
-                snapshotPort.save(today, period, BoardMetric.AMOUNT, BoardAssembler.rankByCost(rows));
+                // 金额榜只开日/周(端点同规则拒 month/all),月/总的金额快照永远无消费方,不落
+                if (period == BoardPeriod.DAY || period == BoardPeriod.WEEK) {
+                    snapshotPort.save(today, period, BoardMetric.AMOUNT, BoardAssembler.rankByCost(rows));
+                }
             } catch (Exception e) {
                 log.error("名次快照失败 period={}", period, e);
             }

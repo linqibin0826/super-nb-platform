@@ -45,7 +45,11 @@ class RankSnapshotJobTest {
         RecordingSnap snap = new RecordingSnap();
         new RankSnapshotJob(port, snap).snapshotDaily();
 
-        assertThat(snap.saved).hasSize(8);                        // 4 周期 × 2 指标
+        assertThat(snap.saved).hasSize(6);                        // tokens×4 + amount×2(金额只日/周)
+        assertThat(snap.saved.stream()
+                .filter(sv -> sv.m() == BoardMetric.AMOUNT)
+                .map(Saved::p))
+                .containsExactlyInAnyOrder(BoardPeriod.DAY, BoardPeriod.WEEK);
         LocalDate today = LocalDate.now(BoardPeriods.SHANGHAI);
         assertThat(snap.saved).allMatch(sv -> sv.date().equals(today));
         assertThat(snap.purgedBefore).isEqualTo(today.minusDays(30));

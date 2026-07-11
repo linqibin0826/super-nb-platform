@@ -95,6 +95,16 @@ class UsageLeaderboardEndpointTest {
     }
 
     @Test
+    void amountBoardRejectsMonthAndAllWith400() throws Exception {
+        for (String p : new String[] {"month", "all"}) {
+            mvc.perform(get("/activity/v1/usage-leaderboard")
+                            .param("period", p).param("metric", "amount")
+                            .header("Authorization", "Bearer T"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
     void coldCacheYields503() throws Exception {
         when(cache.dataset(BoardPeriod.DAY)).thenReturn(null);
         mvc.perform(get("/activity/v1/usage-leaderboard")
