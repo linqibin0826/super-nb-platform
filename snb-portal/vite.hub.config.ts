@@ -5,7 +5,8 @@ import path from 'node:path'
 
 // 本地 dev 直读 super-nb/ 下内容仓库的电子书原始 HTML（生产由 Caddy /books/* 从 web/hub-books 静态服务）。
 // 照 vite.config.ts 的 devGallery 先例；dev 吐的是未清洗的 source.html，与生产清洗版仅差字体 @import。
-const BOOKS_DIR = path.resolve(__dirname, '../../super-nb-hub-content/books')
+// 缺省按主树同级布局解析；在 worktree 等异位场景用 HUB_BOOKS_DIR 显式指内容仓库 books/ 目录。
+const BOOKS_DIR = process.env.HUB_BOOKS_DIR || path.resolve(__dirname, '../../super-nb-hub-content/books')
 
 function devBooks(): Plugin {
   return {
