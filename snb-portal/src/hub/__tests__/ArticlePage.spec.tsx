@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ArticlePage } from '../pages/ArticlePage'
 
@@ -21,13 +21,36 @@ function stubDetail(body: unknown, status = 200) {
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })))
 }
 
-const EBOOK = { ...DETAIL, type: 'ebook', bodyHtml: null, ebookPath: 'books/hello.html', coverUrl: null }
+const EBOOK = { ...DETAIL, type: 'ebook', bodyHtml: null, ebookPath: 'books/hello', coverUrl: null }
 
-/** ebook 用例专用：detail 与 EbookBody 的 HEAD 探活分流 stub。 */
-function stubDetailAndHead(body: unknown, opts: { headOk?: boolean } = {}) {
-  vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
-    if (init?.method === 'HEAD') return new Response(null, { status: opts.headOk === false ? 404 : 200 })
-    return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
+const FAKE_TOC = {
+  title: '你好 Codex',
+  subtitle: '副题一行',
+  badge: 'v2.0.0',
+  author: '花叔',
+  metaLines: ['适用版本：CLI 0.130+'],
+  chapters: [
+    { index: 1, title: '§01 第一章标题', en: 'One' },
+    { index: 2, title: '§02 第二章标题' },
+  ],
+}
+
+/** ebook 用例专用：detail / toc.json / 章 html 三路分流 stub。 */
+function stubBook(detail: unknown, opts: { tocOk?: boolean } = {}) {
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    const u = String(url)
+    if (u.endsWith('/toc.json')) {
+      if (opts.tocOk === false) return new Response('nope', { status: 404 })
+      return new Response(JSON.stringify(FAKE_TOC), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+    const ch = u.match(/\/books\/hello\/(\d+)\.html$/)
+    if (ch) {
+      return new Response(`<p class="book-lead">第${ch[1]}章引言</p><p>正文段</p>`, {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' },
+      })
+    }
+    return new Response(JSON.stringify(detail), { status: 200, headers: { 'Content-Type': 'application/json' } })
   }))
 }
 
@@ -41,24 +64,6 @@ function renderAt(slugPath: string) {
   )
 }
 
-/** 往 jsdom 的同源 iframe 塞一本假书（封面+书内目录页+两章），再触发 load 走分章逻辑。 */
-const FAKE_BOOK = `
-  <div class="cover">封面块</div>
-  <div class="content"><h2 id="toc">目录</h2></div>
-  <div class="content"><h2 id="ch1">第一章标题</h2><p>正文A</p></div>
-  <div class="content"><h2 id="ch2">第二章标题</h2><p>正文B</p></div>`
-
-async function loadFakeBook(): Promise<HTMLIFrameElement> {
-  await waitFor(() => expect(screen.getByTitle('你好 Codex')).toBeTruthy())
-  const iframe = screen.getByTitle('你好 Codex') as HTMLIFrameElement
-  // jsdom 不加载 src：手工初始化 iframe 文档再触发 load
-  const doc = iframe.contentDocument ?? iframe.contentWindow!.document
-  doc.open()
-  doc.write(`<!doctype html><html><body>${FAKE_BOOK}</body></html>`)
-  doc.close()
-  fireEvent.load(iframe)
-  return iframe
-}
 
 describe('ArticlePage', () => {
   beforeEach(() => {
@@ -121,57 +126,47 @@ describe('ArticlePage', () => {
     await waitFor(() => expect(screen.getByTestId('hub-not-found')).toBeTruthy())
   })
 
-  it('ebook 走同版式：书体 iframe 嵌正文位、署名行无阅读时长带新窗口打开、速览照常', async () => {
-    stubDetailAndHead(EBOOK)
+  it('ebook 书首页：书档案卡（副题/meta/作者·版本）+ 目录卡，署名行无阅读时长', async () => {
+    stubBook(EBOOK)
     renderAt('hello')
-
-    await waitFor(() => expect(screen.getByTestId('hub-ebook')).toBeTruthy())
-    const iframe = screen.getByTitle('你好 Codex') as HTMLIFrameElement
-    expect(iframe.getAttribute('src')).toBe('/books/hello.html')
-    expect(screen.getByTestId('hub-tldr')).toBeTruthy()
-    const byline = screen.getByTestId('hub-byline').textContent!
-    expect(byline).not.toMatch(/分钟读完|min read/) // ebook 无 bodyHtml，不估时长
-    expect(screen.getByTestId('hub-reader-open').getAttribute('href')).toBe('/books/hello.html')
-  })
-
-  it('ebook 文件缺失（HEAD 404）在正文位显示缺失提示', async () => {
-    stubDetailAndHead(EBOOK, { headOk: false })
-    renderAt('hello')
-    await waitFor(() => expect(screen.getByTestId('hub-reader-missing')).toBeTruthy())
-  })
-
-  it('ebook 书首页：目录卡列出章节（跳过封面与书内目录页），章内容隐藏只留封面', async () => {
-    stubDetailAndHead(EBOOK)
-    renderAt('hello')
-    const iframe = await loadFakeBook()
 
     await waitFor(() => expect(screen.getByTestId('hub-book-toc')).toBeTruthy())
-    const links = Array.from(screen.getByTestId('hub-book-toc').querySelectorAll('a'))
-    expect(links.map((a) => a.textContent?.trim())).toEqual(['第一章标题', '第二章标题'])
-    expect(links.map((a) => a.getAttribute('href'))).toEqual(['/a/hello/1', '/a/hello/2'])
+    expect(screen.getByTestId('hub-tldr')).toBeTruthy() // 速览照常
+    expect(screen.getByTestId('hub-byline').textContent).not.toMatch(/分钟读完|min read/)
 
-    const doc = iframe.contentDocument!
-    expect((doc.querySelector('.cover') as HTMLElement).style.display).toBe('')
-    expect((doc.getElementById('ch1')!.parentElement as HTMLElement).style.display).toBe('none')
+    const meta = screen.getByTestId('hub-book-meta')
+    expect(meta.textContent).toContain('副题一行')
+    expect(meta.textContent).toContain('适用版本：CLI 0.130+')
+    expect(meta.textContent).toContain('花叔 · v2.0.0')
+
+    const links = Array.from(screen.getByTestId('hub-book-toc').querySelectorAll('a'))
+    expect(links.map((a) => a.textContent?.trim())).toEqual(['§01 第一章标题', '§02 第二章标题'])
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(['/a/hello/1', '/a/hello/2'])
   })
 
-  it('ebook 章节页：只显示当前章，顶条 k/N，上一/下一章导航就位', async () => {
-    stubDetailAndHead(EBOOK)
+  it('ebook 章节页：章头衬线题+英文副题、正文走 hub-prose（book-lead 保留、净化兜底）、上一/下一章', async () => {
+    stubBook(EBOOK)
     renderAt('hello/1')
-    const iframe = await loadFakeBook()
 
     await waitFor(() => expect(screen.getByTestId('hub-book-strip')).toBeTruthy())
     expect(screen.getByTestId('hub-book-strip').textContent).toContain('1 / 2')
     expect(screen.queryByTestId('hub-book-toc')).toBeNull()
+    expect(screen.getByText('§01 第一章标题')).toBeTruthy()
+    expect(screen.getByText('One')).toBeTruthy()
 
-    const doc = iframe.contentDocument!
-    expect((doc.getElementById('ch1')!.parentElement as HTMLElement).style.display).toBe('')
-    expect((doc.getElementById('ch2')!.parentElement as HTMLElement).style.display).toBe('none')
-    expect((doc.querySelector('.cover') as HTMLElement).style.display).toBe('none')
+    await waitFor(() => expect(screen.getByText('第1章引言')).toBeTruthy())
+    expect(document.querySelector('.hub-prose .book-lead')).toBeTruthy()
 
     const pager = screen.getByTestId('hub-book-pager')
     const nextLink = Array.from(pager.querySelectorAll('a')).find((a) => a.textContent?.includes('第二章标题'))!
     expect(nextLink.getAttribute('href')).toBe('/a/hello/2')
+    expect(document.title).toContain('§01 第一章标题')
+  })
+
+  it('ebook toc.json 缺失显示内容缺失提示', async () => {
+    stubBook(EBOOK, { tocOk: false })
+    renderAt('hello')
+    await waitFor(() => expect(screen.getByTestId('hub-reader-missing')).toBeTruthy())
   })
 
   it('普通文章带章节段重定向净化回 /a/:slug', async () => {

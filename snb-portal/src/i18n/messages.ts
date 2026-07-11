@@ -16,8 +16,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         next: '下一章',
       },
       reader: {
-        openNew: '新窗口打开',
-        missing: '电子书文件缺失，请稍后再试',
+        missing: '电子书内容缺失，请稍后再试',
       },
       article: {
         notFound: '内容不存在或已下架',
@@ -279,8 +278,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         next: 'Next chapter',
       },
       reader: {
-        openNew: 'Open in new tab',
-        missing: 'eBook file missing, please retry later',
+        missing: 'eBook content missing, please retry later',
       },
       article: {
         notFound: 'Content not found or unpublished',

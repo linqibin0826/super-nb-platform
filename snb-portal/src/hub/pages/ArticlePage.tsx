@@ -80,7 +80,6 @@ export function ArticlePage() {
     return <Navigate to={`/a/${a.slug}`} replace /> // 章节段只对电子书有意义
   }
   const minutes = isEbook ? null : readingMinutes(a.bodyHtml ?? '')
-  const bookUrl = a.ebookPath ? '/' + a.ebookPath : ''
 
   return (
     <main className="mx-auto w-full max-w-[43rem] px-5 py-8 sm:py-10" data-testid="hub-article">
@@ -121,20 +120,7 @@ export function ArticlePage() {
               </span>
             </>
           )}
-          {isEbook && bookUrl && (
-            <>
-              <span aria-hidden="true">·</span>
-              <a
-                className="underline underline-offset-4 hover:text-snb-t1"
-                href={bookUrl}
-                target="_blank"
-                rel="noopener"
-                data-testid="hub-reader-open"
-              >
-                {t('hub.reader.openNew')}
-              </a>
-            </>
-          )}
+
         </p>
       </header>
 
@@ -152,7 +138,7 @@ export function ArticlePage() {
       )}
 
       {isEbook ? (
-        <EbookBody slug={a.slug} title={a.title} path={bookUrl} chapter={chapter} />
+        <EbookBody slug={a.slug} path={a.ebookPath ?? ''} chapter={chapter} />
       ) : (
         <article
           className="hub-prose"
