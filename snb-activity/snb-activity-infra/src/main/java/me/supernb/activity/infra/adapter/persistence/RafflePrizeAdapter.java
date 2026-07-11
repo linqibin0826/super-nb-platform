@@ -1,8 +1,10 @@
 package me.supernb.activity.infra.adapter.persistence;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import me.supernb.activity.domain.model.raffle.RafflePrize;
+import me.supernb.activity.domain.model.read.raffle.PersonWinsView;
 import me.supernb.activity.domain.port.raffle.RafflePrizePort;
 import me.supernb.activity.infra.adapter.persistence.dao.RafflePrizeJpaRepository;
 import me.supernb.activity.infra.adapter.persistence.entity.RafflePrizeEntity;
@@ -30,6 +32,14 @@ public class RafflePrizeAdapter implements RafflePrizePort {
     public Optional<RafflePrize> wonBy(long campaignId, long userId) {
         return prizes.findFirstByCampaignIdAndWinnerUserId(campaignId, userId)
                 .map(RafflePrizeAdapter::toDomain);
+    }
+
+    @Override
+    public List<PersonWinsView.Win> winsOf(long userId) {
+        return prizes.findWinsOf(userId).stream()
+                .map(r -> new PersonWinsView.Win(((Number) r[0]).longValue(), (String) r[1],
+                        (Instant) r[2], (String) r[3], (String) r[4]))
+                .toList();
     }
 
     /// 实体 -> 领域记录。

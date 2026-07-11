@@ -12,6 +12,7 @@ import me.supernb.activity.domain.model.raffle.RaffleCampaign;
 import me.supernb.activity.domain.model.raffle.RaffleEntrant;
 import me.supernb.activity.domain.model.raffle.RafflePrize;
 import me.supernb.activity.domain.model.read.raffle.MyRaffleView;
+import me.supernb.activity.domain.model.read.raffle.PersonWinsView;
 import me.supernb.activity.domain.model.read.raffle.RaffleCurrentView;
 import me.supernb.activity.domain.model.read.raffle.RaffleHistoryItem;
 import me.supernb.activity.domain.model.read.raffle.RaffleResultView;
@@ -101,6 +102,22 @@ public class RaffleQueryService {
                 .map(c -> new RaffleHistoryItem(c.id(), c.name(), c.drawnAt(),
                         prizePort.byCampaign(c.id()).size(), entryPort.count(c.id())))
                 .toList();
+    }
+
+    /// 公开中奖记录:坐标=(已开奖期, 参会证号)——只认已在开奖通报里公开过的坐标,
+    /// 不新增任何身份标识出口;坐标期未开奖、坐标不存在、或该人从未中过奖,一律 404(参与史不泄露)。
+    public PersonWinsView personWins(long campaignId, int entryNo) {
+        campaignPort.byId(campaignId)
+                .filter(RaffleCampaign::drawn)
+                .orElseThrow(RaffleNotFoundException::new);
+        var entrant = entryPort.findByNo(campaignId, entryNo).orElseThrow(RaffleNotFoundException::new);
+        List<PersonWinsView.Win> wins = prizePort.winsOf(entrant.userId());
+        if (wins.isEmpty()) {
+            throw new RaffleNotFoundException();
+        }
+        String name = gatePort.displayNames(List.of(entrant.userId()))
+                .getOrDefault(entrant.userId(), "神秘代表");
+        return new PersonWinsView(name, wins);
     }
 
     /// 本人视图:资质窗口=[gate_from, min(now, entry_close_at))(截止后进度冻结);

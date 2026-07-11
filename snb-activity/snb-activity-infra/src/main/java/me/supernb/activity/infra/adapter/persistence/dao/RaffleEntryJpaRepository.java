@@ -19,6 +19,9 @@ public interface RaffleEntryJpaRepository extends JpaRepository<RaffleEntryEntit
     /// 本人在该期的报名记录(幂等判定)。
     Optional<RaffleEntryEntity> findByCampaignIdAndUserId(long campaignId, long userId);
 
+    /// 按公开坐标(期, 参会证号)定位报名记录。
+    Optional<RaffleEntryEntity> findByCampaignIdAndEntryNo(long campaignId, int entryNo);
+
     /// 该期报名人数。
     int countByCampaignId(long campaignId);
 

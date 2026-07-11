@@ -49,6 +49,12 @@ public class RaffleEntryAdapter implements RaffleEntryPort {
     }
 
     @Override
+    public Optional<RaffleEntrant> findByNo(long campaignId, int entryNo) {
+        return entries.findByCampaignIdAndEntryNo(campaignId, entryNo)
+                .map(e -> new RaffleEntrant(e.getUserId(), e.getEntryNo()));
+    }
+
+    @Override
     public int count(long campaignId) {
         return entries.countByCampaignId(campaignId);
     }

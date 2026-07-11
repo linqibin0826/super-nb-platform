@@ -27,6 +27,7 @@ import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQuerySe
 import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.raffle.RaffleEntryTicket;
 import me.supernb.activity.domain.model.read.raffle.MyRaffleView;
+import me.supernb.activity.domain.model.read.raffle.PersonWinsView;
 import me.supernb.activity.domain.model.read.raffle.RaffleCurrentView;
 import me.supernb.activity.domain.model.read.raffle.RaffleResultView;
 import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
@@ -141,6 +142,26 @@ class RaffleEndpointTest {
     @Test
     void invalidCampaignIdRejected400() throws Exception {
         mvc.perform(get("/activity/v1/raffle/abc/result"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void winsIsPublicAndCarriesNoPayloadNorUserId() throws Exception {
+        when(raffleQuery.personWins(1, 37)).thenReturn(new PersonWinsView("12***67@qq.com", List.of(
+                new PersonWinsView.Win(1, "第一届发布会", Instant.parse("2026-07-13T02:30:00Z"),
+                        "S", "疯狂星期四专项(V我50)"))));
+        mvc.perform(get("/activity/v1/raffle/wins").param("campaignId", "1").param("entryNo", "37"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.displayName").value("12***67@qq.com"))
+                .andExpect(jsonPath("$.wins[0].campaignId").value("1"))
+                .andExpect(jsonPath("$.wins[0].tier").value("S"))
+                .andExpect(jsonPath("$..payload").doesNotExist())
+                .andExpect(jsonPath("$..userId").doesNotExist());
+    }
+
+    @Test
+    void winsRejectsMalformedEntryNo() throws Exception {
+        mvc.perform(get("/activity/v1/raffle/wins").param("campaignId", "1").param("entryNo", "abc"))
                 .andExpect(status().isBadRequest());
     }
 }

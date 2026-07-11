@@ -10,11 +10,14 @@ import me.supernb.activity.infra.adapter.persistence.dao.RafflePrizeJpaRepositor
 import me.supernb.activity.infra.adapter.persistence.entity.RaffleEntryEntity;
 import me.supernb.activity.infra.adapter.persistence.entity.RafflePrizeEntity;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
+import me.supernb.activity.domain.model.read.raffle.PersonWinsView;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -27,6 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /// V5 迁移与 raffle 持久化基座:审计默认值、双唯一约束、CAS 抢闸语义、实体雪花 id。
 @SpringBootTest(classes = ActivityInfraTestApp.class)
+@Import({RafflePrizeAdapter.class, RaffleEntryAdapter.class}) // 最小装配外补被测适配器(winsOf/findByNo)
 @Testcontainers
 class RafflePersistenceTest {
 
@@ -47,6 +51,8 @@ class RafflePersistenceTest {
     @Autowired RaffleEntryJpaRepository entries;
     @Autowired RafflePrizeJpaRepository prizes;
     @Autowired PlatformTransactionManager txManager;
+    @Autowired RafflePrizeAdapter prizeAdapter;
+    @Autowired RaffleEntryAdapter entryAdapter;
 
     /// 造期:纯 SQL 显式 id(雪花基座无自增),审计列吃 DEFAULT。
     @BeforeEach
@@ -110,5 +116,33 @@ class RafflePersistenceTest {
                 "SELECT winner_user_id, assigned_at FROM activity.raffle_prize WHERE id = 1001");
         assertThat(((Number) row.get("winner_user_id")).longValue()).isEqualTo(42);
         assertThat(row.get("assigned_at")).isNotNull();
+    }
+
+    @Test
+    void winsOfProjectsDrawnCampaignsOnlyWithoutPayload() {
+        // 第 2 期已开奖且归属给 42;第 1 期 active 也归属给 42(不该出现在公开记录里)
+        jdbc.update("INSERT INTO activity.raffle_campaign (id, name, entry_open_at, entry_close_at, "
+                + "draw_at, gate_type, gate_amount, gate_from, status, drawn_at) VALUES "
+                + "(2, '第二届', now() - interval '3 day', now() - interval '2 day', "
+                + "now() - interval '2 day', 'RECHARGE', 100, '2026-01-01', 'drawn', now() - interval '2 day')");
+        jdbc.update("INSERT INTO activity.raffle_prize (id, campaign_id, tier, display_name, kind, "
+                + "payload, sort_order, winner_user_id, assigned_at) VALUES "
+                + "(2001, 2, 'B', '瑞幸咖啡(9.9)', 'ALIPAY_CODE', 'FAKE-LUCKIN', 0, 42, now())");
+        jdbc.update("UPDATE activity.raffle_prize SET winner_user_id = 42, assigned_at = now() WHERE id = 1001");
+        List<PersonWinsView.Win> wins = prizeAdapter.winsOf(42);
+        assertThat(wins).hasSize(1);
+        assertThat(wins.get(0).campaignName()).isEqualTo("第二届");
+        assertThat(wins.get(0).prizeDisplayName()).isEqualTo("瑞幸咖啡(9.9)");
+    }
+
+    @Test
+    void findByNoResolvesPublicCoordinate() {
+        jdbc.update("INSERT INTO activity.raffle_entry (id, campaign_id, user_id, entry_no, "
+                + "gate_value_at_entry) VALUES (3001, 1, 42, 7, 130)");
+        assertThat(entryAdapter.findByNo(1, 7)).hasValueSatisfying(e -> {
+            assertThat(e.userId()).isEqualTo(42);
+            assertThat(e.entryNo()).isEqualTo(7);
+        });
+        assertThat(entryAdapter.findByNo(1, 8)).isEmpty();
     }
 }

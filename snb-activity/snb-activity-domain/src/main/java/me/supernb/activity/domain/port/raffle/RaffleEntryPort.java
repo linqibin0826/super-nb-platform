@@ -15,6 +15,9 @@ public interface RaffleEntryPort {
     /// 本人报名记录。
     Optional<RaffleEntrant> find(long campaignId, long userId);
 
+    /// 按公开坐标(期, 参会证号)定位报名记录(公开中奖记录查询入口)。
+    Optional<RaffleEntrant> findByNo(long campaignId, int entryNo);
+
     /// 该期报名人数。
     int count(long campaignId);
 

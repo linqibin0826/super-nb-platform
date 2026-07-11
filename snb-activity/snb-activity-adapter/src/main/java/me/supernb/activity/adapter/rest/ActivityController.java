@@ -11,6 +11,7 @@ import me.supernb.activity.adapter.rest.response.RaffleEnterResponse;
 import me.supernb.activity.adapter.rest.response.RaffleHistoryResponse;
 import me.supernb.activity.adapter.rest.response.RaffleMeResponse;
 import me.supernb.activity.adapter.rest.response.RaffleResultResponse;
+import me.supernb.activity.adapter.rest.response.RaffleWinsResponse;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
@@ -223,6 +224,13 @@ public class ActivityController {
         return raffleQuery.history().stream().map(RaffleHistoryResponse::of).toList();
     }
 
+    /// 公开中奖记录(公开):坐标=(已开奖期 id, 参会证号),只认开奖通报里公开过的坐标;
+    /// 未中过奖/坐标无效 → 404(参与史不泄露)。
+    @GetMapping("/raffle/wins")
+    public RaffleWinsResponse raffleWins(@RequestParam String campaignId, @RequestParam String entryNo) {
+        return RaffleWinsResponse.of(raffleQuery.personWins(parseId(campaignId), parseEntryNo(entryNo)));
+    }
+
     /// 我的列席状态与奖品(需登录);payload 只在已开奖且本人中奖时出现。
     @GetMapping("/raffle/me")
     public RaffleMeResponse raffleMe(@RequestParam String campaignId, @CurrentUser UserProfile user) {
@@ -240,6 +248,15 @@ public class ActivityController {
         RaffleEntryTicket ticket = commandBus.handle(new RegisterRaffleCommand(
                 parseId(body.campaignId()), user.id(), clientIp, userAgent));
         return new RaffleEnterResponse(ticket.entryNo(), ticket.already());
+    }
+
+    /// 解析参会证号;非法值 → 400。
+    private static int parseEntryNo(String raw) {
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid entryNo: " + raw);
+        }
     }
 
     /// 解析雪花 id 字符串(对外 JSON id 一律字符串的家族惯例);非法值 → 400。
