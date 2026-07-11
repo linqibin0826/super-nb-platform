@@ -19,6 +19,7 @@ import me.supernb.activity.app.usecase.draw.command.PerformDrawAllCommand;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
+import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
@@ -56,7 +57,8 @@ class ActivityControllerTest {
     void setup() {
         ActivityController controller = new ActivityController(
                 commandBus, drawStatusQuery, leaderboardQuery, recentRechargesQuery,
-                poolQuery, recentDrawsQuery, myDrawsQuery, referralQuery, usageLeaderboardQuery);
+                poolQuery, recentDrawsQuery, myDrawsQuery, referralQuery, usageLeaderboardQuery,
+                mock(RaffleQueryService.class));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();

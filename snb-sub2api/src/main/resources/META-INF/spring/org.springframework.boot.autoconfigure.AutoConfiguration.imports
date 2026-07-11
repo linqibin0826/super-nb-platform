@@ -2,3 +2,4 @@ me.supernb.sub2api.autoconfig.Sub2apiAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiRechargeAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiWebAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiUsageBoardAutoConfiguration
+me.supernb.sub2api.autoconfig.Sub2apiRaffleAutoConfiguration
