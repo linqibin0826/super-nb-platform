@@ -54,6 +54,31 @@ describe('ArticlePage', () => {
     expect(document.title).toContain('你好 Codex')
   })
 
+  it('编辑部版式：速览面板显摘要、署名行带阅读时长与来源', async () => {
+    stubDetail(DETAIL)
+    renderAt('hello')
+
+    await waitFor(() => expect(screen.getByTestId('hub-tldr')).toBeTruthy())
+    expect(screen.getByTestId('hub-tldr').textContent).toContain('摘要')
+    const byline = screen.getByTestId('hub-byline').textContent!
+    expect(byline).toMatch(/分钟读完|min read/) // 阅读时长（jsdom locale 无关）
+    expect(byline).toContain('站长整理')
+  })
+
+  it('封面：coverUrl 有值渲染 <img>，为空不渲染', async () => {
+    stubDetail({ ...DETAIL, coverUrl: 'https://img.example/x.png' })
+    renderAt('hello')
+    await waitFor(() => expect(screen.getByText('正文段落')).toBeTruthy())
+    expect(document.querySelector('img[src="https://img.example/x.png"]')).toBeTruthy()
+
+    cleanup()
+    stubDetail({ ...DETAIL, summary: '' })
+    renderAt('hello')
+    await waitFor(() => expect(screen.getByText('正文段落')).toBeTruthy())
+    expect(document.querySelector('figure img')).toBeNull()
+    expect(screen.queryByTestId('hub-tldr')).toBeNull() // 摘要为空不渲染速览
+  })
+
   it('无来源信息不渲染来源区', async () => {
     stubDetail({ ...DETAIL, sourceName: null, sourceUrl: null })
     renderAt('hello')

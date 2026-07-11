@@ -19,6 +19,8 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         backHome: '返回内容中心',
         source: '来源：',
         original: '原文链接',
+        readingTime: '约 {n} 分钟读完',
+        tldr: '速览',
       },
       list: {
         all: '全部',
@@ -275,6 +277,8 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         backHome: 'Back to Content Hub',
         source: 'Source: ',
         original: 'Original',
+        readingTime: '{n} min read',
+        tldr: 'TL;DR',
       },
       list: {
         all: 'All',

@@ -4,6 +4,8 @@ import DOMPurify from 'dompurify'
 import { Chip, Skeleton } from '../../ui'
 import { t } from '../../i18n'
 import { getArticle, NotFoundError, type ArticleDetail } from '../api'
+import { ReadingProgress } from '../ReadingProgress'
+import { readingMinutes } from '../readingTime'
 
 type State =
   | { kind: 'loading' }
@@ -16,7 +18,7 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/** 文章详情页：管线预渲染 HTML + 前端 DOMPurify 兜底注入（纵深防御，照公告口径默认白名单）。 */
+/** 文章详情页：编辑部式阅读版式（进度线/速览面板/编号分节），正文=管线预渲染 HTML + DOMPurify 兜底（纵深防御，照公告口径默认白名单）。 */
 export function ArticlePage() {
   const { slug = '' } = useParams()
   const [state, setState] = useState<State>({ kind: 'loading' })
@@ -40,9 +42,13 @@ export function ArticlePage() {
 
   if (state.kind === 'loading') {
     return (
-      <main className="mx-auto w-full max-w-3xl px-4 py-8" data-testid="hub-article">
-        <Skeleton className="mb-4 h-8 w-2/3" />
-        <Skeleton className="mb-2 h-4 w-1/3" />
+      <main className="mx-auto w-full max-w-[43rem] px-5 py-8 sm:py-10" data-testid="hub-article">
+        <Skeleton className="mb-8 h-4 w-24" />
+        <Skeleton className="mb-3 h-5 w-40" />
+        <Skeleton className="mb-2 h-10 w-full" />
+        <Skeleton className="mb-6 h-10 w-3/5" />
+        <Skeleton className="mb-8 h-4 w-52" />
+        <Skeleton className="mb-8 h-24" />
         <Skeleton className="h-64" />
       </main>
     )
@@ -50,7 +56,7 @@ export function ArticlePage() {
 
   if (state.kind === 'notFound' || state.kind === 'error') {
     return (
-      <main className="mx-auto w-full max-w-3xl px-4 py-16 text-center" data-testid="hub-article">
+      <main className="mx-auto w-full max-w-[43rem] px-5 py-16 text-center" data-testid="hub-article">
         <p className="mb-4 text-snb-t2" data-testid={state.kind === 'notFound' ? 'hub-not-found' : 'hub-error'}>
           {t(state.kind === 'notFound' ? 'hub.article.notFound' : 'hub.list.error')}
         </p>
@@ -65,11 +71,20 @@ export function ArticlePage() {
   if (a.type === 'ebook') {
     return <Navigate to={`/reader/${a.slug}`} replace />
   }
+  const minutes = readingMinutes(a.bodyHtml ?? '')
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8" data-testid="hub-article">
-      <header className="mb-6">
-        <div className="mb-3 flex items-center gap-2">
+    <main className="mx-auto w-full max-w-[43rem] px-5 py-8 sm:py-10" data-testid="hub-article">
+      <ReadingProgress />
+
+      <nav className="mb-8">
+        <Link className="text-[13px] text-snb-t3 transition-colors hover:text-snb-t1" to="/">
+          ← {t('hub.article.backHome')}
+        </Link>
+      </nav>
+
+      <header className="mb-7">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <Chip>{a.categoryName}</Chip>
           {a.tags.slice(0, 4).map((tag) => (
             <span key={tag} className="rounded bg-snb-t1/[0.05] px-1.5 py-0.5 text-xs text-snb-t3">
@@ -77,9 +92,37 @@ export function ArticlePage() {
             </span>
           ))}
         </div>
-        <h1 className="mb-2 font-display text-3xl font-bold leading-tight text-snb-t1">{a.title}</h1>
-        <p className="text-sm text-snb-t3">{formatDate(a.publishedAt)}</p>
+        <h1 className="mb-4 font-display text-[1.9rem] font-bold leading-[1.32] tracking-[-0.01em] text-snb-t1 sm:text-[2.3rem] sm:leading-[1.26]">
+          {a.title}
+        </h1>
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-snb-t3" data-testid="hub-byline">
+          <time dateTime={a.publishedAt}>{formatDate(a.publishedAt)}</time>
+          <span aria-hidden="true">·</span>
+          <span>{t('hub.article.readingTime', { n: minutes })}</span>
+          {a.sourceName && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>
+                {t('hub.article.source')}
+                {a.sourceName}
+              </span>
+            </>
+          )}
+        </p>
       </header>
+
+      {a.summary && (
+        <aside className="hub-tldr" data-testid="hub-tldr">
+          <span className="hub-tldr-tab">{t('hub.article.tldr')}</span>
+          <p>{a.summary}</p>
+        </aside>
+      )}
+
+      {a.coverUrl && (
+        <figure className="mb-9 overflow-hidden rounded-2xl border border-snb-hairline">
+          <img alt="" className="block w-full" loading="lazy" src={a.coverUrl} />
+        </figure>
+      )}
 
       <article
         className="hub-prose"
@@ -88,7 +131,10 @@ export function ArticlePage() {
       />
 
       {a.sourceName && (
-        <footer className="mt-10 border-t border-snb-hairline pt-4 text-sm text-snb-t3" data-testid="hub-source">
+        <footer
+          className="mt-12 rounded-xl border border-snb-hairline bg-snb-well/60 px-4 py-3 text-[13px] leading-relaxed text-snb-t3"
+          data-testid="hub-source"
+        >
           {t('hub.article.source')}
           {a.sourceName}
           {a.sourceUrl && (
@@ -106,6 +152,12 @@ export function ArticlePage() {
           )}
         </footer>
       )}
+
+      <nav className="mt-10 border-t border-snb-hairline pt-6">
+        <Link className="text-[13px] text-snb-t3 transition-colors hover:text-snb-t1" to="/">
+          ← {t('hub.article.backHome')}
+        </Link>
+      </nav>
     </main>
   )
 }
