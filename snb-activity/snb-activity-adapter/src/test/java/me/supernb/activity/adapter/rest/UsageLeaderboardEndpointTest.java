@@ -17,6 +17,7 @@ import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryServic
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
+import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.usageboard.BoardAssembler;
 import me.supernb.activity.app.usecase.usageboard.BoardDataset;
@@ -51,7 +52,7 @@ class UsageLeaderboardEndpointTest {
                 mock(CommandBus.class), mock(DrawStatusQueryService.class), mock(LeaderboardQueryService.class),
                 mock(RecentRechargesQueryService.class), mock(PoolQueryService.class),
                 mock(RecentDrawsQueryService.class), mock(MyDrawsQueryService.class),
-                mock(ReferralLeaderboardQueryService.class), svc);
+                mock(ReferralLeaderboardQueryService.class), svc, mock(RaffleQueryService.class));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
