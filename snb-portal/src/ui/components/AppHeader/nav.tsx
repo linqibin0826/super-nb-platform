@@ -3,11 +3,11 @@ import type { NavCapsuleItem } from '../NavCapsule/NavCapsule'
 
 /**
  * 全站导航的唯一真源（Header 规范 v1，2026-07-05 站长拍板）。
- * 四项固定：控制台 / 使用指南 / 创作工坊 / 充值活动（促销描边+呼吸点）。
+ * 五项固定：控制台 / 使用指南 / 创作工坊 / 内容中心 / 充值活动（促销描边+呼吸点）。
  * 非 React 消费方（fork Vue / learn VitePress / activity 静态页）按 templates/app-header.html
  * 模板抄写——项目/顺序/链接改动必须与本常量同步（契约互指）。
  */
-export type SiteKey = 'console' | 'help' | 'studio' | 'activity' | 'home'
+export type SiteKey = 'console' | 'help' | 'studio' | 'hub' | 'activity' | 'home'
 
 export interface SiteNavItem {
   key: SiteKey
@@ -71,6 +71,19 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
       <Icon>
         <path d="M12 19l7-7 3 3-7 7-3-3z" />
         <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+      </Icon>
+    ),
+  },
+  {
+    key: 'hub',
+    label: '内容中心',
+    href: 'https://hub.super-nb.me/',
+    icon: (
+      <Icon>
+        <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+        <path d="M18 14h-8" />
+        <path d="M15 18h-5" />
+        <path d="M10 6h8v4h-8V6z" />
       </Icon>
     ),
   },

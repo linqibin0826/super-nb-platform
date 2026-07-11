@@ -1,0 +1,173 @@
+/* hub 专属全局样式。--hub-accent = 详情页赤陶强调色（暗色换亮阶保对比）；.hub-prose = 文章正文排版：
+   全部走 token 变量，明暗主题自动跟随。 */
+
+:root {
+  --hub-accent: 204 120 92; /* primary-500 #CC785C */
+}
+.dark {
+  --hub-accent: 226 168 143; /* primary-300 #E2A88F，墨底上保持可读 */
+}
+
+/* ── 速览面板：眉标压边框的暖底卡（详情页签名元素）── */
+.hub-tldr {
+  position: relative;
+  margin: 2.1rem 0 2.3rem;
+  padding: 1.2rem 1.25rem 1.05rem;
+  border: 1px solid rgb(var(--hub-accent) / 0.28);
+  border-radius: 16px;
+  background: rgb(var(--hub-accent) / 0.07);
+}
+.hub-tldr-tab {
+  position: absolute;
+  top: 0;
+  left: 1.1rem;
+  transform: translateY(-52%);
+  padding: 0.1rem 0.65rem;
+  border: 1px solid rgb(var(--hub-accent) / 0.4);
+  border-radius: 999px;
+  background: rgb(var(--snb-bg));
+  color: rgb(var(--hub-accent));
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+.hub-tldr p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.9;
+  color: rgb(var(--snb-t2));
+}
+
+/* ── 正文排版 ── */
+.hub-prose {
+  counter-reset: hub-section;
+  font-size: 17px;
+  line-height: 1.95;
+  color: rgb(var(--snb-t1));
+  overflow-wrap: break-word;
+}
+@media (max-width: 640px) {
+  .hub-prose {
+    font-size: 16px;
+  }
+}
+.hub-prose h1,
+.hub-prose h3,
+.hub-prose h4 {
+  margin: 1.8em 0 0.6em;
+  font-weight: 700;
+  line-height: 1.4;
+  color: rgb(var(--snb-t1));
+}
+.hub-prose h1 { font-size: 1.4em; }
+.hub-prose h3 { font-size: 1.1em; }
+.hub-prose h4 { font-size: 1em; }
+
+/* h2 = 编号章节头：衬线 + 赤陶小圆章（教程/解读天然按序读，编号即微导航） */
+.hub-prose h2 {
+  counter-increment: hub-section;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  margin: 2.3em 0 0.75em;
+  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-size: 1.35em;
+  font-weight: 700;
+  line-height: 1.45;
+  color: rgb(var(--snb-t1));
+}
+.hub-prose h2::before {
+  content: counter(hub-section, decimal-leading-zero);
+  flex: none;
+  transform: translateY(-0.12em);
+  padding: 0.26em 0.6em;
+  border: 1px solid rgb(var(--hub-accent) / 0.42);
+  border-radius: 999px;
+  color: rgb(var(--hub-accent));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.56em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.hub-prose p { margin: 1.05em 0; }
+.hub-prose ul,
+.hub-prose ol {
+  margin: 1.05em 0;
+  padding-left: 1.7em;
+}
+.hub-prose ul { list-style: disc; }
+.hub-prose ol { list-style: decimal; }
+.hub-prose li { margin: 0.35em 0; }
+.hub-prose li::marker { color: rgb(var(--hub-accent)); }
+.hub-prose a {
+  color: rgb(var(--snb-t1));
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: rgb(var(--snb-t3));
+}
+.hub-prose a:hover { text-decoration-color: rgb(var(--snb-t1)); }
+.hub-prose img {
+  display: block;
+  max-width: 100%;
+  margin: 1.6em 0;
+  border: 1px solid rgb(var(--snb-hairline));
+  border-radius: 14px;
+}
+
+/* blockquote = 提示卡：作者在 markdown 里写引用，就自动得到 callout */
+.hub-prose blockquote {
+  margin: 1.6em 0;
+  padding: 0.85em 1.15em;
+  border: 1px solid rgb(var(--snb-hairline));
+  border-left: 3px solid rgb(var(--hub-accent) / 0.75);
+  border-radius: 12px;
+  background: rgb(var(--snb-well) / 0.6);
+  color: rgb(var(--snb-t2));
+}
+.hub-prose blockquote p { margin: 0.35em 0; }
+
+.hub-prose code {
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+  background: rgb(var(--snb-well));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+}
+.hub-prose pre {
+  margin: 1.6em 0;
+  padding: 1em 1.15em;
+  overflow-x: auto;
+  border: 1px solid rgb(var(--snb-hairline));
+  border-radius: 12px;
+  background: rgb(var(--snb-well));
+  font-size: 0.85em;
+  line-height: 1.7;
+}
+.hub-prose pre code {
+  padding: 0;
+  background: none;
+  font-size: 1em;
+}
+.hub-prose hr {
+  margin: 2.4em 0;
+  border: none;
+  border-top: 1px solid rgb(var(--snb-hairline));
+}
+.hub-prose table {
+  margin: 1.6em 0;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  line-height: 1.7;
+}
+.hub-prose th,
+.hub-prose td {
+  padding: 0.55em 0.85em;
+  border: 1px solid rgb(var(--snb-hairline));
+  text-align: left;
+}
+.hub-prose th {
+  background: rgb(var(--snb-well));
+  font-weight: 600;
+}

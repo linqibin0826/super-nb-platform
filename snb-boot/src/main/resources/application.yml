@@ -7,8 +7,8 @@ spring:
     password: ${SNB_DB_PASSWORD:}
   flyway:
     enabled: ${SNB_FLYWAY_ENABLED:true}
-    locations: classpath:db/migration/activity,classpath:db/migration/gallery
-    schemas: activity,gallery
+    locations: classpath:db/migration/activity,classpath:db/migration/gallery,classpath:db/migration/content
+    schemas: activity,gallery,content
     create-schemas: true
   jpa:
     # schema 由 Flyway 全权管理;validate 只校验实体映射与库结构一致
@@ -48,3 +48,10 @@ activity:
     newcomer-group-id: ${QQ_CAMPAIGN_GROUP_ID:77}
     cap: 288
     limit: 10
+
+content:
+  # admin 写接口令牌（发布管线经 SSH 隧道调用）；缺省空值=fail-closed 一律 401
+  admin-token: ${CONTENT_ADMIN_TOKEN:}
+  ratelimit:
+    burst: 60
+    per-minute: 120

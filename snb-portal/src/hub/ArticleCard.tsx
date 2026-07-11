@@ -1,0 +1,57 @@
+import { Link } from 'react-router-dom'
+import { Badge, Card, Chip, cx } from '../ui'
+import { t } from '../i18n'
+import type { ArticleSummary } from './api'
+
+/** 卡片整卡可点：article → 文章页，ebook → 阅读页。 */
+function hrefOf(a: ArticleSummary): string {
+  return a.type === 'ebook' ? `/reader/${a.slug}` : `/a/${a.slug}`
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** 内容卡：封面（可缺省走纯文字变体）+ 分类徽标 + 标题 + 摘要 + 标签 + 日期/来源。 */
+export function ArticleCard({ article }: { article: ArticleSummary }) {
+  return (
+    <Link to={hrefOf(article)} className="block h-full" aria-label={article.title}>
+      <Card hover className="flex h-full flex-col overflow-hidden">
+        {article.coverUrl && (
+          <div className="aspect-[16/9] w-full overflow-hidden bg-snb-well">
+            <img
+              src={article.coverUrl}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+          </div>
+        )}
+        <div className="flex flex-1 flex-col gap-2.5 p-4">
+          <div className="flex items-center gap-2">
+            <Chip>{article.categoryName}</Chip>
+            {article.type === 'ebook' && <Badge>{t('hub.list.ebook')}</Badge>}
+          </div>
+          <h3 className="text-[15px] font-semibold leading-snug text-snb-t1">{article.title}</h3>
+          <p className={cx('text-[13px] leading-relaxed text-snb-t2', article.coverUrl ? 'line-clamp-2' : 'line-clamp-4')}>
+            {article.summary}
+          </p>
+          <div className="mt-auto flex items-center justify-between pt-1 text-xs text-snb-t3">
+            <span className="flex items-center gap-1.5">
+              {article.tags.slice(0, 3).map((tag) => (
+                <span key={tag} className="rounded bg-snb-t1/[0.05] px-1.5 py-0.5">
+                  {tag}
+                </span>
+              ))}
+            </span>
+            <span>
+              {article.sourceName ? `${article.sourceName} · ` : ''}
+              {formatDate(article.publishedAt)}
+            </span>
+          </div>
+        </div>
+      </Card>
+    </Link>
+  )
+}

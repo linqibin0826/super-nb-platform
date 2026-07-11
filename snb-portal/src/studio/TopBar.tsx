@@ -19,6 +19,7 @@ const DEV_HREFS: Record<string, string> = {
   console: '/dashboard',
   help: '/help/',
   studio: '/studio/',
+  hub: 'https://hub.super-nb.me/',
   activity: '/activity/',
 }
 const isLocalDev =
@@ -30,6 +31,7 @@ const NAV_LABEL_KEYS: Record<string, string> = {
   console: 'studio.nav.console',
   help: 'studio.nav.help',
   studio: 'studio.title',
+  hub: 'studio.nav.hub',
   activity: 'studio.nav.activity',
 }
 

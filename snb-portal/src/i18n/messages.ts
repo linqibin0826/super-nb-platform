@@ -3,11 +3,42 @@ import type { LocaleDict } from './core'
 // playground 段拷自 sub2api fork@4f873b56 locales（zh.ts:1204-1280 / en.ts:1200-1276），与主站文案保持一致
 export const messages: Record<'zh' | 'en', LocaleDict> = {
   zh: {
+    hub: {
+      title: '内容中心',
+      nav: {
+        login: '登录',
+        theme: '切换明暗主题',
+      },
+      reader: {
+        back: '返回',
+        openNew: '新窗口打开',
+        missing: '电子书文件缺失，请稍后再试',
+      },
+      article: {
+        notFound: '内容不存在或已下架',
+        backHome: '返回内容中心',
+        source: '来源：',
+        original: '原文链接',
+        readingTime: '约 {n} 分钟读完',
+        tldr: '速览',
+      },
+      list: {
+        all: '全部',
+        ebook: '电子书',
+        empty: '这里还没有内容',
+        error: '加载失败',
+        retry: '重试',
+        loadMore: '加载更多',
+        loading: '加载中…',
+        noMore: '没有更多了',
+      },
+    },
     studio: {
       title: '创作工坊',
       nav: {
         console: '控制台',
         help: '使用指南',
+        hub: '内容中心',
         activity: '充值活动',
         login: '登录',
         balance: '余额',
@@ -230,11 +261,42 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
     },
   },
   en: {
+    hub: {
+      title: 'Content Hub',
+      nav: {
+        login: 'Sign in',
+        theme: 'Toggle light / dark theme',
+      },
+      reader: {
+        back: 'Back',
+        openNew: 'Open in new tab',
+        missing: 'eBook file missing, please retry later',
+      },
+      article: {
+        notFound: 'Content not found or unpublished',
+        backHome: 'Back to Content Hub',
+        source: 'Source: ',
+        original: 'Original',
+        readingTime: '{n} min read',
+        tldr: 'TL;DR',
+      },
+      list: {
+        all: 'All',
+        ebook: 'eBook',
+        empty: 'Nothing here yet',
+        error: 'Failed to load',
+        retry: 'Retry',
+        loadMore: 'Load more',
+        loading: 'Loading…',
+        noMore: 'No more',
+      },
+    },
     studio: {
       title: 'Creative Studio',
       nav: {
         console: 'Console',
         help: 'Guide',
+        hub: 'Content Hub',
         activity: 'Promotions',
         login: 'Sign in',
         balance: 'Balance',
