@@ -30,7 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /// V5 迁移与 raffle 持久化基座:审计默认值、双唯一约束、CAS 抢闸语义、实体雪花 id。
 @SpringBootTest(classes = ActivityInfraTestApp.class)
-@Import({RafflePrizeAdapter.class, RaffleEntryAdapter.class}) // 最小装配外补被测适配器(winsOf/findByNo)
+@Import({RafflePrizeAdapter.class, RaffleEntryAdapter.class, RaffleCampaignAdapter.class}) // 最小装配外补被测适配器
 @Testcontainers
 class RafflePersistenceTest {
 
@@ -53,6 +53,7 @@ class RafflePersistenceTest {
     @Autowired PlatformTransactionManager txManager;
     @Autowired RafflePrizeAdapter prizeAdapter;
     @Autowired RaffleEntryAdapter entryAdapter;
+    @Autowired RaffleCampaignAdapter campaignAdapter;
 
     /// 造期:纯 SQL 显式 id(雪花基座无自增),审计列吃 DEFAULT。
     @BeforeEach
@@ -144,5 +145,25 @@ class RafflePersistenceTest {
             assertThat(e.entryNo()).isEqualTo(7);
         });
         assertThat(entryAdapter.findByNo(1, 8)).isEmpty();
+    }
+
+    @Test
+    void currentKeepsDrawnOnStageUntilNextCampaignOpens() {
+        // 唯一一期 active → 是展示期
+        assertThat(campaignAdapter.current()).hasValueSatisfying(c -> assertThat(c.id()).isEqualTo(1));
+        // 开完(drawn)仍留在台上供迟到重放
+        jdbc.update("UPDATE activity.raffle_campaign SET status = 'drawn', drawn_at = now() WHERE id = 1");
+        assertThat(campaignAdapter.current()).hasValueSatisfying(c -> {
+            assertThat(c.id()).isEqualTo(1);
+            assertThat(c.drawn()).isTrue();
+        });
+        // 下一期开放 → 顶下去
+        jdbc.update("INSERT INTO activity.raffle_campaign (id, name, entry_open_at, entry_close_at, "
+                + "draw_at, gate_type, gate_amount, gate_from) VALUES (3, '第一期', now(), "
+                + "now() + interval '1 day', now() + interval '1 day', 'RECHARGE', 100, '2026-01-01')");
+        assertThat(campaignAdapter.current()).hasValueSatisfying(c -> assertThat(c.id()).isEqualTo(3));
+        // cancelled 一律隐身
+        jdbc.update("UPDATE activity.raffle_campaign SET status = 'cancelled' WHERE id = 3");
+        assertThat(campaignAdapter.current()).hasValueSatisfying(c -> assertThat(c.id()).isEqualTo(1));
     }
 }

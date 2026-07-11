@@ -25,7 +25,7 @@ public class RaffleCampaignAdapter implements RaffleCampaignPort {
 
     @Override
     public Optional<RaffleCampaign> current() {
-        return campaigns.findFirstByStatusOrderByEntryOpenAtDesc("active").map(RaffleCampaignAdapter::toDomain);
+        return campaigns.findFirstByStatusNotOrderByEntryOpenAtDesc("cancelled").map(RaffleCampaignAdapter::toDomain);
     }
 
     @Override

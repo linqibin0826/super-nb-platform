@@ -13,8 +13,9 @@ import org.springframework.data.repository.query.Param;
 /// `activity.raffle_campaign` 仓储。
 public interface RaffleCampaignJpaRepository extends JpaRepository<RaffleCampaignEntity, Long> {
 
-    /// 当前展示期:active 中报名开放时间最新的一期。
-    Optional<RaffleCampaignEntity> findFirstByStatusOrderByEntryOpenAtDesc(String status);
+    /// 当前展示期:最新一期非 cancelled——active 报名/倒计时,drawn 停留展示开奖结果
+    /// (迟到访客完整重放),直到下一期开放把它顶下去。
+    Optional<RaffleCampaignEntity> findFirstByStatusNotOrderByEntryOpenAtDesc(String status);
 
     /// 到点待开奖:status=active 且 draw_at <= now(开奖任务每分钟轮询用,吃 idx_raffle_campaign_due)。
     List<RaffleCampaignEntity> findByStatusAndDrawAtLessThanEqual(String status, Instant now);
