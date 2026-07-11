@@ -20,6 +20,7 @@ import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
+import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.read.DrawStatus;
 import me.supernb.activity.domain.model.read.PoolTier;
@@ -46,6 +47,7 @@ class ActivityControllerTest {
     private final RecentDrawsQueryService recentDrawsQuery = mock(RecentDrawsQueryService.class);
     private final MyDrawsQueryService myDrawsQuery = mock(MyDrawsQueryService.class);
     private final ReferralLeaderboardQueryService referralQuery = mock(ReferralLeaderboardQueryService.class);
+    private final UsageLeaderboardQueryService usageLeaderboardQuery = mock(UsageLeaderboardQueryService.class);
     private final Sub2apiIntrospectClient introspect = mock(Sub2apiIntrospectClient.class);
 
     private MockMvc mvc;
@@ -54,7 +56,7 @@ class ActivityControllerTest {
     void setup() {
         ActivityController controller = new ActivityController(
                 commandBus, drawStatusQuery, leaderboardQuery, recentRechargesQuery,
-                poolQuery, recentDrawsQuery, myDrawsQuery, referralQuery);
+                poolQuery, recentDrawsQuery, myDrawsQuery, referralQuery, usageLeaderboardQuery);
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
