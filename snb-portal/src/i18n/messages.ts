@@ -10,7 +10,6 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         theme: '切换明暗主题',
       },
       reader: {
-        back: '返回',
         openNew: '新窗口打开',
         missing: '电子书文件缺失，请稍后再试',
       },
@@ -268,7 +267,6 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         theme: 'Toggle light / dark theme',
       },
       reader: {
-        back: 'Back',
         openNew: 'Open in new tab',
         missing: 'eBook file missing, please retry later',
       },

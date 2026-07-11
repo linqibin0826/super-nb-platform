@@ -3,9 +3,9 @@ import { Badge, Card, Chip, cx } from '../ui'
 import { t } from '../i18n'
 import type { ArticleSummary } from './api'
 
-/** 卡片整卡可点：article → 文章页，ebook → 阅读页。 */
+/** 卡片整卡可点：一律进文章页（电子书同版式，2026-07-11 起无独立阅读页）。 */
 function hrefOf(a: ArticleSummary): string {
-  return a.type === 'ebook' ? `/reader/${a.slug}` : `/a/${a.slug}`
+  return `/a/${a.slug}`
 }
 
 function formatDate(iso: string): string {

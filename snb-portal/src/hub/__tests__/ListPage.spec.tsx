@@ -55,7 +55,7 @@ describe('ListPage', () => {
     expect(tabs).toHaveLength(3) // 全部 + 两个动态分类
     expect(tabs[1].textContent).toBe('教程')
     const ebookLink = screen.getByText('标题book-x').closest('a')!
-    expect(ebookLink.getAttribute('href')).toBe('/reader/book-x')
+    expect(ebookLink.getAttribute('href')).toBe('/a/book-x') // ebook 同走文章页
     expect(screen.getByText('标题hello').closest('a')!.getAttribute('href')).toBe('/a/hello')
     expect(screen.getByTestId('hub-no-more')).toBeTruthy() // pages=1 无更多
   })

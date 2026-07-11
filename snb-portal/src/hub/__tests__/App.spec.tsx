@@ -26,13 +26,13 @@ describe('hub AppRoutes', () => {
     expect(screen.getByTestId('hub-list')).toBeTruthy()
   })
 
-  it('阅读路由不带常规顶栏（全视口 iframe 布局）', () => {
+  it('旧阅读路由 /reader/:slug 重定向文章页（带常规顶栏）', () => {
     render(
       <MemoryRouter initialEntries={['/reader/some-book']}>
         <AppRoutes />
       </MemoryRouter>,
     )
-    expect(screen.getByTestId('hub-reader')).toBeTruthy()
-    expect(screen.queryByText('创作工坊')).toBeNull() // AppHeader 未挂载
+    expect(screen.getByTestId('hub-article')).toBeTruthy() // 落在文章页（loading 态）
+    expect(screen.getByText('内容中心')).toBeTruthy() // AppHeader 已挂载
   })
 })

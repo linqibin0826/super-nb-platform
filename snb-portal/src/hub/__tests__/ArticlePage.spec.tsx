@@ -21,12 +21,21 @@ function stubDetail(body: unknown, status = 200) {
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })))
 }
 
+const EBOOK = { ...DETAIL, type: 'ebook', bodyHtml: null, ebookPath: 'books/hello.html', coverUrl: null }
+
+/** ebook 用例专用：detail 与 EbookBody 的 HEAD 探活分流 stub。 */
+function stubDetailAndHead(body: unknown, opts: { headOk?: boolean } = {}) {
+  vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+    if (init?.method === 'HEAD') return new Response(null, { status: opts.headOk === false ? 404 : 200 })
+    return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
+  }))
+}
+
 function renderAt(slug: string) {
   return render(
     <MemoryRouter initialEntries={[`/a/${slug}`]}>
       <Routes>
         <Route path="/a/:slug" element={<ArticlePage />} />
-        <Route path="/reader/:slug" element={<div data-testid="reader-route" />} />
       </Routes>
     </MemoryRouter>,
   )
@@ -35,6 +44,7 @@ function renderAt(slug: string) {
 describe('ArticlePage', () => {
   beforeEach(() => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q, addEventListener: () => {}, removeEventListener: () => {} }))
+    vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
   })
 
   it('渲染净化后的正文：script 被剥、段落保留、来源区带安全外链', async () => {
@@ -92,9 +102,22 @@ describe('ArticlePage', () => {
     await waitFor(() => expect(screen.getByTestId('hub-not-found')).toBeTruthy())
   })
 
-  it('ebook 类型重定向阅读页', async () => {
-    stubDetail({ ...DETAIL, type: 'ebook', bodyHtml: null, ebookPath: 'books/hello.html' })
+  it('ebook 走同版式：书体 iframe 嵌正文位、署名行无阅读时长带新窗口打开、速览照常', async () => {
+    stubDetailAndHead(EBOOK)
     renderAt('hello')
-    await waitFor(() => expect(screen.getByTestId('reader-route')).toBeTruthy())
+
+    await waitFor(() => expect(screen.getByTestId('hub-ebook')).toBeTruthy())
+    const iframe = screen.getByTitle('你好 Codex') as HTMLIFrameElement
+    expect(iframe.getAttribute('src')).toBe('/books/hello.html')
+    expect(screen.getByTestId('hub-tldr')).toBeTruthy()
+    const byline = screen.getByTestId('hub-byline').textContent!
+    expect(byline).not.toMatch(/分钟读完|min read/) // ebook 无 bodyHtml，不估时长
+    expect(screen.getByTestId('hub-reader-open').getAttribute('href')).toBe('/books/hello.html')
+  })
+
+  it('ebook 文件缺失（HEAD 404）在正文位显示缺失提示', async () => {
+    stubDetailAndHead(EBOOK, { headOk: false })
+    renderAt('hello')
+    await waitFor(() => expect(screen.getByTestId('hub-reader-missing')).toBeTruthy())
   })
 })
