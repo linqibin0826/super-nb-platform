@@ -12,8 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-/// 到点开奖任务:每分钟轮询「draw_at 已到且 active」的期——开奖时刻是库里的动态数据,
+/// 到点开奖任务:每 10 秒轮询「draw_at 已到且 active」的期——开奖时刻是库里的动态数据,
 /// 不能编译期 cron 绑定;查询吃 idx_raffle_campaign_due,常态零命中零成本。
+/// 10s 间隔是观感参数:页面到点后的「采样中」等待≈扫描间隔+页面 6s 轮询,
+/// 60s 时最坏干等 66s(首期彩排实测 47s),压到 10s 后最坏 ~16s。
 /// 系统自驱写路径不经 CommandBus(RankSnapshotJob 惯例);逐期 try/catch 互不拖垮;
 /// 单事务与幂等由 RaffleDrawPort 实现保证,任务层只做调度与日志。
 @Slf4j
@@ -38,7 +40,7 @@ public class RaffleDrawJob {
     }
 
     /// 每分钟轮询入口。
-    @Scheduled(fixedDelay = 60_000, initialDelay = 60_000)
+    @Scheduled(fixedDelay = 10_000, initialDelay = 30_000)
     public void drawDue() {
         for (RaffleCampaign c : campaignPort.dueForDraw(Instant.now())) {
             try {
