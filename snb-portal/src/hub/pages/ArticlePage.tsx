@@ -19,7 +19,7 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/** 文章详情页：元信息条 + 文章纸张卡（外壳是房间、文章是纸——暗色房间变墨、纸保持暖纸）。正文=管线预渲染 HTML + DOMPurify 兜底（纵深防御，照公告口径默认白名单）。电子书=节目单阅读版（EbookLongRead 自持整页），走独立分支。 */
+/** 文章详情页：元信息条 + 文章纸张卡（暗色随全站变墨：纸 = panel 墨卡，全站同一套明暗纪律）。正文=管线预渲染 HTML + DOMPurify 兜底（纵深防御，照公告口径默认白名单）。电子书=节目单阅读版（EbookLongRead 自持整页），走独立分支。 */
 export function ArticlePage() {
   const { slug = '' } = useParams()
   const [state, setState] = useState<State>({ kind: 'loading' })
@@ -89,7 +89,7 @@ export function ArticlePage() {
         </Link>
       </nav>
 
-      {/* 元信息条：来源 / 日期 ······ 阅读时长（桌面上的档案条，随房间明暗） */}
+      {/* 元信息条：来源 / 日期 ······ 阅读时长（档案条，随全站明暗） */}
       <div className="hub-metabar" data-testid="hub-byline">
         {a.sourceName && (
           <span>
@@ -101,7 +101,7 @@ export function ArticlePage() {
         <span className="min">{t('hub.article.readingTime', { n: minutes })}</span>
       </div>
 
-      {/* 文章纸张卡：暗色模式外壳变墨、纸保持暖纸（.dark .hub-sheet 令牌重钉） */}
+      {/* 文章纸张卡：暗色随全站变墨（panel 墨卡），内部令牌自然解析暗色档 */}
       <article className="hub-sheet" data-testid="hub-sheet">
         {a.coverUrl && (
           <figure className="hub-sheet-cover">

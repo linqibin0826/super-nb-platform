@@ -40,9 +40,9 @@
   color: rgb(var(--snb-t2));
 }
 
-/* ── 文章纸张卡（2026-07-12 第八轮，参照站机关：外壳是房间、文章是纸）──
-   暗色 = 房间变墨、纸保持暖纸：在卡作用域内把全部令牌重钉回浅色档，
-   内部 prose/速览/代码井/tailwind 工具类全部走 var 自动跟随；color-scheme 连滚动条一起转浅。 */
+/* ── 文章纸张卡（2026-07-12 第八轮）：← 返回 → 元信息条 → 纸张大卡。
+   暗色随全站变墨（站长拍板：不做参照站的「暗房间暖纸」特例）——纸 = panel 墨卡，
+   内部令牌自然解析暗色档，与控制台/studio/help 同一套明暗纪律。 */
 .hub-metabar {
   display: flex;
   flex-wrap: wrap;
@@ -71,22 +71,9 @@
   box-shadow: 0 1px 2px rgb(17 13 9 / 0.03), 0 12px 40px -18px rgb(17 13 9 / 0.12);
 }
 .dark .hub-sheet {
-  --sheet-bg: 244 239 229; /* 暖纸微降半档，夜里不眩光 */
-  --snb-bg: 244 239 229;
-  --snb-panel: 255 255 255;
-  --snb-elv: 255 255 255;
-  --snb-well: 233 230 220;
-  --snb-t1: 17 13 9;
-  --snb-t2: 59 51 44;
-  --snb-t3: 115 99 86;
-  --snb-hairline: rgba(0, 0, 0, 0.07);
-  --snb-hairline-strong: rgba(0, 0, 0, 0.12);
-  --hub-accent: 204 120 92;
-  --hub-ink: 50 42 34;
-  --hub-brass: 204 120 92;
-  color-scheme: light;
-  border-color: rgba(245, 239, 230, 0.16);
-  box-shadow: 0 18px 60px -20px rgb(0 0 0 / 0.55);
+  --sheet-bg: 28 25 23; /* panel 墨卡：纸随全站变墨 */
+  border-color: var(--snb-hairline-strong);
+  box-shadow: 0 18px 50px -22px rgb(0 0 0 / 0.6);
 }
 .hub-sheet-cover {
   margin: calc(-1 * clamp(26px, 5.5vw, 60px)) calc(-1 * clamp(26px, 5.5vw, 60px)) clamp(24px, 4vw, 40px);
@@ -112,6 +99,7 @@
   text-wrap: balance;
 }
 .hub-sheet .hub-tldr { margin: 1.9rem 0 0; }
+.hub-sheet .hub-tldr-tab { background: rgb(var(--sheet-bg)); }
 .hub-sheet .hub-prose { margin-top: 2.1rem; font-size: 18px; }
 .hub-sheet-foot {
   margin-top: 44px;
