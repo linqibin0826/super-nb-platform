@@ -60,6 +60,9 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         loading: '加载中…',
         noMore: '没有更多了',
       },
+      foot: {
+        disclaimer: '部分内容整理自互联网公开信息并注明出处，版权归原作者所有；如有侵权，请联系站长删除。',
+      },
     },
     studio: {
       title: '创作工坊',
@@ -345,6 +348,10 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         loadMore: 'Load more',
         loading: 'Loading…',
         noMore: 'No more',
+      },
+      foot: {
+        disclaimer:
+          'Some content is curated from publicly available sources with attribution; all rights remain with the original authors. Contact the site owner for removal in case of infringement.',
       },
     },
     studio: {

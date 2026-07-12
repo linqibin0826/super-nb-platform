@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-
 import { ThemeScope } from '../ui'
 import { useTheme } from '../theme'
 import { HubHeader } from './HubHeader'
+import { HubFooter } from './HubFooter'
 import { ListPage } from './pages/ListPage'
 import { ArticlePage } from './pages/ArticlePage'
 
@@ -15,28 +16,32 @@ function ReaderRedirect() {
 export function AppRoutes() {
   const [theme, toggleTheme] = useTheme()
   return (
-    <ThemeScope theme={theme} className="min-h-screen bg-snb-bg text-snb-t1">
-      <Routes>
-        <Route path="/reader/:slug" element={<ReaderRedirect />} />
-        <Route
-          path="/a/:slug/:part?"
-          element={
-            <>
-              <HubHeader theme={theme} onToggleTheme={toggleTheme} />
-              <ArticlePage />
-            </>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <>
-              <HubHeader theme={theme} onToggleTheme={toggleTheme} />
-              <ListPage />
-            </>
-          }
-        />
-      </Routes>
+    <ThemeScope theme={theme} className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
+      {/* 页脚钉底：路由内容撑 flex-1，短页（空态/加载态）页脚也贴底不悬空 */}
+      <div className="flex-1">
+        <Routes>
+          <Route path="/reader/:slug" element={<ReaderRedirect />} />
+          <Route
+            path="/a/:slug/:part?"
+            element={
+              <>
+                <HubHeader theme={theme} onToggleTheme={toggleTheme} />
+                <ArticlePage />
+              </>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <>
+                <HubHeader theme={theme} onToggleTheme={toggleTheme} />
+                <ListPage />
+              </>
+            }
+          />
+        </Routes>
+      </div>
+      <HubFooter />
     </ThemeScope>
   )
 }

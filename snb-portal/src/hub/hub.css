@@ -802,6 +802,9 @@
 
 .hub-book-foot { margin-top: 56px; padding-top: 26px; border-top: 1px solid var(--snb-hairline); font-size: 13px; line-height: 1.7; color: rgb(var(--snb-t3)); }
 
+/* ── 站点页脚：整理来源声明（全路由可见，App 层 flex 钉底） ── */
+.hub-foot { margin-top: 3.5rem; border-top: 1px solid var(--snb-hairline); padding: 1.3rem 1.25rem 1.6rem; text-align: center; font-size: 12px; line-height: 1.9; color: rgb(var(--snb-t3)); }
+
 @media (max-width: 640px) {
   .hub-cards-wall { grid-template-columns: 1fr; }
   .hub-prose figure.book-cards { grid-auto-columns: minmax(72vw, 1fr); }
