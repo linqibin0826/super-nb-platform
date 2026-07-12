@@ -3,7 +3,7 @@ import type { NavCapsuleItem } from '../NavCapsule/NavCapsule'
 
 /**
  * 全站导航的唯一真源（Header 规范 v1，2026-07-05 站长拍板）。
- * 五项固定：控制台 / 使用指南 / 创作工坊 / 内容中心 / 充值活动（促销描边+呼吸点）。
+ * 五项固定：控制台 / 使用指南 / 创作工坊 / 内容中心 / 活动（促销描边+呼吸点）。
  * 非 React 消费方（fork Vue / learn VitePress / activity 静态页）按 templates/app-header.html
  * 模板抄写——项目/顺序/链接改动必须与本常量同步（契约互指）。
  */
@@ -89,8 +89,9 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
   },
   {
     key: 'activity',
-    label: '充值活动',
-    href: 'https://super-nb.me/activity/',
+    label: '活动',
+    // 2026-07-12 起指活动中心(/activity/all/,registry.json 驱动),不再直挂开卡页
+    href: 'https://super-nb.me/activity/all/',
     promo: true,
     icon: (
       <Icon>
