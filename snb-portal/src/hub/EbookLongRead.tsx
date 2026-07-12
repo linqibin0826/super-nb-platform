@@ -10,8 +10,8 @@ type State = { kind: 'loading' } | { kind: 'missing' } | { kind: 'ready'; book: 
 
 /**
  * 电子书阅读编排器：一次 fetch book.json（全书），按路由 part 分流——
- * 无 part → 封面卡片墙目录（BookIndex）；有 part → 那一部分独立页（BookPart）。
- * 站长第四轮拍板 B：每部分拆开、一次只看一部分（非一条流展开）。
+ * 无 part → 节目单目录（BookIndex）；有 part → 那一讲独立页（BookPart）。
+ * 站长第六稿拍板「节目单」方向：每讲拆开、目录当分集页卖内容（非书目录）。
  */
 export function EbookLongRead({ slug, path }: { slug: string; path: string }) {
   const { part: partRaw } = useParams()
