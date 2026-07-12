@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import DOMPurify from 'dompurify'
-import { Chip, Skeleton } from '../../ui'
+import { Skeleton } from '../../ui'
 import { t } from '../../i18n'
 import { getArticle, NotFoundError, type ArticleDetail } from '../api'
 import { ReadingProgress } from '../ReadingProgress'
@@ -19,7 +19,7 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/** 文章详情页：编辑部式阅读版式（进度线/速览面板/编号分节）。正文=管线预渲染 HTML + DOMPurify 兜底（纵深防御，照公告口径默认白名单）。电子书=「一镜到底」长读版（EbookLongRead 自持整页），走独立分支。 */
+/** 文章详情页：元信息条 + 文章纸张卡（外壳是房间、文章是纸——暗色房间变墨、纸保持暖纸）。正文=管线预渲染 HTML + DOMPurify 兜底（纵深防御，照公告口径默认白名单）。电子书=节目单阅读版（EbookLongRead 自持整页），走独立分支。 */
 export function ArticlePage() {
   const { slug = '' } = useParams()
   const [state, setState] = useState<State>({ kind: 'loading' })
@@ -80,87 +80,80 @@ export function ArticlePage() {
   const minutes = readingMinutes(a.bodyHtml ?? '')
 
   return (
-    <main className="mx-auto w-full max-w-[43rem] px-5 py-8 sm:py-10" data-testid="hub-article">
+    <main className="mx-auto w-full max-w-[50rem] px-3 py-7 sm:px-5 sm:py-10" data-testid="hub-article">
       <ReadingProgress />
 
-      <nav className="mb-8">
+      <nav className="mb-5 px-1">
         <Link className="text-[13px] text-snb-t3 transition-colors hover:text-snb-t1" to="/">
           ← {t('hub.article.backHome')}
         </Link>
       </nav>
 
-      <header className="mb-7">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Chip>{a.categoryName}</Chip>
-          {a.tags.slice(0, 4).map((tag) => (
-            <span key={tag} className="rounded bg-snb-t1/[0.05] px-1.5 py-0.5 text-xs text-snb-t3">
-              {tag}
-            </span>
-          ))}
-        </div>
-        <h1 className="mb-4 font-display text-[1.9rem] font-bold leading-[1.32] tracking-[-0.01em] text-snb-t1 sm:text-[2.3rem] sm:leading-[1.26]">
-          {a.title}
-        </h1>
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-snb-t3" data-testid="hub-byline">
-          <time dateTime={a.publishedAt}>{formatDate(a.publishedAt)}</time>
-          <span aria-hidden="true">·</span>
-          <span>{t('hub.article.readingTime', { n: minutes })}</span>
-          {a.sourceName && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>
+      {/* 元信息条：来源 / 日期 ······ 阅读时长（桌面上的档案条，随房间明暗） */}
+      <div className="hub-metabar" data-testid="hub-byline">
+        {a.sourceName && (
+          <span>
+            {t('hub.article.source')}
+            {a.sourceName}
+          </span>
+        )}
+        <time dateTime={a.publishedAt}>{formatDate(a.publishedAt)}</time>
+        <span className="min">{t('hub.article.readingTime', { n: minutes })}</span>
+      </div>
+
+      {/* 文章纸张卡：暗色模式外壳变墨、纸保持暖纸（.dark .hub-sheet 令牌重钉） */}
+      <article className="hub-sheet" data-testid="hub-sheet">
+        {a.coverUrl && (
+          <figure className="hub-sheet-cover">
+            <img alt="" loading="lazy" src={a.coverUrl} />
+          </figure>
+        )}
+        <header>
+          <div className="hub-sheet-eyebrow">{a.categoryName}</div>
+          <h1 className="hub-sheet-title">{a.title}</h1>
+        </header>
+
+        {a.summary && (
+          <aside className="hub-tldr" data-testid="hub-tldr">
+            <span className="hub-tldr-tab">{t('hub.article.tldr')}</span>
+            <p>{a.summary}</p>
+          </aside>
+        )}
+
+        <div
+          className="hub-prose"
+          // 管线已预渲染并 sanitize；此处 DOMPurify 默认白名单再兜一层（纵深防御）
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(a.bodyHtml ?? '') }}
+        />
+
+        {(a.sourceName || a.tags.length > 0) && (
+          <footer className="hub-sheet-foot">
+            {a.sourceName && (
+              <span data-testid="hub-source">
                 {t('hub.article.source')}
                 {a.sourceName}
+                {a.sourceUrl && (
+                  <>
+                    {' · '}
+                    <a href={a.sourceUrl} target="_blank" rel="noopener noreferrer">
+                      {t('hub.article.original')}
+                    </a>
+                  </>
+                )}
               </span>
-            </>
-          )}
+            )}
+            {a.tags.length > 0 && (
+              <span className="tags">
+                {a.tags.slice(0, 4).map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
+              </span>
+            )}
+          </footer>
+        )}
+      </article>
 
-        </p>
-      </header>
-
-      {a.summary && (
-        <aside className="hub-tldr" data-testid="hub-tldr">
-          <span className="hub-tldr-tab">{t('hub.article.tldr')}</span>
-          <p>{a.summary}</p>
-        </aside>
-      )}
-
-      {a.coverUrl && (
-        <figure className="mb-9 overflow-hidden rounded-2xl border border-snb-hairline">
-          <img alt="" className="block w-full" loading="lazy" src={a.coverUrl} />
-        </figure>
-      )}
-
-      <article
-        className="hub-prose"
-        // 管线已预渲染并 sanitize；此处 DOMPurify 默认白名单再兜一层（纵深防御）
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(a.bodyHtml ?? '') }}
-      />
-
-      {a.sourceName && (
-        <footer
-          className="mt-12 rounded-xl border border-snb-hairline bg-snb-well/60 px-4 py-3 text-[13px] leading-relaxed text-snb-t3"
-          data-testid="hub-source"
-        >
-          {t('hub.article.source')}
-          {a.sourceName}
-          {a.sourceUrl && (
-            <>
-              {' · '}
-              <a
-                className="underline underline-offset-4 hover:text-snb-t1"
-                href={a.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {t('hub.article.original')}
-              </a>
-            </>
-          )}
-        </footer>
-      )}
-
-      <nav className="mt-10 border-t border-snb-hairline pt-6">
+      <nav className="mt-8 px-1">
         <Link className="text-[13px] text-snb-t3 transition-colors hover:text-snb-t1" to="/">
           ← {t('hub.article.backHome')}
         </Link>
