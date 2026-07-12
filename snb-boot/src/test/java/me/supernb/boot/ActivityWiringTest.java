@@ -1,9 +1,11 @@
 package me.supernb.boot;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Optional;
@@ -65,6 +67,21 @@ class ActivityWiringTest {
     void statusWithoutTokenIsUnauthorized() throws Exception {
         mvc.perform(get("/activity/v1/status"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void gateDrawWithoutTokenIsUnauthorized() throws Exception {
+        mvc.perform(post("/activity/v1/gate/draw")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void registryStatusIsPublicAndAlwaysCarriesEvergreenEntries() throws Exception {
+        // 空库无 lottery/raffle 期 → 两条目缺席不断言;qq 状态值随测试运行日期变化,只断言存在性
+        mvc.perform(get("/activity/v1/registry-status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.campaigns[*].id").value(hasItem("leaderboard")))
+                .andExpect(jsonPath("$.campaigns[*].id").value(hasItem("qq-referral")))
+                .andExpect(jsonPath("$.campaigns[?(@.kind=='evergreen')].status").value(hasItem("running")));
     }
 
     @Test
