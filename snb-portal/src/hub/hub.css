@@ -332,7 +332,7 @@
 }
 .hub-prose blockquote[data-seal]::after {
   content: attr(data-seal);
-  display: inline-block;
+  display: table; /* 独占一行收缩包裹：inline-block 会在末行短时浮在句尾 */
   margin-top: 15px;
   padding: 3px 9px;
   border: 1px solid rgb(var(--hub-accent) / 0.4);
