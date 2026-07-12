@@ -19,7 +19,7 @@ export function AppRoutes() {
       <Routes>
         <Route path="/reader/:slug" element={<ReaderRedirect />} />
         <Route
-          path="/a/:slug/:chapter?"
+          path="/a/:slug"
           element={
             <>
               <HubHeader theme={theme} onToggleTheme={toggleTheme} />

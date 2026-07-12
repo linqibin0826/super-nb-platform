@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { Chip, Skeleton } from '../../ui'
 import { t } from '../../i18n'
 import { getArticle, NotFoundError, type ArticleDetail } from '../api'
 import { ReadingProgress } from '../ReadingProgress'
 import { readingMinutes } from '../readingTime'
-import { EbookBody } from '../EbookBody'
+import { EbookLongRead } from '../EbookLongRead'
 
 type State =
   | { kind: 'loading' }
@@ -19,16 +19,15 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/** 文章详情页：编辑部式阅读版式（进度线/速览面板/编号分节）。正文=管线预渲染 HTML + DOMPurify 兜底（纵深防御，照公告口径默认白名单）；电子书同版式，正文位换书体纸面卡（站长拍板：当普通教程，不做独立阅读器）。 */
+/** 文章详情页：编辑部式阅读版式（进度线/速览面板/编号分节）。正文=管线预渲染 HTML + DOMPurify 兜底（纵深防御，照公告口径默认白名单）。电子书=「一镜到底」长读版（EbookLongRead 自持整页），走独立分支。 */
 export function ArticlePage() {
-  const { slug = '', chapter: chapterRaw } = useParams()
-  const chapter = chapterRaw && /^\d+$/.test(chapterRaw) ? Number(chapterRaw) : undefined
+  const { slug = '' } = useParams()
   const [state, setState] = useState<State>({ kind: 'loading' })
 
-  // 章节切换/换文回到页顶（路由变化 React Router 不自动滚）
+  // 换文回到页顶（路由变化 React Router 不自动滚）
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [slug, chapterRaw])
+  }, [slug])
 
   useEffect(() => {
     let alive = true
@@ -75,11 +74,10 @@ export function ArticlePage() {
   }
 
   const a = state.article
-  const isEbook = a.type === 'ebook'
-  if (!isEbook && chapterRaw) {
-    return <Navigate to={`/a/${a.slug}`} replace /> // 章节段只对电子书有意义
+  if (a.type === 'ebook') {
+    return <EbookLongRead slug={a.slug} path={a.ebookPath ?? ''} />
   }
-  const minutes = isEbook ? null : readingMinutes(a.bodyHtml ?? '')
+  const minutes = readingMinutes(a.bodyHtml ?? '')
 
   return (
     <main className="mx-auto w-full max-w-[43rem] px-5 py-8 sm:py-10" data-testid="hub-article">
@@ -105,12 +103,8 @@ export function ArticlePage() {
         </h1>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-snb-t3" data-testid="hub-byline">
           <time dateTime={a.publishedAt}>{formatDate(a.publishedAt)}</time>
-          {minutes !== null && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>{t('hub.article.readingTime', { n: minutes })}</span>
-            </>
-          )}
+          <span aria-hidden="true">·</span>
+          <span>{t('hub.article.readingTime', { n: minutes })}</span>
           {a.sourceName && (
             <>
               <span aria-hidden="true">·</span>
@@ -137,15 +131,11 @@ export function ArticlePage() {
         </figure>
       )}
 
-      {isEbook ? (
-        <EbookBody slug={a.slug} path={a.ebookPath ?? ''} chapter={chapter} />
-      ) : (
-        <article
-          className="hub-prose"
-          // 管线已预渲染并 sanitize；此处 DOMPurify 默认白名单再兜一层（纵深防御）
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(a.bodyHtml ?? '') }}
-        />
-      )}
+      <article
+        className="hub-prose"
+        // 管线已预渲染并 sanitize；此处 DOMPurify 默认白名单再兜一层（纵深防御）
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(a.bodyHtml ?? '') }}
+      />
 
       {a.sourceName && (
         <footer

@@ -76,3 +76,36 @@ export function listArticles(p: {
 export function getArticle(slug: string): Promise<ArticleDetail> {
   return getJson(`${BASE}/articles/${encodeURIComponent(slug)}`)
 }
+
+/** book.json 契约（发布管线 buildBook 产出；dev 由 devBooks 现场转换吐同构数据）。 */
+export interface BookChapter {
+  index: number
+  num: string | null // 前言=null、章节 "01".."10"、附录 "A"/"B"/"C"
+  kind: 'preface' | 'chapter' | 'appendix'
+  eyebrow: string
+  title: string
+  en?: string
+  intro?: string
+  minutes: number
+  sections?: string[]
+  html: string
+}
+
+export interface BookData {
+  title: string
+  subtitle?: string
+  en?: string
+  badge?: string
+  author?: string
+  metaLines?: string[]
+  totalMinutes: number
+  chapters: BookChapter[]
+}
+
+/** 电子书整本（book.json）；path = ebookPath = 'books/<slug>'，长读版一次拿全书一条流渲染。 */
+export async function getBook(path: string): Promise<BookData> {
+  const res = await fetch(`/${path}/book.json`)
+  if (res.status === 404) throw new NotFoundError()
+  if (!res.ok) throw new Error('http ' + res.status)
+  return (await res.json()) as BookData
+}
