@@ -16,8 +16,13 @@ function devBooks(): Plugin {
     const file = path.join(BOOKS_DIR, slug, 'source.html')
     if (!file.startsWith(BOOKS_DIR) || !fs.existsSync(file)) return null
     const libPath = path.join(BOOKS_DIR, '../scripts/lib/books.mjs')
-    // 缓存键 = 书源 + 管线代码两者 mtime 取大——改任一侧刷新即生效
-    const mtime = Math.max(fs.statSync(file).mtimeMs, fs.statSync(libPath).mtimeMs)
+    const enrichPath = path.join(BOOKS_DIR, slug, 'enrich.json')
+    // 缓存键 = 书源 + 管线代码 + 增富配置三者 mtime 取大——改任一侧刷新即生效
+    const mtime = Math.max(
+      fs.statSync(file).mtimeMs,
+      fs.statSync(libPath).mtimeMs,
+      fs.existsSync(enrichPath) ? fs.statSync(enrichPath).mtimeMs : 0,
+    )
     const hit = cache.get(slug)
     if (hit && hit.mtime === mtime) return hit.json
     // 动态 import 内容仓库管线（依赖按该文件位置从内容仓库 node_modules 解析）；
@@ -25,7 +30,8 @@ function devBooks(): Plugin {
     const libUrl = new URL(`file://${libPath}`)
     libUrl.searchParams.set('v', String(mtime))
     const { transformBook, buildBook } = await import(/* @vite-ignore */ libUrl.href)
-    const { meta, chapters } = transformBook(fs.readFileSync(file, 'utf8'))
+    const enrich = fs.existsSync(enrichPath) ? JSON.parse(fs.readFileSync(enrichPath, 'utf8')) : undefined
+    const { meta, chapters } = transformBook(fs.readFileSync(file, 'utf8'), { enrich })
     const json = JSON.stringify(buildBook(meta, chapters, slug))
     cache.set(slug, { mtime, json })
     return json
