@@ -48,6 +48,10 @@ activity:
     newcomer-group-id: ${QQ_CAMPAIGN_GROUP_ID:77}
     cap: 288
     limit: 10
+  gate:
+    # 金票闸机(spec 2026-07-12-gate-golden-ticket):win-rate ≤0 = 闸机休眠
+    threshold-cny: ${GATE_THRESHOLD_CNY:30}
+    win-rate: ${GATE_WIN_RATE:0.02}
 
 content:
   # admin 写接口令牌（发布管线经 SSH 隧道调用）；缺省空值=fail-closed 一律 401

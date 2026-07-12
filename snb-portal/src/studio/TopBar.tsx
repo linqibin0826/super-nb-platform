@@ -20,7 +20,7 @@ const DEV_HREFS: Record<string, string> = {
   help: '/help/',
   studio: '/studio/',
   hub: 'https://hub.super-nb.me/',
-  activity: '/activity/',
+  activity: '/activity/all/',
 }
 const isLocalDev =
   typeof location !== 'undefined' &&

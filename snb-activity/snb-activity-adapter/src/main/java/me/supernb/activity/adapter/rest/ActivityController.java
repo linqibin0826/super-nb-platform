@@ -1,9 +1,19 @@
 package me.supernb.activity.adapter.rest;
 
 import dev.linqibin.commons.cqrs.CommandBus;
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import me.supernb.activity.adapter.rest.request.RaffleEnterRequest;
 import me.supernb.activity.adapter.rest.response.DrawResponse;
+import me.supernb.activity.adapter.rest.response.RaffleCurrentResponse;
+import me.supernb.activity.adapter.rest.response.RaffleEnterResponse;
+import me.supernb.activity.adapter.rest.response.RaffleHistoryResponse;
+import me.supernb.activity.adapter.rest.response.RaffleMeResponse;
+import me.supernb.activity.adapter.rest.response.RaffleResultResponse;
+import me.supernb.activity.adapter.rest.response.RaffleWinsResponse;
+import me.supernb.activity.adapter.rest.response.GateDrawResponse;
+import me.supernb.activity.adapter.rest.response.RegistryStatusResponse;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
@@ -12,9 +22,14 @@ import me.supernb.activity.app.usecase.draw.command.PerformDrawAllCommand;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
+import me.supernb.activity.app.usecase.gate.command.PerformGateDrawCommand;
+import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
+import me.supernb.activity.app.usecase.raffle.command.RegisterRaffleCommand;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
+import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
 import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
+import me.supernb.activity.domain.model.raffle.RaffleEntryTicket;
 import me.supernb.activity.domain.model.read.DrawStatus;
 import me.supernb.activity.domain.model.read.LeaderEntry;
 import me.supernb.activity.domain.model.read.MyDrawView;
@@ -31,14 +46,18 @@ import me.supernb.sub2api.auth.CurrentUser;
 import me.supernb.sub2api.auth.UserProfile;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-/// 活动中心 REST 入口,路径 `/activity/v1/*`。`leaderboard`/`recharges`/`pool`/`recent-draws`
-/// 四个只读端点公开免登录;`status`/`draw`/`my-draws`/`usage-leaderboard` 四个端点需要登录——`@CurrentUser` 由 sub2api
+/// 活动中心 REST 入口,路径 `/activity/v1/*`。`leaderboard`/`recharges`/`pool`/`recent-draws`/`registry-status`
+/// 与发布会的 `raffle/current`/`raffle/{id}/result`/`raffle/history` 公开免登录;
+/// `status`/`draw`/`my-draws`/`usage-leaderboard`/`raffle/me`/`raffle/enter` 需要登录——`@CurrentUser` 由 sub2api
 /// starter 的解析器完成 introspect 校验(要求 active 的 user 或 admin 账号,否则 401)。写操作组装命令
 /// 经 `CommandBus` 派发,其余只读端点直接调用注入的查询用例。
 @RestController
@@ -54,8 +73,10 @@ public class ActivityController {
     private final MyDrawsQueryService myDrawsQuery;
     private final ReferralLeaderboardQueryService referralQuery;
     private final UsageLeaderboardQueryService usageLeaderboardQuery;
+    private final RaffleQueryService raffleQuery;
+    private final RegistryStatusQueryService registryStatusQuery;
 
-    /// 构造:注入 CommandBus 与八个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、拉新榜、用量榜)。
+    /// 构造:注入 CommandBus 与十个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、拉新榜、用量榜、发布会、注册表状态)。
     public ActivityController(
             CommandBus commandBus,
             DrawStatusQueryService drawStatusQuery,
@@ -65,7 +86,9 @@ public class ActivityController {
             RecentDrawsQueryService recentDrawsQuery,
             MyDrawsQueryService myDrawsQuery,
             ReferralLeaderboardQueryService referralQuery,
-            UsageLeaderboardQueryService usageLeaderboardQuery) {
+            UsageLeaderboardQueryService usageLeaderboardQuery,
+            RaffleQueryService raffleQuery,
+            RegistryStatusQueryService registryStatusQuery) {
         this.commandBus = commandBus;
         this.drawStatusQuery = drawStatusQuery;
         this.leaderboardQuery = leaderboardQuery;
@@ -75,6 +98,8 @@ public class ActivityController {
         this.myDrawsQuery = myDrawsQuery;
         this.referralQuery = referralQuery;
         this.usageLeaderboardQuery = usageLeaderboardQuery;
+        this.raffleQuery = raffleQuery;
+        this.registryStatusQuery = registryStatusQuery;
     }
 
     /// 活动期充值榜 Top10(公开)。无进行中活动 → 空列表,不是异常。
@@ -151,6 +176,20 @@ public class ActivityController {
         return referralQuery.stats();
     }
 
+    /// 活动中心注册表状态(公开,活动中心页与各活动页状态徽章用)。零 payload:
+    /// 只回 id/kind/status/时间窗,无人数/名单/金额/身份(spec 2026-07-12 §6,加字段须先改 spec)。
+    @GetMapping("/registry-status")
+    public RegistryStatusResponse registryStatus() {
+        return RegistryStatusResponse.of(registryStatusQuery.status());
+    }
+
+    /// 金票闸机抽签(需登录):资格/限次/概率全在服务端;门槛外一律 {eligible:false},
+    /// 前端表现与普通过闸零差异(隐藏福利,spec gate §4)。写操作经 CommandBus 派发。
+    @PostMapping("/gate/draw")
+    public GateDrawResponse gateDraw(@CurrentUser UserProfile user) {
+        return GateDrawResponse.of(commandBus.handle(new PerformGateDrawCommand(user.id())));
+    }
+
     /// 用量排行榜(Token/金额双榜,需登录)。period=day|week|month|all,metric=tokens|amount;
     /// 参数非法 → 400;缓存未预热 → 503(spec §12)。
     @GetMapping("/usage-leaderboard")
@@ -185,6 +224,68 @@ public class ActivityController {
             return BoardMetric.valueOf(raw.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid metric: " + raw);
+        }
+    }
+
+    /// 发布会当前期(公开):serverNow 供前端倒计时对齐;无进行中 → campaign=null。
+    @GetMapping("/raffle/current")
+    public RaffleCurrentResponse raffleCurrent() {
+        return RaffleCurrentResponse.of(Instant.now(), raffleQuery.current().orElse(null));
+    }
+
+    /// 发布会开奖结果(公开,红头文件数据源);未开奖/不存在 → 404。
+    @GetMapping("/raffle/{campaignId}/result")
+    public RaffleResultResponse raffleResult(@PathVariable String campaignId) {
+        return RaffleResultResponse.of(raffleQuery.result(parseId(campaignId)));
+    }
+
+    /// 历届通报存档(公开,固定 20 期)。
+    @GetMapping("/raffle/history")
+    public List<RaffleHistoryResponse> raffleHistory() {
+        return raffleQuery.history().stream().map(RaffleHistoryResponse::of).toList();
+    }
+
+    /// 公开中奖记录(公开):坐标=(已开奖期 id, 参会证号),只认开奖通报里公开过的坐标;
+    /// 未中过奖/坐标无效 → 404(参与史不泄露)。
+    @GetMapping("/raffle/wins")
+    public RaffleWinsResponse raffleWins(@RequestParam String campaignId, @RequestParam String entryNo) {
+        return RaffleWinsResponse.of(raffleQuery.personWins(parseId(campaignId), parseEntryNo(entryNo)));
+    }
+
+    /// 我的列席状态与奖品(需登录);payload 只在已开奖且本人中奖时出现。
+    @GetMapping("/raffle/me")
+    public RaffleMeResponse raffleMe(@RequestParam String campaignId, @CurrentUser UserProfile user) {
+        return RaffleMeResponse.of(raffleQuery.me(parseId(campaignId), user.id()));
+    }
+
+    /// 申请列席(需登录):不在报名期 404;资质不足 409(带「还需 ¥XX」);重复报名幂等返回既有参会证。
+    /// ip/ua 只作秋后清算留痕(XFF 取首值)。
+    @PostMapping("/raffle/enter")
+    public RaffleEnterResponse raffleEnter(@RequestBody RaffleEnterRequest body,
+            @RequestHeader(value = "X-Forwarded-For", required = false) String forwardedFor,
+            @RequestHeader(value = "User-Agent", required = false) String userAgent,
+            @CurrentUser UserProfile user) {
+        String clientIp = forwardedFor == null ? null : forwardedFor.split(",")[0].trim();
+        RaffleEntryTicket ticket = commandBus.handle(new RegisterRaffleCommand(
+                parseId(body.campaignId()), user.id(), clientIp, userAgent));
+        return new RaffleEnterResponse(ticket.entryNo(), ticket.already());
+    }
+
+    /// 解析参会证号;非法值 → 400。
+    private static int parseEntryNo(String raw) {
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid entryNo: " + raw);
+        }
+    }
+
+    /// 解析雪花 id 字符串(对外 JSON id 一律字符串的家族惯例);非法值 → 400。
+    private static long parseId(String raw) {
+        try {
+            return Long.parseLong(raw);
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid id: " + raw);
         }
     }
 }
