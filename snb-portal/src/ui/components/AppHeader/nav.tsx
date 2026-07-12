@@ -2,8 +2,11 @@ import type { ReactNode } from 'react'
 import type { NavCapsuleItem } from '../NavCapsule/NavCapsule'
 
 /**
- * 全站导航的唯一真源（Header 规范 v1，2026-07-05 站长拍板）。
- * 五项固定：控制台 / 使用指南 / 创作工坊 / 内容中心 / 活动（促销描边+呼吸点）。
+ * 全站导航的唯一真源（Header 规范 v2，2026-07-12 站长拍板；spec 见 ai-relay
+ * docs/superpowers/specs/2026-07-12-header-nav-v2-design.md）。
+ * 四项固定：控制台 / 创作工坊 / 内容中心 / 活动（促销描边+呼吸点）；
+ * 「使用指南」入口收进内容中心（hub 首页常驻「使用手册」直达位），新站不再进顶栏。
+ * 响应式两段：≥1024 胶囊 / <1024 菜单钮+玻璃下拉浮卡（唯一例外：help 站保留 VitePress 三档）。
  * 非 React 消费方（fork Vue / learn VitePress / activity 静态页）按 templates/app-header.html
  * 模板抄写——项目/顺序/链接改动必须与本常量同步（契约互指）。
  */
@@ -48,18 +51,6 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
         <rect x="14" y="3" width="7" height="7" rx="1" />
         <rect x="3" y="14" width="7" height="7" rx="1" />
         <rect x="14" y="14" width="7" height="7" rx="1" />
-      </Icon>
-    ),
-  },
-  {
-    key: 'help',
-    label: '使用指南',
-    // 2026-07-05 迁子域名（原 api.super-nb.me/help/ 由主站 301 兜底）
-    href: 'https://help.super-nb.me/',
-    icon: (
-      <Icon>
-        <path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z" />
-        <path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z" />
       </Icon>
     ),
   },

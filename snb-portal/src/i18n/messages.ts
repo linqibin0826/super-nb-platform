@@ -6,6 +6,10 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
     hub: {
       title: '内容中心',
       nav: {
+        console: '控制台',
+        studio: '创作工坊',
+        hub: '内容中心',
+        activity: '活动',
         login: '登录',
         theme: '切换明暗主题',
       },
@@ -61,6 +65,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         noMore: '没有更多了',
         serialStart: '开始读 →',
         serialResume: '继续读 →',
+        manual: '使用手册',
       },
       foot: {
         disclaimer: '部分内容整理自互联网公开信息并注明出处，版权归原作者所有；如有侵权，请联系站长删除。',
@@ -70,7 +75,6 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       title: '创作工坊',
       nav: {
         console: '控制台',
-        help: '使用指南',
         hub: '内容中心',
         activity: '活动',
         login: '登录',
@@ -297,6 +301,10 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
     hub: {
       title: 'Content Hub',
       nav: {
+        console: 'Console',
+        studio: 'Creative Studio',
+        hub: 'Content Hub',
+        activity: 'Events',
         login: 'Sign in',
         theme: 'Toggle light / dark theme',
       },
@@ -352,6 +360,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         noMore: 'No more',
         serialStart: 'Start reading →',
         serialResume: 'Continue →',
+        manual: 'User Guide',
       },
       foot: {
         disclaimer:
@@ -362,7 +371,6 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       title: 'Creative Studio',
       nav: {
         console: 'Console',
-        help: 'Guide',
         hub: 'Content Hub',
         activity: 'Events',
         login: 'Sign in',

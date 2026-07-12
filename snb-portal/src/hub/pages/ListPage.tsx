@@ -51,7 +51,16 @@ export function ListPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8" data-testid="hub-list">
-      <Tabs items={tabs} active={active} onSelect={setActive} className="mb-6" />
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <Tabs items={tabs} active={active} onSelect={setActive} />
+        {/* 使用手册常驻直达位（Header 规范 v2：「使用指南」退出全站顶栏，动线改经内容中心） */}
+        <a
+          href="https://help.super-nb.me/"
+          className="inline-flex flex-none items-center gap-1.5 rounded-full border border-primary-500/40 px-3.5 py-1.5 text-[13px] font-medium text-primary-600 transition-colors hover:bg-primary-500/10 dark:text-primary-300"
+        >
+          📖 {t('hub.list.manual')}
+        </a>
+      </div>
 
       {active === ALL && <SerialSpotlight />}
 

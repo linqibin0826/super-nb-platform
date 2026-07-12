@@ -28,7 +28,7 @@ export interface AppHeaderProps {
 /**
  * 全站统一 Header（规范 v1，2026-07-05）：三区骨架「品牌锁定 | 驿站胶囊 | 场景槽」。
  * 词标/胶囊全站恒定，场景槽是唯一允许差异的区域。
- * <md 胶囊收起、改汉堡下拉面板（同一 siteNavItems 数据源）。
+ * <lg(1024) 胶囊收起、改菜单钮+玻璃下拉浮卡（同一 siteNavItems 数据源，规范 v2 两段式）。
  * 非 React 站点（fork/learn/activity）按 templates/app-header.html 对齐，改必同步。
  */
 export function AppHeader({
@@ -47,7 +47,7 @@ export function AppHeader({
   const burgerRef = useRef<HTMLButtonElement | null>(null)
   const items = siteNavItems(site, { resolveHref, labelFor })
 
-  // 关闭：Esc / 点面板外（汉堡自身除外，它负责开关）/ 视口抬到 ≥md
+  // 关闭：Esc / 点浮卡外（菜单钮自身除外，它负责开关）/ 视口抬到 ≥lg
   useEffect(() => {
     if (!menuOpen) return
     const onKey = (e: KeyboardEvent) => {
@@ -59,7 +59,7 @@ export function AppHeader({
       setMenuOpen(false)
     }
     // matchMedia 在部分环境（jsdom）缺失：拿不到就跳过「抬到 ≥md 自动收起」，不影响开关
-    const mq = typeof window.matchMedia === 'function' ? window.matchMedia('(min-width: 768px)') : null
+    const mq = typeof window.matchMedia === 'function' ? window.matchMedia('(min-width: 1024px)') : null
     const onMq = () => {
       if (mq?.matches) setMenuOpen(false)
     }
@@ -92,23 +92,23 @@ export function AppHeader({
         {/* 词标家族现状：20px、≥768 抬 24（首页/learn 同款） */}
         <BrandLogo className="md:text-2xl" />
         {subtitle && (
-          <span className="whitespace-nowrap text-[13px] font-medium tracking-[0.22em] text-snb-t3 max-md:hidden">
+          <span className="whitespace-nowrap text-[13px] font-medium tracking-[0.22em] text-snb-t3 max-[639px]:hidden">
             {subtitle}
           </span>
         )}
       </a>
-      {/* <md 隐藏胶囊后不生成 grid item，右槽必须显式钉第三列，否则被自动放进中列 */}
+      {/* <lg 隐藏胶囊后不生成 grid item，右槽必须显式钉第三列，否则被自动放进中列 */}
       <NavCapsule
         aria-label="全站导航"
-        className="col-start-2 max-md:hidden"
+        className="col-start-2 max-lg:hidden"
         items={items}
       />
       <div className="col-start-3 flex items-center gap-2.5 justify-self-end">
-        {/* 移动汉堡：≥md 收起，展开下方全宽面板 */}
+        {/* 菜单钮：≥lg 收起；<lg 顶替胶囊，展开右下玻璃浮卡；有促销项时带呼吸点（活动曝光不丢） */}
         <button
           ref={burgerRef}
           type="button"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-snb-hairline-strong bg-snb-panel p-0 text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 md:hidden"
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-snb-hairline-strong bg-snb-panel p-0 text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 lg:hidden"
           aria-label="打开导航菜单"
           aria-expanded={menuOpen}
           aria-controls={menuId}
@@ -123,19 +123,25 @@ export function AppHeader({
               <path d="M3 6h18M3 12h18M3 18h18" />
             </svg>
           )}
+          {!menuOpen && items.some((i) => i.dot) && (
+            <span
+              className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary-400 animate-pulse motion-reduce:animate-none"
+              aria-hidden="true"
+            />
+          )}
         </button>
         {children}
       </div>
 
-      {/* 移动导航面板 */}
+      {/* <lg 玻璃下拉浮卡（规范 v2：右对齐锚在顶栏下方，与胶囊同玻璃语言） */}
       {menuOpen && (
-        <div ref={menuWrapRef} className="md:hidden">
+        <div ref={menuWrapRef} className="lg:hidden">
           <nav
             id={menuId}
             aria-label="全站导航"
-            className="absolute inset-x-0 top-full z-40 border-b border-snb-hairline bg-snb-bg/95 shadow-glass-sm backdrop-blur-md"
+            className="absolute right-4 top-[calc(100%+8px)] z-40 min-w-[210px] rounded-2xl border border-snb-hairline bg-snb-bg/95 shadow-glass-sm backdrop-blur-md"
           >
-            <ul className="mx-auto flex max-w-[560px] flex-col gap-0.5 px-4 py-3">
+            <ul className="flex flex-col gap-0.5 p-2">
               {items.map((item) => (
                 <li key={item.href}>
                   <a

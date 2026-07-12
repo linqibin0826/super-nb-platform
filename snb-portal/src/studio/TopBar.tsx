@@ -17,7 +17,6 @@ interface ProfileBalance {
 // 本地开发/路径部署：导航走站内相对路径（生产子域名用 SITE_NAV_ITEMS 的绝对地址）
 const DEV_HREFS: Record<string, string> = {
   console: '/dashboard',
-  help: '/help/',
   studio: '/studio/',
   hub: 'https://hub.super-nb.me/',
   activity: '/activity/all/',
@@ -29,7 +28,6 @@ const isLocalDev =
 // SITE_NAV_ITEMS 文案是中文常量，双语站点由 i18n 覆盖
 const NAV_LABEL_KEYS: Record<string, string> = {
   console: 'studio.nav.console',
-  help: 'studio.nav.help',
   studio: 'studio.title',
   hub: 'studio.nav.hub',
   activity: 'studio.nav.activity',

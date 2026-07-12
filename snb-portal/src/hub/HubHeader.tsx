@@ -8,7 +8,11 @@ import type { Theme } from '../themeCookie'
 export function HubHeader({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: () => void }) {
   const user = useAuthUser()
   return (
-    <AppHeader site="hub" subtitle={t('hub.title')}>
+    <AppHeader
+      site="hub"
+      subtitle={t('hub.title')}
+      labelFor={(item) => t(`hub.nav.${item.key}`)}
+    >
       <ThemeSwitch
         dark={theme === 'dark'}
         onToggle={onToggleTheme}
@@ -16,9 +20,13 @@ export function HubHeader({ theme, onToggleTheme }: { theme: Theme; onToggleThem
         title={t('hub.nav.theme')}
       />
       {user ? (
-        <span className="hidden text-sm text-snb-t2 sm:inline" title={user.email}>
+        <a
+          className="hidden text-sm text-snb-t2 underline-offset-4 hover:text-snb-t1 hover:underline sm:inline"
+          href="https://super-nb.me/dashboard"
+          title={user.email}
+        >
           {user.email}
-        </span>
+        </a>
       ) : (
         <a className="text-sm text-snb-t2 underline-offset-4 hover:text-snb-t1 hover:underline" href={loginUrl()}>
           {t('hub.nav.login')}
