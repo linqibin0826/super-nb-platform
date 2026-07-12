@@ -31,21 +31,23 @@ export function ArticleCard({ article }: { article: ArticleSummary }) {
         <div className="flex flex-1 flex-col gap-2.5 p-4">
           <div className="flex items-center gap-2">
             <Chip>{article.categoryName}</Chip>
-            {article.type === 'ebook' && <Badge>{t('hub.list.ebook')}</Badge>}
+            {/* 分类本身是「电子书」时徽标同名冗余，只在其他分类下亮 */}
+            {article.type === 'ebook' && article.categorySlug !== 'ebooks' && <Badge>{t('hub.list.ebook')}</Badge>}
           </div>
           <h3 className="text-[15px] font-semibold leading-snug text-snb-t1">{article.title}</h3>
           <p className={cx('text-[13px] leading-relaxed text-snb-t2', article.coverUrl ? 'line-clamp-2' : 'line-clamp-4')}>
             {article.summary}
           </p>
-          <div className="mt-auto flex items-center justify-between pt-1 text-xs text-snb-t3">
-            <span className="flex items-center gap-1.5">
+          {/* 左标签溢出裁切、右来源整体不折行——防长来源名把标签挤成竖排 */}
+          <div className="mt-auto flex items-center justify-between gap-2 pt-1 text-xs text-snb-t3">
+            <span className="flex min-w-0 items-center gap-1.5 overflow-hidden [mask-image:linear-gradient(to_right,black_calc(100%-16px),transparent)]">
               {article.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="rounded bg-snb-t1/[0.05] px-1.5 py-0.5">
+                <span key={tag} className="whitespace-nowrap rounded bg-snb-t1/[0.05] px-1.5 py-0.5">
                   {tag}
                 </span>
               ))}
             </span>
-            <span>
+            <span className="shrink-0 whitespace-nowrap">
               {article.sourceName ? `${article.sourceName} · ` : ''}
               {formatDate(article.publishedAt)}
             </span>
