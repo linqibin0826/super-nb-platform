@@ -15,12 +15,14 @@ function devBooks(): Plugin {
   async function loadBook(slug: string): Promise<string | null> {
     const file = path.join(BOOKS_DIR, slug, 'source.html')
     if (!file.startsWith(BOOKS_DIR) || !fs.existsSync(file)) return null
-    const mtime = fs.statSync(file).mtimeMs
+    const libPath = path.join(BOOKS_DIR, '../scripts/lib/books.mjs')
+    // 缓存键 = 书源 + 管线代码两者 mtime 取大——改任一侧刷新即生效
+    const mtime = Math.max(fs.statSync(file).mtimeMs, fs.statSync(libPath).mtimeMs)
     const hit = cache.get(slug)
     if (hit && hit.mtime === mtime) return hit.json
     // 动态 import 内容仓库管线（依赖按该文件位置从内容仓库 node_modules 解析）；
-    // 拼 mtime query 破 ESM 模块缓存，让改转换器代码后刷新即生效
-    const libUrl = new URL(`file://${path.join(BOOKS_DIR, '../scripts/lib/books.mjs')}`)
+    // 拼 mtime query 破 ESM 模块缓存
+    const libUrl = new URL(`file://${libPath}`)
     libUrl.searchParams.set('v', String(mtime))
     const { transformBook, buildBook } = await import(/* @vite-ignore */ libUrl.href)
     const { meta, chapters } = transformBook(fs.readFileSync(file, 'utf8'))

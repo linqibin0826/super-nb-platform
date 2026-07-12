@@ -3,9 +3,11 @@
 
 :root {
   --hub-accent: 204 120 92; /* primary-500 #CC785C */
+  --hub-ink: 50 42 34;      /* 正文阅读墨 #322A22：暖褐，长读比 t1 近黑柔和（参照站同档） */
 }
 .dark {
   --hub-accent: 226 168 143; /* primary-300 #E2A88F，墨底上保持可读 */
+  --hub-ink: 224 213 197;    /* 暗色阅读墨 #E0D5C5：奶白降半档，降眩光 */
 }
 
 /* ── 速览面板：眉标压边框的暖底卡（详情页签名元素）── */
@@ -38,14 +40,18 @@
   color: rgb(var(--snb-t2));
 }
 
-/* ── 正文排版 ── */
+/* ── 正文排版（2026-07-12 第七轮阅读舒适：显式 CJK 栈/阅读墨/盘古之白配管线）── */
 .hub-prose {
   counter-reset: hub-section;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
   font-size: 17px;
   line-height: 1.95;
-  color: rgb(var(--snb-t1));
+  color: rgb(var(--hub-ink));
   overflow-wrap: break-word;
+  hanging-punctuation: first allow-end; /* Safari 渐进：行首引号悬挂 */
 }
+.hub-prose ::selection { background: rgb(var(--hub-accent) / 0.22); }
+.hub-prose strong { color: rgb(var(--snb-t1)); } /* 正文软化后，加粗以更深一档立层级 */
 @media (max-width: 640px) {
   .hub-prose {
     font-size: 16px;
@@ -56,12 +62,17 @@
 .hub-prose h4 {
   margin: 1.8em 0 0.6em;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.45;
   color: rgb(var(--snb-t1));
 }
 .hub-prose h1 { font-size: 1.4em; }
-.hub-prose h3 { font-size: 1.1em; }
-.hub-prose h4 { font-size: 1em; }
+/* 书内小节头走衬线（与讲题同血统），长章里的路标 */
+.hub-prose h3 {
+  margin: 2.3em 0 0.65em;
+  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-size: 1.24em;
+}
+.hub-prose h4 { margin: 1.9em 0 0.55em; font-size: 1.02em; }
 
 /* h2 = 编号章节头：衬线 + 赤陶小圆章（教程/解读天然按序读，编号即微导航） */
 .hub-prose h2 {
@@ -90,15 +101,15 @@
   letter-spacing: 0.1em;
 }
 
-.hub-prose p { margin: 1.05em 0; }
+.hub-prose p { margin: 1em 0; }
 .hub-prose ul,
 .hub-prose ol {
-  margin: 1.05em 0;
+  margin: 1em 0;
   padding-left: 1.7em;
 }
 .hub-prose ul { list-style: disc; }
 .hub-prose ol { list-style: decimal; }
-.hub-prose li { margin: 0.35em 0; }
+.hub-prose li { margin: 0.4em 0; }
 .hub-prose li::marker { color: rgb(var(--hub-accent)); }
 .hub-prose a {
   color: rgb(var(--snb-t1));
@@ -128,24 +139,27 @@
 .hub-prose blockquote p { margin: 0.35em 0; }
 
 .hub-prose code {
-  padding: 0.15em 0.4em;
+  padding: 0.16em 0.42em;
+  border: 1px solid rgb(var(--snb-hairline));
   border-radius: 6px;
   background: rgb(var(--snb-well));
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.88em;
+  font-size: 0.85em;
 }
 .hub-prose pre {
   margin: 1.6em 0;
-  padding: 1em 1.15em;
+  padding: 1.05em 1.25em;
   overflow-x: auto;
   border: 1px solid rgb(var(--snb-hairline));
   border-radius: 12px;
   background: rgb(var(--snb-well));
-  font-size: 0.85em;
-  line-height: 1.7;
+  font-size: 0.8em;
+  line-height: 1.75;
+  tab-size: 2;
 }
 .hub-prose pre code {
   padding: 0;
+  border: none;
   background: none;
   font-size: 1em;
 }
@@ -212,7 +226,8 @@
   border-radius: 16px;
   background: rgb(var(--snb-panel));
   font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
-  font-style: italic;
+  font-size: 1.02em;
+  line-height: 1.9;
   color: rgb(var(--snb-t1));
 }
 .hub-prose blockquote[data-seal]::before {
@@ -327,8 +342,8 @@
 .hub-prose .book-card dd {
   margin: 2px 0 0;
   font-size: 13.5px;
-  line-height: 1.5;
-  color: rgb(var(--snb-t1));
+  line-height: 1.55;
+  color: rgb(var(--hub-ink));
 }
 
 /* 参考表：去 Excel 化——表头无填色只压线、斑马纹、横向滚动 */
@@ -361,7 +376,7 @@
 .hub-prose figure.book-table--reference td {
   border: none;
   border-bottom: 1px solid rgb(var(--snb-hairline));
-  color: rgb(var(--snb-t1));
+  color: rgb(var(--hub-ink));
 }
 .hub-prose figure.book-table--reference tr:nth-child(even) td {
   background: rgb(var(--snb-well) / 0.5);
@@ -510,6 +525,7 @@
 
 /* —— 讲次页（BookPart） —— */
 .hub-part { padding-top: 20px; }
+.hub-book-col.hub-part { max-width: 42rem; } /* 收行长至约 37 字/行（阅读舒适带） */
 .hub-part-top {
   display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 40px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
