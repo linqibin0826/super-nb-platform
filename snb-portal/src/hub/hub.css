@@ -698,7 +698,7 @@
 
 /* —— 讲次页（BookPart） —— */
 .hub-part { padding-top: 20px; }
-.hub-book-col.hub-part { max-width: 50rem; } /* 与文章页同栏：纸内减 padding 后仍是 ~37 字/行舒适带 */
+.hub-book-col.hub-part { max-width: 56rem; } /* 与文章页同栏：大屏纸卡放宽（站长嫌窄），纸内正文 ~40 字/行仍在舒适带 */
 .hub-part-top {
   display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 16px; padding: 0 4px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;

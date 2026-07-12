@@ -80,7 +80,7 @@ export function ArticlePage() {
   const minutes = readingMinutes(a.bodyHtml ?? '')
 
   return (
-    <main className="mx-auto w-full max-w-[50rem] px-3 py-7 sm:px-5 sm:py-10" data-testid="hub-article">
+    <main className="mx-auto w-full max-w-[56rem] px-3 py-7 sm:px-5 sm:py-10" data-testid="hub-article">
       <ReadingProgress />
 
       <nav className="mb-5 px-1">
