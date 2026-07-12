@@ -369,97 +369,66 @@
 .hub-prose figure.book-table--reference tr:last-child td { border-bottom: none; }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   电子书「一镜到底」长读版（EbookLongRead）——一条流 + 时码轨，无目录页无翻页器
-   衬线只用 3 处：masthead 标题 / 章题 / 引语卡。--hub-brass = 时码轨金属光（暗色黄铜）。
+   电子书阅读版式——目录卡片墙（BookIndex）+ 每部分独立页（BookPart），2026-07-11 站长拍板 B
+   衬线只用 3 处：masthead 标题 / 章题 / 引语卡。--hub-brass = 强调金属光（暗色黄铜：续读点/舞台）。
    ══════════════════════════════════════════════════════════════════════════ */
 
-:root { --hub-brass: 204 120 92; }  /* 亮色轨=赤陶 */
-.dark { --hub-brass: 217 163 92; }  /* 暗色轨=黄铜 #D9A35C */
+:root { --hub-brass: 204 120 92; }  /* 亮色=赤陶 */
+.dark { --hub-brass: 217 163 92; }  /* 暗色=黄铜 #D9A35C */
 
 .hub-book { position: relative; }
 .hub-book-col { max-width: 44rem; margin: 0 auto; padding: 0 24px 120px; }
 
-/* —— 时码轨（桌面竖轨）—— */
-.hub-rail {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  right: max(18px, calc((100vw - 44rem) / 2 - 84px));
-  width: 60px;
-  z-index: 30;
+/* —— 目录卡片墙（BookIndex）：14 部分铺成封面卡，点卡进独立页 —— */
+.hub-cards-wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+  margin: 28px 0 0;
+}
+.hub-part-card {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  pointer-events: none;
-}
-.hub-rail-track { position: relative; display: flex; flex-direction: column; gap: 3px; pointer-events: auto; }
-.hub-rail-track::before {
-  content: '';
-  position: absolute;
-  left: 6px;
-  top: 4px;
-  bottom: 4px;
-  width: 1px;
-  background: rgb(var(--snb-hairline-strong));
-}
-.hub-tick {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 3px 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.05em;
-  color: rgb(var(--snb-t3));
-  text-align: left;
-  transition: color 0.25s ease;
-}
-.hub-tick .mark {
-  flex: none;
-  width: 13px;
-  height: 2px;
-  border-radius: 2px;
-  background: rgb(var(--snb-hairline-strong));
-  transition: all 0.3s ease;
-}
-.hub-tick .lbl { opacity: 0; transform: translateX(-4px); transition: opacity 0.25s ease, transform 0.25s ease; white-space: nowrap; }
-.hub-rail:hover .hub-tick .lbl { opacity: 0.5; transform: none; }
-.hub-tick:hover .lbl { opacity: 1; color: rgb(var(--snb-t1)); }
-.hub-tick.is-active { color: rgb(var(--hub-accent)); }
-.hub-tick.is-active .mark {
-  width: 22px;
-  height: 3px;
-  background: rgb(var(--hub-brass));
-  box-shadow: 0 0 10px rgb(var(--hub-brass) / 0.7), 0 0 2px rgb(var(--hub-brass));
-}
-.hub-tick.is-active .lbl { opacity: 1; color: rgb(var(--hub-accent)); font-weight: 600; }
-
-/* —— 移动端浮标 —— */
-.hub-pill {
-  position: fixed;
-  right: 16px;
-  bottom: 20px;
-  z-index: 40;
-  display: none;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 15px;
-  border-radius: 999px;
-  background: rgb(var(--snb-panel));
+  gap: 6px;
+  padding: 18px;
   border: 1px solid rgb(var(--snb-hairline-strong));
-  box-shadow: var(--snb-shadow-card);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  color: rgb(var(--snb-t1));
-  cursor: pointer;
+  border-radius: 16px;
+  background: rgb(var(--snb-panel));
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease;
 }
-.hub-pill .dot { width: 7px; height: 7px; border-radius: 999px; background: rgb(var(--hub-brass)); box-shadow: 0 0 8px rgb(var(--hub-brass)); }
-.hub-pill b { color: rgb(var(--hub-accent)); }
+.hub-part-card:hover {
+  border-color: rgb(var(--hub-accent) / 0.7);
+  transform: translateY(-2px);
+  box-shadow: var(--snb-shadow-card);
+}
+.hub-part-card .pc-num {
+  align-self: flex-start;
+  padding: 3px 8px;
+  border: 1.5px solid rgb(var(--hub-accent) / 0.4);
+  border-radius: 999px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 600;
+  font-size: 12px;
+  color: rgb(var(--hub-accent));
+}
+.hub-part-card .pc-eyebrow { margin-top: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgb(var(--snb-t3)); }
+.hub-part-card .pc-title { font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif; font-weight: 700; font-size: 1.12rem; line-height: 1.3; color: rgb(var(--snb-t1)); }
+.hub-part-card .pc-en { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-style: italic; font-size: 0.72rem; color: rgb(var(--snb-t3)); }
+.hub-part-card .pc-min { margin-top: auto; padding-top: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: rgb(var(--snb-t3)); font-variant-numeric: tabular-nums; }
+
+/* —— 部分页（BookPart）：顶条 + 上一/下一部分 —— */
+.hub-part { padding-top: 20px; }
+.hub-part-top { display: flex; align-items: center; justify-content: space-between; margin: 0 0 26px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+.hub-part-top .back { color: rgb(var(--snb-t3)); text-decoration: none; transition: color 0.2s ease; }
+.hub-part-top .back:hover { color: rgb(var(--snb-t1)); }
+.hub-part-top .pos { font-size: 12px; color: rgb(var(--snb-t3)); font-variant-numeric: tabular-nums; }
+.hub-part-nav { display: flex; align-items: baseline; gap: 16px; margin: 52px 0 0; padding-top: 24px; border-top: 1px solid rgb(var(--snb-hairline)); font-size: 13px; }
+.hub-part-nav a { color: rgb(var(--snb-t2)); text-decoration: none; transition: color 0.2s ease; }
+.hub-part-nav a:hover { color: rgb(var(--hub-accent)); }
+.hub-part-nav .prev { flex: 1; min-width: 0; text-align: left; }
+.hub-part-nav .next { flex: 1; min-width: 0; text-align: right; }
+.hub-part-nav .toc { flex: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: rgb(var(--snb-t3)); }
 
 /* —— Masthead —— */
 .hub-mast { padding: clamp(40px, 8vh, 84px) 0 0; }
@@ -518,17 +487,6 @@
 .dark .hub-btn-read { color: #1a1613; }
 .hub-btn-read:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 rgb(var(--snb-t1) / 0.2); }
 .hub-btn-read:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgb(var(--snb-t1) / 0.16); }
-.hub-link-scan {
-  padding: 2px 0;
-  border: none;
-  border-bottom: 1px solid rgb(var(--snb-hairline-strong));
-  background: none;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
-  color: rgb(var(--snb-t2));
-  cursor: pointer;
-}
-.hub-link-scan:hover { color: rgb(var(--hub-accent)); border-color: rgb(var(--hub-accent)); }
 
 /* —— 续读条 —— */
 .hub-resume {
@@ -552,18 +510,7 @@
 .hub-resume b { color: rgb(var(--snb-t1)); font-weight: 600; }
 .hub-resume .go { margin-left: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 600; color: rgb(var(--hub-accent)); }
 
-/* —— 分节节奏 —— */
-.hub-breath { position: relative; height: clamp(80px, 13vh, 140px); display: flex; align-items: center; justify-content: center; }
-.hub-breath span {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: clamp(56px, 11vw, 112px);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: rgb(var(--snb-t1));
-  opacity: 0.05;
-  user-select: none;
-}
-.hub-sec { scroll-margin-top: 76px; content-visibility: auto; contain-intrinsic-size: 0 1000px; }
+/* —— 章头（部分页 BookPart）—— */
 .hub-sec-head { margin: 0 0 10px; }
 .hub-eyebrow { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(var(--snb-t3)); }
 .hub-sec-titrow { display: flex; align-items: flex-start; gap: 13px; margin: 12px 0 0; }
@@ -612,36 +559,12 @@
 .hub-stage-foot { margin: 0; padding: 12px 20px; border-top: 1px solid rgb(var(--snb-hairline)); font-size: 12px; line-height: 1.6; color: rgb(var(--snb-t3)); }
 .hub-stage-foot code { padding: 0.1em 0.35em; border-radius: 4px; background: rgb(var(--snb-well)); font-size: 0.9em; }
 
-/* —— 速览模式 —— */
-.hub-book.is-scan .hub-sec-body,
-.hub-book.is-scan .hub-sec-en,
-.hub-book.is-scan .hub-breath,
-.hub-book.is-scan .hub-stats,
-.hub-book.is-scan .hub-mast-cta { display: none; }
-.hub-book.is-scan .hub-sec { padding: 16px 0; border-bottom: 1px solid rgb(var(--snb-hairline)); content-visibility: visible; }
-.hub-book.is-scan .hub-sec-intro { margin-top: 8px; font-size: 0.98rem; }
-.hub-scan-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 20px 0 0;
-  padding: 12px 18px;
-  border: 1px dashed rgb(var(--hub-accent));
-  border-radius: 12px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12.5px;
-  color: rgb(var(--snb-t2));
-}
-.hub-scan-banner .x { padding: 4px 10px; border: 1px solid rgb(var(--hub-accent)); border-radius: 6px; background: none; color: rgb(var(--hub-accent)); cursor: pointer; }
-
 .hub-book-foot { margin-top: 56px; padding-top: 26px; border-top: 1px solid rgb(var(--snb-hairline)); font-size: 13px; line-height: 1.7; color: rgb(var(--snb-t3)); }
 
-@media (max-width: 1180px) { .hub-rail { right: 8px; width: 28px; } }
-@media (max-width: 860px) {
-  .hub-rail { display: none; }
-  .hub-pill { display: flex; }
+@media (max-width: 640px) {
+  .hub-cards-wall { grid-template-columns: 1fr; }
   .hub-prose figure.book-cards { grid-auto-columns: minmax(72vw, 1fr); }
+  .hub-part-nav { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hub-tree .lvl { opacity: 1; border-left-color: rgb(var(--hub-brass)); transition: none; }

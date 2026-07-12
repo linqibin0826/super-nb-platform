@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { EbookLongRead } from '../EbookLongRead'
 
 afterEach(() => {
@@ -18,9 +18,9 @@ const BOOK = {
   totalMinutes: 137,
   chapters: [
     { index: 1, num: null, kind: 'preface', eyebrow: '序', title: '给读者的话', minutes: 5, html: '<p>前言正文</p>' },
-    { index: 2, num: '01', kind: 'chapter', eyebrow: '基础', title: 'Codex 是什么', en: 'Five Forms', intro: '章引言', minutes: 12, html: '<p>导语</p><p>正文</p>' },
+    { index: 2, num: '01', kind: 'chapter', eyebrow: '基础', title: 'Codex 是什么', en: 'Five Forms', intro: '章引言', minutes: 12, html: '<p>正文</p>' },
     { index: 6, num: '05', kind: 'chapter', eyebrow: '进阶', title: 'AGENTS.md', minutes: 10, html: '<ol class="book-steps"><li><p>步骤</p></li></ol>' },
-    { index: 13, num: 'B', kind: 'appendix', eyebrow: '附录', title: '定价', minutes: 3, html: '<figure class="book-table book-table--reference"><table><tbody><tr><td>x</td></tr></tbody></table></figure>' },
+    { index: 13, num: 'B', kind: 'appendix', eyebrow: '附录', title: '定价', minutes: 3, html: '<p>附录正文</p>' },
   ],
 }
 
@@ -31,15 +31,17 @@ function stubBook(book: unknown, ok = true) {
       : new Response('nope', { status: 404 })))
 }
 
-function renderBook(slug = 'codex-complete-guide-zh') {
+function renderBook(opts: { slug?: string; part?: string } = {}) {
+  const slug = opts.slug ?? 'codex-complete-guide-zh'
+  const entry = opts.part ? `/a/${slug}/${opts.part}` : `/a/${slug}`
   return render(
-    <MemoryRouter>
-      <EbookLongRead slug={slug} path={`books/${slug}`} />
+    <MemoryRouter initialEntries={[entry]}>
+      <Routes>
+        <Route path="/a/:slug/:part?" element={<EbookLongRead slug={slug} path={`books/${slug}`} />} />
+      </Routes>
     </MemoryRouter>,
   )
 }
-
-const chipTexts = () => Array.from(document.querySelectorAll('.hub-numchip')).map((e) => e.textContent)
 
 describe('EbookLongRead', () => {
   beforeEach(() => {
@@ -47,61 +49,80 @@ describe('EbookLongRead', () => {
     vi.stubGlobal('IntersectionObserver', class { observe() {} disconnect() {} })
   })
 
-  it('masthead：刊号/衬线书名/信任行含总时长与章数', async () => {
+  it('目录：masthead 信任行 + 14 部分卡片墙（编号/标题/时长），点卡链到独立页', async () => {
     stubBook(BOOK)
     renderBook()
-    await waitFor(() => expect(screen.getByTestId('hub-book-stats')).toBeTruthy())
-    expect(screen.getByText('OpenAI Codex 从入门到精通')).toBeTruthy()
-    expect(screen.getByText('2026年5月 · v2.0.0')).toBeTruthy()
+    await waitFor(() => expect(screen.getByTestId('hub-book-index')).toBeTruthy())
+    // masthead 信任行
     const stats = screen.getByTestId('hub-book-stats').textContent!
-    expect(stats).toContain('137') // totalMinutes
-    expect(stats).toContain('4') // 章数
-    expect(document.title).toContain('OpenAI Codex')
+    expect(stats).toContain('137')
+    expect(stats).toContain('4')
+    // 卡片：4 张，链到 /a/slug/{index}
+    const cards = Array.from(screen.getByTestId('hub-book-index').querySelectorAll('a.hub-part-card'))
+    expect(cards).toHaveLength(4)
+    expect(cards.map((a) => a.getAttribute('href'))).toEqual([
+      '/a/codex-complete-guide-zh/1',
+      '/a/codex-complete-guide-zh/2',
+      '/a/codex-complete-guide-zh/6',
+      '/a/codex-complete-guide-zh/13',
+    ])
+    expect(cards[1].textContent).toContain('§01')
+    expect(cards[1].textContent).toContain('Codex 是什么')
+    expect(cards[3].textContent).toContain('B') // 附录编号
+    // 「从头开始读」链到第一部分
+    expect(screen.getByText(/从头开始读|Start reading/).closest('a')!.getAttribute('href')).toBe('/a/codex-complete-guide-zh/1')
   })
 
-  it('一条流：全章锚点、编号 chip（前言无/§01/附录 B）、正文走 hub-prose、时码轨就位', async () => {
+  it('部分页：章头（眉标/§chip/衬线题/英文/导语）+ 正文 + 上一/下一部分 + 顶条 k/N', async () => {
     stubBook(BOOK)
-    renderBook()
-    await waitFor(() => expect(screen.getByTestId('hub-book-rail')).toBeTruthy())
-    expect(document.getElementById('s1')).toBeTruthy()
-    expect(document.getElementById('s6')).toBeTruthy()
-    expect(document.getElementById('s13')).toBeTruthy()
-    const chips = chipTexts()
-    expect(chips).toContain('§01')
-    expect(chips).toContain('B')
-    expect(chips).not.toContain('§序') // 前言无 chip
-    expect(document.querySelector('.hub-prose')?.textContent).toContain('正文')
+    renderBook({ part: '6' }) // §05
+    await waitFor(() => expect(screen.getByTestId('hub-book-parttop')).toBeTruthy())
+    expect(screen.getByTestId('hub-book-parttop').textContent).toContain('3 / 4') // 第 3/4 部分
+    expect(screen.getByText('§05')).toBeTruthy()
+    expect(document.querySelector('.hub-sec-title')?.textContent).toBe('AGENTS.md')
+    expect(screen.getByText('进阶')).toBeTruthy()
+    expect(document.querySelector('.hub-prose .book-steps')).toBeTruthy() // 正文渲染
+    // 上一/下一部分
+    const nav = screen.getByTestId('hub-book-partnav')
+    const links = Array.from(nav.querySelectorAll('a'))
+    expect(links.find((a) => a.classList.contains('prev'))!.getAttribute('href')).toBe('/a/codex-complete-guide-zh/2')
+    expect(links.find((a) => a.classList.contains('next'))!.getAttribute('href')).toBe('/a/codex-complete-guide-zh/13')
+    expect(document.title).toContain('§05 AGENTS.md')
   })
 
-  it('机制舞台 bespoke：codex §05 注入 AGENTS.md 发现链；别的书不注入', async () => {
+  it('机制舞台 bespoke：codex §05 部分页注入 AGENTS.md 发现链；别的书不注入', async () => {
     stubBook(BOOK)
-    renderBook('codex-complete-guide-zh')
+    renderBook({ part: '6' })
     await waitFor(() => expect(screen.getByTestId('hub-book-stage')).toBeTruthy())
 
     cleanup()
     stubBook(BOOK)
-    renderBook('other-book')
-    await waitFor(() => expect(screen.getByTestId('hub-book-rail')).toBeTruthy())
+    renderBook({ slug: 'other-book', part: '6' })
+    await waitFor(() => expect(screen.getByTestId('hub-book-parttop')).toBeTruthy())
     expect(screen.queryByTestId('hub-book-stage')).toBeNull()
   })
 
-  it('速览模式：点开切 is-scan 显横幅，退出复原', async () => {
-    stubBook(BOOK)
-    renderBook()
-    await waitFor(() => expect(screen.getByTestId('hub-book-stats')).toBeTruthy())
-    fireEvent.click(screen.getByText(/90 秒|90s/))
-    expect(screen.getByTestId('hub-book-scan')).toBeTruthy()
-    expect(document.querySelector('.hub-book.is-scan')).toBeTruthy()
-    fireEvent.click(screen.getByText(/退出速览|Exit scan/))
-    expect(screen.queryByTestId('hub-book-scan')).toBeNull()
-  })
-
-  it('续读：localStorage 有较远位置则显续读条（不被时码轨挂载写覆盖）', async () => {
+  it('续读：localStorage 有位置则目录页显续读条链到那部分', async () => {
     localStorage.setItem('hub-book-pos:codex-complete-guide-zh', JSON.stringify({ index: 6 }))
     stubBook(BOOK)
     renderBook()
     await waitFor(() => expect(screen.getByTestId('hub-book-resume')).toBeTruthy())
-    expect(screen.getByTestId('hub-book-resume').textContent).toContain('§05')
+    const resume = screen.getByTestId('hub-book-resume')
+    expect(resume.textContent).toContain('§05')
+    expect(resume.getAttribute('href')).toBe('/a/codex-complete-guide-zh/6')
+  })
+
+  it('部分页读到即写 localStorage（供续读）', async () => {
+    stubBook(BOOK)
+    renderBook({ part: '13' })
+    await waitFor(() => expect(screen.getByTestId('hub-book-parttop')).toBeTruthy())
+    expect(JSON.parse(localStorage.getItem('hub-book-pos:codex-complete-guide-zh')!)).toEqual({ index: 13 })
+  })
+
+  it('无效 part 重定向回目录', async () => {
+    stubBook(BOOK)
+    renderBook({ part: '99' })
+    await waitFor(() => expect(screen.getByTestId('hub-book-index')).toBeTruthy())
   })
 
   it('book.json 缺失显示内容缺失提示', async () => {
