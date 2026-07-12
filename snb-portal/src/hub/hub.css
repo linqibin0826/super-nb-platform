@@ -234,6 +234,15 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.85em;
 }
+.hub-prose kbd {
+  padding: 0.1em 0.45em;
+  border: 1px solid var(--snb-hairline-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: rgb(var(--snb-panel));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8em;
+}
 .hub-prose pre {
   margin: 1.6em 0;
   padding: 1.05em 1.25em;
