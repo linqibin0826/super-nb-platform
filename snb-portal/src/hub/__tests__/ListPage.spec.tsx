@@ -61,6 +61,7 @@ describe('ListPage', () => {
     const serial = await screen.findByTestId('hub-serial')
     expect(serial.getAttribute('href')).toBe('/a/book-x')
     expect(serial.textContent).toContain('标题book-x')
+    expect(screen.getByTestId('hub-serial-art')).toBeTruthy() // 主打位带书封配图
     expect(screen.getAllByText('标题book-x')).toHaveLength(1) // 只在专栏位出现一次
     expect(screen.getByText('标题hello').closest('a')!.getAttribute('href')).toBe('/a/hello')
     expect(screen.getByTestId('hub-no-more')).toBeTruthy() // pages=1 无更多
