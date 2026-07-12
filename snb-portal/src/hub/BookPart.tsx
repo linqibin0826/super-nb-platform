@@ -19,8 +19,9 @@ function crumb(c: BookChapter): string {
 }
 
 /**
- * 讲次页：顶条（← 全部 N 篇 + 14 格进度刻度）+ 讲头（眉标/衬线题/导语）+ 正文（含机制舞台）
- * + 「下一讲」邀请块。滚动比落 localStorage（续读条带进度），读过 85% 记已读。
+ * 讲次页：顶条（← 全部 N 篇 + 14 格进度刻度）在桌面，讲头/正文（含机制舞台）/「下一讲」
+ * 邀请块包进与文章页同款纸张卡（hub-sheet，暗色随全站=panel 墨卡）。滚动比落
+ * localStorage（续读条带进度），读过 85% 记已读。
  */
 export function BookPart({ slug, book, chapter }: { slug: string; book: BookData; chapter: BookChapter }) {
   const idx = book.chapters.findIndex((c) => c.index === chapter.index)
@@ -72,6 +73,7 @@ export function BookPart({ slug, book, chapter }: { slug: string; book: BookData
           </span>
         </nav>
 
+        <article className="hub-sheet hub-part-sheet">
         <header className="hub-sec-head">
           <div className="hub-eyebrow">
             {crumb(chapter)} <span className="min">／ {t('hub.book.minutes', { m: chapter.minutes })}</span>
@@ -113,6 +115,7 @@ export function BookPart({ slug, book, chapter }: { slug: string; book: BookData
             </>
           )}
         </nav>
+        </article>
 
         <div className="hub-part-foot">
           {prev ? (

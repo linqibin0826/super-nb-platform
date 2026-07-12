@@ -616,9 +616,9 @@
 
 /* —— 讲次页（BookPart） —— */
 .hub-part { padding-top: 20px; }
-.hub-book-col.hub-part { max-width: 42rem; } /* 收行长至约 37 字/行（阅读舒适带） */
+.hub-book-col.hub-part { max-width: 50rem; } /* 与文章页同栏：纸内减 padding 后仍是 ~37 字/行舒适带 */
 .hub-part-top {
-  display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 40px;
+  display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 16px; padding: 0 4px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11.5px; color: rgb(var(--snb-t3));
 }
@@ -669,7 +669,7 @@
 }
 .hub-part-foot {
   display: flex; justify-content: space-between; align-items: center; gap: 16px;
-  margin-top: 30px; padding: 16px 0 0; border-top: 1px solid var(--snb-hairline);
+  margin-top: 18px; padding: 0 6px;
   font-size: 12.5px; color: rgb(var(--snb-t3));
 }
 .hub-part-foot a {
@@ -686,6 +686,7 @@
   .hub-row .rtrack { margin: 0; }
   .hub-act .desc { display: none; }
   .hub-part-top .ticks i { width: 8px; }
+  .hub-book-col.hub-part { padding-inline: 12px; }
 }
 
 /* —— 机制舞台（bespoke，滚动逐级点亮）—— */
