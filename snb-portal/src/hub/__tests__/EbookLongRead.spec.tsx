@@ -58,12 +58,15 @@ describe('EbookLongRead（节目单方向·第六稿）', () => {
     stubBook(BOOK)
     renderBook()
     await waitFor(() => expect(screen.getByTestId('hub-book-index')).toBeTruthy())
-    // 刊头：bespoke 点题带 + 署名/统计（2 讲 + 序 + 1 份速查 · 全程 137）
+    // 刊头：bespoke 点题带；署名/参数行已拆（出处挪页底）
     expect(document.querySelector('.hub-forms')?.textContent).toContain('CLI')
-    const stats = screen.getByTestId('hub-book-stats').textContent!
-    expect(stats).toContain('花叔 著')
-    expect(stats).toContain('2 讲 + 序 + 1 份速查')
-    expect(stats).toContain('全程 137 分钟')
+    expect(document.querySelector('.hub-colophon')).toBeNull()
+    // 页底出处：改编自 + 作者 X 链接
+    const credit = screen.getByTestId('hub-book-credit')
+    expect(credit.textContent).toContain('改编自 花叔 的原作')
+    expect(credit.textContent).toContain('原文请查看作者的 X 主页')
+    expect(credit.querySelector('a')!.getAttribute('href')).toBe('https://x.com/AlchainHust')
+    expect(credit.querySelector('a')!.getAttribute('rel')).toContain('noopener')
     // 幕间标题：开篇/基础篇/进阶篇/附录，带统计
     const actNames = Array.from(document.querySelectorAll('.hub-act .name')).map((n) => n.textContent)
     expect(actNames).toEqual(['开篇', '基础篇', '进阶篇', '附录'])

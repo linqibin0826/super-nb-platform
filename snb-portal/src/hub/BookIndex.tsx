@@ -5,10 +5,11 @@ import type { BookChapter, BookData } from './api'
 import { actName, lessonLabel, loadProgress, numLabel, type BookProgress } from './bookShared'
 
 /** 封面点题带 + 幕间注（bespoke 编辑性文案，数据不携带；未登记的书自动省略）。 */
-const BESPOKE_COVER: Record<string, { forms?: string[]; formsCaption?: string; actNotes?: Record<string, string> }> = {
+const BESPOKE_COVER: Record<string, { forms?: string[]; formsCaption?: string; authorUrl?: string; actNotes?: Record<string, string> }> = {
   'codex-complete-guide-zh': {
     forms: ['CLI', 'App', 'Cloud', 'IDE', 'Chrome'],
     formsCaption: '五种形态 · 一个系统',
+    authorUrl: 'https://x.com/AlchainHust',
     actNotes: { 序: '作者的话', 基础: '装上、跑通、做出第一个东西', 进阶: '四种形态逐个吃透', 实战: '从扩展能力到完整产品', 附录: '用到再翻' },
   },
 }
@@ -66,13 +67,6 @@ export function BookIndex({ slug, book }: { slug: string; book: BookData }) {
   const first = book.chapters[0]
   const resume = prog.pos ? book.chapters.find((c) => c.index === prog.pos!.index) : undefined
   const maxMin = Math.max(...book.chapters.map((c) => c.minutes), 1)
-  const lessons = book.chapters.filter((c) => c.kind === 'chapter').length
-  const refs = book.chapters.filter((c) => c.kind === 'appendix').length
-  const statBits = [
-    lessons ? t('hub.book.statLessons', { n: lessons }) : '',
-    book.chapters.some((c) => c.kind === 'preface') ? t('hub.book.preface') : '',
-    refs ? t('hub.book.statRefs', { n: refs }) : '',
-  ].filter(Boolean)
   let seq = 0
 
   return (
@@ -96,13 +90,6 @@ export function BookIndex({ slug, book }: { slug: string; book: BookData }) {
               {bespoke.formsCaption && <span className="fcap">{bespoke.formsCaption}</span>}
             </div>
           )}
-          <div className="hub-colophon" data-testid="hub-book-stats">
-            {book.author && <span><b>{t('hub.book.by', { a: book.author })}</b></span>}
-            {(book.metaLines ?? []).map((l) => <span key={l}>{l}</span>)}
-            <span>
-              <b>{statBits.join(' + ')}</b> · {t('hub.book.minutesTotal', { m: book.totalMinutes })}
-            </span>
-          </div>
           {first && (
             <div className="hub-cta">
               {resume ? (
@@ -160,8 +147,18 @@ export function BookIndex({ slug, book }: { slug: string; book: BookData }) {
           ))}
         </nav>
 
-        <footer className="hub-book-foot">
-          <p>{t('hub.book.footNote')}</p>
+        <footer className="hub-book-foot" data-testid="hub-book-credit">
+          <p>
+            {t('hub.book.adaptedFrom', { a: book.author ?? '' })}
+            {bespoke?.authorUrl && (
+              <>
+                {' · '}
+                <a href={bespoke.authorUrl} target="_blank" rel="noopener noreferrer">
+                  {t('hub.book.seeOriginal')}
+                </a>
+              </>
+            )}
+          </p>
         </footer>
       </div>
     </main>

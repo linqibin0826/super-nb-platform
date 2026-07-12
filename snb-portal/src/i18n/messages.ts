@@ -36,7 +36,8 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         nextUp: '接下来',
         done: '全书读完',
         backToAll: '回到全部 {n} 篇',
-        footNote: '内容整理自公开资料，来源署名保留原作者。「内容中心」收录时重排为站内版式——每讲独立成篇，读到哪讲，下次从哪讲继续。',
+        adaptedFrom: '改编自 {a} 的原作',
+        seeOriginal: '原文请查看作者的 X 主页 ↗',
       },
       reader: {
         missing: '电子书内容缺失，请稍后再试',
@@ -321,7 +322,8 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         nextUp: 'Up next',
         done: "You've reached the end",
         backToAll: 'Back to all {n} parts',
-        footNote: 'Compiled from public sources with the original author credited — republished in the Hub layout, each lesson its own page.',
+        adaptedFrom: "Adapted from {a}'s original work",
+        seeOriginal: "See the author's X for the original ↗",
       },
       reader: {
         missing: 'eBook content missing, please retry later',
