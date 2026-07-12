@@ -12,6 +12,7 @@ import me.supernb.activity.adapter.rest.response.RaffleHistoryResponse;
 import me.supernb.activity.adapter.rest.response.RaffleMeResponse;
 import me.supernb.activity.adapter.rest.response.RaffleResultResponse;
 import me.supernb.activity.adapter.rest.response.RaffleWinsResponse;
+import me.supernb.activity.adapter.rest.response.RegistryStatusResponse;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
@@ -23,6 +24,7 @@ import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
 import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.raffle.command.RegisterRaffleCommand;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
+import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
 import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.raffle.RaffleEntryTicket;
@@ -51,7 +53,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-/// 活动中心 REST 入口,路径 `/activity/v1/*`。`leaderboard`/`recharges`/`pool`/`recent-draws`
+/// 活动中心 REST 入口,路径 `/activity/v1/*`。`leaderboard`/`recharges`/`pool`/`recent-draws`/`registry-status`
 /// 与发布会的 `raffle/current`/`raffle/{id}/result`/`raffle/history` 公开免登录;
 /// `status`/`draw`/`my-draws`/`usage-leaderboard`/`raffle/me`/`raffle/enter` 需要登录——`@CurrentUser` 由 sub2api
 /// starter 的解析器完成 introspect 校验(要求 active 的 user 或 admin 账号,否则 401)。写操作组装命令
@@ -70,8 +72,9 @@ public class ActivityController {
     private final ReferralLeaderboardQueryService referralQuery;
     private final UsageLeaderboardQueryService usageLeaderboardQuery;
     private final RaffleQueryService raffleQuery;
+    private final RegistryStatusQueryService registryStatusQuery;
 
-    /// 构造:注入 CommandBus 与九个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、拉新榜、用量榜、发布会)。
+    /// 构造:注入 CommandBus 与十个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、拉新榜、用量榜、发布会、注册表状态)。
     public ActivityController(
             CommandBus commandBus,
             DrawStatusQueryService drawStatusQuery,
@@ -82,7 +85,8 @@ public class ActivityController {
             MyDrawsQueryService myDrawsQuery,
             ReferralLeaderboardQueryService referralQuery,
             UsageLeaderboardQueryService usageLeaderboardQuery,
-            RaffleQueryService raffleQuery) {
+            RaffleQueryService raffleQuery,
+            RegistryStatusQueryService registryStatusQuery) {
         this.commandBus = commandBus;
         this.drawStatusQuery = drawStatusQuery;
         this.leaderboardQuery = leaderboardQuery;
@@ -93,6 +97,7 @@ public class ActivityController {
         this.referralQuery = referralQuery;
         this.usageLeaderboardQuery = usageLeaderboardQuery;
         this.raffleQuery = raffleQuery;
+        this.registryStatusQuery = registryStatusQuery;
     }
 
     /// 活动期充值榜 Top10(公开)。无进行中活动 → 空列表,不是异常。
@@ -167,6 +172,13 @@ public class ActivityController {
     @GetMapping("/referral/stats")
     public ReferralStats referralStats() {
         return referralQuery.stats();
+    }
+
+    /// 活动中心注册表状态(公开,活动中心页与各活动页状态徽章用)。零 payload:
+    /// 只回 id/kind/status/时间窗,无人数/名单/金额/身份(spec 2026-07-12 §6,加字段须先改 spec)。
+    @GetMapping("/registry-status")
+    public RegistryStatusResponse registryStatus() {
+        return RegistryStatusResponse.of(registryStatusQuery.status());
     }
 
     /// 用量排行榜(Token/金额双榜,需登录)。period=day|week|month|all,metric=tokens|amount;

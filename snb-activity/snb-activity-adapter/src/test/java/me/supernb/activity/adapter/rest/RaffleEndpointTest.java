@@ -24,6 +24,7 @@ import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
 import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.raffle.command.RegisterRaffleCommand;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
+import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
 import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.raffle.RaffleEntryTicket;
 import me.supernb.activity.domain.model.read.raffle.MyRaffleView;
@@ -57,7 +58,7 @@ class RaffleEndpointTest {
                 mock(RecentRechargesQueryService.class), mock(PoolQueryService.class),
                 mock(RecentDrawsQueryService.class), mock(MyDrawsQueryService.class),
                 mock(ReferralLeaderboardQueryService.class), mock(UsageLeaderboardQueryService.class),
-                raffleQuery);
+                raffleQuery, mock(RegistryStatusQueryService.class));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
