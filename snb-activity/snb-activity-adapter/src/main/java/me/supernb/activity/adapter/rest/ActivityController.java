@@ -12,6 +12,7 @@ import me.supernb.activity.adapter.rest.response.RaffleHistoryResponse;
 import me.supernb.activity.adapter.rest.response.RaffleMeResponse;
 import me.supernb.activity.adapter.rest.response.RaffleResultResponse;
 import me.supernb.activity.adapter.rest.response.RaffleWinsResponse;
+import me.supernb.activity.adapter.rest.response.GateDrawResponse;
 import me.supernb.activity.adapter.rest.response.RegistryStatusResponse;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
@@ -21,6 +22,7 @@ import me.supernb.activity.app.usecase.draw.command.PerformDrawAllCommand;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
+import me.supernb.activity.app.usecase.gate.command.PerformGateDrawCommand;
 import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.raffle.command.RegisterRaffleCommand;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
@@ -179,6 +181,13 @@ public class ActivityController {
     @GetMapping("/registry-status")
     public RegistryStatusResponse registryStatus() {
         return RegistryStatusResponse.of(registryStatusQuery.status());
+    }
+
+    /// 金票闸机抽签(需登录):资格/限次/概率全在服务端;门槛外一律 {eligible:false},
+    /// 前端表现与普通过闸零差异(隐藏福利,spec gate §4)。写操作经 CommandBus 派发。
+    @PostMapping("/gate/draw")
+    public GateDrawResponse gateDraw(@CurrentUser UserProfile user) {
+        return GateDrawResponse.of(commandBus.handle(new PerformGateDrawCommand(user.id())));
     }
 
     /// 用量排行榜(Token/金额双榜,需登录)。period=day|week|month|all,metric=tokens|amount;

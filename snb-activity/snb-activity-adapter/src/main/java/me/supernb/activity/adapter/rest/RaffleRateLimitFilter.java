@@ -51,7 +51,9 @@ public class RaffleRateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/activity/v1/raffle");
+        // gate(金票闸机)与 raffle 同池按 IP 限流:都是「仪式类」低频端点,共享桶足够
+        String uri = request.getRequestURI();
+        return !(uri.startsWith("/activity/v1/raffle") || uri.startsWith("/activity/v1/gate"));
     }
 
     @Override

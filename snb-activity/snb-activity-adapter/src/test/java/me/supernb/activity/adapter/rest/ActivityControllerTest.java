@@ -1,6 +1,7 @@
 package me.supernb.activity.adapter.rest;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -21,6 +22,8 @@ import me.supernb.activity.app.usecase.draw.command.PerformDrawAllCommand;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
+import me.supernb.activity.app.usecase.gate.GateDrawResult;
+import me.supernb.activity.app.usecase.gate.command.PerformGateDrawCommand;
 import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
@@ -67,6 +70,32 @@ class ActivityControllerTest {
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
+    }
+
+    @Test
+    void gateDrawReturnsOwnCodeOnlyWithWhitelistedFields() throws Exception {
+        when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
+        when(commandBus.handle(any(PerformGateDrawCommand.class)))
+                .thenReturn(new GateDrawResult(true, true, new BigDecimal("6"), "TK-6",
+                        Instant.parse("2026-07-12T12:00:00Z")));
+        mvc.perform(post("/activity/v1/gate/draw").header("Authorization", "Bearer T"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.eligible").value(true))
+                .andExpect(jsonPath("$.win").value(true))
+                .andExpect(jsonPath("$.amount").value(6))
+                .andExpect(jsonPath("$.code").value("TK-6"))
+                .andExpect(jsonPath("$.*", hasSize(5))); // 白名单五字段,多一个都不行
+    }
+
+    @Test
+    void gateDrawIneligibleHidesEverything() throws Exception {
+        when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
+        when(commandBus.handle(any(PerformGateDrawCommand.class))).thenReturn(GateDrawResult.ineligible());
+        mvc.perform(post("/activity/v1/gate/draw").header("Authorization", "Bearer T"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.eligible").value(false))
+                .andExpect(jsonPath("$.win").value(false))
+                .andExpect(jsonPath("$.code").isEmpty());
     }
 
     @Test
