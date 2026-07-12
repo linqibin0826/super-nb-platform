@@ -43,19 +43,25 @@ describe('ListPage', () => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q, addEventListener: () => {}, removeEventListener: () => {} }))
   })
 
-  it('渲染分类 tab 与卡片，电子书卡指向阅读页', async () => {
+  it('渲染分类 tab（电子书不作类目）与瀑布流卡片，连载专栏位指向阅读页', async () => {
     stubFetch({
       '/content/v1/categories': CATS,
-      '/content/v1/articles': { items: [ART('hello'), ART('book-x', { type: 'ebook' })], total: 2, page: 1, pages: 1 },
+      '/content/v1/articles': (url: string) =>
+        url.includes('category=ebooks')
+          ? { items: [ART('book-x', { type: 'ebook' })], total: 1, page: 1, pages: 1 }
+          : { items: [ART('hello'), ART('book-x', { type: 'ebook' })], total: 2, page: 1, pages: 1 },
     })
     renderPage()
 
     await waitFor(() => expect(screen.getByText('标题hello')).toBeTruthy())
     const tabs = screen.getAllByRole('tab')
-    expect(tabs).toHaveLength(3) // 全部 + 两个动态分类
+    expect(tabs).toHaveLength(2) // 全部 + 教程；电子书类目不示人
     expect(tabs[1].textContent).toBe('教程')
-    const ebookLink = screen.getByText('标题book-x').closest('a')!
-    expect(ebookLink.getAttribute('href')).toBe('/a/book-x') // ebook 同走文章页
+    // 电子书不进卡片墙，走顶部连载专栏位
+    const serial = await screen.findByTestId('hub-serial')
+    expect(serial.getAttribute('href')).toBe('/a/book-x')
+    expect(serial.textContent).toContain('标题book-x')
+    expect(screen.getAllByText('标题book-x')).toHaveLength(1) // 只在专栏位出现一次
     expect(screen.getByText('标题hello').closest('a')!.getAttribute('href')).toBe('/a/hello')
     expect(screen.getByTestId('hub-no-more')).toBeTruthy() // pages=1 无更多
   })
@@ -63,7 +69,10 @@ describe('ListPage', () => {
   it('切分类 tab 重新请求带 category 参数', async () => {
     const calls = stubFetch({
       '/content/v1/categories': CATS,
-      '/content/v1/articles': { items: [ART('hello')], total: 1, page: 1, pages: 1 },
+      '/content/v1/articles': (url: string) =>
+        url.includes('category=ebooks')
+          ? { items: [], total: 0, page: 1, pages: 1 }
+          : { items: [ART('hello')], total: 1, page: 1, pages: 1 },
     })
     renderPage()
     await waitFor(() => expect(screen.getByText('标题hello')).toBeTruthy())
@@ -76,9 +85,11 @@ describe('ListPage', () => {
     stubFetch({
       '/content/v1/categories': CATS,
       '/content/v1/articles': (url: string) =>
-        url.includes('page=2')
-          ? { items: [ART('second')], total: 2, page: 2, pages: 2 }
-          : { items: [ART('first')], total: 2, page: 1, pages: 2 },
+        url.includes('category=ebooks')
+          ? { items: [], total: 0, page: 1, pages: 1 }
+          : url.includes('page=2')
+            ? { items: [ART('second')], total: 2, page: 2, pages: 2 }
+            : { items: [ART('first')], total: 2, page: 1, pages: 2 },
     })
     renderPage()
     await waitFor(() => expect(screen.getByText('标题first')).toBeTruthy())
@@ -100,6 +111,8 @@ describe('ListPage', () => {
     let fail = true
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       if (url.startsWith('/content/v1/categories')) return jsonResponse(CATS)
+      // 专栏位的 ebooks 请求恒成功——失败注入只打卡片墙的请求，防两请求竞态吃掉 fail 标记
+      if (url.includes('category=ebooks')) return jsonResponse({ items: [], total: 0, page: 1, pages: 1 })
       if (fail) { fail = false; throw new Error('network down') }
       return jsonResponse({ items: [ART('recovered')], total: 1, page: 1, pages: 1 })
     }))

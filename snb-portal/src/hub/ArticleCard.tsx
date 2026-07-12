@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Badge, Card, Chip, cx } from '../ui'
-import { t } from '../i18n'
+import { Card, Chip, cx } from '../ui'
 import type { ArticleSummary } from './api'
 
 /** 卡片整卡可点：一律进文章页（电子书同版式，2026-07-11 起无独立阅读页）。 */
@@ -16,8 +15,9 @@ function formatDate(iso: string): string {
 /** 内容卡：封面（可缺省走纯文字变体）+ 分类徽标 + 标题 + 摘要 + 标签 + 日期/来源。 */
 export function ArticleCard({ article }: { article: ArticleSummary }) {
   return (
-    <Link to={hrefOf(article)} className="block h-full" aria-label={article.title}>
-      <Card hover className="flex h-full flex-col overflow-hidden">
+    <Link to={hrefOf(article)} className="block" aria-label={article.title}>
+      {/* 瀑布流卡：自然高度不拉伸（h-full 拉齐是旧网格残留，空心卡的真凶） */}
+      <Card hover className="flex flex-col overflow-hidden">
         {article.coverUrl && (
           <div className="aspect-[16/9] w-full overflow-hidden bg-snb-well">
             <img
@@ -31,8 +31,6 @@ export function ArticleCard({ article }: { article: ArticleSummary }) {
         <div className="flex flex-1 flex-col gap-2.5 p-4">
           <div className="flex items-center gap-2">
             <Chip>{article.categoryName}</Chip>
-            {/* 分类本身是「电子书」时徽标同名冗余，只在其他分类下亮 */}
-            {article.type === 'ebook' && article.categorySlug !== 'ebooks' && <Badge>{t('hub.list.ebook')}</Badge>}
           </div>
           <h3 className="text-[15px] font-semibold leading-snug text-snb-t1">{article.title}</h3>
           <p className={cx('text-[13px] leading-relaxed text-snb-t2', article.coverUrl ? 'line-clamp-2' : 'line-clamp-4')}>

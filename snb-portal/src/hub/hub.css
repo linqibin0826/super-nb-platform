@@ -805,6 +805,43 @@
 /* ── 站点页脚：整理来源声明（全路由可见，App 层 flex 钉底） ── */
 .hub-foot { margin-top: 3.5rem; border-top: 1px solid var(--snb-hairline); padding: 1.3rem 1.25rem 1.6rem; text-align: center; font-size: 12px; line-height: 1.9; color: rgb(var(--snb-t3)); }
 
+/* ── 连载专栏位：电子书不进卡片墙，墙顶横幅登场（2026-07-12 站长拍板「不出现电子书类目」） ── */
+.hub-serial {
+  display: flex; align-items: center; gap: 18px;
+  margin-bottom: 16px; padding: 18px 22px;
+  border: 1px solid var(--snb-hairline-strong); border-radius: 16px;
+  background: rgb(var(--snb-panel)); text-decoration: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.hub-serial:hover { border-color: rgb(var(--hub-accent) / 0.55); box-shadow: 0 10px 30px -18px rgb(0 0 0 / 0.35); }
+.hub-serial-main { min-width: 0; flex: 1; }
+.hub-serial-eyebrow {
+  display: block; margin-bottom: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px; letter-spacing: 0.14em; color: rgb(var(--hub-accent));
+}
+.hub-serial-title {
+  margin: 0;
+  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-size: 1.3rem; font-weight: 700; line-height: 1.3; color: rgb(var(--snb-t1));
+}
+.hub-serial-deck {
+  margin: 5px 0 0; font-size: 13px; line-height: 1.7; color: rgb(var(--snb-t2));
+  overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1;
+}
+.hub-serial-cta {
+  flex-shrink: 0; padding: 9px 18px; border-radius: 8px;
+  background: rgb(var(--hub-accent)); color: #fff;
+  font-size: 13.5px; font-weight: 600; white-space: nowrap;
+  box-shadow: 3px 3px 0 rgb(var(--snb-t1) / 0.14);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.dark .hub-serial-cta { color: #1a1613; }
+.hub-serial:hover .hub-serial-cta { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 rgb(var(--snb-t1) / 0.18); }
+@media (max-width: 640px) {
+  .hub-serial { flex-direction: column; align-items: flex-start; }
+}
+
 @media (max-width: 640px) {
   .hub-cards-wall { grid-template-columns: 1fr; }
   .hub-prose figure.book-cards { grid-auto-columns: minmax(72vw, 1fr); }

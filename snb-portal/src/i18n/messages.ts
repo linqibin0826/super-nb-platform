@@ -59,6 +59,8 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         loadMore: '加载更多',
         loading: '加载中…',
         noMore: '没有更多了',
+        serialStart: '开始读 →',
+        serialResume: '继续读 →',
       },
       foot: {
         disclaimer: '部分内容整理自互联网公开信息并注明出处，版权归原作者所有；如有侵权，请联系站长删除。',
@@ -348,6 +350,8 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         loadMore: 'Load more',
         loading: 'Loading…',
         noMore: 'No more',
+        serialStart: 'Start reading →',
+        serialResume: 'Continue →',
       },
       foot: {
         disclaimer:
