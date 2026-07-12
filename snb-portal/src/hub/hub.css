@@ -544,24 +544,26 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px; letter-spacing: 0.16em; color: rgb(var(--snb-t3));
 }
-.hub-act .name { font-size: 13px; letter-spacing: 0.3em; color: rgb(var(--snb-t1)); font-weight: 700; }
+.hub-act .name { font-size: 13px; letter-spacing: 0.3em; margin-right: -0.3em; color: rgb(var(--snb-t1)); font-weight: 700; }
 .hub-act::after { content: ''; flex: 1; height: 1px; background: var(--snb-hairline-strong); transform: translateY(-3px); }
 
 /* 节目单行 */
 .hub-row {
   display: grid; grid-template-columns: 76px 1fr auto; gap: 0 22px;
-  align-items: start; padding: 20px 14px 20px 10px; margin: 0 -14px 0 -10px;
+  align-items: baseline; /* 序号/讲题/分钟共基线——顶对齐会让单行行的字往上飘 */
+  padding: 20px 14px 20px 10px; margin: 0 -14px 0 -10px;
   border-bottom: 1px solid var(--snb-hairline); border-radius: 12px;
   text-decoration: none; transition: background 0.16s ease;
   animation: hub-rowin 0.5s both; animation-delay: calc(var(--i, 0) * 32ms);
 }
+.hub-row:focus-visible { outline: 2px solid rgb(var(--hub-accent)); outline-offset: 3px; }
 @keyframes hub-rowin { from { opacity: 0; transform: translateY(10px); } }
 @media (prefers-reduced-motion: reduce) { .hub-row { animation: none; } }
 .hub-row:hover { background: rgb(var(--snb-panel)); border-bottom-color: transparent; }
 .hub-row .num {
   font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
   font-size: 1.65rem; line-height: 1.15; color: rgb(var(--snb-t3));
-  font-variant-numeric: tabular-nums; opacity: 0.62; padding-top: 2px;
+  font-variant-numeric: tabular-nums; opacity: 0.62;
   transition: color 0.16s ease, opacity 0.16s ease;
 }
 .hub-row:hover .num { color: rgb(var(--hub-accent)); opacity: 1; }
@@ -577,7 +579,7 @@
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   margin-top: 7px; font-size: 0.92rem; line-height: 1.68; color: rgb(var(--snb-t2) / 0.88); max-width: 36em;
 }
-.hub-row .rmeta { text-align: right; padding-top: 8px; }
+.hub-row .rmeta { text-align: right; }
 .hub-row .rmin {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px; color: rgb(var(--snb-t3)); white-space: nowrap; font-variant-numeric: tabular-nums;
@@ -601,10 +603,11 @@
 .hub-row.resume .num { color: rgb(var(--hub-accent)); opacity: 1; }
 .hub-row.resume .rtrack i { background: rgb(var(--hub-accent)); }
 /* 序/附录紧凑行 */
-.hub-row.compact { padding-top: 13px; padding-bottom: 13px; }
+.hub-row.compact { padding-top: 14px; padding-bottom: 14px; }
 .hub-row.compact .rtitle { font-size: 1.05rem; }
-.hub-row.compact .num { font-size: 1.22rem; padding-top: 3px; }
-.hub-row.compact .rmeta { padding-top: 3px; }
+.hub-row.compact .num { font-size: 1.22rem; }
+.hub-row.compact .rmeta { display: flex; align-items: center; gap: 10px; }
+.hub-row.compact .rtrack { margin: 0; }
 
 .hub-book-foot {
   margin: 44px 0 0; padding-top: 18px; border-top: 1px solid var(--snb-hairline);

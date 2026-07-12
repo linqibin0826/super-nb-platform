@@ -136,7 +136,7 @@ export function BookIndex({ slug, book }: { slug: string; book: BookData }) {
                   .filter(Boolean)
                   .join(' ')
                 const pct = isResume
-                  ? Math.max(6, Math.round((prog.pos?.at ?? 0) * 100))
+                  ? Math.max(12, Math.round((prog.pos?.at ?? 0) * 100))
                   : Math.max(14, Math.round((c.minutes / maxMin) * 100))
                 const state = isResume ? t('hub.book.lastRead') : wasRead ? t('hub.book.read') : ''
                 return (
