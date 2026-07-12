@@ -579,8 +579,8 @@
 .hub-row .rbody { min-width: 0; display: block; }
 .hub-row .rtitle {
   display: block;
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
-  font-size: 1.26rem; line-height: 1.4; font-weight: 700; color: rgb(var(--snb-t1));
+  font-size: 1.12rem; line-height: 1.5; font-weight: 600; letter-spacing: 0.01em;
+  color: rgb(var(--snb-t1));
   transition: color 0.16s ease;
 }
 .hub-row:hover .rtitle { color: rgb(var(--hub-accent)); }
@@ -613,7 +613,7 @@
 .hub-row.resume .rtrack i { background: rgb(var(--hub-accent)); }
 /* 序/附录紧凑行 */
 .hub-row.compact { padding-top: 14px; padding-bottom: 14px; }
-.hub-row.compact .rtitle { font-size: 1.05rem; }
+.hub-row.compact .rtitle { font-size: 1rem; }
 .hub-row.compact .num { font-size: 1.22rem; }
 .hub-row.compact .rmeta { display: flex; align-items: center; gap: 10px; }
 .hub-row.compact .rtrack { margin: 0; }
@@ -665,8 +665,8 @@
 .hub-part-next .label .nmin { letter-spacing: 0.06em; }
 .hub-part-next .next-link { display: flex; align-items: baseline; gap: 16px; padding: 14px 0 4px; text-decoration: none; }
 .hub-part-next .nt {
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
-  font-size: 1.5rem; line-height: 1.4; font-weight: 700; color: rgb(var(--snb-t1));
+  font-size: 1.3rem; line-height: 1.45; font-weight: 600; letter-spacing: 0.01em;
+  color: rgb(var(--snb-t1));
   transition: color 0.16s ease;
 }
 .hub-part-next .na { font-family: Georgia, serif; font-size: 1.5rem; color: rgb(var(--hub-accent)); transition: transform 0.16s ease; }
