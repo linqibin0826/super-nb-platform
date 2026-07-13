@@ -12,19 +12,35 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /// [RaffleGateReadModel] 的 JdbcTemplate 实现,经独立只读 DataSource 查 sub2api 库。
 ///
-/// 口径逐字对齐既有读模型:RECHARGE 抄 JdbcRechargeReadModel.totalRecharge
-/// (order_type='balance' AND status='COMPLETED',completed_at 窗口);
+/// 口径:RECHARGE=COMPLETED 余额单(completed_at 窗口)+已核销余额兑换码(type='balance'
+/// AND status='used',used_at 窗口)——兑换码购码充值(闲鱼渠道)与在线支付同等计入
+/// (2026-07-13 站长拍板补口径)。⚠️ ZPay 完成单会自动建同码 balance 兑换码并即时核销
+/// (payment_fulfillment 镜像),按 payment_orders.recharge_code=code 关联剔除防双算;
+/// 平台赠发的 balance 码(如 07-01 充值抽奖奖槽码)会计入,对 ¥50 门槛核算零增员,接受。
 /// SPEND 抄用量榜金额口径(billing_type = 0 的 actual_cost,created_at 窗口)。
 public class JdbcRaffleGateReadModel implements RaffleGateReadModel {
 
+    private static final String REDEEM_NOT_ZPAY_MIRROR =
+            "AND NOT EXISTS (SELECT 1 FROM payment_orders po WHERE po.recharge_code = rc.code)";
     private static final String RECHARGE_SINGLE =
-            "SELECT COALESCE(SUM(amount), 0) FROM payment_orders "
+            "SELECT COALESCE((SELECT SUM(amount) FROM payment_orders "
                     + "WHERE user_id = :uid AND order_type = 'balance' AND status = 'COMPLETED' "
-                    + "AND completed_at >= :from AND completed_at < :to";
+                    + "AND completed_at >= :from AND completed_at < :to), 0) "
+                    + "+ COALESCE((SELECT SUM(rc.value) FROM redeem_codes rc "
+                    + "WHERE rc.used_by = :uid AND rc.type = 'balance' AND rc.status = 'used' "
+                    + "AND rc.used_at >= :from AND rc.used_at < :to "
+                    + REDEEM_NOT_ZPAY_MIRROR + "), 0)";
     private static final String RECHARGE_BATCH =
-            "SELECT user_id, COALESCE(SUM(amount), 0) AS total FROM payment_orders "
+            "SELECT user_id, SUM(total) AS total FROM ("
+                    + "SELECT user_id, SUM(amount) AS total FROM payment_orders "
                     + "WHERE user_id IN (:ids) AND order_type = 'balance' AND status = 'COMPLETED' "
-                    + "AND completed_at >= :from AND completed_at < :to GROUP BY user_id";
+                    + "AND completed_at >= :from AND completed_at < :to GROUP BY user_id "
+                    + "UNION ALL "
+                    + "SELECT rc.used_by AS user_id, SUM(rc.value) AS total FROM redeem_codes rc "
+                    + "WHERE rc.used_by IN (:ids) AND rc.type = 'balance' AND rc.status = 'used' "
+                    + "AND rc.used_at >= :from AND rc.used_at < :to "
+                    + REDEEM_NOT_ZPAY_MIRROR
+                    + " GROUP BY rc.used_by) t GROUP BY user_id";
     private static final String SPEND_SINGLE =
             "SELECT COALESCE(SUM(actual_cost), 0) FROM usage_logs "
                     + "WHERE user_id = :uid AND billing_type = 0 "
