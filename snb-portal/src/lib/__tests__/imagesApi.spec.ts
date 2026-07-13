@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { generateImages, ImagesApiError, IMAGES_MODEL } from '../imagesApi'
+import { generateImages, ImagesApiError } from '../imagesApi'
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -13,7 +13,7 @@ afterEach(() => {
 })
 
 describe('generateImages', () => {
-  it('成功：锁定模型、带 Bearer、b64 转 dataUrl', async () => {
+  it('成功：带 model、Bearer、b64 转 dataUrl', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse(200, { data: [{ b64_json: 'QUJD' }, { b64_json: 'REVG' }] })
     )
@@ -21,6 +21,7 @@ describe('generateImages', () => {
 
     const images = await generateImages({
       apiKey: 'sk-test',
+      model: 'gpt-image-2',
       prompt: 'a cat',
       size: '1024x1024',
       n: 2,
@@ -35,7 +36,7 @@ describe('generateImages', () => {
     expect(init.headers.Authorization).toBe('Bearer sk-test')
     const body = JSON.parse(init.body)
     expect(body).toEqual({
-      model: IMAGES_MODEL,
+      model: 'gpt-image-2',
       prompt: 'a cat',
       n: 2,
       size: '1024x1024',
@@ -50,6 +51,7 @@ describe('generateImages', () => {
     )
     const err = await generateImages({
       apiKey: 'sk',
+      model: 'gpt-image-2',
       prompt: 'x',
       size: 'auto',
       n: 1,
@@ -64,6 +66,7 @@ describe('generateImages', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, { data: [] })))
     const err = await generateImages({
       apiKey: 'sk',
+      model: 'gpt-image-2',
       prompt: 'x',
       size: '1024x1024',
       n: 1,
@@ -77,6 +80,7 @@ describe('generateImages', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(abortErr))
     const e1 = await generateImages({
       apiKey: 'sk',
+      model: 'gpt-image-2',
       prompt: 'x',
       size: '1024x1024',
       n: 1,
@@ -87,6 +91,7 @@ describe('generateImages', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
     const e2 = await generateImages({
       apiKey: 'sk',
+      model: 'gpt-image-2',
       prompt: 'x',
       size: '1024x1024',
       n: 1,
@@ -103,6 +108,7 @@ describe('generateImages', () => {
     const fileB = new File(['bbb'], 'ref-b.jpg', { type: 'image/jpeg' })
     const images = await generateImages({
       apiKey: 'sk-edit',
+      model: 'gpt-image-2',
       prompt: 'make it orange',
       size: '1024x1024',
       n: 2,
@@ -124,7 +130,7 @@ describe('generateImages', () => {
     const files = form.getAll('image[]') as File[]
     expect(files).toHaveLength(2)
     expect(files.map((f) => f.name)).toEqual(['ref-a.png', 'ref-b.jpg'])
-    expect(form.get('model')).toBe(IMAGES_MODEL)
+    expect(form.get('model')).toBe('gpt-image-2')
     expect(form.get('prompt')).toBe('make it orange')
     expect(form.get('n')).toBe('2')
     expect(form.get('size')).toBe('1024x1024')
@@ -137,6 +143,7 @@ describe('generateImages', () => {
 
     await generateImages({
       apiKey: 'sk-test',
+      model: 'gpt-image-2',
       prompt: 'a cat',
       size: 'auto',
       n: 1,
@@ -148,7 +155,7 @@ describe('generateImages', () => {
     expect(url).toBe('/v1/images/generations')
     expect(init.headers['Content-Type']).toBe('application/json')
     expect(JSON.parse(init.body)).toEqual({
-      model: IMAGES_MODEL,
+      model: 'gpt-image-2',
       prompt: 'a cat',
       n: 1,
       size: 'auto',
@@ -163,6 +170,7 @@ describe('generateImages', () => {
     controller.abort()
     const err = await generateImages({
       apiKey: 'sk',
+      model: 'gpt-image-2',
       prompt: 'x',
       size: '1024x1024',
       n: 1,
@@ -171,5 +179,53 @@ describe('generateImages', () => {
     }).catch((e) => e)
     expect(err).toBeInstanceOf(ImagesApiError)
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('grok 传参考图 → edits 用编辑模型 grok-imagine-edit（自动切）', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { data: [{ b64_json: 'QUJD' }] }))
+    vi.stubGlobal('fetch', fetchMock)
+    const file = new File(['x'], 'r.png', { type: 'image/png' })
+    await generateImages({
+      apiKey: 'sk',
+      prompt: 'edit it',
+      size: '1024x1024',
+      n: 1,
+      quality: 'auto',
+      model: 'grok-imagine-image',
+      images: [file],
+    })
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/v1/images/edits')
+    expect((init.body as FormData).get('model')).toBe('grok-imagine-edit')
+  })
+
+  it('grok 无参考图 → generations 用生图模型本身', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { data: [{ b64_json: 'QUJD' }] }))
+    vi.stubGlobal('fetch', fetchMock)
+    await generateImages({
+      apiKey: 'sk',
+      prompt: 'a cat',
+      size: '1024x1024',
+      n: 1,
+      quality: 'auto',
+      model: 'grok-imagine-image',
+    })
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body.model).toBe('grok-imagine-image')
+  })
+
+  it('返回 JPEG 数据 → dataUrl 标 image/jpeg（按内容嗅探）', async () => {
+    // base64 of bytes FF D8 FF E0 (JPEG magic)
+    const jpegB64 = btoa(String.fromCharCode(0xff, 0xd8, 0xff, 0xe0))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, { data: [{ b64_json: jpegB64 }] })))
+    const images = await generateImages({
+      apiKey: 'sk',
+      prompt: 'x',
+      size: '1024x1024',
+      n: 1,
+      quality: 'auto',
+      model: 'grok-imagine-image',
+    })
+    expect(images[0].dataUrl).toBe(`data:image/jpeg;base64,${jpegB64}`)
   })
 })

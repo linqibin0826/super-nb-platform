@@ -2,12 +2,15 @@
 // 直接持用户站内 key 调网关（不是控制台 apiClient 的 JWT 体系）。
 // 只用 data: URL（线上 CSP img-src 含 data: 不含 blob:）。
 import { mapImagesError, type MappedImagesError } from './errors'
+import { editModelFor } from './modelFamilies'
 
 export const IMAGES_MODEL = 'gpt-image-2'
 const DEFAULT_TIMEOUT_MS = 300_000
 
 export interface GenerateImagesParams {
   apiKey: string
+  /** 生图模型名（如 gpt-image-2 / grok-imagine-image）。edits 时内部自动切到该模型的编辑搭档。 */
+  model: string
   prompt: string
   /** 'auto' 会原样传给后端 */
   size: string
@@ -36,6 +39,22 @@ export class ImagesApiError extends Error {
   }
 }
 
+/** 按 b64 内容前几字节嗅探图片 MIME（grok 返 JPEG、gpt-image 返 PNG，不能硬编码） */
+function sniffImageMime(b64: string): string {
+  let head = ''
+  try {
+    head = atob(b64.slice(0, 24))
+  } catch {
+    return 'image/png'
+  }
+  const c = (i: number) => head.charCodeAt(i)
+  if (c(0) === 0x89 && c(1) === 0x50 && c(2) === 0x4e && c(3) === 0x47) return 'image/png'
+  if (c(0) === 0xff && c(1) === 0xd8) return 'image/jpeg'
+  if (head.slice(0, 4) === 'RIFF' && head.slice(8, 12) === 'WEBP') return 'image/webp'
+  if (head.slice(0, 3) === 'GIF') return 'image/gif'
+  return 'image/png'
+}
+
 // 图生图 /v1/images/edits 后端结论（sub2api 私有 fork，2026-07-04 核对）：
 // - 路由：backend/internal/server/routes/gateway.go:118 在 /v1 组注册 POST /images/edits → OpenAIGateway.Images
 //   （gateway.go:200 另有根级 /images/edits 别名，不用）。
@@ -50,7 +69,8 @@ export class ImagesApiError extends Error {
 function buildRequest(params: GenerateImagesParams, signal: AbortSignal): { url: string; init: RequestInit } {
   if (params.images && params.images.length > 0) {
     const form = new FormData()
-    form.append('model', IMAGES_MODEL)
+    // 图生图：按家族把生图模型切到编辑搭档（grok-imagine-image→grok-imagine-edit；gpt-image 用自身）
+    form.append('model', editModelFor(params.model) ?? params.model)
     form.append('prompt', params.prompt)
     form.append('n', String(params.n))
     form.append('size', params.size)
@@ -79,7 +99,7 @@ function buildRequest(params: GenerateImagesParams, signal: AbortSignal): { url:
         Authorization: `Bearer ${params.apiKey}`,
       },
       body: JSON.stringify({
-        model: IMAGES_MODEL,
+        model: params.model,
         prompt: params.prompt,
         n: params.n,
         size: params.size,
@@ -130,7 +150,7 @@ export async function generateImages(params: GenerateImagesParams): Promise<Gene
   const data = (body as { data?: Array<{ b64_json?: string }> }).data ?? []
   const images = data
     .filter((item): item is { b64_json: string } => typeof item.b64_json === 'string' && item.b64_json.length > 0)
-    .map((item) => ({ b64: item.b64_json, dataUrl: `data:image/png;base64,${item.b64_json}` }))
+    .map((item) => ({ b64: item.b64_json, dataUrl: `data:${sniffImageMime(item.b64_json)};base64,${item.b64_json}` }))
 
   if (images.length === 0) {
     throw new ImagesApiError(mapImagesError(response.status, body))
