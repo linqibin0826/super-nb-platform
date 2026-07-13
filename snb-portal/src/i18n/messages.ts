@@ -239,6 +239,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         // 短标签：供结果区 meta 等非选择器语境使用（「（推荐）」后缀只属于下拉）
         qualitiesShort: { low: '低', medium: '中', high: '高', auto: '自动' },
         key: 'API Key',
+        model: '模型',
         estimate: '预计费用',
         estimateNote: '实际扣费以账单为准',
         generate: '生成',
@@ -538,6 +539,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         // 短标签：供结果区 meta 等非选择器语境使用（"(recommended)" 后缀只属于下拉）
         qualitiesShort: { low: 'Low', medium: 'Medium', high: 'High', auto: 'Auto' },
         key: 'API Key',
+        model: 'Model',
         estimate: 'Estimated cost',
         estimateNote: 'actual charge follows your billing',
         generate: 'Generate',
