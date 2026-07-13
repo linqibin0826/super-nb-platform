@@ -16,6 +16,7 @@ const base = {
   onChangeN: vi.fn(),
   onChangeKey: vi.fn(),
   onChangeModel: vi.fn(),
+  onChangeSize: vi.fn(),
   selectableModels: ['gpt-image-2', 'grok-imagine-image', 'grok-imagine-image-quality'],
 }
 
@@ -35,9 +36,11 @@ describe('SpecPanel 模型下拉 + 家族显隐', () => {
     expect(screen.getByText(t('studio.composer.resolution'))).toBeTruthy()
   })
 
-  it('grok（fixed1024）：隐藏比例/画质档', () => {
+  it('grok（grokSquare）：隐藏比例/画质档，显示 1K/2K 尺寸档', () => {
     render(<SpecPanel {...base} model="grok-imagine-image" />)
     expect(screen.queryByText(t('studio.composer.ratio'))).toBeNull()
     expect(screen.queryByText(t('studio.composer.resolution'))).toBeNull()
+    expect(screen.getByText('1K · 1024²')).toBeTruthy()
+    expect(screen.getByText('2K · 2048²')).toBeTruthy()
   })
 })

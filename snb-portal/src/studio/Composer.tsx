@@ -91,7 +91,7 @@ export function Composer(p: ComposerProps) {
   // custom 非法（越界/非16倍数/半输入）不可生成；固定比例档由 validTiersForRatio 保证合法
   const canSubmit =
     p.canGenerate &&
-    (sizeModeOf(p.model) === 'fixed1024' || spec.ratio !== 'custom' || isValidGptImageSize(composeSize(spec) ?? ''))
+    (sizeModeOf(p.model) !== 'free' || spec.ratio !== 'custom' || isValidGptImageSize(composeSize(spec) ?? ''))
 
   function updateSpec(patch: Partial<LocalSpec>): void {
     const next = { ...spec, ...patch }
@@ -269,6 +269,7 @@ export function Composer(p: ComposerProps) {
                 onChangeN={(n) => p.onChange({ n })}
                 onChangeKey={(id) => p.onChange({ selectedKeyId: id })}
                 onChangeModel={(m) => p.onChange({ model: m })}
+                onChangeSize={(s) => p.onChange({ size: s })}
               />
 
               {/* 撕票口：虚线 + 两端缺口（overflow-hidden 恰好裁出半圆缺口），

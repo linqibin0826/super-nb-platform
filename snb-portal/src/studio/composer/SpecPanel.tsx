@@ -6,7 +6,7 @@ import type { LocalSpec } from './spec'
 import { billingTierOrDefault, isValidGptImageSize, RATIO_OPTIONS, validTiersForRatio, type BillingTier } from '../../lib/sizes'
 import { t } from '../../i18n'
 import type { EligibleKey } from '../../types'
-import { displayName, sizeModeOf } from '../../lib/modelFamilies'
+import { displayName, normalizeGrokSize, sizeModeOf } from '../../lib/modelFamilies'
 
 export interface SpecPanelProps {
   spec: LocalSpec
@@ -25,6 +25,7 @@ export interface SpecPanelProps {
   onChangeN: (n: number) => void
   onChangeKey: (id: number) => void
   onChangeModel: (model: string) => void
+  onChangeSize: (size: string) => void
 }
 
 /** 创作票据展开的配置区：模型/比例（形状/自动/自定义宽高）/画质档/张数/Key/游客提示。
@@ -183,6 +184,22 @@ export function SpecPanel(props: SpecPanelProps) {
             />
           </ConfigRow>
         </>
+      )}
+
+      {/* grok 只稳定支持方形 1K/2K，给两档尺寸（不给 4K、不给比例——grok 比例是内部跳档不精确）*/}
+      {sizeModeOf(props.model) === 'grokSquare' && (
+        <ConfigRow label={t('playground.form.size')}>
+          <OptionChips
+            groupId="grokSize"
+            aria-label={t('playground.form.size')}
+            options={[
+              { value: '1024x1024', label: '1K · 1024²' },
+              { value: '2048x2048', label: '2K · 2048²' },
+            ]}
+            value={normalizeGrokSize(props.sizeText)}
+            onSelect={(v) => props.onChangeSize(v)}
+          />
+        </ConfigRow>
       )}
 
       <ConfigRow label={t('playground.form.count')}>

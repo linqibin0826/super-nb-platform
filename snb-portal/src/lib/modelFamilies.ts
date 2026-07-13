@@ -2,7 +2,7 @@
 // 判定基于命名前缀：新增同族模型零改动；接全新家族加一条 FamilySpec。
 // 这是「动态清单」（GET /v1/models）与「静态语义」之间唯一的耦合点。
 export type ModelRole = 'generation' | 'edit' | 'hidden'
-export type SizeMode = 'free' | 'fixed1024'
+export type SizeMode = 'free' | 'grokSquare'
 
 interface FamilySpec {
   id: string
@@ -36,7 +36,7 @@ const FAMILIES: FamilySpec[] = [
     displayName: (m) =>
       m === 'grok-imagine-image' ? 'Grok 快图' : m === 'grok-imagine-image-quality' ? 'Grok 高清' : m,
     editModel: 'grok-imagine-edit',
-    sizeMode: 'fixed1024',
+    sizeMode: 'grokSquare',
     hasQualityAxis: false,
   },
 ]
@@ -69,4 +69,12 @@ export function sizeModeOf(model: string): SizeMode {
 
 export function hasQualityAxis(model: string): boolean {
   return familyOf(model)?.hasQualityAxis ?? true
+}
+
+/** grok 生图实测只稳定命中方形 1024²/2048²（1K/2K）；其余 size 上游回退 1024²、4K 不支持 */
+export const GROK_SQUARE_SIZES = ['1024x1024', '2048x2048'] as const
+
+/** 把任意 size 归一到 grok 支持的方形档；不匹配则默认 2K */
+export function normalizeGrokSize(size: string): string {
+  return (GROK_SQUARE_SIZES as readonly string[]).includes(size) ? size : '2048x2048'
 }

@@ -18,7 +18,7 @@ import { useTheme } from './theme'
 import { estimateCost } from './lib/cost'
 import { SIZE_PRESETS, sizeForRatio } from './lib/sizes'
 import { useSelectableModels } from './studio/useSelectableModels'
-import { sizeModeOf } from './lib/modelFamilies'
+import { normalizeGrokSize, sizeModeOf } from './lib/modelFamilies'
 import { downloadImage } from './lib/downloadImage'
 import { t } from './i18n'
 
@@ -146,8 +146,8 @@ export default function App() {
     const entry = eligible.find((e) => e.key.id === selectedKeyId)
     if (!entry) return
     setTrayOpen(true)
-    // grok 家族固定 1024²（上游忽略 size）；用 effectiveSize 同时让预估价对齐
-    const effectiveSize = sizeModeOf(model) === 'fixed1024' ? '1024x1024' : size
+    // grok 家族只支持方形 1K/2K（上游对其余 size 回退）；归一到支持档，同时让预估价对齐
+    const effectiveSize = sizeModeOf(model) === 'grokSquare' ? normalizeGrokSize(size) : size
     const estimate = estimateCost(entry.group, effectiveSize, n, rates[entry.group.id])
     // 只发已就绪的参考图：加载中的骨架还没有 File，本次生成不带它
     const readyFiles = refs.filter((r) => r.status === 'ready' && r.file).map((r) => r.file as File)

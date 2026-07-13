@@ -6,6 +6,7 @@ import {
   editModelFor,
   sizeModeOf,
   hasQualityAxis,
+  normalizeGrokSize,
 } from '../modelFamilies'
 
 describe('modelFamilies', () => {
@@ -25,7 +26,7 @@ describe('modelFamilies', () => {
     expect(displayName('grok-imagine-image-quality')).toBe('Grok 高清')
     expect(editModelFor('grok-imagine-image')).toBe('grok-imagine-edit')
     expect(editModelFor('grok-imagine-image-quality')).toBe('grok-imagine-edit')
-    expect(sizeModeOf('grok-imagine-image')).toBe('fixed1024')
+    expect(sizeModeOf('grok-imagine-image')).toBe('grokSquare')
     expect(hasQualityAxis('grok-imagine-image')).toBe(false)
   })
 
@@ -47,5 +48,12 @@ describe('modelFamilies', () => {
     expect(sizeModeOf('gpt-5.5')).toBe('free')
     expect(hasQualityAxis('gpt-5.5')).toBe(true)
     expect(displayName('gpt-5.5')).toBe('gpt-5.5')
+  })
+
+  it('normalizeGrokSize：命中方形档保留，其余归 2K', () => {
+    expect(normalizeGrokSize('1024x1024')).toBe('1024x1024')
+    expect(normalizeGrokSize('2048x2048')).toBe('2048x2048')
+    expect(normalizeGrokSize('1152x2048')).toBe('2048x2048')
+    expect(normalizeGrokSize('3840x2160')).toBe('2048x2048')
   })
 })
