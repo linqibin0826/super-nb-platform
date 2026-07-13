@@ -13,6 +13,8 @@ export interface GenerateInput {
   apiKey: string
   keyId: number
   groupName: string
+  /** 用户所选生图模型名 */
+  model: string
   prompt: string
   size: string
   n: number
@@ -124,6 +126,7 @@ export function useGenerationQueue(): GenerationQueue {
       try {
         const images = await generateImages({
           apiKey: task.input.apiKey,
+          model: task.input.model,
           prompt: task.input.prompt,
           size: task.input.size,
           n: task.input.n,
