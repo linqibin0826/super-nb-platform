@@ -16,7 +16,7 @@ const queueState: GenerationQueue = {
   tasks: [
     {
       id: 't1',
-      input: { apiKey: 'sk', keyId: 1, groupName: 'g', prompt: 'a cat', size: '1024x1024', n: 1, quality: 'medium', cost: null },
+      input: { apiKey: 'sk', keyId: 1, groupName: 'g', model: 'gpt-image-2', prompt: 'a cat', size: '1024x1024', n: 1, quality: 'medium', cost: null },
       status: 'running',
       createdAt: 1000,
       startedAt: 1000,

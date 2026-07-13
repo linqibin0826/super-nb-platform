@@ -30,6 +30,8 @@ function renderComposer(over: Partial<Parameters<typeof Composer>[0]> = {}) {
     n: 1,
     quality: 'medium' as const,
     selectedKeyId: null,
+    model: 'gpt-image-2',
+    selectableModels: [] as string[],
     onChange: vi.fn(),
     eligible: [],
     rates: {},

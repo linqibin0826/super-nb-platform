@@ -17,6 +17,8 @@ import { useAuthUser } from './auth/useAuth'
 import { useTheme } from './theme'
 import { estimateCost } from './lib/cost'
 import { SIZE_PRESETS, sizeForRatio } from './lib/sizes'
+import { useSelectableModels } from './studio/useSelectableModels'
+import { sizeModeOf } from './lib/modelFamilies'
 import { downloadImage } from './lib/downloadImage'
 import { t } from './i18n'
 
@@ -34,6 +36,7 @@ export type { RefImage } from './studio/useRefImages'
 export type { TabId }
 
 const KEY_STORAGE = 'snb-playground-key-id'
+const MODEL_STORAGE = 'snb-playground-model'
 
 export default function App() {
   const user = useAuthUser()
@@ -47,6 +50,7 @@ export default function App() {
   const [n, setN] = useState(1)
   const [quality, setQuality] = useState<Quality>('medium')
   const [selectedKeyId, setSelectedKeyId] = useState<number | null>(null)
+  const [model, setModel] = useState<string>('gpt-image-2')
   // 参考图集合（含加载中骨架）+ 会话「最近上传」，加载态流转收在 hook 里
   const { refs, recentUploads, addFiles: onAddRefs, remove: onRemoveRef } = useRefImages()
   const [preview, setPreview] = useState<{ images: string[]; index: number } | null>(null)
@@ -95,13 +99,14 @@ export default function App() {
   }
 
   function onChange(
-    patch: Partial<{ prompt: string; size: string; n: number; quality: Quality; selectedKeyId: number | null }>
+    patch: Partial<{ prompt: string; size: string; n: number; quality: Quality; selectedKeyId: number | null; model: string }>
   ): void {
     if (patch.prompt !== undefined) setPrompt(patch.prompt)
     if (patch.size !== undefined) setSize(patch.size)
     if (patch.n !== undefined) setN(patch.n)
     if (patch.quality !== undefined) setQuality(patch.quality)
     if (patch.selectedKeyId !== undefined) setSelectedKeyId(patch.selectedKeyId)
+    if (patch.model !== undefined) setModel(patch.model)
   }
 
   // Cmd/Ctrl+V 粘贴图片直接作参考图（截图后直接贴，图生图最顺手的动作）。
@@ -118,6 +123,22 @@ export default function App() {
   }, [onAddRefs])
 
   const selectedEntry = eligible.find((e) => e.key.id === selectedKeyId) ?? null
+  const { models: selectableModels } = useSelectableModels(selectedEntry?.key.key ?? null)
+
+  // 清单就绪后校正选中 model：优先上次、否则第一个；当前 model 不在清单则回落第一个
+  useEffect(() => {
+    if (selectableModels.length === 0) return
+    setModel((cur) => {
+      if (selectableModels.includes(cur)) return cur
+      const saved = localStorage.getItem(MODEL_STORAGE)
+      return saved && selectableModels.includes(saved) ? saved : selectableModels[0]
+    })
+  }, [selectableModels])
+
+  useEffect(() => {
+    localStorage.setItem(MODEL_STORAGE, model)
+  }, [model])
+
   const canGenerate =
     user !== null && !queue.queueFull && prompt.trim() !== '' && selectedEntry !== null
 
@@ -125,15 +146,18 @@ export default function App() {
     const entry = eligible.find((e) => e.key.id === selectedKeyId)
     if (!entry) return
     setTrayOpen(true)
-    const estimate = estimateCost(entry.group, size, n, rates[entry.group.id])
+    // grok 家族固定 1024²（上游忽略 size）；用 effectiveSize 同时让预估价对齐
+    const effectiveSize = sizeModeOf(model) === 'fixed1024' ? '1024x1024' : size
+    const estimate = estimateCost(entry.group, effectiveSize, n, rates[entry.group.id])
     // 只发已就绪的参考图：加载中的骨架还没有 File，本次生成不带它
     const readyFiles = refs.filter((r) => r.status === 'ready' && r.file).map((r) => r.file as File)
     queue.enqueue({
       apiKey: entry.key.key,
       keyId: entry.key.id,
       groupName: entry.group.name,
+      model,
       prompt: prompt.trim(),
-      size,
+      size: effectiveSize,
       n,
       quality,
       images: readyFiles.length > 0 ? readyFiles : undefined,
@@ -228,6 +252,8 @@ export default function App() {
               n={n}
               quality={quality}
               selectedKeyId={selectedKeyId}
+              model={model}
+              selectableModels={selectableModels}
               onChange={onChange}
               eligible={eligible}
               rates={rates}

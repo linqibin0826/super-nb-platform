@@ -18,7 +18,7 @@ function pngHeadB64(w: number, h: number): string {
 }
 
 const baseInput = {
-  apiKey: 'sk', keyId: 1, groupName: 'g', prompt: 'a lighthouse at dusk',
+  apiKey: 'sk', keyId: 1, groupName: 'g', model: 'gpt-image-2', prompt: 'a lighthouse at dusk',
   size: '1024x1024', n: 1, quality: 'medium' as const, cost: 0.04,
 }
 

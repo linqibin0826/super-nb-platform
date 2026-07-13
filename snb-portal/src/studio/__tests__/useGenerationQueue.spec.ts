@@ -19,7 +19,7 @@ let pending: Deferred[] = []
 const IMG: GeneratedImage = { b64: 'QUJD', dataUrl: 'data:image/png;base64,QUJD' }
 
 function makeInput(prompt: string) {
-  return { apiKey: 'sk', keyId: 1, groupName: 'g', prompt, size: '1024x1024', n: 1, quality: 'medium' as const, cost: 0.04 }
+  return { apiKey: 'sk', keyId: 1, groupName: 'g', model: 'gpt-image-2', prompt, size: '1024x1024', n: 1, quality: 'medium' as const, cost: 0.04 }
 }
 
 beforeEach(() => {

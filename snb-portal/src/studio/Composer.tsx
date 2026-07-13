@@ -14,6 +14,7 @@ import { keysUrl, loginUrl } from '../auth/apiFetch'
 import { useAuthUser } from '../auth/useAuth'
 import type { EligibleKey } from '../types'
 import type { Quality, RefImage } from '../App'
+import { sizeModeOf } from '../lib/modelFamilies'
 
 /** 输入框自动增高上限（约 6 行），超出转内部滚动 */
 const MAX_INPUT_HEIGHT = 168
@@ -24,8 +25,10 @@ interface ComposerProps {
   n: number
   quality: Quality
   selectedKeyId: number | null
+  model: string
+  selectableModels: string[]
   onChange: (
-    patch: Partial<{ prompt: string; size: string; n: number; quality: Quality; selectedKeyId: number | null }>
+    patch: Partial<{ prompt: string; size: string; n: number; quality: Quality; selectedKeyId: number | null; model: string }>
   ) => void
   eligible: EligibleKey[]
   rates: Record<number, number>
@@ -86,7 +89,9 @@ export function Composer(p: ComposerProps) {
   }
 
   // custom 非法（越界/非16倍数/半输入）不可生成；固定比例档由 validTiersForRatio 保证合法
-  const canSubmit = p.canGenerate && (spec.ratio !== 'custom' || isValidGptImageSize(composeSize(spec) ?? ''))
+  const canSubmit =
+    p.canGenerate &&
+    (sizeModeOf(p.model) === 'fixed1024' || spec.ratio !== 'custom' || isValidGptImageSize(composeSize(spec) ?? ''))
 
   function updateSpec(patch: Partial<LocalSpec>): void {
     const next = { ...spec, ...patch }
@@ -258,9 +263,12 @@ export function Composer(p: ComposerProps) {
                 n={p.n}
                 eligible={p.eligible}
                 selectedKeyId={p.selectedKeyId}
+                model={p.model}
+                selectableModels={p.selectableModels}
                 updateSpec={updateSpec}
                 onChangeN={(n) => p.onChange({ n })}
                 onChangeKey={(id) => p.onChange({ selectedKeyId: id })}
+                onChangeModel={(m) => p.onChange({ model: m })}
               />
 
               {/* 撕票口：虚线 + 两端缺口（overflow-hidden 恰好裁出半圆缺口），

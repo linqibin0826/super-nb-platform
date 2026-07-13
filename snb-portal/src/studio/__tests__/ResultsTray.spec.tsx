@@ -6,7 +6,7 @@ import { t } from '../../i18n'
 import type { GenerationQueue, GenTask } from '../useGenerationQueue'
 
 const baseInput = {
-  apiKey: 'sk', keyId: 1, groupName: 'g', prompt: 'p',
+  apiKey: 'sk', keyId: 1, groupName: 'g', model: 'gpt-image-2', prompt: 'p',
   size: '1024x1024', n: 1, quality: 'medium' as const, cost: null,
 }
 
