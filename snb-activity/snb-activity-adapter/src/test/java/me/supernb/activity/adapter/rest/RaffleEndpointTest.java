@@ -127,6 +127,7 @@ class RaffleEndpointTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"campaignId\":\"1\"}")
                         .header("Authorization", "Bearer T")
+                        // 伪造首值 9.9.9.9 + Caddy 亲验真实对端 10.0.0.1(末值)
                         .header("X-Forwarded-For", "9.9.9.9, 10.0.0.1")
                         .header("User-Agent", "TestUA"))
                 .andExpect(status().isOk())
@@ -136,7 +137,7 @@ class RaffleEndpointTest {
         verify(commandBus).handle(captor.capture());
         assertThat(captor.getValue().campaignId()).isEqualTo(1L);
         assertThat(captor.getValue().userId()).isEqualTo(42L);
-        assertThat(captor.getValue().clientIp()).isEqualTo("9.9.9.9"); // XFF 取首值
+        assertThat(captor.getValue().clientIp()).isEqualTo("10.0.0.1"); // XFF 取末值(真实对端,首值可伪造)
         assertThat(captor.getValue().userAgent()).isEqualTo("TestUA");
     }
 

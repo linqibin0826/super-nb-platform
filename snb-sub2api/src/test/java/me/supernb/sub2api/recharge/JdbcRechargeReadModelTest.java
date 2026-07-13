@@ -71,9 +71,9 @@ class JdbcRechargeReadModelTest {
     void leaderboardExcludesAdminAndMasksEmails() {
         List<RechargeReadModel.LeaderRow> board = readModel.leaderboard(START, END, 10);
         assertThat(board).hasSize(2);
-        assertThat(board.get(0).name()).isEqualTo("bo***@gmail.com");
+        assertThat(board.get(0).name()).isEqualTo("***@gmail.com");        // bob:本地名 3 位,整段遮
         assertThat(board.get(0).amount()).isEqualByComparingTo("250");
-        assertThat(board.get(1).name()).isEqualTo("al***@qq.com");
+        assertThat(board.get(1).name()).isEqualTo("a***e@qq.com");         // alice:本地名 5 位,露首尾各 1
         assertThat(board.get(1).amount()).isEqualByComparingTo("165");
     }
 
@@ -92,7 +92,7 @@ class JdbcRechargeReadModelTest {
     void maskedEmailsExcludesAdmin() {
         Map<Long, String> emails = readModel.maskedEmailsByIds(List.of(1L, 2L, 3L));
         assertThat(emails).containsOnlyKeys(1L, 2L);
-        assertThat(emails.get(1L)).isEqualTo("al***@qq.com");
+        assertThat(emails.get(1L)).isEqualTo("a***e@qq.com");
     }
 
     @Test

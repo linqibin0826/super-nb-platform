@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import me.supernb.sub2api.EmailMask;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -111,16 +112,9 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
         return result;
     }
 
-    /// 邮箱脱敏:本地部分保留前 2 位(不足 2 位原样保留)+ `***` + @域名(如 ab***@qq.com);
-    /// null 输入原样返回 null。未脱敏的完整邮箱只在本方法作用域内出现过,不向外传播。
+    /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask]。恒 ≥2 位被遮(短本地名不再回显完整本地部分)。
+    /// 未脱敏的完整邮箱只在本方法作用域内出现过,不向外传播。
     static String mask(String email) {
-        if (email == null) {
-            return null;
-        }
-        int at = email.indexOf('@');
-        String local = at >= 0 ? email.substring(0, at) : email;
-        String domain = at >= 0 ? email.substring(at) : "";
-        String prefix = local.length() >= 2 ? local.substring(0, 2) : local;
-        return prefix + "***" + domain;
+        return EmailMask.mask(email);
     }
 }

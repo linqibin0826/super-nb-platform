@@ -259,13 +259,18 @@ public class ActivityController {
     }
 
     /// 申请列席(需登录):不在报名期 404;资质不足 409(带「还需 ¥XX」);重复报名幂等返回既有参会证。
-    /// ip/ua 只作秋后清算留痕(XFF 取首值)。
+    /// ip/ua 只作秋后清算留痕。XFF 取【末值】=Caddy 亲验的真实对端:取首值可被报名者伪造投毒取证,
+    /// 与同包 RaffleRateLimitFilter 口径一致(2026-07-13 安全审计,runbook ai-relay deployment/31)。
     @PostMapping("/raffle/enter")
     public RaffleEnterResponse raffleEnter(@RequestBody RaffleEnterRequest body,
             @RequestHeader(value = "X-Forwarded-For", required = false) String forwardedFor,
             @RequestHeader(value = "User-Agent", required = false) String userAgent,
             @CurrentUser UserProfile user) {
-        String clientIp = forwardedFor == null ? null : forwardedFor.split(",")[0].trim();
+        String clientIp = null;
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            String[] parts = forwardedFor.split(",");
+            clientIp = parts[parts.length - 1].trim();
+        }
         RaffleEntryTicket ticket = commandBus.handle(new RegisterRaffleCommand(
                 parseId(body.campaignId()), user.id(), clientIp, userAgent));
         return new RaffleEnterResponse(ticket.entryNo(), ticket.already());

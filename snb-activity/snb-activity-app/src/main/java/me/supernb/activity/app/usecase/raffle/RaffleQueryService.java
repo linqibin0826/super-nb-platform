@@ -112,7 +112,10 @@ public class RaffleQueryService {
                 .orElseThrow(RaffleNotFoundException::new);
         var entrant = entryPort.findByNo(campaignId, entryNo).orElseThrow(RaffleNotFoundException::new);
         List<PersonWinsView.Win> wins = prizePort.winsOf(entrant.userId());
-        if (wins.isEmpty()) {
+        // 坐标必须是【本期】真实中奖者:winsOf 是跨期全量,仅非空不够。否则任意报名者(含未中奖者)的
+        // 坐标都能穿透查出其在别期的中奖史,击穿本方法「参与史不泄露」承诺(2026-07-13 安全审计,
+        // runbook ai-relay deployment/31)。仍复用已取列表原样返回(真中奖者的跨期荣誉墙是预期功能)。
+        if (wins.stream().noneMatch(w -> w.campaignId() == campaignId)) {
             throw new RaffleNotFoundException();
         }
         String name = gatePort.displayNames(List.of(entrant.userId()))

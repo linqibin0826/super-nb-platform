@@ -3,6 +3,7 @@ package me.supernb.sub2api.usageboard;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import me.supernb.sub2api.EmailMask;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -64,17 +65,8 @@ public class JdbcUsageBoardReadModel implements UsageBoardReadModel {
         return mask(email);
     }
 
-    /// 邮箱脱敏:与 referral 榜同一契约——本地部分前 2 位 + `***` + 后 2 位(仅本地段 ≥5 位时
-    /// 保留后缀) + @域名。改口径须与 JdbcReferralReadModel.mask 同步。null 原样返回。
+    /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask](恒 ≥2 位被遮,短本地名不再回显完整本地部分)。null 原样返回。
     static String mask(String email) {
-        if (email == null) {
-            return null;
-        }
-        int at = email.indexOf('@');
-        String local = at >= 0 ? email.substring(0, at) : email;
-        String domain = at >= 0 ? email.substring(at) : "";
-        String prefix = local.length() >= 2 ? local.substring(0, 2) : local;
-        String suffix = local.length() >= 5 ? local.substring(local.length() - 2) : "";
-        return prefix + "***" + suffix + domain;
+        return EmailMask.mask(email);
     }
 }

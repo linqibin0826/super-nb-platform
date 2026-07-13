@@ -111,11 +111,11 @@ class JdbcReferralReadModelTest {
         List<ReferralReadModel.RechargeRow> board = readModel.rechargeBoard(START, END, CAP, 3);
         assertThat(board).hasSize(2);
         // alice 原始 390(200+150+40),排第一;capped=288
-        assertThat(board.get(0).name()).isEqualTo("al***ce@qq.com");
+        assertThat(board.get(0).name()).isEqualTo("a***e@qq.com");
         assertThat(board.get(0).total()).isEqualByComparingTo("390");
         assertThat(board.get(0).capped()).isEqualByComparingTo("288");
         // bob 原始 100(仅 201,900 窗口外不算);capped=100
-        assertThat(board.get(1).name()).isEqualTo("bo***@gmail.com");
+        assertThat(board.get(1).name()).isEqualTo("***@gmail.com");
         assertThat(board.get(1).total()).isEqualByComparingTo("100");
         assertThat(board.get(1).capped()).isEqualByComparingTo("100");
     }
@@ -125,9 +125,9 @@ class JdbcReferralReadModelTest {
         List<ReferralReadModel.InviteRow> board = readModel.inviteBoard(GROUP, 3);
         assertThat(board).hasSize(2);
         // alice 开了 101/102 两个 → 2;bob 开了 201(软删仍算) → 1
-        assertThat(board.get(0).name()).isEqualTo("al***ce@qq.com");
+        assertThat(board.get(0).name()).isEqualTo("a***e@qq.com");
         assertThat(board.get(0).count()).isEqualTo(2);
-        assertThat(board.get(1).name()).isEqualTo("bo***@gmail.com");
+        assertThat(board.get(1).name()).isEqualTo("***@gmail.com");
         assertThat(board.get(1).count()).isEqualTo(1);
     }
 
@@ -138,14 +138,16 @@ class JdbcReferralReadModelTest {
     }
 
     @Test
-    void maskKeepsFirstTwoAndLastTwoOfLocalPart() {
-        // 纯数字 QQ 邮箱:前2+***+后2,同前缀号码可区分
+    void maskFloorsShortLocalPartsToAtLeastTwoHidden() {
+        // ≥6 位:前2+***+后2(与旧口径一致,真实 QQ 号/邮箱不变)
         assertThat(JdbcReferralReadModel.mask("123456789@qq.com")).isEqualTo("12***89@qq.com");
-        // 本地部分 5 位下限:带后缀且仍至少遮 1 位
-        assertThat(JdbcReferralReadModel.mask("10001@qq.com")).isEqualTo("10***01@qq.com");
-        // 不足 5 位:不带后缀,避免前2+后2把本地部分全暴露
-        assertThat(JdbcReferralReadModel.mask("abcd@x.com")).isEqualTo("ab***@x.com");
-        assertThat(JdbcReferralReadModel.mask("a@x.com")).isEqualTo("a***@x.com");
+        // 5 位:露首尾各 1(旧口径 10***01 只遮 1 位=可被枚举)
+        assertThat(JdbcReferralReadModel.mask("10001@qq.com")).isEqualTo("1***1@qq.com");
+        // 4 位:露首尾各 1(旧口径 ab*** 半明文)
+        assertThat(JdbcReferralReadModel.mask("abcd@x.com")).isEqualTo("a***d@x.com");
+        // ≤3 位:整段遮(旧口径 a*** 把本地名全暴露)
+        assertThat(JdbcReferralReadModel.mask("a@x.com")).isEqualTo("***@x.com");
+        assertThat(JdbcReferralReadModel.mask("bob@x.com")).isEqualTo("***@x.com");
         // null 原样兜底
         assertThat(JdbcReferralReadModel.mask(null)).isNull();
     }

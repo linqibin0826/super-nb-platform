@@ -149,4 +149,16 @@ class RaffleQueryServiceTest {
         when(entryPort.findByNo(1, 99)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> svc.personWins(1, 99)).isInstanceOf(RaffleNotFoundException.class);
     }
+
+    @Test
+    void personWinsRejectsWinnerOfOtherCampaignOnly() {
+        // 本期(1)报名但没中奖、只在别期(9)中过奖:必须 404,不得穿透泄露跨期中奖史
+        // (2026-07-13 安全审计:仅 winsOf 非空不够,须命中本期 campaignId)
+        when(campaignPort.byId(1)).thenReturn(Optional.of(drawn()));
+        when(entryPort.findByNo(1, 50)).thenReturn(Optional.of(new RaffleEntrant(77, 50)));
+        when(prizePort.winsOf(77)).thenReturn(List.of(
+                new PersonWinsView.Win(9, "第〇届彩排", Instant.parse("2026-07-04T02:30:00Z"),
+                        "B", "瑞幸咖啡(9.9)")));
+        assertThatThrownBy(() -> svc.personWins(1, 50)).isInstanceOf(RaffleNotFoundException.class);
+    }
 }

@@ -23,10 +23,21 @@ public class RaffleRateLimitFilter extends OncePerRequestFilter {
 
     static final int CAPACITY = 40;
     static final double REFILL_PER_SEC = 10.0;
-    private static final int MAX_BUCKETS = 20_000;
+    static final int DEFAULT_MAX_BUCKETS = 20_000;
     private static final long IDLE_EVICT_NANOS = 60L * 1_000_000_000L;
 
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private final int maxBuckets;
+
+    /// 构造(Spring 用):桶表上限取默认 20000。
+    public RaffleRateLimitFilter() {
+        this(DEFAULT_MAX_BUCKETS);
+    }
+
+    /// 构造(可注入上限):便于测试用小容量断言溢出淘汰路径收敛(照 introspect 缓存有界化先例)。
+    RaffleRateLimitFilter(int maxBuckets) {
+        this.maxBuckets = maxBuckets;
+    }
 
     /// 单 IP 令牌桶:按流逝时间线性回填,封顶容量。
     static final class Bucket {
@@ -59,10 +70,10 @@ public class RaffleRateLimitFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain chain) throws ServletException, IOException {
-        Bucket bucket = buckets.computeIfAbsent(clientIp(request), k -> {
-            evictIfOversize();
-            return new Bucket();
-        });
+        // evict 必须在 computeIfAbsent 之外:在其映射函数内对同一 ConcurrentHashMap 做 clear()/removeIf()
+        // 违反 JDK 明令,实测(生产同版本 JDK 25)高并发下会真死锁、不自愈(2026-07-13 安全审计 deployment/31)。
+        evictIfOversize();
+        Bucket bucket = buckets.computeIfAbsent(clientIp(request), k -> new Bucket());
         if (bucket.tryTake()) {
             chain.doFilter(request, response);
             return;
@@ -73,12 +84,12 @@ public class RaffleRateLimitFilter extends OncePerRequestFilter {
     }
 
     private void evictIfOversize() {
-        if (buckets.size() < MAX_BUCKETS) {
+        if (buckets.size() < maxBuckets) {
             return;
         }
         long now = System.nanoTime();
         buckets.entrySet().removeIf(e -> e.getValue().idleNanos(now) > IDLE_EVICT_NANOS);
-        if (buckets.size() >= MAX_BUCKETS) {
+        if (buckets.size() >= maxBuckets) {
             buckets.clear();
         }
     }

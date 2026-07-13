@@ -35,7 +35,7 @@ public class RaffleEntryEntity extends BaseJpaEntity {
     @Column(name = "gate_value_at_entry")
     private BigDecimal gateValueAtEntry;
 
-    /// 报名请求来源 IP(X-Forwarded-For 首值,秋后清算用)。
+    /// 报名请求来源 IP(X-Forwarded-For 末值=Caddy 亲验真实对端,秋后清算用;首值可伪造,见 deployment/31)。
     @Column(name = "client_ip")
     private String clientIp;
 

@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import me.supernb.sub2api.EmailMask;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -139,17 +140,8 @@ public class JdbcRaffleGateReadModel implements RaffleGateReadModel {
         return mask(email);
     }
 
-    /// 邮箱脱敏:本地段前 2 + *** + 后 2(仅本地段 ≥5 时保留后缀)+ @域名。
-    /// 契约同 JdbcUsageBoardReadModel.mask / JdbcReferralReadModel.mask,改口径三处同步。
+    /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask](恒 ≥2 位被遮,短本地名不再回显完整本地部分)。null 原样返回。
     static String mask(String email) {
-        if (email == null) {
-            return null;
-        }
-        int at = email.indexOf('@');
-        String local = at >= 0 ? email.substring(0, at) : email;
-        String domain = at >= 0 ? email.substring(at) : "";
-        String prefix = local.length() >= 2 ? local.substring(0, 2) : local;
-        String suffix = local.length() >= 5 ? local.substring(local.length() - 2) : "";
-        return prefix + "***" + suffix + domain;
+        return EmailMask.mask(email);
     }
 }
