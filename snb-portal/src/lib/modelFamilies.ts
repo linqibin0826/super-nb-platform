@@ -2,7 +2,7 @@
 // 判定基于命名前缀：新增同族模型零改动；接全新家族加一条 FamilySpec。
 // 这是「动态清单」（GET /v1/models）与「静态语义」之间唯一的耦合点。
 export type ModelRole = 'generation' | 'edit' | 'hidden'
-export type SizeMode = 'free' | 'grokSquare'
+export type SizeMode = 'free' | 'grokPreset'
 
 interface FamilySpec {
   id: string
@@ -36,7 +36,7 @@ const FAMILIES: FamilySpec[] = [
     displayName: (m) =>
       m === 'grok-imagine-image' ? 'Grok 快图' : m === 'grok-imagine-image-quality' ? 'Grok 高清' : m,
     editModel: 'grok-imagine-edit',
-    sizeMode: 'grokSquare',
+    sizeMode: 'grokPreset',
     hasQualityAxis: false,
   },
 ]
@@ -71,10 +71,19 @@ export function hasQualityAxis(model: string): boolean {
   return familyOf(model)?.hasQualityAxis ?? true
 }
 
-/** grok 生图实测只稳定命中方形 1024²/2048²（1K/2K）；其余 size 上游回退 1024²、4K 不支持 */
-export const GROK_SQUARE_SIZES = ['1024x1024', '2048x2048'] as const
+// grok 生图（经 getelucid）实测认这些 OpenAI 标准 size 值 → 映射到内部比例档；其余回退 1024²、4K 全不支持。
+// 输出尺寸≠请求（如 1536×1024→1248×832 是 3:2、1792×1024→1280×720 是 16:9），但比例对；
+// 非方形只 ~1.2K 一档、只有方形有 1K/2K。
+export const GROK_SIZE_PRESETS = [
+  { value: '1024x1024', label: '1:1 · 1K' },
+  { value: '2048x2048', label: '1:1 · 2K' },
+  { value: '1536x1024', label: '3:2 横' },
+  { value: '1024x1536', label: '2:3 竖' },
+  { value: '1792x1024', label: '16:9 横' },
+  { value: '1024x1792', label: '9:16 竖' },
+] as const
 
-/** 把任意 size 归一到 grok 支持的方形档；不匹配则默认 2K */
+/** 把任意 size 归一到 grok 支持的预设档；不匹配（如从 gpt-image 切来的非标准值）默认 1:1 1K */
 export function normalizeGrokSize(size: string): string {
-  return (GROK_SQUARE_SIZES as readonly string[]).includes(size) ? size : '2048x2048'
+  return GROK_SIZE_PRESETS.some((p) => p.value === size) ? size : '1024x1024'
 }

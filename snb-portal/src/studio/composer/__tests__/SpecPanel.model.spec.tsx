@@ -36,11 +36,13 @@ describe('SpecPanel 模型下拉 + 家族显隐', () => {
     expect(screen.getByText(t('studio.composer.resolution'))).toBeTruthy()
   })
 
-  it('grok（grokSquare）：隐藏比例/画质档，显示 1K/2K 尺寸档', () => {
+  it('grok（grokPreset）：隐藏比例/画质档，显示 6 个尺寸预设（含比例）', () => {
     render(<SpecPanel {...base} model="grok-imagine-image" />)
     expect(screen.queryByText(t('studio.composer.ratio'))).toBeNull()
     expect(screen.queryByText(t('studio.composer.resolution'))).toBeNull()
-    expect(screen.getByText('1K · 1024²')).toBeTruthy()
-    expect(screen.getByText('2K · 2048²')).toBeTruthy()
+    expect(screen.getByText('1:1 · 1K')).toBeTruthy()
+    expect(screen.getByText('1:1 · 2K')).toBeTruthy()
+    expect(screen.getByText('3:2 横')).toBeTruthy()
+    expect(screen.getByText('16:9 横')).toBeTruthy()
   })
 })

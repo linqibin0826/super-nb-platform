@@ -146,8 +146,8 @@ export default function App() {
     const entry = eligible.find((e) => e.key.id === selectedKeyId)
     if (!entry) return
     setTrayOpen(true)
-    // grok 家族只支持方形 1K/2K（上游对其余 size 回退）；归一到支持档，同时让预估价对齐
-    const effectiveSize = sizeModeOf(model) === 'grokSquare' ? normalizeGrokSize(size) : size
+    // grok 家族认特定标准 size 值（上游对其余回退）；归一到支持的预设档，同时让预估价对齐
+    const effectiveSize = sizeModeOf(model) === 'grokPreset' ? normalizeGrokSize(size) : size
     const estimate = estimateCost(entry.group, effectiveSize, n, rates[entry.group.id])
     // 只发已就绪的参考图：加载中的骨架还没有 File，本次生成不带它
     const readyFiles = refs.filter((r) => r.status === 'ready' && r.file).map((r) => r.file as File)

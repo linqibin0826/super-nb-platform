@@ -6,7 +6,7 @@ import type { LocalSpec } from './spec'
 import { billingTierOrDefault, isValidGptImageSize, RATIO_OPTIONS, validTiersForRatio, type BillingTier } from '../../lib/sizes'
 import { t } from '../../i18n'
 import type { EligibleKey } from '../../types'
-import { displayName, normalizeGrokSize, sizeModeOf } from '../../lib/modelFamilies'
+import { displayName, GROK_SIZE_PRESETS, normalizeGrokSize, sizeModeOf } from '../../lib/modelFamilies'
 
 export interface SpecPanelProps {
   spec: LocalSpec
@@ -186,16 +186,13 @@ export function SpecPanel(props: SpecPanelProps) {
         </>
       )}
 
-      {/* grok 只稳定支持方形 1K/2K，给两档尺寸（不给 4K、不给比例——grok 比例是内部跳档不精确）*/}
-      {sizeModeOf(props.model) === 'grokSquare' && (
+      {/* grok 认特定 OpenAI 标准 size 值→内部比例档：1:1(1K/2K)+3:2/2:3/16:9/9:16；不给 4K、非标准值回退 */}
+      {sizeModeOf(props.model) === 'grokPreset' && (
         <ConfigRow label={t('playground.form.size')}>
           <OptionChips
             groupId="grokSize"
             aria-label={t('playground.form.size')}
-            options={[
-              { value: '1024x1024', label: '1K · 1024²' },
-              { value: '2048x2048', label: '2K · 2048²' },
-            ]}
+            options={GROK_SIZE_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
             value={normalizeGrokSize(props.sizeText)}
             onSelect={(v) => props.onChangeSize(v)}
           />
