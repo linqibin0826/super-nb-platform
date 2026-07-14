@@ -48,4 +48,8 @@ public interface RechargeReadModel {
 
     /// 批量取兑换码状态;查无对应记录的 code 不出现在返回 map 中。
     Map<String, RedeemCodeStatus> codeStatuses(Collection<String> codes);
+
+    /// 窗口 [since,until) 内有新增 COMPLETED 余额充值的用户 id(去重;补给记录成就候选
+    /// 发现用,不做全表扫描)。
+    java.util.List<Long> usersWithNewRechargeSince(java.time.Instant since, java.time.Instant until);
 }

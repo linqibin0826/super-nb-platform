@@ -10,7 +10,9 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import me.supernb.sub2api.raffle.RaffleGateReadModel;
+import me.supernb.sub2api.recharge.RechargeReadModel;
 import org.junit.jupiter.api.Test;
 
 /// 薄委托:全量充值与连续 3 月均转发既有 RaffleGateReadModel 的 RECHARGE 全口径
@@ -20,8 +22,9 @@ import org.junit.jupiter.api.Test;
 class AchievementRechargeReadAdapterTest {
 
     private final RaffleGateReadModel raffleGateReadModel = mock(RaffleGateReadModel.class);
+    private final RechargeReadModel rechargeReadModel = mock(RechargeReadModel.class);
     private final AchievementRechargeReadAdapter adapter =
-            new AchievementRechargeReadAdapter(raffleGateReadModel);
+            new AchievementRechargeReadAdapter(raffleGateReadModel, rechargeReadModel);
 
     @Test
     void totalRechargedDelegatesToRaffleGateReadModelWithEpochWindow() {
@@ -43,5 +46,13 @@ class AchievementRechargeReadAdapterTest {
         when(raffleGateReadModel.gateValue(eq(7L), eq("RECHARGE"), any(), any()))
                 .thenReturn(new BigDecimal("10"), BigDecimal.ZERO, new BigDecimal("5"));
         assertThat(adapter.hasThreeConsecutiveMonthsOfRecharge(7)).isFalse();
+    }
+
+    @Test
+    void usersWithNewRechargeSinceDelegatesToRechargeReadModel() {
+        Instant since = Instant.parse("2026-07-12T00:00:00Z");
+        Instant until = Instant.parse("2026-07-14T00:00:00Z");
+        when(rechargeReadModel.usersWithNewRechargeSince(since, until)).thenReturn(List.of(42L));
+        assertThat(adapter.usersWithNewRechargeSince(since, until)).containsExactly(42L);
     }
 }

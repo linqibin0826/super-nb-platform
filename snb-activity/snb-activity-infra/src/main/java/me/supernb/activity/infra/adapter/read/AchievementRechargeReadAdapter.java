@@ -5,7 +5,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import me.supernb.activity.domain.port.read.AchievementRechargeReadPort;
+import java.util.List;
 import me.supernb.sub2api.raffle.RaffleGateReadModel;
+import me.supernb.sub2api.recharge.RechargeReadModel;
 import org.springframework.stereotype.Component;
 
 /// AchievementRechargeReadPort 实现:全量充值与连续 3 月均薄委托既有 RaffleGateReadModel 的
@@ -23,10 +25,15 @@ public class AchievementRechargeReadAdapter implements AchievementRechargeReadPo
     private static final ZoneId ZONE = ZoneId.of("Asia/Shanghai");
 
     private final RaffleGateReadModel raffleGateReadModel;
+    private final RechargeReadModel rechargeReadModel;
 
-    /// 构造:注入既有 sub2api 只读读模型(已由 raffle 场景激活,零新增装配条件)。
-    public AchievementRechargeReadAdapter(RaffleGateReadModel raffleGateReadModel) {
+    /// 构造:注入既有 sub2api 只读读模型(均已由 raffle/referral 场景激活,零新增装配条件)。
+    /// rechargeReadModel 只用于候选发现(payment_orders 窄扫描);金额口径仍统一走
+    /// raffleGateReadModel 的 RECHARGE 全口径,两者职责不同不混用。
+    public AchievementRechargeReadAdapter(RaffleGateReadModel raffleGateReadModel,
+            RechargeReadModel rechargeReadModel) {
         this.raffleGateReadModel = raffleGateReadModel;
+        this.rechargeReadModel = rechargeReadModel;
     }
 
     @Override
@@ -47,5 +54,10 @@ public class AchievementRechargeReadAdapter implements AchievementRechargeReadPo
             }
         }
         return true;
+    }
+
+    @Override
+    public List<Long> usersWithNewRechargeSince(Instant since, Instant until) {
+        return rechargeReadModel.usersWithNewRechargeSince(since, until);
     }
 }

@@ -10,4 +10,7 @@ public interface AchievementRechargeReadPort {
 
     /// 是否连续 3 个自然月(本月、上月、上上月)均有真实充值 > 0。
     boolean hasThreeConsecutiveMonthsOfRecharge(long userId);
+
+    /// 窗口内有新增真实充值的用户 id(候选发现,不做全表扫描)。
+    java.util.List<Long> usersWithNewRechargeSince(java.time.Instant since, java.time.Instant until);
 }

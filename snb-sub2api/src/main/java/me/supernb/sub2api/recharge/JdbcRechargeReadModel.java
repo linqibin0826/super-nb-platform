@@ -112,6 +112,18 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
         return result;
     }
 
+    /// 窗口内有新增 COMPLETED 余额充值的用户 id(候选发现,payment_orders 窄扫描)。
+    @Override
+    public List<Long> usersWithNewRechargeSince(Instant since, Instant until) {
+        MapSqlParameterSource p = new MapSqlParameterSource()
+                .addValue("since", Timestamp.from(since))
+                .addValue("until", Timestamp.from(until));
+        return jdbc.query(
+                "SELECT DISTINCT user_id FROM payment_orders WHERE order_type = 'balance' "
+                        + "AND status = 'COMPLETED' AND completed_at >= :since AND completed_at < :until",
+                p, (rs, i) -> rs.getLong("user_id"));
+    }
+
     /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask]。恒 ≥2 位被遮(短本地名不再回显完整本地部分)。
     /// 未脱敏的完整邮箱只在本方法作用域内出现过,不向外传播。
     static String mask(String email) {
