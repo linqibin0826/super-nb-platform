@@ -220,7 +220,7 @@ VALUES
  '深夜机房', '凌晨 1-5 点有成功调用', '凌晨的机房,只有风扇和你还醒着。', '机房这个点还亮着灯,是谁在。'),
 (900037, 'ghost_return', NULL, NULL, '机密档案', 'T1', 5, true, false, 'active',
  'metric_threshold', 'checkin_ghost_return_flag', 1, 'gte', NULL, 1, DATE '2026-07-13', 62,
- '诈尸打卡', '两次签到间隔≥30 天后再签', '消失一个月,考勤簿还是给你留了格。', '考勤簿也认"浪子回头"。'),
+ '诈尸打卡', '两次签到间隔≥30 天后再签', '消失一个月,考勤簿还是给你留了格。', '考勤簿也认「浪子回头」。'),
 (900038, 'raffle_companion_1', NULL, 1, '机密档案', 'T1', 5, true, false, 'active',
  'metric_threshold', 'raffle_companion_count', 1, 'gte', NULL, 1, DATE '2026-07-13', 63,
  '陪跑', '报名 raffle 未中奖(仅计已开奖期次)', '没中奖,但你确实来了,这也算数。', '不是所有到场的人都举得起奖杯。'),
