@@ -79,6 +79,8 @@ activity:
         threshold: ${CHECKIN_TIER_C_THRESHOLD:500}
         group-id: ${CHECKIN_TIER_C_GROUP_ID:0}
         cost-cny: ${CHECKIN_TIER_C_COST_CNY:4.4}
+  achievement:
+    retroactive-backfill-enabled: ${CHECKIN_RETROACTIVE_BACKFILL_ENABLED:false}
 
 content:
   # admin 写接口令牌（发布管线经 SSH 隧道调用）；缺省空值=fail-closed 一律 401

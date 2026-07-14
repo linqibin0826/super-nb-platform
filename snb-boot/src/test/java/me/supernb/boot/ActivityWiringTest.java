@@ -152,4 +152,28 @@ class ActivityWiringTest {
         // fail-closed 回归锁:该 Bean 绝不能因 yml 给空串默认值而被 @ConditionalOnProperty 误判匹配。
         assertThat(grantPort).isNull();
     }
+
+    @Test
+    void achievementsEndpointReturnsFullCatalogWallForRealUser() throws Exception {
+        jdbc.update("INSERT INTO users (id, created_at) VALUES (601, now() - interval '48 hours') "
+                + "ON CONFLICT (id) DO UPDATE SET created_at = EXCLUDED.created_at");
+        when(introspect.introspect("Bearer W601")).thenReturn(Optional.of(new UserProfile(601, "user", "active")));
+        mvc.perform(get("/activity/v1/checkin/achievements").header("Authorization", "Bearer W601"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.totalCount").value(42))
+                .andExpect(jsonPath("$.summary.unlockedCount").value(0))
+                .andExpect(jsonPath("$.categories[0].name").value("入职档案"))
+                .andExpect(jsonPath("$.metaAchievements[0].code").value("meta_regular"));
+    }
+
+    @Test
+    void markAchievementsSeenEndpointReturnsZeroWhenNothingToAcknowledge() throws Exception {
+        jdbc.update("INSERT INTO users (id, created_at) VALUES (602, now() - interval '48 hours') "
+                + "ON CONFLICT (id) DO UPDATE SET created_at = EXCLUDED.created_at");
+        when(introspect.introspect("Bearer W602")).thenReturn(Optional.of(new UserProfile(602, "user", "active")));
+        mvc.perform(post("/activity/v1/checkin/achievements/seen").header("Authorization", "Bearer W602")
+                .contentType("application/json").content("{\"codes\":[\"checkin_first\"]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.acknowledged").value(0)); // 该用户从未解锁过此成就,标记不到行,返回0不报错
+    }
 }
