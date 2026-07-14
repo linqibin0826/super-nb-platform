@@ -5,3 +5,4 @@ me.supernb.sub2api.autoconfig.Sub2apiUsageBoardAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiRaffleAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiGateAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiAdminAutoConfiguration
+me.supernb.sub2api.autoconfig.Sub2apiAccountAutoConfiguration
