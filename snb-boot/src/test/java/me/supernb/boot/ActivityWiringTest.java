@@ -1,5 +1,6 @@
 package me.supernb.boot;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -9,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Optional;
+import me.supernb.activity.domain.port.checkin.SubscriptionGrantPort;
 import me.supernb.gallery.domain.port.storage.ImageStoragePort;
 import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
 import me.supernb.sub2api.auth.UserProfile;
@@ -57,6 +59,11 @@ class ActivityWiringTest {
     // mock introspect:未 stub 时返回 Optional.empty → 401;stub 后放行真派发路径
     @MockitoBean
     Sub2apiIntrospectClient introspect;
+
+    // 未设 SUB2API_ADMIN_KEY 时应为 null——锁住 Sub2apiAdminAutoConfiguration/SubscriptionGrantAdapter
+    // 的 @ConditionalOnProperty fail-closed 回归(2026-07-14 曾因 yml 给空串默认值被打破)
+    @Autowired(required = false)
+    SubscriptionGrantPort grantPort;
 
     @Autowired
     JdbcTemplate jdbc;
@@ -137,5 +144,12 @@ class ActivityWiringTest {
                 .andExpect(jsonPath("$.streakCurrent").value(1));
         mvc.perform(post("/activity/v1/checkin").header("Authorization", "Bearer OLD"))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void subscriptionGrantPortAbsentWithoutAdminKey() {
+        // sub2api.admin-key 在本测试环境真缺席(未设 SUB2API_ADMIN_KEY,yml 也不给默认值)——
+        // fail-closed 回归锁:该 Bean 绝不能因 yml 给空串默认值而被 @ConditionalOnProperty 误判匹配。
+        assertThat(grantPort).isNull();
     }
 }

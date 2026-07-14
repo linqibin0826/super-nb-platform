@@ -33,7 +33,11 @@ sub2api:
     url: ${SUB2API_RO_URL:jdbc:postgresql://localhost:5432/sub2api}
     username: ${SUB2API_RO_USER:snb_ro}
     password: ${SUB2API_RO_PASSWORD:}
-  admin-key: ${SUB2API_ADMIN_KEY:}
+  # admin-key 仅经环境变量 SUB2API_ADMIN_KEY 注入;绝不给 yml 默认值——缺省时该属性在
+  # Environment 中完全不存在,Sub2apiAdminAutoConfiguration / SubscriptionGrantAdapter 的
+  # @ConditionalOnProperty(prefix="sub2api", name="admin-key") 才能真正 fail-closed
+  # (yml 给空串默认值会让属性"永远存在但值为空",该注解无 havingValue 时空串≠"false"即判匹配,
+  # 会让两个 Bean 恒装配,复审探针已实测坐实此坑,2026-07-14 修复)。
 
 gallery:
   # R2 凭据仅经环境变量注入(GALLERY_R2_ENDPOINT / GALLERY_R2_BUCKET / GALLERY_R2_ACCESS_KEY /
