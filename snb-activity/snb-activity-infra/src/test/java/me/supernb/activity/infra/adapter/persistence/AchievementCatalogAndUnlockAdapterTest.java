@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import me.supernb.activity.domain.model.achievement.AchievementDefinition;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -90,5 +92,25 @@ class AchievementCatalogAndUnlockAdapterTest {
                 .orElseThrow().seen()).isTrue();
         assertThat(unlocks.stream().filter(u -> u.achievementCode().equals("api_first_call")).findFirst()
                 .orElseThrow().seen()).isFalse();
+    }
+
+    @Test
+    void allDefinitionsIncludesDraftAndRetiredNotJustActive() {
+        jdbc.update("INSERT INTO activity.achievement_definition "
+                + "(id, code, category, rarity, nb_points, status, predicate_kind, metric_code, "
+                + " threshold_value, comparator, sort_order, name, condition_text) "
+                + "VALUES (999001, 'draft_probe', '情报站', 'T1', 5, 'draft', 'metric_threshold', "
+                + " 'probe_metric', 1, 'gte', 999, '占位', '占位条件')");
+        List<AchievementDefinition> all = catalog.allDefinitions();
+        assertThat(all).extracting(AchievementDefinition::code).contains("draft_probe", "checkin_first");
+        assertThat(catalog.activeDefinitions()).extracting(AchievementDefinition::code)
+                .doesNotContain("draft_probe");
+    }
+
+    @Test
+    void allSeriesLabelsReturnsSeededDisplayNames() {
+        Map<String, String> labels = catalog.allSeriesLabels();
+        assertThat(labels).containsKey("api_calls");
+        assertThat(labels.get("api_calls")).contains("API CALLS");
     }
 }
