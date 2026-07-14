@@ -19,6 +19,9 @@ public class Sub2apiProperties {
     /// sub2api 只读库连接配置(独立只读数据库角色,权限仅 SELECT)。
     private final ReadDatasource readDatasource = new ReadDatasource();
 
+    /// admin API 令牌(`x-api-key` 请求头);缺省空值时 `Sub2apiAdminAutoConfiguration` 整体不装配。
+    private String adminKey;
+
     /// 只读源连接参数;`url` 缺配则充值读模型能力整体不装配。
     @Getter
     @Setter
