@@ -13,24 +13,36 @@ import org.springframework.stereotype.Component;
 @Component
 public class CheckinTierProperties {
 
-    /// 单档静态信息(供 GET /checkin/status 的 supply.tiers[] 与 GET /checkin/rewards 的 label 复用)。
-    public record TierInfo(String tier, String label, String conditionText, BigDecimal threshold) {
+    /// 单档静态信息(供 GET /checkin/status 的 supply.tiers[] 与 GET /checkin/rewards 的 label 复用,
+    /// 也供月度结算 job 取发放所需的 group-id/校验期/成本)。
+    public record TierInfo(String tier, String label, String conditionText, BigDecimal threshold,
+            long groupId, int validityDays, BigDecimal costCny) {
     }
 
     private final List<TierInfo> tiers;
 
-    /// 构造:三档阈值经配置注入,label/conditionText 固定文案(与 spec §5.2 表格一致)。
+    /// 构造:三档阈值/组 id/单档成本经配置注入,label/conditionText/校验期固定文案与数字
+    /// (与 spec §5.2 表格一致:A/B 三天、C 七天,校验期不接 env)。
     public CheckinTierProperties(
             @Value("${activity.checkin.tier.a.threshold:30}") BigDecimal thresholdA,
             @Value("${activity.checkin.tier.b.threshold:50}") BigDecimal thresholdB,
-            @Value("${activity.checkin.tier.c.threshold:500}") BigDecimal thresholdC) {
+            @Value("${activity.checkin.tier.c.threshold:500}") BigDecimal thresholdC,
+            @Value("${activity.checkin.tier.a.group-id:0}") long groupIdA,
+            @Value("${activity.checkin.tier.b.group-id:0}") long groupIdB,
+            @Value("${activity.checkin.tier.c.group-id:0}") long groupIdC,
+            @Value("${activity.checkin.tier.a.cost-cny:0.9}") BigDecimal costA,
+            @Value("${activity.checkin.tier.b.cost-cny:1.9}") BigDecimal costB,
+            @Value("${activity.checkin.tier.c.cost-cny:4.4}") BigDecimal costC) {
         this.tiers = List.of(
                 new TierInfo("A", "GPT-Plus 补给 · 3 天",
-                        "满勤 + 当月新增充值 ¥" + thresholdA.toPlainString() + " 起 · 日限 $5", thresholdA),
+                        "满勤 + 当月新增充值 ¥" + thresholdA.toPlainString() + " 起 · 日限 $5",
+                        thresholdA, groupIdA, 3, costA),
                 new TierInfo("B", "GPT-Pro 补给 · 3 天",
-                        "满勤 + 当月新增充值 ¥" + thresholdB.toPlainString() + " 起 · 日限 $5", thresholdB),
+                        "满勤 + 当月新增充值 ¥" + thresholdB.toPlainString() + " 起 · 日限 $5",
+                        thresholdB, groupIdB, 3, costB),
                 new TierInfo("C", "GPT-Pro 补给 · 7 天",
-                        "满勤 + 当月新增充值 ¥" + thresholdC.toPlainString() + " 起 · 日限 $5", thresholdC));
+                        "满勤 + 当月新增充值 ¥" + thresholdC.toPlainString() + " 起 · 日限 $5",
+                        thresholdC, groupIdC, 7, costC));
     }
 
     /// 三档静态信息,按 A/B/C 顺序(阈值升序)。
