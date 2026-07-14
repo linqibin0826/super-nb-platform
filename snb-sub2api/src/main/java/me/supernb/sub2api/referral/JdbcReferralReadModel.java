@@ -3,7 +3,10 @@ package me.supernb.sub2api.referral;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import me.supernb.sub2api.EmailMask;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -80,6 +83,23 @@ public class JdbcReferralReadModel implements ReferralReadModel {
                         + "WHERE u.created_at >= :start AND u.created_at < :end AND u.deleted_at IS NULL",
                 p, Integer.class);
         return n == null ? 0 : n;
+    }
+
+    /// 全量邀请关系(不分活动窗口):排除站长自号(inviter_id=1)与软删被邀者。
+    /// 无具名参数,直接走内层 JdbcTemplate 查询。
+    @Override
+    public Map<Long, List<Long>> allInviteeIdsByInviter() {
+        Map<Long, List<Long>> result = new HashMap<>();
+        jdbc.getJdbcTemplate().query(
+                "SELECT ua.inviter_id, ua.user_id FROM user_affiliates ua "
+                        + "JOIN users u ON u.id = ua.user_id AND u.deleted_at IS NULL "
+                        + "WHERE ua.inviter_id IS NOT NULL AND ua.inviter_id <> 1",
+                rs -> {
+                    // 块 lambda:只 void 兼容,消歧 query(String,RowCallbackHandler) 与 ResultSetExtractor 重载
+                    result.computeIfAbsent(rs.getLong("inviter_id"), k -> new ArrayList<>())
+                            .add(rs.getLong("user_id"));
+                });
+        return result;
     }
 
     /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask](恒 ≥2 位被遮,短本地名不再回显完整本地部分)。

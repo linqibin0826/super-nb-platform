@@ -35,4 +35,9 @@ public interface ReferralReadModel {
 
     /// 新人总数:窗口内注册([start,end))且未软删的用户数;只看注册,不要求进群/开通新人组/有邀请人。
     int newcomerTotal(Instant start, Instant end);
+
+    /// 全量邀请关系(不分活动窗口):inviter_id -> 被邀请人 id 列表,排除站长自号(inviter_id=1)
+    /// 与软删用户。referral_valid_count 成就用——"是否有效"(被邀者有首次成功调用)由调用方
+    /// 交叉 user_metric 判断,本方法只给"谁邀请了谁"这个事实。
+    java.util.Map<Long, java.util.List<Long>> allInviteeIdsByInviter();
 }
