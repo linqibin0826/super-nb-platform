@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import dev.linqibin.starter.jpa.id.SnowflakeIdGenerator;
+import me.supernb.activity.domain.model.checkin.CheckinGrantRecord;
 import me.supernb.activity.domain.model.checkin.CheckinRewardCandidate;
 import me.supernb.activity.domain.model.checkin.CheckinRewardView;
 import me.supernb.activity.domain.port.checkin.CheckinRewardPort;
@@ -73,6 +74,13 @@ public class CheckinRewardAdapter implements CheckinRewardPort {
     public List<CheckinRewardView> myGrants(long userId) {
         return grants.findByUserIdOrderByGrantMonthDesc(userId).stream()
                 .map(e -> new CheckinRewardView(e.getGrantMonth(), e.getTier(), e.getStatus()))
+                .toList();
+    }
+
+    @Override
+    public List<CheckinGrantRecord> myGrantedRewards(long userId) {
+        return grants.findByUserIdAndStatusOrderByGrantMonthDesc(userId, "success").stream()
+                .map(e -> new CheckinGrantRecord(e.getGrantMonth(), e.getTier(), e.getUpdatedAt()))
                 .toList();
     }
 }

@@ -3,6 +3,7 @@ package me.supernb.activity.domain.port.checkin;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import me.supernb.activity.domain.model.checkin.CheckinGrantRecord;
 import me.supernb.activity.domain.model.checkin.CheckinRewardCandidate;
 import me.supernb.activity.domain.model.checkin.CheckinRewardView;
 
@@ -27,4 +28,8 @@ public interface CheckinRewardPort {
 
     /// 用户本人的全部发放记录,按 grant_month 降序。
     List<CheckinRewardView> myGrants(long userId);
+
+    /// 用户本人已成功发放的记录(仅 status=success,按 grant_month 降序)。当月若尚未结算,
+    /// 不会出现在返回值里——月度结算 job 只在月末为"上个月"建行,当月天然无记录(GET /checkin/rewards 用)。
+    List<CheckinGrantRecord> myGrantedRewards(long userId);
 }

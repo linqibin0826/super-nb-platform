@@ -10,4 +10,6 @@ public interface CheckinRewardGrantJpaRepository extends JpaRepository<CheckinRe
     List<CheckinRewardGrantEntity> findByStatus(String status);
 
     List<CheckinRewardGrantEntity> findByUserIdOrderByGrantMonthDesc(long userId);
+
+    List<CheckinRewardGrantEntity> findByUserIdAndStatusOrderByGrantMonthDesc(long userId, String status);
 }

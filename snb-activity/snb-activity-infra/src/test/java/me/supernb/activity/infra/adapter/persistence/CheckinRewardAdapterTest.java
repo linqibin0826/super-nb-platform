@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import me.supernb.activity.domain.model.checkin.CheckinGrantRecord;
 import me.supernb.activity.domain.model.checkin.CheckinRewardCandidate;
 import me.supernb.activity.domain.model.checkin.CheckinRewardView;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,5 +90,17 @@ class CheckinRewardAdapterTest {
                 .containsExactly(pendingA);
         assertThat(adapter.byStatus("success")).extracting(CheckinRewardCandidate::grantId)
                 .containsExactly(willSucceedB);
+    }
+
+    @Test
+    void myGrantedRewardsReturnsOnlySuccessRowsWithGrantedAtDescByMonth() {
+        long julyGrant = adapter.claim(42, MONTH, "B", 65, "n").orElseThrow();
+        adapter.claim(42, MONTH.minusMonths(1), "A", 27, "n"); // 上月:仍是 pending,不应出现
+        adapter.markSuccess(julyGrant);
+        var rewards = adapter.myGrantedRewards(42);
+        assertThat(rewards).hasSize(1);
+        assertThat(rewards.get(0).grantMonth()).isEqualTo(MONTH);
+        assertThat(rewards.get(0).tier()).isEqualTo("B");
+        assertThat(rewards.get(0).grantedAt()).isNotNull();
     }
 }
