@@ -35,13 +35,13 @@ public class CheckinTierProperties {
             @Value("${activity.checkin.tier.c.cost-cny:4.4}") BigDecimal costC) {
         this.tiers = List.of(
                 new TierInfo("A", "GPT-Plus 补给 · 3 天",
-                        "满勤 + 当月新增充值 ¥" + thresholdA.toPlainString() + " 起 · 日限 $5",
+                        "满勤 + 当月新增充值 ¥" + thresholdA.toPlainString() + " 起",
                         thresholdA, groupIdA, 3, costA),
                 new TierInfo("B", "GPT-Pro 补给 · 3 天",
-                        "满勤 + 当月新增充值 ¥" + thresholdB.toPlainString() + " 起 · 日限 $5",
+                        "满勤 + 当月新增充值 ¥" + thresholdB.toPlainString() + " 起",
                         thresholdB, groupIdB, 3, costB),
                 new TierInfo("C", "GPT-Pro 补给 · 7 天",
-                        "满勤 + 当月新增充值 ¥" + thresholdC.toPlainString() + " 起 · 日限 $5",
+                        "满勤 + 当月新增充值 ¥" + thresholdC.toPlainString() + " 起",
                         thresholdC, groupIdC, 7, costC));
     }
 
