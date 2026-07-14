@@ -14,6 +14,8 @@ import java.util.Optional;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
+import me.supernb.activity.app.usecase.checkin.query.CheckinRewardQueryService;
+import me.supernb.activity.app.usecase.checkin.query.CheckinStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
 import me.supernb.activity.app.usecase.draw.query.MyDrawsQueryService;
 import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
@@ -54,7 +56,8 @@ class UsageLeaderboardEndpointTest {
                 mock(RecentRechargesQueryService.class), mock(PoolQueryService.class),
                 mock(RecentDrawsQueryService.class), mock(MyDrawsQueryService.class),
                 mock(ReferralLeaderboardQueryService.class), svc, mock(RaffleQueryService.class),
-                mock(RegistryStatusQueryService.class));
+                mock(RegistryStatusQueryService.class),
+                mock(CheckinStatusQueryService.class), mock(CheckinRewardQueryService.class));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();

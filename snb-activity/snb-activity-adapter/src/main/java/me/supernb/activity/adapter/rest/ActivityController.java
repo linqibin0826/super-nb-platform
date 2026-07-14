@@ -13,10 +13,15 @@ import me.supernb.activity.adapter.rest.response.RaffleMeResponse;
 import me.supernb.activity.adapter.rest.response.RaffleResultResponse;
 import me.supernb.activity.adapter.rest.response.RaffleWinsResponse;
 import me.supernb.activity.adapter.rest.response.GateDrawResponse;
+import me.supernb.activity.adapter.rest.response.CheckinRewardsResponse;
+import me.supernb.activity.adapter.rest.response.CheckinStatusResponse;
 import me.supernb.activity.adapter.rest.response.RegistryStatusResponse;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
+import me.supernb.activity.app.usecase.checkin.command.CheckInCommand;
+import me.supernb.activity.app.usecase.checkin.query.CheckinRewardQueryService;
+import me.supernb.activity.app.usecase.checkin.query.CheckinStatusQueryService;
 import me.supernb.activity.app.usecase.draw.command.PerformDrawCommand;
 import me.supernb.activity.app.usecase.draw.command.PerformDrawAllCommand;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
@@ -75,8 +80,11 @@ public class ActivityController {
     private final UsageLeaderboardQueryService usageLeaderboardQuery;
     private final RaffleQueryService raffleQuery;
     private final RegistryStatusQueryService registryStatusQuery;
+    private final CheckinStatusQueryService checkinStatusQuery;
+    private final CheckinRewardQueryService checkinRewardQuery;
 
-    /// 构造:注入 CommandBus 与十个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、拉新榜、用量榜、发布会、注册表状态)。
+    /// 构造:注入 CommandBus 与十二个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、
+    /// 拉新榜、用量榜、发布会、注册表状态、签到状态、我的补给发放记录)。
     public ActivityController(
             CommandBus commandBus,
             DrawStatusQueryService drawStatusQuery,
@@ -88,7 +96,9 @@ public class ActivityController {
             ReferralLeaderboardQueryService referralQuery,
             UsageLeaderboardQueryService usageLeaderboardQuery,
             RaffleQueryService raffleQuery,
-            RegistryStatusQueryService registryStatusQuery) {
+            RegistryStatusQueryService registryStatusQuery,
+            CheckinStatusQueryService checkinStatusQuery,
+            CheckinRewardQueryService checkinRewardQuery) {
         this.commandBus = commandBus;
         this.drawStatusQuery = drawStatusQuery;
         this.leaderboardQuery = leaderboardQuery;
@@ -100,6 +110,8 @@ public class ActivityController {
         this.usageLeaderboardQuery = usageLeaderboardQuery;
         this.raffleQuery = raffleQuery;
         this.registryStatusQuery = registryStatusQuery;
+        this.checkinStatusQuery = checkinStatusQuery;
+        this.checkinRewardQuery = checkinRewardQuery;
     }
 
     /// 活动期充值榜 Top10(公开)。无进行中活动 → 空列表,不是异常。
@@ -292,5 +304,29 @@ public class ActivityController {
         } catch (NumberFormatException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid id: " + raw);
         }
+    }
+
+    /// 签到(需登录,spec §7.3):账龄门槛与幂等写入在 CheckInHandler/CheckinAdapter 完成,写操作
+    /// 经 CommandBus 派发;成功后 200 响应体是与 GET /checkin/status 完全同形的完整状态快照
+    /// (2026-07-14 控制器裁决,覆盖三字段响应草稿——三字段会在跨阈值打卡时造成里程碑徽标已
+    /// achieved 而 statusText 停留旧值的自相矛盾,前端被契约禁止自算业务文案,详见
+    /// fe-contract.md POST /checkin 节的审查裁决)。账龄不足/今日已打过卡分别经 CommandBus
+    /// 抛出的领域异常映射 403/409(commons StandardErrorTrait,由全局错误处理器接管)。
+    @PostMapping("/checkin")
+    public CheckinStatusResponse checkIn(@CurrentUser UserProfile user) {
+        commandBus.handle(new CheckInCommand(user.id()));
+        return CheckinStatusResponse.of(checkinStatusQuery.status(user.id()));
+    }
+
+    /// 签到状态(需登录):月度格子/累计天数/streak/里程碑 5·10·20·满勤/补给三档进度预览。
+    @GetMapping("/checkin/status")
+    public CheckinStatusResponse checkinStatus(@CurrentUser UserProfile user) {
+        return CheckinStatusResponse.of(checkinStatusQuery.status(user.id()));
+    }
+
+    /// 我的补给发放记录(需登录,仅本人,spec §7.3 脱敏红线;响应体 `{"grants":[...]}` 包裹)。
+    @GetMapping("/checkin/rewards")
+    public CheckinRewardsResponse checkinRewards(@CurrentUser UserProfile user) {
+        return CheckinRewardsResponse.of(checkinRewardQuery.myRewards(user.id()));
     }
 }
