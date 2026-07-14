@@ -62,25 +62,19 @@ public class AchievementJudgeEngine {
         }
 
         List<AchievementDefinition> allDefs = catalogPort.activeDefinitions();
-        List<AchievementDefinition> metricDefs = allDefs.stream()
-                .filter(d -> "metric_threshold".equals(d.predicateKind())
-                        && !SYNTHETIC_UNLOCK_COUNT_METRIC.equals(d.metricCode()))
-                .toList();
-        List<AchievementDefinition> metaLikeDefs = allDefs.stream()
-                .filter(d -> "meta_combo".equals(d.predicateKind())
-                        || SYNTHETIC_UNLOCK_COUNT_METRIC.equals(d.metricCode()))
-                .toList();
+        List<AchievementDefinition> metricDefs = metricThresholdDefs(allDefs);
+        List<AchievementDefinition> metaLikeDefs = metaLikeDefs(allDefs);
 
         for (long userId : candidates) {
             try {
-                judgeMetricThresholds(userId, metricDefs);
+                judgeMetricThresholds(userId, metricDefs, "batch_scan");
             } catch (Exception e) {
                 log.error("成就判定失败(metric_threshold) user={}", userId, e);
             }
         }
         for (long userId : candidates) {
             try {
-                judgeMetaLike(userId, metaLikeDefs, allDefs);
+                judgeMetaLike(userId, metaLikeDefs, allDefs, "batch_scan");
             } catch (Exception e) {
                 log.error("成就判定失败(meta_combo/合成指标) user={}", userId, e);
             }
@@ -88,7 +82,26 @@ public class AchievementJudgeEngine {
         watermarkPort.advance(JOB_NAME, now);
     }
 
-    private void judgeMetricThresholds(long userId, List<AchievementDefinition> metricDefs) {
+    /// metric_threshold 分支的候选定义(排除合成指标,那个挪到 metaLikeDefs 统一处理)。
+    /// 包内可见,供首刷批处理复用,避免复制过滤逻辑。
+    static List<AchievementDefinition> metricThresholdDefs(List<AchievementDefinition> allDefs) {
+        return allDefs.stream()
+                .filter(d -> "metric_threshold".equals(d.predicateKind())
+                        && !SYNTHETIC_UNLOCK_COUNT_METRIC.equals(d.metricCode()))
+                .toList();
+    }
+
+    /// meta_combo + 合成指标(meta_regular)的候选定义。包内可见,供首刷批处理复用。
+    static List<AchievementDefinition> metaLikeDefs(List<AchievementDefinition> allDefs) {
+        return allDefs.stream()
+                .filter(d -> "meta_combo".equals(d.predicateKind())
+                        || SYNTHETIC_UNLOCK_COUNT_METRIC.equals(d.metricCode()))
+                .toList();
+    }
+
+    /// metric_threshold 判定;unlockSource 由调用方指定("batch_scan" 常规批扫,
+    /// "retroactive_backfill" 首刷)。包内可见供首刷批处理复用,不复制判定逻辑。
+    void judgeMetricThresholds(long userId, List<AchievementDefinition> metricDefs, String unlockSource) {
         Set<String> alreadyUnlocked = unlockPort.unlockedCodes(userId);
         Map<String, Double> metrics = metricPort.allMetrics(userId);
         for (AchievementDefinition def : metricDefs) {
@@ -97,13 +110,14 @@ public class AchievementJudgeEngine {
             }
             Double value = metrics.get(def.metricCode());
             if (value != null && meetsThreshold(value, def.thresholdValue(), def.comparator())) {
-                unlockPort.unlock(userId, def.code(), Instant.now(), def.nbPoints(), "batch_scan");
+                unlockPort.unlock(userId, def.code(), Instant.now(), def.nbPoints(), unlockSource);
             }
         }
     }
 
-    private void judgeMetaLike(long userId, List<AchievementDefinition> metaLikeDefs,
-            List<AchievementDefinition> allDefs) {
+    /// meta_combo/合成指标判定;unlockSource 语义同上。包内可见供首刷批处理复用。
+    void judgeMetaLike(long userId, List<AchievementDefinition> metaLikeDefs,
+            List<AchievementDefinition> allDefs, String unlockSource) {
         // 重新查询(不复用 judgeMetricThresholds 阶段的旧集合),反映本轮已发生的最新解锁。
         Set<String> alreadyUnlocked = unlockPort.unlockedCodes(userId);
         for (AchievementDefinition def : metaLikeDefs) {
@@ -123,7 +137,7 @@ public class AchievementJudgeEngine {
                 }
             };
             if (qualifies) {
-                unlockPort.unlock(userId, def.code(), Instant.now(), def.nbPoints(), "batch_scan");
+                unlockPort.unlock(userId, def.code(), Instant.now(), def.nbPoints(), unlockSource);
             }
         }
     }
