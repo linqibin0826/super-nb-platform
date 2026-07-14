@@ -72,7 +72,7 @@ public class CheckinStatusQueryService {
         int streakCurrent = CheckinStreak.current(recentDates, today);
 
         // 满勤在轨:自"月初与上线日两者取晚"起到今天为止一天不落——月中动态展示"目前在线全勤",
-        // 月末(monthCount==monthDays 且在轨)即成为最终"已打穿"判定。
+        // 月末(今天是本月最后一天 且在轨)即成为最终"已打穿"判定,判定细节见 buildMilestones。
         LocalDate fullMonthWindowStart = monthStart.isAfter(props.launchDate()) ? monthStart : props.launchDate();
         boolean onTrackFullMonth;
         if (fullMonthWindowStart.isAfter(today)) {
@@ -82,8 +82,7 @@ public class CheckinStatusQueryService {
             int countSinceWindowStart = checkinPort.countInRange(userId, fullMonthWindowStart, today);
             onTrackFullMonth = countSinceWindowStart >= expectedDays;
         }
-        List<CheckinMilestoneView> milestones =
-                buildMilestones(monthCount, onTrackFullMonth, today.lengthOfMonth());
+        List<CheckinMilestoneView> milestones = buildMilestones(monthCount, onTrackFullMonth, today);
 
         Instant monthStartInstant = monthStart.atStartOfDay(ZONE).toInstant();
         Instant nextMonthStartInstant = monthStart.plusMonths(1).atStartOfDay(ZONE).toInstant();
@@ -96,13 +95,20 @@ public class CheckinStatusQueryService {
     }
 
     /// 组装四档里程碑(5/10/20/满勤),固定顺序、成品状态文案。
-    private static List<CheckinMilestoneView> buildMilestones(int monthCount, boolean onTrackFullMonth,
-            int monthDays) {
+    ///
+    /// 满勤达成 = 在轨 **且** 今天已是本月最后一天;不能再用 monthCount(整月签到数)与
+    /// monthDays(全月天数)的大小比较——上线日若落在被测月中旬,monthCount 物理上不可能追上
+    /// monthDays(如 7/13 上线、7/31 共 19 天签到 vs 31 天分母),会导致满勤永远判定不通过
+    /// (2026-07-14 复审修复,呼应 spec 红一④"满勤仅计上线日之后"的分母调整不能反被终判抵消)。
+    /// 包私有(非 private)以便脱离 `LocalDate.now()`/端口 mock,直接用固定 `today` 单测这一纯计算
+    /// (仿 `BoardPeriods` 先例:依赖"今天"的计算抽成显式接收 today/now 的纯函数)。
+    static List<CheckinMilestoneView> buildMilestones(int monthCount, boolean onTrackFullMonth, LocalDate today) {
+        int monthDays = today.lengthOfMonth();
         List<CheckinMilestoneView> list = new ArrayList<>();
         list.add(milestoneOf("days_5", "出勤 5 天", 5, monthCount));
         list.add(milestoneOf("days_10", "出勤 10 天", 10, monthCount));
         list.add(milestoneOf("days_20", "出勤 20 天", 20, monthCount));
-        boolean fullMonthAchieved = onTrackFullMonth && monthCount >= monthDays;
+        boolean fullMonthAchieved = onTrackFullMonth && today.getDayOfMonth() == monthDays;
         String fullMonthText = fullMonthAchieved ? "已打穿" : (onTrackFullMonth ? "在轨 · 一格没漏" : "本月已错过");
         list.add(new CheckinMilestoneView("full_month", "满勤", monthDays, fullMonthAchieved, fullMonthText));
         return list;
@@ -161,21 +167,32 @@ public class CheckinStatusQueryService {
     /// 段内线性插值,四舍五入取整。¥36(A=30,B=50)→33+(36-30)/(50-30)×33=42.9→43,
     /// 与前端契约示例 JSON 吻合。infos 恒为 [A,B,C] 三个元素(阈值升序,CheckinTierProperties
     /// 构造时固定生成),故按下标直取而非再次查找。
+    ///
+    /// 每段另封顶(2026-07-14 复审裁决,消除"满格却未达标"矛盾):四舍五入不得把尚未真正
+    /// 达标的金额显示成下一档的整格刻度(33/66/100)——例如 ¥495 距 C 档(¥500)还差 ¥5,
+    /// tiers[].state 仍是"progress"、statusText 仍是"差 ¥5",但 round(99.62)=100 会让
+    /// 进度条视觉满格,与"未达标"文案自相矛盾;故本段封顶到刻度线之下的整数(32/65/99),
+    /// 只有 amount 真正达到阈值(落入下一分支或直接 return 100)才允许显示满格。
     private static int gaugePctBySegmentedScale(BigDecimal amount, List<CheckinTierProperties.TierInfo> infos) {
         double amt = amount.doubleValue();
         double a = infos.get(0).threshold().doubleValue();
         double b = infos.get(1).threshold().doubleValue();
         double c = infos.get(2).threshold().doubleValue();
-        double pct;
         if (amt < a) {
-            pct = amt / a * 33;
+            return cappedRound(amt / a * 33, 32);
         } else if (amt < b) {
-            pct = 33 + (amt - a) / (b - a) * 33;
+            return cappedRound(33 + (amt - a) / (b - a) * 33, 65);
         } else if (amt < c) {
-            pct = 66 + (amt - b) / (c - b) * 34;
+            return cappedRound(66 + (amt - b) / (c - b) * 34, 99);
         } else {
             return 100;
         }
-        return (int) Math.round(Math.max(0, Math.min(100, pct)));
+    }
+
+    /// 四舍五入取整后夹到 [0, segmentCap],segmentCap 是当前段允许显示的最高刻度(比下一档的
+    /// 整格刻度小 1),防止四舍五入把未达标金额"抬"到下一档的满格视觉。
+    private static int cappedRound(double pct, int segmentCap) {
+        int rounded = (int) Math.round(pct);
+        return Math.max(0, Math.min(segmentCap, rounded));
     }
 }
