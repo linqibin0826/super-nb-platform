@@ -4,7 +4,10 @@ import dev.linqibin.commons.cqrs.CommandBus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import me.supernb.activity.adapter.rest.request.MarkAchievementsSeenRequest;
 import me.supernb.activity.adapter.rest.request.RaffleEnterRequest;
+import me.supernb.activity.adapter.rest.response.AchievementWallResponse;
+import me.supernb.activity.adapter.rest.response.MarkAchievementsSeenResponse;
 import me.supernb.activity.adapter.rest.response.DrawResponse;
 import me.supernb.activity.adapter.rest.response.RaffleCurrentResponse;
 import me.supernb.activity.adapter.rest.response.RaffleEnterResponse;
@@ -16,6 +19,8 @@ import me.supernb.activity.adapter.rest.response.GateDrawResponse;
 import me.supernb.activity.adapter.rest.response.CheckinRewardsResponse;
 import me.supernb.activity.adapter.rest.response.CheckinStatusResponse;
 import me.supernb.activity.adapter.rest.response.RegistryStatusResponse;
+import me.supernb.activity.app.usecase.achievement.command.MarkAchievementsSeenCommand;
+import me.supernb.activity.app.usecase.achievement.query.AchievementWallQueryService;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
@@ -82,6 +87,7 @@ public class ActivityController {
     private final RegistryStatusQueryService registryStatusQuery;
     private final CheckinStatusQueryService checkinStatusQuery;
     private final CheckinRewardQueryService checkinRewardQuery;
+    private final AchievementWallQueryService achievementWallQuery;
 
     /// 构造:注入 CommandBus 与十二个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、
     /// 拉新榜、用量榜、发布会、注册表状态、签到状态、我的补给发放记录)。
@@ -98,7 +104,8 @@ public class ActivityController {
             RaffleQueryService raffleQuery,
             RegistryStatusQueryService registryStatusQuery,
             CheckinStatusQueryService checkinStatusQuery,
-            CheckinRewardQueryService checkinRewardQuery) {
+            CheckinRewardQueryService checkinRewardQuery,
+            AchievementWallQueryService achievementWallQuery) {
         this.commandBus = commandBus;
         this.drawStatusQuery = drawStatusQuery;
         this.leaderboardQuery = leaderboardQuery;
@@ -112,6 +119,7 @@ public class ActivityController {
         this.registryStatusQuery = registryStatusQuery;
         this.checkinStatusQuery = checkinStatusQuery;
         this.checkinRewardQuery = checkinRewardQuery;
+        this.achievementWallQuery = achievementWallQuery;
     }
 
     /// 活动期充值榜 Top10(公开)。无进行中活动 → 空列表,不是异常。
@@ -328,5 +336,19 @@ public class ActivityController {
     @GetMapping("/checkin/rewards")
     public CheckinRewardsResponse checkinRewards(@CurrentUser UserProfile user) {
         return CheckinRewardsResponse.of(checkinRewardQuery.myRewards(user.id()));
+    }
+
+    /// 我的成就墙(需登录,仅本人;机密档案未解锁项服务端脱敏,name/condition 恒 null)。
+    @GetMapping("/checkin/achievements")
+    public AchievementWallResponse checkinAchievements(@CurrentUser UserProfile user) {
+        return AchievementWallResponse.of(achievementWallQuery.wall(user.id()));
+    }
+
+    /// 标记成就已读(需登录;幂等,重复标记不报错,响应 acknowledged=实际新标记行数)。
+    @PostMapping("/checkin/achievements/seen")
+    public MarkAchievementsSeenResponse markAchievementsSeen(@CurrentUser UserProfile user,
+            @RequestBody MarkAchievementsSeenRequest request) {
+        int acknowledged = commandBus.handle(new MarkAchievementsSeenCommand(user.id(), request.codes()));
+        return new MarkAchievementsSeenResponse(acknowledged);
     }
 }

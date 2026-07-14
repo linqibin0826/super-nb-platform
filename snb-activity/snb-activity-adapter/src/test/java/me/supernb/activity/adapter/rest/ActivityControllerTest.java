@@ -17,8 +17,14 @@ import java.util.Optional;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
+import me.supernb.activity.app.usecase.achievement.command.MarkAchievementsSeenCommand;
+import me.supernb.activity.app.usecase.achievement.query.AchievementWallQueryService;
 import me.supernb.activity.app.usecase.checkin.query.CheckinRewardQueryService;
 import me.supernb.activity.app.usecase.checkin.query.CheckinStatusQueryService;
+import me.supernb.activity.domain.model.achievement.AchievementCategoryView;
+import me.supernb.activity.domain.model.achievement.AchievementItemView;
+import me.supernb.activity.domain.model.achievement.AchievementSummaryView;
+import me.supernb.activity.domain.model.achievement.AchievementWallView;
 import me.supernb.activity.app.usecase.draw.command.PerformDrawCommand;
 import me.supernb.activity.app.usecase.draw.command.PerformDrawAllCommand;
 import me.supernb.activity.app.usecase.draw.query.DrawStatusQueryService;
@@ -60,6 +66,7 @@ class ActivityControllerTest {
     private final UsageLeaderboardQueryService usageLeaderboardQuery = mock(UsageLeaderboardQueryService.class);
     private final RegistryStatusQueryService registryStatusQuery = mock(RegistryStatusQueryService.class);
     private final Sub2apiIntrospectClient introspect = mock(Sub2apiIntrospectClient.class);
+    private final AchievementWallQueryService achievementWallQuery = mock(AchievementWallQueryService.class);
 
     private MockMvc mvc;
 
@@ -69,7 +76,8 @@ class ActivityControllerTest {
                 commandBus, drawStatusQuery, leaderboardQuery, recentRechargesQuery,
                 poolQuery, recentDrawsQuery, myDrawsQuery, referralQuery, usageLeaderboardQuery,
                 mock(RaffleQueryService.class), registryStatusQuery,
-                mock(CheckinStatusQueryService.class), mock(CheckinRewardQueryService.class));
+                mock(CheckinStatusQueryService.class), mock(CheckinRewardQueryService.class),
+                achievementWallQuery);
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
@@ -186,5 +194,39 @@ class ActivityControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("al***@qq.com"))
                 .andExpect(jsonPath("$[0].count").value(2));
+    }
+
+    @Test
+    void achievementsEndpointReturnsWallShapedResponse() throws Exception {
+        when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(42, "user", "active")));
+        AchievementWallView view = new AchievementWallView(
+                new AchievementSummaryView(1, 1, 5),
+                List.of(new AchievementCategoryView("入职档案", false,
+                        List.of(new AchievementItemView("checkin_first", "开机自检", "首次签到", 1, 5, true,
+                                "active", false, "每天上班第一件事:证明我还活着。", null, null, null, null, null)),
+                        List.of())),
+                List.of(),
+                List.of());
+        when(achievementWallQuery.wall(42)).thenReturn(view);
+
+        mvc.perform(get("/activity/v1/checkin/achievements").header("Authorization", "Bearer T"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.unlockedCount").value(1))
+                .andExpect(jsonPath("$.categories[0].name").value("入职档案"))
+                .andExpect(jsonPath("$.categories[0].items[0].condition").value("首次签到"))
+                .andExpect(jsonPath("$.categories[0].items[0].tier").value(1));
+    }
+
+    @Test
+    void seenEndpointDelegatesToCommandBusAndReturnsAcknowledgedCount() throws Exception {
+        when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(42, "user", "active")));
+        when(commandBus.handle(any(MarkAchievementsSeenCommand.class))).thenReturn(1);
+
+        mvc.perform(post("/activity/v1/checkin/achievements/seen")
+                        .header("Authorization", "Bearer T")
+                        .contentType("application/json")
+                        .content("{\"codes\":[\"api_calls_2\"]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.acknowledged").value(1));
     }
 }
