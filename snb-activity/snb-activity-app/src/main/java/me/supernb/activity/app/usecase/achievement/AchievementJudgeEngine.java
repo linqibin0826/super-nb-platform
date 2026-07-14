@@ -28,6 +28,10 @@ public class AchievementJudgeEngine {
 
     private static final String JOB_NAME = "achievement_judge_engine";
     private static final String SYNTHETIC_UNLOCK_COUNT_METRIC = "achievement_unlock_total_count";
+    /// 合成指标②:双轴组合旗标(深化稿 §3「全栈选手」判定=api_call 存在 ∧ gallery 生成 ≥1,
+    /// "均现成"——不由任何生产者落表,判定时现查两个既有 metric 派生,与 meta_regular 同款
+    /// 合成指标处理(V9 seed 的 metric_code 保持原样,不改内容表)。
+    private static final String SYNTHETIC_CROSS_SURFACE_METRIC = "cross_surface_flag";
 
     private final UserMetricPort metricPort;
     private final ScanWatermarkPort watermarkPort;
@@ -87,7 +91,8 @@ public class AchievementJudgeEngine {
     static List<AchievementDefinition> metricThresholdDefs(List<AchievementDefinition> allDefs) {
         return allDefs.stream()
                 .filter(d -> "metric_threshold".equals(d.predicateKind())
-                        && !SYNTHETIC_UNLOCK_COUNT_METRIC.equals(d.metricCode()))
+                        && !SYNTHETIC_UNLOCK_COUNT_METRIC.equals(d.metricCode())
+                        && !SYNTHETIC_CROSS_SURFACE_METRIC.equals(d.metricCode()))
                 .toList();
     }
 
@@ -95,7 +100,8 @@ public class AchievementJudgeEngine {
     static List<AchievementDefinition> metaLikeDefs(List<AchievementDefinition> allDefs) {
         return allDefs.stream()
                 .filter(d -> "meta_combo".equals(d.predicateKind())
-                        || SYNTHETIC_UNLOCK_COUNT_METRIC.equals(d.metricCode()))
+                        || SYNTHETIC_UNLOCK_COUNT_METRIC.equals(d.metricCode())
+                        || SYNTHETIC_CROSS_SURFACE_METRIC.equals(d.metricCode()))
                 .toList();
     }
 
@@ -126,6 +132,9 @@ public class AchievementJudgeEngine {
             }
             boolean qualifies = switch (def.code()) {
                 case "meta_regular" -> unlockPort.unlockedCount(userId) >= def.thresholdValue().intValue();
+                case "cross_surface_user" ->
+                        metricPort.value(userId, "api_call_total_count").orElse(0.0) >= 1
+                                && metricPort.value(userId, "gallery_generate_done_count").orElse(0.0) >= 1;
                 case "meta_category_onboarding" ->
                         categoryFullyUnlocked(def.prerequisite(), allDefs, alreadyUnlocked);
                 case "meta_series_master" -> anySeriesFullyUnlocked(allDefs, alreadyUnlocked);

@@ -134,4 +134,27 @@ class AchievementJudgeEngineTest {
         verify(unlockPort).unlock(eq(5L), eq("checkin_first"), any(), eq(5), eq("batch_scan"));
         verify(unlockPort).unlock(eq(5L), eq("meta_regular"), any(), eq(15), eq("batch_scan"));
     }
+
+    @Test
+    void crossSurfaceUnlocksOnlyWhenBothAxesPresent() {
+        when(watermarkPort.get("achievement_judge_engine")).thenReturn(Optional.empty());
+        when(metricPort.usersUpdatedSince(any())).thenReturn(List.of(11L, 12L));
+        var crossSurface = def("cross_surface_user", "机房作业", 15, "metric_threshold",
+                "cross_surface_flag", new BigDecimal("1"), "gte", null);
+        when(catalogPort.activeDefinitions()).thenReturn(List.of(crossSurface));
+        when(unlockPort.unlockedCodes(11)).thenReturn(Set.of());
+        when(unlockPort.unlockedCodes(12)).thenReturn(Set.of());
+        when(metricPort.allMetrics(11)).thenReturn(Map.of());
+        when(metricPort.allMetrics(12)).thenReturn(Map.of());
+        // 双轴齐备 → 解锁;只有单轴 → 不解锁
+        when(metricPort.value(11, "api_call_total_count")).thenReturn(Optional.of(3.0));
+        when(metricPort.value(11, "gallery_generate_done_count")).thenReturn(Optional.of(1.0));
+        when(metricPort.value(12, "api_call_total_count")).thenReturn(Optional.of(3.0));
+        when(metricPort.value(12, "gallery_generate_done_count")).thenReturn(Optional.empty());
+
+        engine(true).judgeHourly();
+
+        verify(unlockPort).unlock(eq(11L), eq("cross_surface_user"), any(), eq(15), eq("batch_scan"));
+        verify(unlockPort, never()).unlock(eq(12L), eq("cross_surface_user"), any(), anyInt(), any());
+    }
 }
