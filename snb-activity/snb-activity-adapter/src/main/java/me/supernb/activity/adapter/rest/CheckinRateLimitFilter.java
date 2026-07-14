@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -30,6 +31,8 @@ public class CheckinRateLimitFilter extends OncePerRequestFilter {
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     /// 构造(Spring 用):容量/回填经配置注入(默认 30 枚桶、5/s 回填),桶表上限取默认 20000。
+    /// 双构造器场景必须 @Autowired 消歧,否则容器回退找无参构造器失败、应用上下文刷新崩溃。
+    @Autowired
     public CheckinRateLimitFilter(
             @Value("${activity.checkin.rate-limit.capacity:30}") int capacity,
             @Value("${activity.checkin.rate-limit.refill-per-sec:5}") double refillPerSec) {
