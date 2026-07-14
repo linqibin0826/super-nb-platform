@@ -9,35 +9,38 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
-import me.supernb.sub2api.gate.GateReadModel;
-import me.supernb.sub2api.recharge.RechargeReadModel;
+import java.time.Instant;
+import me.supernb.sub2api.raffle.RaffleGateReadModel;
 import org.junit.jupiter.api.Test;
 
-/// 薄委托:全量充值转发 GateReadModel(已含防双算口径,不重写);连续 3 月转发
-/// RechargeReadModel 的窗口口径三连查,任一窗口 ≤0 即判 false 并短路(不必查满三次)。
+/// 薄委托:全量充值与连续 3 月均转发既有 RaffleGateReadModel 的 RECHARGE 全口径
+/// (payment_orders UNION 已核销 redeem_codes,剔 ZPay 镜像码防双算,与 A-7
+/// CheckinRechargeReadPort 同款,不重写这段易错 SQL)。全量充值窗口=[EPOCH, now);
+/// 连续 3 月按月窗口三连查,任一窗口 ≤0 即判 false 并短路(不必查满三次)。
 class AchievementRechargeReadAdapterTest {
 
-    private final GateReadModel gateReadModel = mock(GateReadModel.class);
-    private final RechargeReadModel rechargeReadModel = mock(RechargeReadModel.class);
+    private final RaffleGateReadModel raffleGateReadModel = mock(RaffleGateReadModel.class);
     private final AchievementRechargeReadAdapter adapter =
-            new AchievementRechargeReadAdapter(gateReadModel, rechargeReadModel);
+            new AchievementRechargeReadAdapter(raffleGateReadModel);
 
     @Test
-    void totalRechargedDelegatesToGateReadModel() {
-        when(gateReadModel.totalRecharged(42)).thenReturn(new BigDecimal("640"));
+    void totalRechargedDelegatesToRaffleGateReadModelWithEpochWindow() {
+        when(raffleGateReadModel.gateValue(eq(42L), eq("RECHARGE"), eq(Instant.EPOCH), any()))
+                .thenReturn(new BigDecimal("640"));
         assertThat(adapter.totalRecharged(42)).isEqualByComparingTo("640");
     }
 
     @Test
     void threeConsecutiveMonthsTrueWhenAllThreeWindowsPositive() {
-        when(rechargeReadModel.totalRecharge(eq(42L), any(), any())).thenReturn(new BigDecimal("10"));
+        when(raffleGateReadModel.gateValue(eq(42L), eq("RECHARGE"), any(), any()))
+                .thenReturn(new BigDecimal("10"));
         assertThat(adapter.hasThreeConsecutiveMonthsOfRecharge(42)).isTrue();
-        verify(rechargeReadModel, times(3)).totalRecharge(eq(42L), any(), any());
+        verify(raffleGateReadModel, times(3)).gateValue(eq(42L), eq("RECHARGE"), any(), any());
     }
 
     @Test
     void threeConsecutiveMonthsFalseWhenAnyWindowIsZero() {
-        when(rechargeReadModel.totalRecharge(eq(7L), any(), any()))
+        when(raffleGateReadModel.gateValue(eq(7L), eq("RECHARGE"), any(), any()))
                 .thenReturn(new BigDecimal("10"), BigDecimal.ZERO, new BigDecimal("5"));
         assertThat(adapter.hasThreeConsecutiveMonthsOfRecharge(7)).isFalse();
     }
