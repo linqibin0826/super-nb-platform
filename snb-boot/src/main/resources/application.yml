@@ -33,6 +33,7 @@ sub2api:
     url: ${SUB2API_RO_URL:jdbc:postgresql://localhost:5432/sub2api}
     username: ${SUB2API_RO_USER:snb_ro}
     password: ${SUB2API_RO_PASSWORD:}
+  admin-key: ${SUB2API_ADMIN_KEY:}
 
 gallery:
   # R2 凭据仅经环境变量注入(GALLERY_R2_ENDPOINT / GALLERY_R2_BUCKET / GALLERY_R2_ACCESS_KEY /
@@ -52,6 +53,28 @@ activity:
     # 金票闸机(spec 2026-07-12-gate-golden-ticket):win-rate ≤0 = 闸机休眠
     threshold-cny: ${GATE_THRESHOLD_CNY:30}
     win-rate: ${GATE_WIN_RATE:0.02}
+  checkin:
+    launch-date: ${CHECKIN_LAUNCH_DATE:2026-07-13}
+    monthly-budget-cap: ${CHECKIN_MONTHLY_BUDGET_CAP:250}
+    per-user-monthly-cap: ${CHECKIN_PER_USER_MONTHLY_CAP:10}
+    scan-enabled: ${CHECKIN_SCAN_ENABLED:false}
+    tier-reward-enabled: ${CHECKIN_TIER_REWARD_ENABLED:false}
+    rate-limit:
+      capacity: ${CHECKIN_RATE_LIMIT_CAPACITY:30}
+      refill-per-sec: ${CHECKIN_RATE_LIMIT_REFILL:5}
+    tier:
+      a:
+        threshold: ${CHECKIN_TIER_A_THRESHOLD:30}
+        group-id: ${CHECKIN_TIER_A_GROUP_ID:0}
+        cost-cny: ${CHECKIN_TIER_A_COST_CNY:0.9}
+      b:
+        threshold: ${CHECKIN_TIER_B_THRESHOLD:50}
+        group-id: ${CHECKIN_TIER_B_GROUP_ID:0}
+        cost-cny: ${CHECKIN_TIER_B_COST_CNY:1.9}
+      c:
+        threshold: ${CHECKIN_TIER_C_THRESHOLD:500}
+        group-id: ${CHECKIN_TIER_C_GROUP_ID:0}
+        cost-cny: ${CHECKIN_TIER_C_COST_CNY:4.4}
 
 content:
   # admin 写接口令牌（发布管线经 SSH 隧道调用）；缺省空值=fail-closed 一律 401

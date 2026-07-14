@@ -140,4 +140,24 @@ class CheckinMonthlySettlementJobTest {
         verify(grantPort, times(3)).bulkGrant(eq(List.of(9L)), eq(27L), eq(3), any());
         verify(rewardPort).markFailed(eq(3001L), contains("transport failure"));
     }
+
+    /// grantPort 未装配(理论不应发生——tierRewardEnabled 硬开关本应与 sub2api.admin-key 配置
+    /// 同步打开,job 构造器内的 null 检查只是最后一道防线)时安全跳过:仅记错误日志后直接
+    /// return,不触碰 checkinPort/rechargePort/rewardPort/grantPort 任何一个端口方法——这是
+    /// 无 admin-key 环境下 job 不崩溃的最后闸门。
+    @Test
+    void skipsEntirelyWhenGrantPortUnavailable() {
+        CheckinSettlementProperties settlementProps =
+                new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, true);
+        CheckinMonthlySettlementJob jobWithoutGrantPort = new CheckinMonthlySettlementJob(
+                checkinPort, rechargePort, rewardPort, (SubscriptionGrantPort) null, props, tierProps,
+                settlementProps);
+
+        jobWithoutGrantPort.settlePreviousMonth();
+
+        verify(checkinPort, never()).fullAttendanceUserIds(any(), any(), anyLong());
+        verify(rechargePort, never()).monthlyRecharges(any(), any(), any());
+        verify(rewardPort, never()).byStatus(any());
+        verify(grantPort, never()).bulkGrant(any(), anyLong(), anyInt(), any());
+    }
 }
