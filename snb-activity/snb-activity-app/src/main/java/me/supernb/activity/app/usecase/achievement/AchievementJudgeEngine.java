@@ -1,0 +1,163 @@
+package me.supernb.activity.app.usecase.achievement;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
+import me.supernb.activity.domain.model.achievement.AchievementDefinition;
+import me.supernb.activity.domain.port.achievement.AchievementCatalogPort;
+import me.supernb.activity.domain.port.achievement.AchievementUnlockPort;
+import me.supernb.activity.domain.port.metric.UserMetricPort;
+import me.supernb.activity.domain.port.scan.ScanWatermarkPort;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+/// 统一成就判定引擎(每小时):只扫"近期 user_metric 有更新"的用户集,按 predicate_kind 分支
+/// 判定。metric_threshold 里 metric_code="achievement_unlock_total_count"(meta_regular 用的
+/// 合成指标)被移到与 meta_combo 同一阶段处理——严格晚于本轮全部普通 metric_threshold 解锁
+/// 完成,不依赖 activeDefinitions() 的行返回顺序。类目/系列引用一律现查 activeDefinitions()
+/// (深化稿增补#7动态引用),不写死列表。
+@Slf4j
+@Service
+public class AchievementJudgeEngine {
+
+    private static final String JOB_NAME = "achievement_judge_engine";
+    private static final String SYNTHETIC_UNLOCK_COUNT_METRIC = "achievement_unlock_total_count";
+
+    private final UserMetricPort metricPort;
+    private final ScanWatermarkPort watermarkPort;
+    private final AchievementCatalogPort catalogPort;
+    private final AchievementUnlockPort unlockPort;
+    private final CheckinSettlementProperties settlementProperties;
+
+    /// 构造:注入指标底座、水位线、目录、解锁台账与 Plan A 的批处理总闸配置。
+    public AchievementJudgeEngine(UserMetricPort metricPort, ScanWatermarkPort watermarkPort,
+            AchievementCatalogPort catalogPort, AchievementUnlockPort unlockPort,
+            CheckinSettlementProperties settlementProperties) {
+        this.metricPort = metricPort;
+        this.watermarkPort = watermarkPort;
+        this.catalogPort = catalogPort;
+        this.unlockPort = unlockPort;
+        this.settlementProperties = settlementProperties;
+    }
+
+    /// 每小时入口(启动 2 分钟后开始,之后每小时一次)。
+    @Scheduled(fixedDelay = 3_600_000, initialDelay = 120_000)
+    public void judgeHourly() {
+        if (!settlementProperties.scanEnabled()) {
+            log.info("成就判定引擎已跳过:scanEnabled=false");
+            return;
+        }
+        Instant now = Instant.now();
+        Instant since = watermarkPort.get(JOB_NAME).orElse(now.minus(Duration.ofDays(1)));
+        List<Long> candidates = metricPort.usersUpdatedSince(since);
+        if (candidates.isEmpty()) {
+            watermarkPort.advance(JOB_NAME, now);
+            return;
+        }
+
+        List<AchievementDefinition> allDefs = catalogPort.activeDefinitions();
+        List<AchievementDefinition> metricDefs = allDefs.stream()
+                .filter(d -> "metric_threshold".equals(d.predicateKind())
+                        && !SYNTHETIC_UNLOCK_COUNT_METRIC.equals(d.metricCode()))
+                .toList();
+        List<AchievementDefinition> metaLikeDefs = allDefs.stream()
+                .filter(d -> "meta_combo".equals(d.predicateKind())
+                        || SYNTHETIC_UNLOCK_COUNT_METRIC.equals(d.metricCode()))
+                .toList();
+
+        for (long userId : candidates) {
+            try {
+                judgeMetricThresholds(userId, metricDefs);
+            } catch (Exception e) {
+                log.error("成就判定失败(metric_threshold) user={}", userId, e);
+            }
+        }
+        for (long userId : candidates) {
+            try {
+                judgeMetaLike(userId, metaLikeDefs, allDefs);
+            } catch (Exception e) {
+                log.error("成就判定失败(meta_combo/合成指标) user={}", userId, e);
+            }
+        }
+        watermarkPort.advance(JOB_NAME, now);
+    }
+
+    private void judgeMetricThresholds(long userId, List<AchievementDefinition> metricDefs) {
+        Set<String> alreadyUnlocked = unlockPort.unlockedCodes(userId);
+        Map<String, Double> metrics = metricPort.allMetrics(userId);
+        for (AchievementDefinition def : metricDefs) {
+            if (alreadyUnlocked.contains(def.code()) || def.metricCode() == null) {
+                continue;
+            }
+            Double value = metrics.get(def.metricCode());
+            if (value != null && meetsThreshold(value, def.thresholdValue(), def.comparator())) {
+                unlockPort.unlock(userId, def.code(), Instant.now(), def.nbPoints(), "batch_scan");
+            }
+        }
+    }
+
+    private void judgeMetaLike(long userId, List<AchievementDefinition> metaLikeDefs,
+            List<AchievementDefinition> allDefs) {
+        // 重新查询(不复用 judgeMetricThresholds 阶段的旧集合),反映本轮已发生的最新解锁。
+        Set<String> alreadyUnlocked = unlockPort.unlockedCodes(userId);
+        for (AchievementDefinition def : metaLikeDefs) {
+            if (alreadyUnlocked.contains(def.code())) {
+                continue;
+            }
+            boolean qualifies = switch (def.code()) {
+                case "meta_regular" -> unlockPort.unlockedCount(userId) >= def.thresholdValue().intValue();
+                case "meta_category_onboarding" ->
+                        categoryFullyUnlocked(def.prerequisite(), allDefs, alreadyUnlocked);
+                case "meta_series_master" -> anySeriesFullyUnlocked(allDefs, alreadyUnlocked);
+                // 未来新增 meta_combo/合成指标条目须显式补分支,不做隐式默认放行
+                // (深化稿不可逆清单第4条:判定逻辑变更=旧code退役+新code上线,不能静默改义)
+                default -> {
+                    log.warn("未识别的 meta_combo/合成指标 code,判定跳过:{}", def.code());
+                    yield false;
+                }
+            };
+            if (qualifies) {
+                unlockPort.unlock(userId, def.code(), Instant.now(), def.nbPoints(), "batch_scan");
+            }
+        }
+    }
+
+    /// 动态类目引用(深化稿增补#7):现查该类目下全部 active 非 meta 条目,不写死列表——
+    /// 加新条目自动纳入判定,不必改这段代码。
+    private static boolean categoryFullyUnlocked(String category, List<AchievementDefinition> allDefs,
+            Set<String> unlockedCodes) {
+        List<AchievementDefinition> inCategory = allDefs.stream()
+                .filter(d -> category.equals(d.category()) && !"meta_combo".equals(d.predicateKind()))
+                .toList();
+        return !inCategory.isEmpty() && inCategory.stream().allMatch(d -> unlockedCodes.contains(d.code()));
+    }
+
+    /// 动态系列引用(深化稿增补#7):任一 series_code 下全部已启用层级点亮即算首次集齐。
+    private static boolean anySeriesFullyUnlocked(List<AchievementDefinition> allDefs, Set<String> unlockedCodes) {
+        Map<String, List<AchievementDefinition>> bySeries = allDefs.stream()
+                .filter(d -> d.seriesCode() != null)
+                .collect(Collectors.groupingBy(AchievementDefinition::seriesCode));
+        for (var entry : bySeries.entrySet()) {
+            if (entry.getValue().stream().allMatch(d -> unlockedCodes.contains(d.code()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// public(而非 private):Task 16 的 AchievementWallQueryService 在另一个包
+    /// (app.usecase.achievement.query)里复用同一套阈值判定算系列进度条,包内可见不够用。
+    public static boolean meetsThreshold(double value, BigDecimal threshold, String comparator) {
+        if (threshold == null) {
+            return false;
+        }
+        double t = threshold.doubleValue();
+        return "lte".equals(comparator) ? value <= t : value >= t; // 未显式指定时默认 gte
+    }
+}
