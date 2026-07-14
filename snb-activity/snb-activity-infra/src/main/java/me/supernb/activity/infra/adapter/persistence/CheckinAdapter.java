@@ -72,4 +72,9 @@ public class CheckinAdapter implements CheckinPort {
                 .map(CheckinRecordEntity::getCheckinDate)
                 .toList();
     }
+
+    @Override
+    public List<Long> fullAttendanceUserIds(LocalDate fromInclusive, LocalDate toInclusive, long expectedDays) {
+        return records.findFullAttendanceUserIds(fromInclusive, toInclusive, expectedDays);
+    }
 }

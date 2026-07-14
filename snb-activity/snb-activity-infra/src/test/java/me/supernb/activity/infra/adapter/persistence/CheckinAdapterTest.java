@@ -107,4 +107,16 @@ class CheckinAdapterTest {
                 .containsExactly(LocalDate.of(2026, 7, 3), LocalDate.of(2026, 7, 1));
         assertThat(adapter.totalCheckins(7)).isEqualTo(3);
     }
+
+    @Test
+    void fullAttendanceUserIdsReturnsOnlyUsersMatchingExactCount() {
+        LocalDate d1 = LocalDate.of(2026, 6, 1);
+        LocalDate d2 = LocalDate.of(2026, 6, 2);
+        LocalDate d3 = LocalDate.of(2026, 6, 3);
+        adapter.checkIn(1, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant());
+        adapter.checkIn(1, d2, d2.atStartOfDay(java.time.ZoneOffset.UTC).toInstant());
+        adapter.checkIn(1, d3, d3.atStartOfDay(java.time.ZoneOffset.UTC).toInstant());
+        adapter.checkIn(2, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant()); // 只签 1 天,不满勤
+        assertThat(adapter.fullAttendanceUserIds(d1, d3, 3)).containsExactly(1L);
+    }
 }

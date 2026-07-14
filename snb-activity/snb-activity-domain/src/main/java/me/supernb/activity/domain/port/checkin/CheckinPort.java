@@ -23,4 +23,8 @@ public interface CheckinPort {
 
     /// [fromInclusive, toInclusive] 闭区间内的签到日期,按日期降序。
     List<LocalDate> datesInRange(long userId, LocalDate fromInclusive, LocalDate toInclusive);
+
+    /// [fromInclusive, toInclusive] 闭区间内每天都签到的用户 id 列表(满勤判定用,
+    /// expectedDays = 该区间天数,调用方负责按上线日与自然月边界算好)。
+    List<Long> fullAttendanceUserIds(LocalDate fromInclusive, LocalDate toInclusive, long expectedDays);
 }
