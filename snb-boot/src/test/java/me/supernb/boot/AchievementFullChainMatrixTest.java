@@ -44,6 +44,24 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 class AchievementFullChainMatrixTest {
 
+    @Test
+    void ledgerReconcilesWithUnlockFacts() {
+        // 总账对账(NB 账本口径):成就侧账本行与解锁事实逐用户恒等——行数与点数和都不允许偏差;
+        // 矩阵已让 42 码全部真实解锁,此断言证明「解锁即记账」在全部解锁路径(引擎/直判 job)下无一漏记
+        Integer mismatch = jdbc.queryForObject("""
+                SELECT count(*) FROM (
+                  SELECT u.user_id,
+                         SUM(u.points_at_unlock) AS expect_points,
+                         (SELECT COALESCE(SUM(l.points),0) FROM activity.nb_ledger l
+                           WHERE l.user_id = u.user_id AND l.source_type = 'achievement_unlock') AS ledger_points
+                  FROM activity.achievement_unlock u
+                  WHERE u.revoked_at IS NULL
+                  GROUP BY u.user_id) t
+                WHERE t.expect_points <> t.ledger_points""", Integer.class);
+        assertThat(mismatch).isZero();
+    }
+
+
     private static final ZoneId SH = ZoneId.of("Asia/Shanghai");
 
     @Container
