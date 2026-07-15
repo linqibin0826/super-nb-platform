@@ -11,7 +11,10 @@
     "test:run": "vitest run",
     "dev:hub": "vite -c vite.hub.config.ts",
     "build:hub": "tsc -b && vite build -c vite.hub.config.ts",
-    "preview:hub": "vite preview -c vite.hub.config.ts"
+    "preview:hub": "vite preview -c vite.hub.config.ts",
+    "dev:invoice": "vite -c vite.invoice.config.ts",
+    "build:invoice": "tsc -b && vite build -c vite.invoice.config.ts",
+    "preview:invoice": "vite preview -c vite.invoice.config.ts"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
