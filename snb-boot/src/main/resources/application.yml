@@ -7,8 +7,8 @@ spring:
     password: ${SNB_DB_PASSWORD:}
   flyway:
     enabled: ${SNB_FLYWAY_ENABLED:true}
-    locations: classpath:db/migration/activity,classpath:db/migration/gallery,classpath:db/migration/content
-    schemas: activity,gallery,content
+    locations: classpath:db/migration/activity,classpath:db/migration/gallery,classpath:db/migration/content,classpath:db/migration/invoice
+    schemas: activity,gallery,content,invoice
     create-schemas: true
   jpa:
     # schema 由 Flyway 全权管理;validate 只校验实体映射与库结构一致

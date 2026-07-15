@@ -46,4 +46,11 @@ includeAt(":snb-content:snb-content-adapter", "snb-content/snb-content-adapter")
 includeAt(":snb-content:snb-content-api", "snb-content/snb-content-api")
 project(":snb-content").projectDir = file("snb-content")
 
+includeAt(":snb-invoice:snb-invoice-domain", "snb-invoice/snb-invoice-domain")
+includeAt(":snb-invoice:snb-invoice-app", "snb-invoice/snb-invoice-app")
+includeAt(":snb-invoice:snb-invoice-infra", "snb-invoice/snb-invoice-infra")
+includeAt(":snb-invoice:snb-invoice-adapter", "snb-invoice/snb-invoice-adapter")
+includeAt(":snb-invoice:snb-invoice-api", "snb-invoice/snb-invoice-api")
+project(":snb-invoice").projectDir = file("snb-invoice")
+
 includeAt(":snb-boot", "snb-boot")
