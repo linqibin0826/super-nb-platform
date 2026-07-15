@@ -1,5 +1,6 @@
 package me.supernb.sub2api.autoconfig;
 
+import me.supernb.sub2api.admin.Sub2apiAdminBalanceClient;
 import me.supernb.sub2api.admin.Sub2apiAdminSubscriptionClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -21,5 +22,13 @@ public class Sub2apiAdminAutoConfiguration {
     public Sub2apiAdminSubscriptionClient sub2apiAdminSubscriptionClient(Sub2apiProperties props) {
         RestClient restClient = RestClient.builder().baseUrl(props.getBaseUrl() + "/api/v1/admin").build();
         return new Sub2apiAdminSubscriptionClient(restClient, props.getAdminKey());
+    }
+
+    /// admin 余额扣/退客户端 Bean(发票手续费结算)。
+    @Bean
+    @ConditionalOnMissingBean
+    public Sub2apiAdminBalanceClient sub2apiAdminBalanceClient(Sub2apiProperties props) {
+        RestClient restClient = RestClient.builder().baseUrl(props.getBaseUrl() + "/api/v1/admin").build();
+        return new Sub2apiAdminBalanceClient(restClient, props.getAdminKey());
     }
 }
