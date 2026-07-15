@@ -39,7 +39,19 @@ public class AchievementUnlockAdapter implements AchievementUnlockPort {
                         + "ON CONFLICT (user_id, achievement_code) DO NOTHING RETURNING id",
                 (rs, i) -> rs.getLong("id"),
                 id, userId, achievementCode, Timestamp.from(unlockedAt), pointsAtUnlock, unlockSource);
-        return !inserted.isEmpty();
+        if (inserted.isEmpty()) {
+            return false;
+        }
+        // 解锁即记账(同一事务,对齐「解锁即既得」;真源=账本,points_at_unlock 保留作成就域展示):
+        // 账本行 id 复用解锁行 id(与 V11 补铸同口径);points=0 防御跳过(CHECK 要求 EARN>0)
+        if (pointsAtUnlock > 0) {
+            jdbc.update("INSERT INTO activity.nb_ledger "
+                            + "(id, user_id, entry_type, source_type, source_ref, points, occurred_at) "
+                            + "VALUES (?, ?, 'EARN', 'achievement_unlock', ?, ?, ?) "
+                            + "ON CONFLICT (user_id, source_type, source_ref) DO NOTHING",
+                    inserted.get(0), userId, achievementCode, pointsAtUnlock, Timestamp.from(unlockedAt));
+        }
+        return true;
     }
 
     @Override
