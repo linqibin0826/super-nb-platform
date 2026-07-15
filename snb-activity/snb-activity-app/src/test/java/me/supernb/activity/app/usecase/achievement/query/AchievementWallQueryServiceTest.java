@@ -16,6 +16,7 @@ import me.supernb.activity.domain.model.achievement.AchievementUnlock;
 import me.supernb.activity.domain.model.achievement.AchievementWallView;
 import me.supernb.activity.domain.port.achievement.AchievementCatalogPort;
 import me.supernb.activity.domain.port.achievement.AchievementUnlockPort;
+import me.supernb.activity.domain.port.nb.NbLedgerPort;
 import me.supernb.activity.domain.port.metric.UserMetricPort;
 import org.junit.jupiter.api.Test;
 
@@ -23,9 +24,10 @@ class AchievementWallQueryServiceTest {
 
     private final AchievementCatalogPort catalogPort = mock(AchievementCatalogPort.class);
     private final AchievementUnlockPort unlockPort = mock(AchievementUnlockPort.class);
+    private final NbLedgerPort nbLedger = mock(NbLedgerPort.class);
     private final UserMetricPort metricPort = mock(UserMetricPort.class);
     private final AchievementWallQueryService service =
-            new AchievementWallQueryService(catalogPort, unlockPort, metricPort);
+            new AchievementWallQueryService(catalogPort, unlockPort, metricPort, nbLedger);
 
     private static AchievementDefinition def(String code, String seriesCode, Integer tierLevel, String category,
             String rarity, int nb, boolean hiddenReveal, String predicateKind, String metricCode,
@@ -57,6 +59,7 @@ class AchievementWallQueryServiceTest {
                 new AchievementUnlock(42, "api_calls_1", Instant.now(), 5, "batch_scan", true),
                 new AchievementUnlock(42, "api_calls_2", Instant.now(), 15, "batch_scan", true)));
         when(metricPort.allMetrics(42)).thenReturn(Map.of("api_call_total_count", 6842.0));
+        when(nbLedger.totalPoints(42)).thenReturn(25); // 口径切换:nbTotal 走账本 SUM,数值与原成就点数和恒等
 
         AchievementWallView wall = service.wall(42);
 

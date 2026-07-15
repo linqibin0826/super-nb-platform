@@ -20,6 +20,7 @@ import me.supernb.activity.domain.model.achievement.AchievementWallView;
 import me.supernb.activity.domain.model.achievement.ProgressView;
 import me.supernb.activity.domain.port.achievement.AchievementCatalogPort;
 import me.supernb.activity.domain.port.achievement.AchievementUnlockPort;
+import me.supernb.activity.domain.port.nb.NbLedgerPort;
 import me.supernb.activity.domain.port.metric.UserMetricPort;
 import org.springframework.stereotype.Service;
 
@@ -37,13 +38,15 @@ public class AchievementWallQueryService {
     private final AchievementCatalogPort catalogPort;
     private final AchievementUnlockPort unlockPort;
     private final UserMetricPort metricPort;
+    private final NbLedgerPort nbLedger;
 
-    /// 构造:注入目录只读端口、解锁台账端口、指标底座端口。
+    /// 构造:注入目录只读端口、解锁台账端口、指标底座端口与 NB 账本读端口。
     public AchievementWallQueryService(AchievementCatalogPort catalogPort, AchievementUnlockPort unlockPort,
-            UserMetricPort metricPort) {
+            UserMetricPort metricPort, NbLedgerPort nbLedger) {
         this.catalogPort = catalogPort;
         this.unlockPort = unlockPort;
         this.metricPort = metricPort;
+        this.nbLedger = nbLedger;
     }
 
     /// 组装某用户的成就墙整页视图。
@@ -69,7 +72,7 @@ public class AchievementWallQueryService {
 
         int totalCount = allDefs.size();
         int unlockedCount = unlocks.size();
-        int nbTotal = unlocks.stream().mapToInt(AchievementUnlock::pointsAtUnlock).sum();
+        int nbTotal = nbLedger.totalPoints(userId); // 口径切换:账本 SUM 单真源(打卡+成就,替代成就点数内存和)
         List<String> pendingUnseal =
                 unlocks.stream().filter(u -> !u.seen()).map(AchievementUnlock::achievementCode).toList();
 

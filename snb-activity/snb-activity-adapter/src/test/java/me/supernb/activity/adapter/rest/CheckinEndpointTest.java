@@ -94,7 +94,7 @@ class CheckinEndpointTest {
                 new CheckinMilestoneView("days_20", "出勤 20 天", 20, false, "12 / 20"),
                 new CheckinMilestoneView("full_month", "满勤", 31, false, "在轨 · 一格没漏"));
         return new CheckinStatusView(
-                true, null, punchedToday, 13, "2026.07", 31, List.of(1, 2, 3), 12, 12, milestones, supply);
+                true, null, punchedToday, 13, "2026.07", 31, List.of(1, 2, 3), 12, 12, milestones, supply, 235);
     }
 
     @Test
@@ -108,6 +108,7 @@ class CheckinEndpointTest {
                 .andExpect(jsonPath("$.punchedToday").value(true))
                 .andExpect(jsonPath("$.cumulativeDays").value(12))
                 .andExpect(jsonPath("$.streakCurrent").value(12))
+                .andExpect(jsonPath("$.nbTotal").value(235))
                 .andExpect(jsonPath("$.milestones[0].code").value("days_5"))
                 .andExpect(jsonPath("$.milestones[0].statusText").value("已打穿"))
                 .andExpect(jsonPath("$.supply.tiers[1].state").value("progress"))

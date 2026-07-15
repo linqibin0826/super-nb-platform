@@ -17,6 +17,7 @@ import me.supernb.activity.app.usecase.checkin.config.CheckinTierProperties;
 import me.supernb.activity.domain.model.checkin.CheckinMilestoneView;
 import me.supernb.activity.domain.model.checkin.CheckinStatusView;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
+import me.supernb.activity.domain.port.nb.NbLedgerPort;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
 import me.supernb.activity.domain.port.read.CheckinRechargeReadPort;
 import org.junit.jupiter.api.Test;
@@ -35,12 +36,13 @@ class CheckinStatusQueryServiceTest {
     private final CheckinPort checkinPort = mock(CheckinPort.class);
     private final CheckinRechargeReadPort rechargePort = mock(CheckinRechargeReadPort.class);
     private final AccountRegistrationReadPort registrationPort = mock(AccountRegistrationReadPort.class);
+    private final NbLedgerPort nbLedger = mock(NbLedgerPort.class);
     private final CheckinProperties props = new CheckinProperties("2020-01-01", 3);
     private final CheckinTierProperties tierProps = new CheckinTierProperties(
             new BigDecimal("30"), new BigDecimal("50"), new BigDecimal("500"),
             27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"));
     private final CheckinStatusQueryService service =
-            new CheckinStatusQueryService(checkinPort, rechargePort, registrationPort, props, tierProps);
+            new CheckinStatusQueryService(checkinPort, rechargePort, registrationPort, nbLedger, props, tierProps);
 
     @Test
     void eligibleUserSeesFullStatusWithProgressTierB() {

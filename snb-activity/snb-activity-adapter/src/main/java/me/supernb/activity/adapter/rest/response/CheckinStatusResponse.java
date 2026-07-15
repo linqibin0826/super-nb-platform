@@ -21,12 +21,13 @@ public record CheckinStatusResponse(
         int cumulativeDays,
         int streakCurrent,
         List<MilestoneLine> milestones,
-        SupplyLine supply) {
+        SupplyLine supply,
+        int nbTotal) {
 
     public static CheckinStatusResponse of(CheckinStatusView v) {
         return new CheckinStatusResponse(v.eligible(), v.ineligibleReason(), v.punchedToday(), v.todayDay(),
                 v.monthLabel(), v.monthDays(), v.checkedDays(), v.cumulativeDays(), v.streakCurrent(),
-                v.milestones().stream().map(MilestoneLine::of).toList(), SupplyLine.of(v.supply()));
+                v.milestones().stream().map(MilestoneLine::of).toList(), SupplyLine.of(v.supply()), v.nbTotal());
     }
 
     /// 单条里程碑。

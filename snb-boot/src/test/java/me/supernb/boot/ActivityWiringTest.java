@@ -141,7 +141,8 @@ class ActivityWiringTest {
         mvc.perform(post("/activity/v1/checkin").header("Authorization", "Bearer OLD"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cumulativeDays").value(1))
-                .andExpect(jsonPath("$.streakCurrent").value(1));
+                .andExpect(jsonPath("$.streakCurrent").value(1))
+                .andExpect(jsonPath("$.nbTotal").value(3)); // 打卡即 +3(账本真源,快照直带)
         mvc.perform(post("/activity/v1/checkin").header("Authorization", "Bearer OLD"))
                 .andExpect(status().isConflict());
     }

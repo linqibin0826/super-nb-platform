@@ -15,6 +15,7 @@ import java.util.List;
 /// @param streakCurrent    连续签到天数(纯展示)
 /// @param milestones       四档里程碑状态(5/10/20/满勤,固定顺序)
 /// @param supply           补给资格进度总视图
+/// @param nbTotal          用户当前 NB 总值(账本 SUM 唯一真源,打卡响应当场可用,前端零二次请求)
 public record CheckinStatusView(
         boolean eligible,
         String ineligibleReason,
@@ -26,5 +27,6 @@ public record CheckinStatusView(
         int cumulativeDays,
         int streakCurrent,
         List<CheckinMilestoneView> milestones,
-        CheckinSupplyView supply) {
+        CheckinSupplyView supply,
+        int nbTotal) {
 }

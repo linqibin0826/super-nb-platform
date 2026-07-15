@@ -17,6 +17,7 @@ import me.supernb.activity.domain.model.checkin.CheckinStreak;
 import me.supernb.activity.domain.model.checkin.CheckinSupplyTierView;
 import me.supernb.activity.domain.model.checkin.CheckinSupplyView;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
+import me.supernb.activity.domain.port.nb.NbLedgerPort;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
 import me.supernb.activity.domain.port.read.CheckinRechargeReadPort;
 import org.springframework.stereotype.Service;
@@ -36,16 +37,18 @@ public class CheckinStatusQueryService {
     private final CheckinPort checkinPort;
     private final CheckinRechargeReadPort rechargePort;
     private final AccountRegistrationReadPort registrationPort;
+    private final NbLedgerPort nbLedger;
     private final CheckinProperties props;
     private final CheckinTierProperties tierProps;
 
-    /// 构造:注入签到端口、补给充值读端口、账龄读端口与两个配置类。
+    /// 构造:注入签到端口、补给充值读端口、账龄读端口、NB 账本读端口与两个配置类。
     public CheckinStatusQueryService(CheckinPort checkinPort, CheckinRechargeReadPort rechargePort,
-            AccountRegistrationReadPort registrationPort, CheckinProperties props,
+            AccountRegistrationReadPort registrationPort, NbLedgerPort nbLedger, CheckinProperties props,
             CheckinTierProperties tierProps) {
         this.checkinPort = checkinPort;
         this.rechargePort = rechargePort;
         this.registrationPort = registrationPort;
+        this.nbLedger = nbLedger;
         this.props = props;
         this.tierProps = tierProps;
     }
@@ -89,9 +92,10 @@ public class CheckinStatusQueryService {
         BigDecimal monthlyRecharge = rechargePort.monthlyRecharge(userId, monthStartInstant, nextMonthStartInstant);
         CheckinSupplyView supply = buildSupply(monthlyRecharge, onTrackFullMonth);
 
+        int nbTotal = nbLedger.totalPoints(userId);
         return new CheckinStatusView(eligible, ineligibleReason, punchedToday, today.getDayOfMonth(),
                 today.format(MONTH_LABEL), today.lengthOfMonth(), checkedDays, cumulativeDays, streakCurrent,
-                milestones, supply);
+                milestones, supply, nbTotal);
     }
 
     /// 组装四档里程碑(5/10/20/满勤),固定顺序、成品状态文案。
