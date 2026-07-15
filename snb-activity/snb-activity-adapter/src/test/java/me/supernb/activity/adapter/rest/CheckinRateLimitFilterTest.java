@@ -42,7 +42,8 @@ class CheckinRateLimitFilterTest {
 
     @Test
     void perIpIsolationAndXffLastValueWins() throws Exception {
-        CheckinRateLimitFilter f = new CheckinRateLimitFilter(5, 10.0, CheckinRateLimitFilter.DEFAULT_MAX_BUCKETS);
+        // refill 须足够慢(20s/枚):429 断言依赖桶保持空,10/s 在慢 runner 上断言间隙即回填→假失败(CI 实证)
+        CheckinRateLimitFilter f = new CheckinRateLimitFilter(5, 0.05, CheckinRateLimitFilter.DEFAULT_MAX_BUCKETS);
         for (int i = 0; i < 5; i++) {
             fire(f, "/activity/v1/checkin/status", "9.9.9.9");
         }
