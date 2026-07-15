@@ -24,6 +24,8 @@ services:
       GALLERY_R2_ACCESS_KEY: ${GALLERY_R2_ACCESS_KEY:?}
       GALLERY_R2_SECRET_KEY: ${GALLERY_R2_SECRET_KEY:?}
       CONTENT_ADMIN_TOKEN: ${CONTENT_ADMIN_TOKEN:?}
+      # 发票手续费结算(admin API 扣/退余额)+签到档位发奖共用;不配则相关能力 fail-closed
+      SUB2API_ADMIN_KEY: ${SUB2API_ADMIN_KEY:?}
     # 调试直连口(反代走容器网,不依赖这条)
     ports:
       - "127.0.0.1:8090:8080"
