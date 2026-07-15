@@ -15,6 +15,10 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
 
 management:
   endpoints:
@@ -89,3 +93,8 @@ content:
   ratelimit:
     burst: 60
     per-minute: 120
+
+invoice:
+  ratelimit:
+    burst: 30
+    per-minute: 60
