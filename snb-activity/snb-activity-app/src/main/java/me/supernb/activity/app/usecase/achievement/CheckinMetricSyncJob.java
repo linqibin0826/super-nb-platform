@@ -43,35 +43,49 @@ public class CheckinMetricSyncJob {
         this.settlementProperties = settlementProperties;
     }
 
-    /// 每日 00:20(Asia/Shanghai)入口。
+    /// 每日 00:20(Asia/Shanghai)入口:结算"刚过去的昨天"(那天已完整)。00:20 时"今天"才过
+    /// 20 分钟、只含零点打卡者,故必须 minusDays(1)——与 syncMonthly 的 minusMonths(1) 同理。
     @Scheduled(cron = "0 20 0 * * *", zone = "Asia/Shanghai")
     public void syncDaily() {
-        syncDailyAt(LocalDate.now(ZONE));
+        syncDailyAt(LocalDate.now(ZONE).minusDays(1));
     }
 
-    /// 测试友好重载:显式传入"今天"。
-    void syncDailyAt(LocalDate today) {
+    /// 测试友好重载:显式传入"要结算的那一天"。
+    void syncDailyAt(LocalDate day) {
         if (!settlementProperties.scanEnabled()) {
             log.info("签到 metric 日频同步已跳过:scanEnabled=false");
             return;
         }
-        List<Long> todayCheckers = signalPort.usersCheckedInOn(today);
-        if (todayCheckers.isEmpty()) {
+        List<Long> checkers = signalPort.usersCheckedInOn(day);
+        if (checkers.isEmpty()) {
             return;
         }
-        Set<Long> midnightUsers = new HashSet<>(signalPort.usersCheckedInAtMidnightOn(today));
-        for (long userId : todayCheckers) {
+        Set<Long> midnightUsers = new HashSet<>(signalPort.usersCheckedInAtMidnightOn(day));
+        for (long userId : checkers) {
             try {
-                metricPort.upsert(userId, "checkin_total_count", checkinPort.totalCheckins(userId));
-                if (midnightUsers.contains(userId)) {
-                    metricPort.upsert(userId, "checkin_midnight_flag", 1);
-                }
-                if (signalPort.hasGhostReturnAsOf(userId, today)) {
-                    metricPort.upsert(userId, "checkin_ghost_return_flag", 1);
-                }
+                writeUserMetrics(userId, midnightUsers.contains(userId), signalPort.hasGhostReturnAsOf(userId, day));
             } catch (Exception e) {
                 log.error("签到 metric 日频同步失败 user={}", userId, e);
             }
+        }
+    }
+
+    /// 单用户即时同步(打卡实时路径复用):打卡刚提交后按 day 补齐该用户三个即时指标,与日频
+    /// 循环写同一套 metric_code(唯一真源,不与批处理分叉)。零点旗标按单用户查询后判断。
+    public void syncUserForDay(long userId, LocalDate day) {
+        boolean midnight = signalPort.usersCheckedInAtMidnightOn(day).contains(userId);
+        writeUserMetrics(userId, midnight, signalPort.hasGhostReturnAsOf(userId, day));
+    }
+
+    /// 累计次数恒写;零点/诈尸旗标按传入布尔写(日频批量预算 midnightUsers 集合、实时路径按
+    /// 单用户查询,布尔在调用方算好,这里只落 metric)。
+    private void writeUserMetrics(long userId, boolean midnight, boolean ghost) {
+        metricPort.upsert(userId, "checkin_total_count", checkinPort.totalCheckins(userId));
+        if (midnight) {
+            metricPort.upsert(userId, "checkin_midnight_flag", 1);
+        }
+        if (ghost) {
+            metricPort.upsert(userId, "checkin_ghost_return_flag", 1);
         }
     }
 

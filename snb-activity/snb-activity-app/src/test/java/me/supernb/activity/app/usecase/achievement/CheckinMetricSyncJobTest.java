@@ -74,4 +74,35 @@ class CheckinMetricSyncJobTest {
         verify(metricPort).upsert(42, "checkin_founding_month_flag", 1);
         verify(metricPort).upsert(42, "checkin_founding_fullmonth_flag", 1);
     }
+
+    @Test
+    void syncDailySettlesYesterdayNotToday() {
+        // 生产接线 syncDaily() 在 00:20 跑,必须结算"刚过去的昨天"(那天已完整);不是"今天"
+        // (00:20 时今天只有 0–20 分钟的零点打卡者)。回归 2026-07-15 白天打卡者永不解锁开机自检的日期 bug。
+        LocalDate yesterday = LocalDate.now(java.time.ZoneId.of("Asia/Shanghai")).minusDays(1);
+        when(signalPort.usersCheckedInOn(yesterday)).thenReturn(List.of(42L));
+        when(signalPort.usersCheckedInAtMidnightOn(yesterday)).thenReturn(List.of());
+        when(checkinPort.totalCheckins(42)).thenReturn(1);
+        when(signalPort.hasGhostReturnAsOf(42, yesterday)).thenReturn(false);
+
+        job(true).syncDaily();
+
+        verify(signalPort).usersCheckedInOn(yesterday);
+        verify(metricPort).upsert(42, "checkin_total_count", 1);
+    }
+
+
+    @Test
+    void syncUserForDayWritesCumulativeAndFlagsForSingleUser() {
+        LocalDate day = LocalDate.of(2026, 7, 15);
+        when(checkinPort.totalCheckins(7)).thenReturn(1);
+        when(signalPort.usersCheckedInAtMidnightOn(day)).thenReturn(List.of(7L));
+        when(signalPort.hasGhostReturnAsOf(7, day)).thenReturn(false);
+
+        job(true).syncUserForDay(7, day);
+
+        verify(metricPort).upsert(7, "checkin_total_count", 1);
+        verify(metricPort).upsert(7, "checkin_midnight_flag", 1);
+    }
+
 }

@@ -86,6 +86,15 @@ public class AchievementJudgeEngine {
         watermarkPort.advance(JOB_NAME, now);
     }
 
+    /// 单用户即时判定(打卡实时路径复用):跑一遍该用户的 metric_threshold + meta/合成指标判定,
+    /// 与每小时批扫共用同一套过滤器与判定方法。unlock 幂等(alreadyUnlocked 去重 + 唯一约束),
+    /// 与后续批扫重复判定无害。scanEnabled 闸由调用方把守(与 judgeHourly 一致)。
+    public void judgeUser(long userId, String unlockSource) {
+        List<AchievementDefinition> allDefs = catalogPort.activeDefinitions();
+        judgeMetricThresholds(userId, metricThresholdDefs(allDefs), unlockSource);
+        judgeMetaLike(userId, metaLikeDefs(allDefs), allDefs, unlockSource);
+    }
+
     /// metric_threshold 分支的候选定义(排除合成指标,那个挪到 metaLikeDefs 统一处理)。
     /// 包内可见,供首刷批处理复用,避免复制过滤逻辑。
     static List<AchievementDefinition> metricThresholdDefs(List<AchievementDefinition> allDefs) {

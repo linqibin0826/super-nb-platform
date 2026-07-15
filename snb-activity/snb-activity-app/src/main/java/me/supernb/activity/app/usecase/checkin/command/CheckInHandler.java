@@ -13,6 +13,7 @@ import me.supernb.activity.domain.model.checkin.CheckinStreak;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 /// 签到编排:账龄 ≥24 小时才放行(spec §3.1,呼应 07-10 注册即送事故教训,403)→
@@ -29,13 +30,15 @@ public class CheckInHandler implements CommandHandler<CheckInCommand, CheckInRes
     private final AccountRegistrationReadPort registration;
     private final CheckinPort checkinPort;
     private final CheckinProperties props;
+    private final ApplicationEventPublisher events;
 
     /// 构造:注入账龄读端口、签到端口与签到配置(每日进账单价)。
     public CheckInHandler(AccountRegistrationReadPort registration, CheckinPort checkinPort,
-            CheckinProperties props) {
+            CheckinProperties props, ApplicationEventPublisher events) {
         this.registration = registration;
         this.checkinPort = checkinPort;
         this.props = props;
+        this.events = events;
     }
 
     @Override
@@ -51,6 +54,9 @@ public class CheckInHandler implements CommandHandler<CheckInCommand, CheckInRes
         if (!outcome.firstCheckinToday()) {
             throw new CheckinAlreadyDoneException();
         }
+        // 首次打卡成功(事务已在 CheckinAdapter 提交)→ 发布事实事件,成就侧同步监听即时补写指标
+        // 并判定解锁(开机自检等打卡当场亮);checkin 不依赖成就侧,成就同步失败也不影响本次打卡。
+        events.publishEvent(new UserCheckedInEvent(command.userId(), today));
         int cumulativeDays = checkinPort.totalCheckins(command.userId());
         var recentDates = checkinPort.datesInRange(command.userId(),
                 today.minusDays(STREAK_LOOKBACK_DAYS), today);
