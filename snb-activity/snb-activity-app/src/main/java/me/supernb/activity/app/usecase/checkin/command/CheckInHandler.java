@@ -11,6 +11,7 @@ import me.supernb.activity.domain.model.checkin.CheckInResult;
 import me.supernb.activity.domain.model.checkin.CheckinOutcome;
 import me.supernb.activity.domain.model.checkin.CheckinStreak;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
+import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
 import org.springframework.stereotype.Service;
 
@@ -27,11 +28,14 @@ public class CheckInHandler implements CommandHandler<CheckInCommand, CheckInRes
 
     private final AccountRegistrationReadPort registration;
     private final CheckinPort checkinPort;
+    private final CheckinProperties props;
 
-    /// 构造:注入账龄读端口与签到端口。
-    public CheckInHandler(AccountRegistrationReadPort registration, CheckinPort checkinPort) {
+    /// 构造:注入账龄读端口、签到端口与签到配置(每日进账单价)。
+    public CheckInHandler(AccountRegistrationReadPort registration, CheckinPort checkinPort,
+            CheckinProperties props) {
         this.registration = registration;
         this.checkinPort = checkinPort;
+        this.props = props;
     }
 
     @Override
@@ -43,7 +47,7 @@ public class CheckInHandler implements CommandHandler<CheckInCommand, CheckInRes
             throw new CheckinTooYoungException();
         }
         LocalDate today = LocalDate.now(ZONE);
-        CheckinOutcome outcome = checkinPort.checkIn(command.userId(), today, now);
+        CheckinOutcome outcome = checkinPort.checkIn(command.userId(), today, now, props.dailyNbPoints());
         if (!outcome.firstCheckinToday()) {
             throw new CheckinAlreadyDoneException();
         }

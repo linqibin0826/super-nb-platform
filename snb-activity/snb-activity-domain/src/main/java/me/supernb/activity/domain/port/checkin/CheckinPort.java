@@ -10,7 +10,9 @@ public interface CheckinPort {
 
     /// 签到:当日已有记录 → 幂等回放(firstCheckinToday=false,checkedInAt 为原始时刻);
     /// 否则原子插入(INSERT ... ON CONFLICT DO NOTHING RETURNING id),并发天然去重,不抛异常)。
-    CheckinOutcome checkIn(long userId, LocalDate day, Instant now);
+    /// 幂等打卡:真插入(首次)即同事务写账本 EARN 行(nbPoints,打卡即进账业务规则);
+    /// nbPoints<=0 只打卡不记账(防御,CHECK 要求 EARN>0)。
+    CheckinOutcome checkIn(long userId, LocalDate day, Instant now, int nbPoints);
 
     /// 是否已在某天签到。
     boolean checkedInOn(long userId, LocalDate day);

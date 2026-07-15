@@ -59,6 +59,7 @@ activity:
     win-rate: ${GATE_WIN_RATE:0.02}
   checkin:
     launch-date: ${CHECKIN_LAUNCH_DATE:2026-07-13}
+    daily-nb-points: ${CHECKIN_DAILY_NB_POINTS:3}
     monthly-budget-cap: ${CHECKIN_MONTHLY_BUDGET_CAP:250}
     per-user-monthly-cap: ${CHECKIN_PER_USER_MONTHLY_CAP:10}
     scan-enabled: ${CHECKIN_SCAN_ENABLED:false}

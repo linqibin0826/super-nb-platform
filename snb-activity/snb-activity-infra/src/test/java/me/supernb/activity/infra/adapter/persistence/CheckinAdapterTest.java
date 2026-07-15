@@ -57,7 +57,7 @@ class CheckinAdapterTest {
 
     @Test
     void firstCheckInTodayInsertsAndReturnsTrue() {
-        CheckinOutcome o = adapter.checkIn(42, DAY, Instant.parse("2026-07-13T01:00:00Z"));
+        CheckinOutcome o = adapter.checkIn(42, DAY, Instant.parse("2026-07-13T01:00:00Z"), 3);
         assertThat(o.firstCheckinToday()).isTrue();
         assertThat(o.checkinDate()).isEqualTo(DAY);
         assertThat(adapter.checkedInOn(42, DAY)).isTrue();
@@ -66,8 +66,8 @@ class CheckinAdapterTest {
     @Test
     void secondCheckInSameDayIsIdempotentAndReplaysOriginalTimestamp() {
         Instant first = Instant.parse("2026-07-13T01:00:00Z");
-        adapter.checkIn(42, DAY, first);
-        CheckinOutcome again = adapter.checkIn(42, DAY, Instant.parse("2026-07-13T09:00:00Z"));
+        adapter.checkIn(42, DAY, first, 3);
+        CheckinOutcome again = adapter.checkIn(42, DAY, Instant.parse("2026-07-13T09:00:00Z"), 3);
         assertThat(again.firstCheckinToday()).isFalse();
         assertThat(again.checkedInAt()).isEqualTo(first);
         assertThat(adapter.totalCheckins(42)).isEqualTo(1);
@@ -82,7 +82,7 @@ class CheckinAdapterTest {
         for (int i = 0; i < threads; i++) {
             futures.add(pool.submit(() -> {
                 gate.await();
-                return adapter.checkIn(99, DAY, Instant.now());
+                return adapter.checkIn(99, DAY, Instant.now(), 3);
             }));
         }
         gate.countDown();
@@ -99,9 +99,9 @@ class CheckinAdapterTest {
 
     @Test
     void countAndDatesInRangeReflectStoredRows() {
-        adapter.checkIn(7, LocalDate.of(2026, 7, 1), Instant.parse("2026-07-01T00:30:00Z"));
-        adapter.checkIn(7, LocalDate.of(2026, 7, 3), Instant.parse("2026-07-03T00:30:00Z"));
-        adapter.checkIn(7, LocalDate.of(2026, 8, 1), Instant.parse("2026-08-01T00:30:00Z"));
+        adapter.checkIn(7, LocalDate.of(2026, 7, 1), Instant.parse("2026-07-01T00:30:00Z"), 3);
+        adapter.checkIn(7, LocalDate.of(2026, 7, 3), Instant.parse("2026-07-03T00:30:00Z"), 3);
+        adapter.checkIn(7, LocalDate.of(2026, 8, 1), Instant.parse("2026-08-01T00:30:00Z"), 3);
         assertThat(adapter.countInRange(7, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31))).isEqualTo(2);
         assertThat(adapter.datesInRange(7, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31)))
                 .containsExactly(LocalDate.of(2026, 7, 3), LocalDate.of(2026, 7, 1));
@@ -113,10 +113,10 @@ class CheckinAdapterTest {
         LocalDate d1 = LocalDate.of(2026, 6, 1);
         LocalDate d2 = LocalDate.of(2026, 6, 2);
         LocalDate d3 = LocalDate.of(2026, 6, 3);
-        adapter.checkIn(1, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant());
-        adapter.checkIn(1, d2, d2.atStartOfDay(java.time.ZoneOffset.UTC).toInstant());
-        adapter.checkIn(1, d3, d3.atStartOfDay(java.time.ZoneOffset.UTC).toInstant());
-        adapter.checkIn(2, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant()); // 只签 1 天,不满勤
+        adapter.checkIn(1, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3);
+        adapter.checkIn(1, d2, d2.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3);
+        adapter.checkIn(1, d3, d3.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3);
+        adapter.checkIn(2, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3); // 只签 1 天,不满勤
         assertThat(adapter.fullAttendanceUserIds(d1, d3, 3)).containsExactly(1L);
     }
 }

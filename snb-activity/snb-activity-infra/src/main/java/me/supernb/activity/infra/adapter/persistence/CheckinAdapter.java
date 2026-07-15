@@ -33,7 +33,7 @@ public class CheckinAdapter implements CheckinPort {
 
     @Override
     @Transactional
-    public CheckinOutcome checkIn(long userId, LocalDate day, Instant now) {
+    public CheckinOutcome checkIn(long userId, LocalDate day, Instant now, int nbPoints) {
         long id = SnowflakeIdGenerator.getId();
         List<Long> inserted = jdbc.query(
                 "INSERT INTO activity.checkin_record (id, user_id, checkin_date, checked_in_at) "
@@ -41,6 +41,14 @@ public class CheckinAdapter implements CheckinPort {
                 (rs, i) -> rs.getLong("id"),
                 id, userId, day, Timestamp.from(now));
         if (!inserted.isEmpty()) {
+            // 打卡即进账(同一事务):账本行 id 复用打卡行 id,source_ref=ISO 日期(与 V11 补铸同口径)
+            if (nbPoints > 0) {
+                jdbc.update("INSERT INTO activity.nb_ledger "
+                                + "(id, user_id, entry_type, source_type, source_ref, points, occurred_at) "
+                                + "VALUES (?, ?, 'EARN', 'checkin_daily', ?, ?, ?) "
+                                + "ON CONFLICT (user_id, source_type, source_ref) DO NOTHING",
+                        inserted.get(0), userId, day.toString(), nbPoints, Timestamp.from(now));
+            }
             return new CheckinOutcome(true, day, now);
         }
         // 未真插入:当日已有记录(并发对手抢先或本人重复请求),幂等回放既有时刻

@@ -3,6 +3,7 @@ package me.supernb.activity.app.usecase.checkin.command;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -11,6 +12,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.domain.exception.CheckinAlreadyDoneException;
 import me.supernb.activity.domain.exception.CheckinTooYoungException;
 import me.supernb.activity.domain.model.checkin.CheckInResult;
@@ -25,7 +27,7 @@ class CheckInHandlerTest {
 
     private final AccountRegistrationReadPort registration = mock(AccountRegistrationReadPort.class);
     private final CheckinPort checkinPort = mock(CheckinPort.class);
-    private final CheckInHandler handler = new CheckInHandler(registration, checkinPort);
+    private final CheckInHandler handler = new CheckInHandler(registration, checkinPort, new CheckinProperties("2020-01-01", 3));
 
     @Test
     void unknownRegistrationRejectedWith403() {
@@ -44,7 +46,7 @@ class CheckInHandlerTest {
     @Test
     void alreadyCheckedInTodayRejectedWith409() {
         when(registration.registeredAt(42)).thenReturn(Optional.of(Instant.now().minusSeconds(3600 * 48)));
-        when(checkinPort.checkIn(eq(42L), any(), any()))
+        when(checkinPort.checkIn(eq(42L), any(), any(), anyInt()))
                 .thenReturn(new CheckinOutcome(false, LocalDate.now(), Instant.now().minusSeconds(3600)));
         assertThatThrownBy(() -> handler.handle(new CheckInCommand(42)))
                 .isInstanceOf(CheckinAlreadyDoneException.class);
@@ -54,7 +56,7 @@ class CheckInHandlerTest {
     void firstCheckInTodayReturnsCumulativeAndStreak() {
         when(registration.registeredAt(42)).thenReturn(Optional.of(Instant.now().minusSeconds(3600 * 48)));
         LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Shanghai"));
-        when(checkinPort.checkIn(eq(42L), any(), any()))
+        when(checkinPort.checkIn(eq(42L), any(), any(), anyInt()))
                 .thenReturn(new CheckinOutcome(true, today, Instant.now()));
         when(checkinPort.totalCheckins(42)).thenReturn(13);
         when(checkinPort.datesInRange(eq(42L), any(), any())).thenReturn(List.of(today, today.minusDays(1)));

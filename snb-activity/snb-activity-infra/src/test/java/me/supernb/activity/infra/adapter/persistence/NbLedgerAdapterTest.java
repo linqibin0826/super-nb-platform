@@ -3,6 +3,7 @@ package me.supernb.activity.infra.adapter.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -40,6 +41,9 @@ class NbLedgerAdapterTest {
     AchievementUnlockAdapter unlockAdapter;
 
     @Autowired
+    CheckinAdapter checkinAdapter;
+
+    @Autowired
     JdbcTemplate jdbc;
 
     @Test
@@ -63,5 +67,19 @@ class NbLedgerAdapterTest {
                         + "AND source_ref='checkin_first'", Integer.class);
         assertThat(rows).isEqualTo(1);
         assertThat(adapter.totalPoints(9102)).isEqualTo(5);
+    }
+
+    @Test
+    void checkInWritesLedgerRowOnceOnly() {
+        LocalDate day = LocalDate.of(2026, 7, 16);
+        var first = checkinAdapter.checkIn(9103, day, Instant.now(), 3);
+        var replay = checkinAdapter.checkIn(9103, day, Instant.now(), 3);
+        assertThat(first.firstCheckinToday()).isTrue();
+        assertThat(replay.firstCheckinToday()).isFalse();
+        Integer rows = jdbc.queryForObject(
+                "SELECT count(*) FROM activity.nb_ledger WHERE user_id=9103 AND source_type='checkin_daily' "
+                        + "AND source_ref='2026-07-16'", Integer.class);
+        assertThat(rows).isEqualTo(1);
+        assertThat(adapter.totalPoints(9103)).isEqualTo(3);
     }
 }

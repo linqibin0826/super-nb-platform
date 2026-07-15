@@ -24,7 +24,7 @@ class CheckinMetricSyncJobTest {
     private final CheckinPort checkinPort = mock(CheckinPort.class);
     private final CheckinMetricSignalPort signalPort = mock(CheckinMetricSignalPort.class);
     private final UserMetricPort metricPort = mock(UserMetricPort.class);
-    private final CheckinProperties checkinProperties = new CheckinProperties("2020-01-01");
+    private final CheckinProperties checkinProperties = new CheckinProperties("2020-01-01", 3);
 
     private CheckinMetricSyncJob job(boolean scanEnabled) {
         CheckinSettlementProperties settlementProperties = new CheckinSettlementProperties(
@@ -59,7 +59,7 @@ class CheckinMetricSyncJobTest {
         LocalDate monthEnd = lastMonth.atEndOfMonth();
         when(checkinPort.fullAttendanceUserIds(monthStart, monthEnd, 31)).thenReturn(List.of(42L));
         when(metricPort.value(42, "checkin_fullmonth_count")).thenReturn(Optional.of(2.0));
-        CheckinProperties launchInJuly = new CheckinProperties("2026-07-01");
+        CheckinProperties launchInJuly = new CheckinProperties("2026-07-01", 3);
         when(signalPort.usersCheckedInBetween(eq(LocalDate.of(2026, 7, 1)), eq(monthEnd)))
                 .thenReturn(List.of(42L));
         when(checkinPort.fullAttendanceUserIds(LocalDate.of(2026, 7, 1), monthEnd, 31))
