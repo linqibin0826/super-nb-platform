@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button, Card } from '../../ui'
+import { Button } from '../../ui'
 import { t } from '../../i18n'
 import { api, InvoiceApiError, InvoiceAuthError, type OverviewT, type ProfileT } from '../api'
 import { feeCents, fmtYuan, fmtYuanGrouped, rmbUpper, selectedTotalCents } from '../fee'
@@ -9,8 +9,8 @@ import { loginUrl } from '../../auth/apiFetch'
 
 const today = () => new Date().toLocaleDateString('sv')
 
-/** 申请开票(填开联):左=订单账页,右=实时成票的发票申请单。
- *  勾选订单→票面合计/大写实时更新;跨过免收线盖「免」章(挂载即动画,一次性)。 */
+/** 申请开票(填开联):整页一张居中票面,订单即明细行——
+ *  在票上勾明细,合计/大写实时更新;跨过免收线盖「免」章(挂载即动画)。 */
 export function ApplyPage() {
   const [overview, setOverview] = useState<OverviewT | null>(null)
   const [profiles, setProfiles] = useState<ProfileT[] | null>(null)
@@ -110,7 +110,6 @@ export function ApplyPage() {
 
   const profile = profiles.find((p) => p.id === profileId)
   const allOn = overview.orders.length > 0 && selected.size === overview.orders.length
-  const grandCents = overview.orders.reduce((s, o) => s + Math.round(o.amount * 100), 0)
 
   const warn = feeShort
     ? t('invoice.apply.feeShort', { fee: fmtYuan(fee) })
@@ -121,191 +120,166 @@ export function ApplyPage() {
   return (
     <>
       {head}
-      {error && <div className="mb-4"><ErrorBar msg={error} /></div>}
-      <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_432px]">
-        {/* 左:订单账页 */}
-        <div>
-          {overview.orders.length === 0 ? (
-            <div className="rounded-xl border-[1.5px] border-dashed border-snb-hairline-strong p-16 text-center text-sm text-snb-t3">
-              {t('invoice.apply.empty')}
-            </div>
-          ) : (
-            <Card className="overflow-hidden p-0">
-              <div className="flex items-center gap-3 border-b border-snb-hairline-strong px-4 py-3.5 iv-ledger-head">
-                <label className="flex cursor-pointer items-center gap-2.5 text-sm font-semibold">
-                  <input
-                    type="checkbox"
-                    checked={allOn}
-                    onChange={(e) =>
-                      setSelected(e.target.checked ? new Set(overview.orders.map((o) => o.orderId)) : new Set())
-                    }
-                  />
-                  {t('invoice.apply.selectAll')}
-                </label>
-                <span className="ml-auto text-[13px] text-snb-t3">
-                  {t('invoice.apply.headMeta', {
-                    n: String(overview.orders.length),
-                    total: '¥' + fmtYuanGrouped(grandCents),
-                  })}
-                </span>
-              </div>
-              <div>
-                {overview.orders.map((o) => (
-                  <label key={o.orderId} className={`iv-ord ${selected.has(o.orderId) ? 'on' : ''}`}>
-                    <input type="checkbox" checked={selected.has(o.orderId)} onChange={() => toggle(o.orderId)} />
-                    <span className="w-[88px] flex-none text-[13px] tabular-nums text-snb-t3">
-                      {new Date(o.completedAt).toLocaleDateString('sv')}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate font-mono text-[13px] text-snb-t2">{o.orderNo}</span>
-                    <span className="flex-none text-right font-mono text-[15px] font-semibold tabular-nums">
-                      ¥{fmtYuanGrouped(Math.round(o.amount * 100))}
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-1.5 border-t border-snb-hairline px-4 py-3 text-[13px] text-snb-t3">
-                <span>
-                  {t('invoice.apply.balance')} <b className="font-semibold text-snb-t2">¥{overview.balance.toFixed(2)}</b>
-                </span>
-                <span>·</span>
-                <span>{t('invoice.apply.balanceNote')}</span>
-              </div>
-            </Card>
-          )}
+      {error && <div className="mx-auto mb-4 max-w-3xl"><ErrorBar msg={error} /></div>}
+      <div className="iv-fapiao mx-auto max-w-3xl">
+        <div className="iv-fp-title">{t('invoice.apply.docTitle')}</div>
+        <div className="iv-fp-title-rule" />
+        <div className="iv-fp-no">
+          <span>
+            {t('invoice.apply.noLabel')} <b>{t('invoice.apply.noPending')}</b>
+          </span>
+          <span>{today()}</span>
         </div>
 
-        {/* 右:发票申请单(实时成票) */}
-        <div className="iv-fapiao lg:sticky lg:top-24">
-          <div className="iv-fp-title">{t('invoice.apply.docTitle')}</div>
-          <div className="iv-fp-title-rule" />
-          <div className="iv-fp-no">
-            <span>
-              {t('invoice.apply.noLabel')} <b>{t('invoice.apply.noPending')}</b>
-            </span>
-            <span>{today()}</span>
-          </div>
-
-          <div className="iv-fp-grid">
-            <div className="iv-fp-row">
-              <div className="iv-fp-side">{t('invoice.apply.buyerSide')}</div>
-              <div className="iv-fp-cell">
-                <div className="iv-fp-field">
-                  <span className="lb">{t('invoice.apply.nameLabel')}</span>
-                  {profiles.length === 0 ? (
-                    <Link to="/profiles" className="text-[13px] underline underline-offset-4 hover:text-snb-t1">
-                      {t('invoice.apply.noProfile')}
-                    </Link>
-                  ) : (
-                    <select
-                      className="iv-fp-select"
-                      value={profileId}
-                      onChange={(e) => setProfileId(e.target.value)}
-                      aria-label={t('invoice.apply.profile')}
-                    >
-                      {profiles.map((p) => (
-                        <option key={p.id} value={p.id}>{p.title}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div className="iv-fp-field">
-                  <span className="lb">{t('invoice.apply.taxLabel')}</span>
-                  <span className={`vl font-mono ${profile?.taxNo ? '' : 'text-snb-t3'}`}>
-                    {profile?.taxNo || t('invoice.profiles.noTax')}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="iv-fp-row">
-              <div className="iv-fp-side">{t('invoice.apply.itemSide')}</div>
-              <div className="iv-fp-cell">
-                <table className="iv-fp-items">
-                  <thead>
-                    <tr>
-                      <th>{t('invoice.apply.thName')}</th>
-                      <th className="!text-right">{t('invoice.apply.thCount')}</th>
-                      <th className="!text-right">{t('invoice.apply.thAmt')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>{t('invoice.apply.itemName')}</td>
-                      <td className="r">{t('invoice.apply.countUnit', { n: String(selected.size) })}</td>
-                      <td className="r">{totalCents ? '¥' + fmtYuanGrouped(totalCents) : '—'}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="iv-fp-row">
-              <div className="iv-fp-side">{t('invoice.apply.sumSide')}</div>
-              <div className="iv-fp-cell">
-                {totalCents > 0 ? (
-                  <div className="iv-fp-cap">
-                    <span className="iv-fp-cap-sm">{t('invoice.apply.capitalPrefix')}</span>
-                    {rmbUpper(totalCents)}
-                  </div>
+        <div className="iv-fp-grid">
+          {/* 购买方 */}
+          <div className="iv-fp-row">
+            <div className="iv-fp-side">{t('invoice.apply.buyerSide')}</div>
+            <div className="iv-fp-cell">
+              <div className="iv-fp-field">
+                <span className="lb">{t('invoice.apply.nameLabel')}</span>
+                {profiles.length === 0 ? (
+                  <Link to="/profiles" className="text-[13px] underline underline-offset-4 hover:text-snb-t1">
+                    {t('invoice.apply.noProfile')}
+                  </Link>
                 ) : (
-                  <div className="iv-fp-cap dim">
-                    <span className="iv-fp-cap-sm">{t('invoice.apply.capitalPrefix')}</span>
-                    {t('invoice.apply.capitalEmpty')}
-                  </div>
+                  <select
+                    className="iv-fp-select"
+                    value={profileId}
+                    onChange={(e) => setProfileId(e.target.value)}
+                    aria-label={t('invoice.apply.profile')}
+                  >
+                    {profiles.map((p) => (
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    ))}
+                  </select>
                 )}
-                <div className="iv-fp-num">¥{fmtYuanGrouped(totalCents)}</div>
               </div>
-            </div>
-
-            <div className="iv-fp-row">
-              <div className="iv-fp-side">{t('invoice.apply.feeSide')}</div>
-              <div className="iv-fp-cell">
-                <div className="iv-fee-line">
-                  <span>{t('invoice.apply.feeLabel')}</span>
-                  {isFree ? (
-                    <>
-                      <span className="strike font-mono">
-                        ¥{fmtYuanGrouped(Math.round(totalCents * overview.feeRate))}
-                      </span>
-                      <b className="iv-fee-free font-mono">¥0.00</b>
-                      <span className="iv-stamp-mian pop">免</span>
-                    </>
-                  ) : (
-                    <b className="font-mono">{totalCents >= minCents ? '¥' + fmtYuanGrouped(fee) : '—'}</b>
-                  )}
-                </div>
-                <div className="iv-fee-note">
-                  {isFree ? t('invoice.apply.feeFreeNote') : t('invoice.apply.feeNote')}
-                </div>
-              </div>
-            </div>
-
-            <div className="iv-fp-row">
-              <div className="iv-fp-side">{t('invoice.apply.remarkSide')}</div>
-              <div className="iv-fp-cell">
-                <textarea
-                  className="iv-fp-remark"
-                  value={remark}
-                  onChange={(e) => setRemark(e.target.value)}
-                  maxLength={200}
-                  placeholder={t('invoice.apply.remark')}
-                />
+              <div className="iv-fp-field">
+                <span className="lb">{t('invoice.apply.taxLabel')}</span>
+                <span className={`vl font-mono ${profile?.taxNo ? '' : 'text-snb-t3'}`}>
+                  {profile ? profile.taxNo || t('invoice.profiles.noTax') : '—'}
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="mt-3.5 flex items-center gap-3">
-            <div className="iv-fp-hint">{t('invoice.apply.previewHint')}</div>
-            <Button
-              variant="primary"
-              disabled={submitting || belowMin || feeShort || selected.size === 0 || !profileId}
-              onClick={submit}
-            >
-              {t('invoice.apply.submit')}
-            </Button>
+          {/* 项目明细:订单即商品行,表头勾选=全选 */}
+          <div className="iv-fp-row">
+            <div className="iv-fp-side">{t('invoice.apply.itemSide')}</div>
+            <div className="iv-fp-cell !p-0">
+              {overview.orders.length === 0 ? (
+                <div className="px-4 py-10 text-center text-[13px] text-snb-t3">{t('invoice.apply.empty')}</div>
+              ) : (
+                <>
+                  <div className="iv-fp-ord-head">
+                    <input
+                      type="checkbox"
+                      checked={allOn}
+                      title={t('invoice.apply.selectAll')}
+                      aria-label={t('invoice.apply.selectAll')}
+                      onChange={(e) =>
+                        setSelected(e.target.checked ? new Set(overview.orders.map((o) => o.orderId)) : new Set())
+                      }
+                    />
+                    <span className="nm">{t('invoice.apply.itemName')}</span>
+                    <span className="meta">
+                      {t('invoice.apply.ordMeta', {
+                        n: String(selected.size),
+                        total: '¥' + fmtYuanGrouped(totalCents),
+                      })}
+                    </span>
+                  </div>
+                  <div className="iv-fp-orders">
+                    {overview.orders.map((o) => (
+                      <label key={o.orderId} className={`iv-fp-ord ${selected.has(o.orderId) ? '' : 'off'}`}>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(o.orderId)}
+                          onChange={() => toggle(o.orderId)}
+                        />
+                        <span className="d">{new Date(o.completedAt).toLocaleDateString('sv')}</span>
+                        <span className="no">{o.orderNo}</span>
+                        <span className="amt">¥{fmtYuanGrouped(Math.round(o.amount * 100))}</span>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-          <div className="iv-warn">{warn}</div>
+
+          {/* 合计 */}
+          <div className="iv-fp-row">
+            <div className="iv-fp-side">{t('invoice.apply.sumSide')}</div>
+            <div className="iv-fp-cell">
+              {totalCents > 0 ? (
+                <div className="iv-fp-cap">
+                  <span className="iv-fp-cap-sm">{t('invoice.apply.capitalPrefix')}</span>
+                  {rmbUpper(totalCents)}
+                </div>
+              ) : (
+                <div className="iv-fp-cap dim">
+                  <span className="iv-fp-cap-sm">{t('invoice.apply.capitalPrefix')}</span>
+                  {t('invoice.apply.capitalEmpty')}
+                </div>
+              )}
+              <div className="iv-fp-num">¥{fmtYuanGrouped(totalCents)}</div>
+            </div>
+          </div>
+
+          {/* 费用 */}
+          <div className="iv-fp-row">
+            <div className="iv-fp-side">{t('invoice.apply.feeSide')}</div>
+            <div className="iv-fp-cell">
+              <div className="iv-fee-line">
+                <span>{t('invoice.apply.feeLabel')}</span>
+                {isFree ? (
+                  <>
+                    <span className="strike font-mono">
+                      ¥{fmtYuanGrouped(Math.round(totalCents * overview.feeRate))}
+                    </span>
+                    <b className="iv-fee-free font-mono">¥0.00</b>
+                    <span className="iv-stamp-mian pop">免</span>
+                  </>
+                ) : (
+                  <b className="font-mono">{totalCents >= minCents ? '¥' + fmtYuanGrouped(fee) : '—'}</b>
+                )}
+              </div>
+              <div className="iv-fee-note">
+                {isFree
+                  ? t('invoice.apply.feeFreeNote')
+                  : t('invoice.apply.feeNoteWithBal', { balance: '¥' + fmtYuanGrouped(balanceCents) })}
+              </div>
+            </div>
+          </div>
+
+          {/* 备注 */}
+          <div className="iv-fp-row">
+            <div className="iv-fp-side">{t('invoice.apply.remarkSide')}</div>
+            <div className="iv-fp-cell">
+              <textarea
+                className="iv-fp-remark"
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+                maxLength={200}
+                placeholder={t('invoice.apply.remark')}
+              />
+            </div>
+          </div>
         </div>
+
+        <div className="mt-3.5 flex items-center gap-3">
+          <div className="iv-fp-hint">{t('invoice.apply.previewHint')}</div>
+          <Button
+            variant="primary"
+            disabled={submitting || belowMin || feeShort || selected.size === 0 || !profileId}
+            onClick={submit}
+          >
+            {t('invoice.apply.submit')}
+          </Button>
+        </div>
+        <div className="iv-warn">{warn}</div>
       </div>
     </>
   )
