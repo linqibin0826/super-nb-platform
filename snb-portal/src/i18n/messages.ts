@@ -402,6 +402,9 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         verifyNote: '填好全称点核验：税号/地址/开户行自动带出（已填内容不覆盖）。名称与税号和官方档案完全一致时，保存后自动盖「已核验」章；改动名称或税号会掉章。',
         verifiedBadge: '已核验',
         verifiedTip: '名称与税号已与官方开票档案核对一致',
+        pastePlaceholder: '把对方发来的开票资料整段粘到这里，自动识别填入下方表单',
+        pasteApplied: '已识别填入 {n} 项，请核对',
+        pasteNone: '没识别出开票信息，请检查粘贴内容',
       },
       admin: {
         title: '发票申请管理',
@@ -831,6 +834,9 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         verifyNote: 'Enter the legal name and hit Verify: tax no., address and bank are auto-filled (typed values are kept). When name and tax no. exactly match the record, the profile is stamped VERIFIED on save; editing either drops the stamp.',
         verifiedBadge: 'VERIFIED',
         verifiedTip: 'Name and tax number match the official registry record',
+        pastePlaceholder: 'Paste the whole invoice-info blob here — fields are recognized and filled automatically',
+        pasteApplied: 'Recognized and filled {n} field(s) — please review',
+        pasteNone: 'No invoice info recognized in the pasted text',
       },
       admin: {
         title: 'Invoice Requests Admin',

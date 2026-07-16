@@ -336,6 +336,26 @@
   opacity: 0.9;
 }
 
+/* 开票资料智能粘贴框(抬头表单,仅企业类型):整段粘贴 → 自动识别拆字段 */
+.iv-paste {
+  width: 100%;
+  border: 1.5px dashed var(--snb-hairline-strong);
+  border-radius: 8px;
+  background: transparent;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: rgb(var(--snb-t1));
+  resize: vertical;
+  min-height: 52px;
+}
+.iv-paste:focus {
+  outline: none;
+  border-style: solid;
+  border-color: var(--iv-frame);
+}
+.iv-paste::placeholder { color: rgb(var(--snb-t3)); }
+
 /* 官方档案核验面板(抬头表单,仅企业类型) */
 .iv-verify {
   border: 1px dashed var(--snb-hairline-strong);

@@ -3,6 +3,7 @@ import { Button, Input, Modal } from '../../ui'
 import { t } from '../../i18n'
 import { api, type ProfileT, type RegistryOfficialT } from '../api'
 import { isValidTaxNo } from '../taxno'
+import { parseInvoiceInfo } from '../pasteParse'
 import { ErrorBar } from './shared'
 
 /** 核验面板状态机:未核验 → 查询中 → 查得(比对)/查无/通道异常 */
@@ -41,8 +42,27 @@ export function ProfileFormModal({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [check, setCheck] = useState<VerifyState | null>(null)
+  const [pasteText, setPasteText] = useState('')
+  const [pasteMsg, setPasteMsg] = useState('')
 
   const set = (patch: Partial<ProfileDraft>) => setDraft((d) => ({ ...d, ...patch }))
+
+  /** 智能粘贴:整段开票资料 → 识别出的字段直接填入(粘贴即宣告数据来源,识别项覆盖) */
+  const handlePasteText = (value: string) => {
+    setPasteText(value)
+    if (value.trim().length < 8) {
+      setPasteMsg('')
+      return
+    }
+    const parsed = parseInvoiceInfo(value)
+    const count = Object.values(parsed).filter(Boolean).length
+    if (count === 0) {
+      setPasteMsg(t('invoice.profiles.pasteNone'))
+      return
+    }
+    set(parsed)
+    setPasteMsg(t('invoice.profiles.pasteApplied', { n: String(count) }))
+  }
 
   // 税号填了但格式不合法(18 位国标校验位/15 位老号,与后端同规则)——红提示 + 禁保存
   const taxNoBad = !!(draft.taxNo ?? '').trim() && !isValidTaxNo(draft.taxNo ?? '')
@@ -139,13 +159,29 @@ export function ProfileFormModal({
               variant={draft.type === type ? 'primary' : 'secondary'}
               onClick={() => {
                 set({ type })
-                if (type !== 'COMPANY') setCheck(null)
+                if (type !== 'COMPANY') {
+                  setCheck(null)
+                  setPasteText('')
+                  setPasteMsg('')
+                }
               }}
             >
               {type === 'COMPANY' ? t('invoice.profiles.typeCompany') : t('invoice.profiles.typePersonal')}
             </Button>
           ))}
         </div>
+        {draft.type === 'COMPANY' && (
+          <div>
+            <textarea
+              className="iv-paste"
+              rows={2}
+              value={pasteText}
+              onChange={(e) => handlePasteText(e.target.value)}
+              placeholder={t('invoice.profiles.pastePlaceholder')}
+            />
+            {pasteMsg && <span className="mt-0.5 block text-xs text-snb-t3">{pasteMsg}</span>}
+          </div>
+        )}
         <label className="block">
           <span className="mb-1 block text-xs text-snb-t3">
             {t('invoice.profiles.title')}
