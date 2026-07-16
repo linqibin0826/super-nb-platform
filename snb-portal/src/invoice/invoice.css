@@ -528,7 +528,86 @@
   pointer-events: none;
 }
 
+/* ---------- 首次进站「开票须知」单 ---------- */
+.iv-guide-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(17, 13, 9, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.iv-guide-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  animation: iv-guide-in 0.18s ease-out;
+}
+@keyframes iv-guide-in {
+  from { transform: scale(0.96) translateY(8px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.iv-guide-step {
+  display: flex;
+  gap: 12px;
+  padding: 11px 2px;
+  border-bottom: 1px dashed var(--iv-frame-soft);
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: rgb(var(--snb-t2));
+}
+.iv-guide-step:last-of-type { border-bottom: none; }
+.iv-guide-step .num {
+  flex: none;
+  font-family: 'FangSong', 'STFangsong', '仿宋', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--iv-no-red);
+  line-height: 1.5;
+}
+.iv-guide-rule {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--iv-frame-soft);
+  font-size: 12.5px;
+  color: rgb(var(--snb-t3));
+  line-height: 1.6;
+}
+.iv-guide-dim { transition: opacity 0.2s; }
+.iv-guide-dim.off { opacity: 0.35; }
+.iv-guide-seal {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.iv-guide-seal .box {
+  border: 3px solid var(--iv-seal);
+  border-radius: 8px;
+  color: var(--iv-seal);
+  font-family: 'FangSong', 'STFangsong', '仿宋', serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 10px;
+  padding: 10px 16px 10px 26px;
+  transform: rotate(-9deg);
+  opacity: 0.92;
+  animation: iv-guide-stamp 0.24s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.iv-guide-seal .box { mix-blend-mode: multiply; }
+.dark .iv-guide-seal .box { mix-blend-mode: normal; }
+@keyframes iv-guide-stamp {
+  from { transform: scale(1.9) rotate(-22deg); opacity: 0; }
+  to { transform: scale(1) rotate(-9deg); opacity: 0.92; }
+}
+
 /* ---------- 动效纪律 ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .iv-stamp-mian.pop { animation: none; }
+  .iv-stamp-mian.pop,
+  .iv-guide-card,
+  .iv-guide-seal .box { animation: none; }
 }

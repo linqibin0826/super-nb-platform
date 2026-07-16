@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
 import { ThemeScope } from '../ui'
 import { useTheme } from '../theme'
 import { t } from '../i18n'
 import { InvoiceHeader } from './InvoiceHeader'
+import { FirstVisitGuide, guideSeen } from './FirstVisitGuide'
 import { ApplyPage } from './pages/ApplyPage'
 import { RequestsPage } from './pages/RequestsPage'
 import { ProfilesPage } from './pages/ProfilesPage'
@@ -39,8 +41,10 @@ function SubNav() {
 
 export function AppRoutes() {
   const [theme, toggleTheme] = useTheme()
+  const [showGuide, setShowGuide] = useState(() => !guideSeen())
   return (
     <ThemeScope theme={theme} className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
+      {showGuide && <FirstVisitGuide onDismiss={() => setShowGuide(false)} />}
       <InvoiceHeader theme={theme} onToggleTheme={toggleTheme} />
       <SubNav />
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-7">

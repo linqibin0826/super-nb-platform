@@ -301,6 +301,15 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       title: '发票中心',
       nav: { console: '控制台', studio: '创作工坊', hub: '内容中心', activity: '活动', login: '登录', theme: '切换明暗主题' },
       tabs: { apply: '申请开票', requests: '我的申请', profiles: '抬头管理' },
+      guide: {
+        title: '开票须知',
+        step1: '设置开票抬头——企业抬头需要税号，个人抬头填姓名即可',
+        step2: '在票面上勾选要开票的充值订单，合计满 ¥1000 可开',
+        step3: '提交申请，管理员 1–3 个工作日内开出电子发票，随时可下载',
+        rule: '单张满 ¥3000 免收 5% 手续费；受理前可随时撤回申请。',
+        cta: '知道了，开始填票',
+        read: '已阅',
+      },
       apply: {
         intro: '选好抬头、勾选要开票的充值订单后提交，1–3 个工作日开出；合计满 ¥1000 可开，单张满 ¥3000 免 5% 手续费。',
         empty: '暂无可开票的充值订单',
@@ -707,6 +716,15 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       title: 'Invoice Center',
       nav: { console: 'Console', studio: 'Creative Studio', hub: 'Content Hub', activity: 'Events', login: 'Log in', theme: 'Toggle theme' },
       tabs: { apply: 'Apply', requests: 'My Requests', profiles: 'Billing Profiles' },
+      guide: {
+        title: 'How Invoicing Works',
+        step1: 'Set up a billing profile — companies need a tax No., individuals just a name',
+        step2: 'Tick the top-up orders on the ticket; ¥1000 minimum in total',
+        step3: 'Submit — the e-invoice is issued within 1–3 business days, downloadable anytime',
+        rule: 'The 5% fee is waived at ¥3000+; withdraw anytime before acceptance.',
+        cta: 'Got it, start filling',
+        read: 'READ',
+      },
       apply: {
         intro: 'Pick a profile, tick the top-up orders, submit — issued within 1–3 business days. ¥1000 minimum; the 5% fee is waived at ¥3000+.',
         empty: 'No invoiceable top-up orders yet',
