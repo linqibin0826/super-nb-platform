@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button, Input, Modal } from '../../ui'
 import { t } from '../../i18n'
 import { api, type ProfileT, type RegistryOfficialT } from '../api'
+import { isValidTaxNo } from '../taxno'
 import { ErrorBar } from './shared'
 
 /** 核验面板状态机:未核验 → 查询中 → 查得(比对)/查无/通道异常 */
@@ -43,8 +44,11 @@ export function ProfileFormModal({
 
   const set = (patch: Partial<ProfileDraft>) => setDraft((d) => ({ ...d, ...patch }))
 
+  // 税号填了但格式不合法(18 位国标校验位/15 位老号,与后端同规则)——红提示 + 禁保存
+  const taxNoBad = !!(draft.taxNo ?? '').trim() && !isValidTaxNo(draft.taxNo ?? '')
+
   const incomplete =
-    !draft.title.trim() || (draft.type === 'COMPANY' && !(draft.taxNo ?? '').trim())
+    !draft.title.trim() || (draft.type === 'COMPANY' && !(draft.taxNo ?? '').trim()) || taxNoBad
 
   /** 官方档案核验:查得后逐字段比对 + 自动补全空字段,不拦保存(核验是辅助不是门槛)。
    *  用户只需要输全称——税号/地址/开户行都能由这里带出(必填的税号也算回填满足)。 */
@@ -228,6 +232,11 @@ export function ProfileFormModal({
                 onChange={(e) => set({ [f.key]: e.target.value } as Partial<ProfileDraft>)}
                 placeholder={f.hint ?? ''}
               />
+              {f.key === 'taxNo' && taxNoBad && (
+                <span className="mt-1 block text-xs" style={{ color: 'var(--iv-seal)' }}>
+                  {t('invoice.profiles.taxNoInvalid')}
+                </span>
+              )}
             </label>
           ))}
         <div className="flex justify-end gap-2 pt-1">
