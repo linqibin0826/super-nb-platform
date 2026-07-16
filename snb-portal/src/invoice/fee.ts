@@ -74,3 +74,8 @@ export function rmbUpper(cents: number): string {
   }
   return head + tail
 }
+
+/** 票面/存根金额:千分位两位小数(¥ 前缀由调用方拼) */
+export function fmtYuanGrouped(cents: number): string {
+  return (cents / 100).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}

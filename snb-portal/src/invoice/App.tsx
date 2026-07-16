@@ -16,7 +16,7 @@ function SubNav() {
     { to: '/profiles', label: t('invoice.tabs.profiles') },
   ]
   return (
-    <nav className="mx-auto flex w-full max-w-4xl gap-2 px-4 pt-6">
+    <nav className="mx-auto flex w-full max-w-6xl gap-1.5 px-4 pt-6">
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}
@@ -24,7 +24,9 @@ function SubNav() {
           end={tab.to === '/'}
           className={({ isActive }) =>
             `rounded-full px-4 py-1.5 text-sm transition-colors ${
-              isActive ? 'bg-snb-t1 text-snb-bg' : 'text-snb-t2 hover:text-snb-t1'
+              isActive
+                ? 'bg-snb-panel font-semibold text-snb-t1 shadow-card'
+                : 'text-snb-t2 hover:bg-snb-t1/5 hover:text-snb-t1'
             }`
           }
         >
@@ -41,7 +43,7 @@ export function AppRoutes() {
     <ThemeScope theme={theme} className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
       <InvoiceHeader theme={theme} onToggleTheme={toggleTheme} />
       <SubNav />
-      <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-6">
+      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-7">
         <Routes>
           <Route path="/" element={<ApplyPage />} />
           <Route path="/requests" element={<RequestsPage />} />

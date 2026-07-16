@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Alert, Badge, Button, Card, Input } from '../../ui'
+import { Alert, Button, Card, Input } from '../../ui'
 import { t } from '../../i18n'
 import { api, downloadPdf, invoiceUpload, InvoiceApiError, type AdminDetailT, type AdminRowT } from '../api'
-import { ErrorBar, Loading } from './shared'
+import { ErrorBar, Loading, PageHead } from './shared'
+import { fmtYuanGrouped, rmbUpper } from '../fee'
 
-const STATUSES = ['', 'PENDING', 'INVOICING', 'ISSUED', 'REJECTED', 'CANCELLED'] as const
+const STATUSES = ['PENDING', 'INVOICING', 'ISSUED', 'REJECTED', 'CANCELLED', ''] as const
 
-/** 发票管理(站长自用):非 admin 一律 403 由后端把门,前端只渲染错误提示。 */
+/** 发票管理(柜台,站长自用):队列行→点开=mini 票面+操作;非 admin 由后端 403 把门。 */
 export function AdminPage() {
   const [status, setStatus] = useState<string>('PENDING')
   const [page, setPage] = useState(1)
@@ -14,7 +15,8 @@ export function AdminPage() {
   const [total, setTotal] = useState(0)
   const [error, setError] = useState('')
   const [forbidden, setForbidden] = useState(false)
-  const [open, setOpen] = useState<AdminDetailT | null>(null)
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [detail, setDetail] = useState<AdminDetailT | null>(null)
   const [reason, setReason] = useState('')
   const [refundFee, setRefundFee] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -33,12 +35,26 @@ export function AdminPage() {
   }
   useEffect(load, [status, page])
 
+  const toggleRow = (id: string) => {
+    if (openId === id) {
+      setOpenId(null)
+      setDetail(null)
+      return
+    }
+    setOpenId(id)
+    setDetail(null)
+    setReason('')
+    setRefundFee(true)
+    api.adminDetail(id).then(setDetail).catch((e) => setError(String(e.message)))
+  }
+
   const act = async (fn: () => Promise<unknown>) => {
     setBusy(true)
     setError('')
     try {
       await fn()
-      setOpen(null)
+      setOpenId(null)
+      setDetail(null)
       load()
     } catch (e) {
       setError(String((e as Error).message))
@@ -53,126 +69,212 @@ export function AdminPage() {
     return act(() => invoiceUpload(`/admin/requests/${id}/pdf`, form))
   }
 
-  if (forbidden) return <Alert tone="warning">{t('invoice.admin.forbidden')}</Alert>
+  const head = (
+    <PageHead eyebrow={t('invoice.admin.eyebrow')} title={t('invoice.admin.title')} sub={t('invoice.admin.sub')} />
+  )
+
+  if (forbidden) return <>{head}<Alert tone="warning">{t('invoice.admin.forbidden')}</Alert></>
 
   return (
-    <div className="space-y-3">
-      <h1 className="text-lg font-medium">{t('invoice.admin.title')}</h1>
-      <div className="flex flex-wrap gap-2">
+    <>
+      {head}
+      <div className="mb-4 flex flex-wrap gap-2">
         {STATUSES.map((s) => (
           <Button
             key={s || 'all'}
             size="sm"
-            variant={status === s ? 'primary' : undefined}
+            variant={status === s ? 'primary' : 'secondary'}
             onClick={() => {
               setStatus(s)
               setPage(1)
+              setOpenId(null)
+              setDetail(null)
             }}
           >
             {s === '' ? t('invoice.admin.all') : t(`invoice.requests.statuses.${s}`)}
           </Button>
         ))}
       </div>
-      {error && <ErrorBar msg={error} />}
+      {error && <div className="mb-4"><ErrorBar msg={error} /></div>}
       {!rows ? (
         <Loading />
+      ) : rows.length === 0 ? (
+        <div className="rounded-xl border-[1.5px] border-dashed border-snb-hairline-strong p-16 text-center text-sm text-snb-t3">
+          {t('invoice.requests.empty')}
+        </div>
       ) : (
-        <>
+        <Card className="overflow-hidden p-0">
           {rows.map((r) => (
-            <Card key={r.id} className="space-y-2 p-4">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-sm">{r.requestNo}</span>
-                <Badge tone="gray">{t(`invoice.requests.statuses.${r.status}`)}</Badge>
-                <span className="flex-1 truncate text-sm text-snb-t2">{r.email}</span>
-                <span className="font-mono">¥{r.amount.toFixed(2)}</span>
-                <span className="font-mono text-sm text-snb-t2">fee ¥{r.fee.toFixed(2)}</span>
-                <Button size="sm" onClick={() => api.adminDetail(r.id).then(setOpen).catch((e) => setError(String(e.message)))}>
-                  {t('invoice.admin.detail')}
-                </Button>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {r.status === 'PENDING' && (
-                  <Button size="sm" variant="primary" disabled={busy}
-                          onClick={() => act(() => api.adminCharge(r.id))}>
-                    {r.fee === 0 ? t('invoice.admin.chargeFree') : t('invoice.admin.charge')}
-                  </Button>
-                )}
-                {(r.status === 'INVOICING' || r.status === 'ISSUED') && (
-                  <label className="inline-flex cursor-pointer items-center gap-1 text-sm text-snb-t2">
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      className="hidden"
-                      onChange={(e) => e.target.files?.[0] && uploadPdf(r.id, e.target.files[0])}
-                    />
-                    <span className="rounded border border-snb-line px-2 py-1">{t('invoice.admin.upload')}</span>
-                  </label>
-                )}
-                {(r.status === 'INVOICING' || r.status === 'ISSUED') && (
-                  <Button size="sm" onClick={() => downloadPdf(`/admin/requests/${r.id}/pdf`, `${r.requestNo}.pdf`)}>
-                    {t('invoice.admin.download')}
-                  </Button>
-                )}
-                {(r.status === 'PENDING' || r.status === 'INVOICING') && (
-                  <span className="inline-flex items-center gap-2">
-                    <Input value={reason} onChange={(e) => setReason(e.target.value)}
-                           placeholder={t('invoice.admin.rejectReason')} />
-                    {r.status === 'INVOICING' && (
-                      <label className="flex items-center gap-1 text-xs text-snb-t2">
-                        <input type="checkbox" checked={refundFee}
-                               onChange={(e) => setRefundFee(e.target.checked)} />
-                        {t('invoice.admin.refundFee')}
-                      </label>
-                    )}
-                    <Button size="sm" disabled={busy || !reason.trim()}
-                            onClick={() => act(() => api.adminReject(r.id, reason.trim(), refundFee))}>
-                      {t('invoice.admin.reject')}
-                    </Button>
-                  </span>
-                )}
-              </div>
-            </Card>
-          ))}
-          <div className="flex items-center gap-3 text-sm text-snb-t2">
-            <Button size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>←</Button>
-            <span>{page} / {Math.max(1, Math.ceil(total / 20))}</span>
-            <Button size="sm" disabled={page * 20 >= total} onClick={() => setPage(page + 1)}>→</Button>
-          </div>
-        </>
-      )}
+            <div key={r.id}>
+              <button
+                type="button"
+                onClick={() => toggleRow(r.id)}
+                className="flex w-full items-center gap-4 border-b border-snb-hairline px-5 py-3.5 text-left text-[13.5px] transition-colors hover:bg-snb-t1/5"
+              >
+                <span className="w-[210px] flex-none font-mono font-semibold max-md:w-auto max-md:flex-1">
+                  {r.requestNo}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-snb-t2 max-md:hidden">{r.email}</span>
+                <span className="w-[110px] flex-none text-right font-mono font-semibold tabular-nums">
+                  ¥{fmtYuanGrouped(Math.round(r.amount * 100))}
+                </span>
+                <span className="w-[90px] flex-none text-right tabular-nums text-snb-t3 max-md:hidden">
+                  {r.fee === 0
+                    ? t('invoice.admin.freeShort')
+                    : t('invoice.admin.feeCol', { fee: fmtYuanGrouped(Math.round(r.fee * 100)) })}
+                </span>
+                <span className={`iv-st-pill iv-st-${r.status}`}>{t(`invoice.requests.statuses.${r.status}`)}</span>
+              </button>
 
-      {open && (
-        <Card className="space-y-2 p-4">
-          <div className="flex justify-between">
-            <span className="font-mono">{open.requestNo}</span>
-            <Button size="sm" onClick={() => setOpen(null)}>×</Button>
-          </div>
-          <div className="text-sm">{open.email} · uid {open.userId}</div>
-          <div className="text-sm">
-            {open.profileType === 'COMPANY' ? t('invoice.profiles.typeCompany') : t('invoice.profiles.typePersonal')}
-            {' · '}{open.profileTitle}
-            {open.profileTaxNo && <span className="font-mono"> · {open.profileTaxNo}</span>}
-          </div>
-          {(open.profileRegAddress || open.profileBankName) && (
-            <div className="text-xs text-snb-t2">
-              {[open.profileRegAddress, open.profileRegPhone, open.profileBankName, open.profileBankAccount]
-                .filter(Boolean).join(' · ')}
+              {openId === r.id && (
+                <div className="iv-adm-detail border-b border-snb-hairline p-5">
+                  {!detail ? (
+                    <div className="py-6 text-center text-sm text-snb-t3">{t('invoice.common.loading')}</div>
+                  ) : (
+                    <div className="grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_300px]">
+                      <div className="iv-mini-fapiao">
+                        <div className="iv-fp-field">
+                          <span className="lb">{t('invoice.admin.userLabel')}</span>
+                          <span className="vl font-mono text-[12.5px]">{detail.email} · uid {detail.userId}</span>
+                        </div>
+                        <div className="iv-fp-field">
+                          <span className="lb">{t('invoice.apply.buyerSide')}</span>
+                          <span className="vl">
+                            {detail.profileType === 'COMPANY'
+                              ? t('invoice.profiles.typeCompany')
+                              : t('invoice.profiles.typePersonal')}
+                            {' · '}
+                            {detail.profileTitle}
+                          </span>
+                        </div>
+                        <div className="iv-fp-field">
+                          <span className="lb">{t('invoice.apply.taxLabel')}</span>
+                          <span className={`vl font-mono ${detail.profileTaxNo ? '' : 'text-snb-t3'}`}>
+                            {detail.profileTaxNo || '—'}
+                          </span>
+                        </div>
+                        {(detail.profileRegAddress || detail.profileBankName) && (
+                          <div className="iv-fp-field">
+                            <span className="lb">{t('invoice.admin.extraLabel')}</span>
+                            <span className="vl text-[12px] text-snb-t3">
+                              {[detail.profileRegAddress, detail.profileRegPhone, detail.profileBankName, detail.profileBankAccount]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </span>
+                          </div>
+                        )}
+                        <div className="iv-fp-field">
+                          <span className="lb">{t('invoice.apply.sumSide')}</span>
+                          <span className="vl font-mono font-bold">
+                            ¥{fmtYuanGrouped(Math.round(detail.amount * 100))}
+                            <span className="iv-doc ml-2 font-normal">（{rmbUpper(Math.round(detail.amount * 100))}）</span>
+                          </span>
+                        </div>
+                        <div className="iv-fp-field">
+                          <span className="lb">{t('invoice.apply.feeSide')}</span>
+                          <span className="vl">
+                            {detail.fee === 0
+                              ? t('invoice.requests.feeFreeLine')
+                              : `¥${fmtYuanGrouped(Math.round(detail.fee * 100))}${detail.feeChargedAt ? t('invoice.admin.feeChargedSuffix') : ''}`}
+                          </span>
+                        </div>
+                        {detail.remark && (
+                          <div className="iv-fp-field">
+                            <span className="lb">{t('invoice.apply.remarkSide')}</span>
+                            <span className="vl text-snb-t3">{detail.remark}</span>
+                          </div>
+                        )}
+                        {detail.rejectReason && (
+                          <div className="iv-fp-field">
+                            <span className="lb">{t('invoice.requests.rejectReason')}</span>
+                            <span className="vl" style={{ color: 'var(--iv-seal)' }}>{detail.rejectReason}</span>
+                          </div>
+                        )}
+                        <table className="mt-2 w-full border-t border-dashed border-snb-hairline-strong text-[12.5px]">
+                          <tbody>
+                            {detail.orders.map((o) => (
+                              <tr key={o.orderId}>
+                                <td className="py-1 font-mono">{o.orderNo}</td>
+                                <td className="py-1 text-snb-t3">{new Date(o.completedAt).toLocaleDateString('sv')}</td>
+                                <td className="py-1 text-right font-mono tabular-nums">
+                                  ¥{fmtYuanGrouped(Math.round(o.amount * 100))}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="flex flex-col gap-2.5">
+                        {detail.status === 'PENDING' && (
+                          <Button variant="primary" disabled={busy} onClick={() => act(() => api.adminCharge(detail.id))}>
+                            {detail.fee === 0 ? t('invoice.admin.chargeFree') : t('invoice.admin.charge')}
+                          </Button>
+                        )}
+                        {(detail.status === 'INVOICING' || detail.status === 'ISSUED') && (
+                          <>
+                            <label className="block cursor-pointer rounded-lg border-[1.5px] border-dashed border-snb-hairline-strong px-4 py-3 text-center text-[13px] text-snb-t2 transition-colors hover:border-primary-500 hover:text-snb-t1">
+                              <input
+                                type="file"
+                                accept="application/pdf"
+                                className="hidden"
+                                onChange={(e) => e.target.files?.[0] && uploadPdf(detail.id, e.target.files[0])}
+                              />
+                              <b>{t('invoice.admin.upload')}</b>
+                              <span className="mt-0.5 block text-[11.5px] text-snb-t3">{t('invoice.admin.uploadHint')}</span>
+                            </label>
+                            <Button
+                              variant="secondary"
+                              onClick={() => downloadPdf(`/admin/requests/${detail.id}/pdf`, `${detail.requestNo}.pdf`)}
+                            >
+                              {t('invoice.admin.download')}
+                            </Button>
+                          </>
+                        )}
+                        {(detail.status === 'PENDING' || detail.status === 'INVOICING') && (
+                          <div className="flex flex-col gap-2 border-t border-snb-hairline pt-2.5">
+                            <Input
+                              value={reason}
+                              onChange={(e) => setReason(e.target.value)}
+                              placeholder={t('invoice.admin.rejectReason')}
+                            />
+                            {detail.status === 'INVOICING' && (
+                              <label className="flex cursor-pointer items-center gap-1.5 text-xs text-snb-t2">
+                                <input
+                                  type="checkbox"
+                                  checked={refundFee}
+                                  onChange={(e) => setRefundFee(e.target.checked)}
+                                />
+                                {t('invoice.admin.refundFee')}
+                              </label>
+                            )}
+                            <Button
+                              variant="secondary"
+                              className="!text-[#B3382C] hover:!border-[#B3382C]"
+                              disabled={busy || !reason.trim()}
+                              onClick={() => act(() => api.adminReject(detail.id, reason.trim(), refundFee))}
+                            >
+                              {t('invoice.admin.reject')}
+                            </Button>
+                          </div>
+                        )}
+                        <div className="text-[11.5px] leading-relaxed text-snb-t3">{t('invoice.admin.opsNote')}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-          {open.remark && <div className="text-sm text-snb-t2">备注: {open.remark}</div>}
-          <table className="w-full text-sm">
-            <tbody>
-              {open.orders.map((o) => (
-                <tr key={o.orderId} className="border-t border-snb-line">
-                  <td className="py-1 font-mono">{o.orderNo}</td>
-                  <td className="py-1 text-snb-t2">{new Date(o.completedAt).toLocaleDateString('zh-CN')}</td>
-                  <td className="py-1 text-right font-mono">¥{o.amount.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          ))}
         </Card>
       )}
-    </div>
+      {rows && rows.length > 0 && (
+        <div className="mt-4 flex items-center gap-3 text-sm text-snb-t2">
+          <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>←</Button>
+          <span>{page} / {Math.max(1, Math.ceil(total / 20))}</span>
+          <Button size="sm" variant="secondary" disabled={page * 20 >= total} onClick={() => setPage(page + 1)}>→</Button>
+        </div>
+      )}
+    </>
   )
 }
