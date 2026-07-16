@@ -44,7 +44,13 @@ export function FirstVisitGuide({ onConfirm, onSkip }: { onConfirm: () => void; 
                 </div>
               ))}
             </div>
-            <div className="iv-guide-rule">{t('invoice.guide.rule')}</div>
+            <div className="iv-guide-rule">
+              <span className="iv-stamp-mian" aria-hidden="true">免</span>
+              <span>
+                <b className="main">{t('invoice.guide.ruleMain')}</b>
+                <span className="sub">{t('invoice.guide.ruleSub')}</span>
+              </span>
+            </div>
             <div className="mt-5 text-center">
               <Button variant="primary" autoFocus onClick={close}>
                 {t('invoice.guide.cta')}
