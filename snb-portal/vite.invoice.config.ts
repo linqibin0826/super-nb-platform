@@ -24,6 +24,7 @@ export default defineConfig({
     proxy: {
       '/api': 'http://127.0.0.1:8080',
       '/invoice/v1': process.env.INVOICE_PLATFORM_TARGET || 'http://127.0.0.1:8081',
+      '/guide/v1': process.env.INVOICE_PLATFORM_TARGET || 'http://127.0.0.1:8081',
     },
   },
 })

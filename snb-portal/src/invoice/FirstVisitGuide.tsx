@@ -2,33 +2,14 @@ import { useEffect, useState } from 'react'
 import { Button } from '../ui'
 import { t } from '../i18n'
 
-const SEEN_KEY = 'snb_invoice_guide_v1'
-
-export function guideSeen(): boolean {
-  try {
-    return !!localStorage.getItem(SEEN_KEY)
-  } catch {
-    return true // 存储不可用(隐私模式)时不弹,避免每次都弹
-  }
-}
-
-export function markGuideSeen(): void {
-  try {
-    localStorage.setItem(SEEN_KEY, '1')
-  } catch {
-    /* 存不下就算了 */
-  }
-}
-
 /** 首次进站「开票须知」单:三步办事顺序 + 关键规则;
- *  点「知道了」盖「已阅」章(240ms)后关闭,localStorage 记住不再弹。 */
+ *  点「知道了」盖「已阅」章(240ms)后关闭。弹与不弹由 useGuideAck 决定(服务端真源)。 */
 export function FirstVisitGuide({ onDismiss }: { onDismiss: () => void }) {
   const [closing, setClosing] = useState(false)
 
   const close = () => {
     if (closing) return
     setClosing(true)
-    markGuideSeen()
     window.setTimeout(onDismiss, 320)
   }
 
