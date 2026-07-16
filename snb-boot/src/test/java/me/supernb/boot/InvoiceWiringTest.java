@@ -110,7 +110,7 @@ class InvoiceWiringTest {
         String profileBody = mvc.perform(post("/invoice/v1/profiles")
                         .header("Authorization", "Bearer user-token")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"type\":\"COMPANY\",\"title\":\"某某科技\",\"taxNo\":\"91330100X\"}"))
+                        .content("{\"type\":\"COMPANY\",\"title\":\"某某科技\",\"taxNo\":\"9144030071526726XG\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         String profileId = JsonPath.read(profileBody, "$.id");

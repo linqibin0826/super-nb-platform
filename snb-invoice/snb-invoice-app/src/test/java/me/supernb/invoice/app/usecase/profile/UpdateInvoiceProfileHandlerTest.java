@@ -55,8 +55,8 @@ class UpdateInvoiceProfileHandlerTest {
 
     @Test
     void untouchedNameAndTaxNoKeepsStampEvenWithoutCache() {
-        var before = company("某某科技", "91X", "旧开户行");
-        var after = company("某某科技", "91X", "新开户行"); // 只改章外字段
+        var before = company("某某科技", "9144030071526726XG", "旧开户行");
+        var after = company("某某科技", "9144030071526726XG", "新开户行"); // 只改章外字段
         when(repo.find(7, 1)).thenReturn(Optional.of(new StoredProfile(before, STAMP)));
         when(repo.update(eq(7L), eq(1L), eq(after), eq(STAMP))).thenReturn(true);
         handler.handle(new UpdateInvoiceProfileCommand(7, 1, after));
@@ -65,8 +65,8 @@ class UpdateInvoiceProfileHandlerTest {
 
     @Test
     void editedTaxNoDropsStampWhenCacheDisagrees() {
-        var before = company("某某科技", "91X", null);
-        var after = company("某某科技", "改过的税号", null);
+        var before = company("某某科技", "9144030071526726XG", null);
+        var after = company("某某科技", "91440300708461136T", null); // 换成另一个格式合法的税号
         when(repo.find(7, 1)).thenReturn(Optional.of(new StoredProfile(before, STAMP)));
         when(registry.cached("某某科技")).thenReturn(Optional.empty());
         when(repo.update(eq(7L), eq(1L), eq(after), isNull())).thenReturn(true);
@@ -76,11 +76,11 @@ class UpdateInvoiceProfileHandlerTest {
 
     @Test
     void editedTitleRestampsWhenCacheMatches() {
-        var before = company("旧名字", "91X", null);
-        var after = company("某某科技", "91X", null);
+        var before = company("旧名字", "9144030071526726XG", null);
+        var after = company("某某科技", "9144030071526726XG", null);
         when(repo.find(7, 1)).thenReturn(Optional.of(new StoredProfile(before, null)));
-        when(registry.cached("某某科技"))
-                .thenReturn(Optional.of(new CompanyRecord("某某科技", "91X", null, null, null, null)));
+        when(registry.cached("某某科技")).thenReturn(
+                Optional.of(new CompanyRecord("某某科技", "9144030071526726XG", null, null, null, null)));
         when(repo.update(eq(7L), eq(1L), eq(after), org.mockito.ArgumentMatchers.notNull())).thenReturn(true);
         handler.handle(new UpdateInvoiceProfileCommand(7, 1, after));
         verify(repo).update(eq(7L), eq(1L), eq(after), org.mockito.ArgumentMatchers.notNull()); // 改对了 → 补章
