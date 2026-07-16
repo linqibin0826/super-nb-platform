@@ -22,6 +22,7 @@ import me.supernb.invoice.domain.port.read.BillableOrderReadPort;
 import me.supernb.invoice.domain.port.read.InvoiceRequestReadPort;
 import me.supernb.invoice.domain.port.repository.InvoiceProfileRepository;
 import me.supernb.invoice.domain.port.repository.InvoiceProfileRepository.ProfileData;
+import me.supernb.invoice.domain.port.repository.InvoiceProfileRepository.StoredProfile;
 import me.supernb.invoice.domain.port.repository.InvoiceRequestRepository;
 import me.supernb.invoice.domain.port.repository.InvoiceRequestRepository.Created;
 import me.supernb.invoice.domain.port.repository.InvoiceRequestRepository.NewRequest;
@@ -42,13 +43,14 @@ class CreateInvoiceRequestHandlerTest {
 
     static final ProfileData PROFILE = new ProfileData(ProfileType.PERSONAL, "张三", null, null, null, null, null);
     static final Instant AT = Instant.parse("2026-07-01T00:00:00Z");
+    static final Instant STAMP = Instant.parse("2026-07-16T00:00:00Z");
 
     static OrderLine order(long id, String amount) {
         return new OrderLine(id, "T" + id, new BigDecimal(amount), AT);
     }
 
     void stubHappy() {
-        when(profiles.find(7, 55)).thenReturn(Optional.of(PROFILE));
+        when(profiles.find(7, 55)).thenReturn(Optional.of(new StoredProfile(PROFILE, STAMP)));
         when(billable.completedOrders(7)).thenReturn(List.of(order(1, "600"), order(2, "500"), order(3, "3000")));
         when(requestRead.occupiedOrderIds(7)).thenReturn(Set.of());
         when(billable.balanceOf(7)).thenReturn(new BigDecimal("100"));
@@ -67,6 +69,7 @@ class CreateInvoiceRequestHandlerTest {
         assertThat(captor.getValue().orders()).hasSize(2);
         assertThat(captor.getValue().remark()).isEqualTo("七月报销");
         assertThat(captor.getValue().profile()).isEqualTo(PROFILE);
+        assertThat(captor.getValue().profileVerifiedAt()).isEqualTo(STAMP); // 提交那一刻的章随快照落单
     }
 
     @Test

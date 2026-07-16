@@ -3,12 +3,14 @@ package me.supernb.invoice.adapter.rest.response;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import me.supernb.invoice.app.usecase.admin.dto.AdminInvoiceDetailDto;
 import me.supernb.invoice.app.usecase.admin.dto.AdminInvoiceItem;
 import me.supernb.invoice.domain.model.FeePolicy;
 import me.supernb.invoice.domain.model.read.InvoiceRequestView;
 import me.supernb.invoice.domain.model.read.OrderLine;
 import me.supernb.invoice.domain.model.read.ProfileView;
+import me.supernb.invoice.domain.port.registry.CompanyRegistryPort.CompanyRecord;
 
 /// /invoice/v1 响应形状(全部 record;实体 id 一律字符串)。
 public final class Responses {
@@ -24,12 +26,26 @@ public final class Responses {
     public record StatusResponse(String status) {
     }
 
-    /// 抬头行。
+    /// 抬头行(verifiedAt=核验章,null 即未核验)。
     public record ProfileResponse(String id, String type, String title, String taxNo, String regAddress,
-                                  String regPhone, String bankName, String bankAccount) {
+                                  String regPhone, String bankName, String bankAccount, Instant verifiedAt) {
         public static ProfileResponse of(ProfileView v) {
             return new ProfileResponse(String.valueOf(v.id()), v.type().name(), v.title(), v.taxNo(),
-                    v.regAddress(), v.regPhone(), v.bankName(), v.bankAccount());
+                    v.regAddress(), v.regPhone(), v.bankName(), v.bankAccount(), v.verifiedAt());
+        }
+    }
+
+    /// 抬头核验结果:found=false=供应商查无此企业(≠出错,出错走异常 422/429)。
+    public record RegistryLookupResponse(boolean found, RegistryCompany official) {
+        /// 官方开票资料(字段已清洗:strip、空归 null、地址电话已拆)。
+        public record RegistryCompany(String name, String taxNo, String address, String phone,
+                                      String bankName, String bankAccount) {
+        }
+
+        public static RegistryLookupResponse of(Optional<CompanyRecord> record) {
+            return record.map(r -> new RegistryLookupResponse(true, new RegistryCompany(
+                            r.name(), r.taxNo(), r.address(), r.phone(), r.bankName(), r.bankAccount())))
+                    .orElseGet(() -> new RegistryLookupResponse(false, null));
         }
     }
 
@@ -73,20 +89,20 @@ public final class Responses {
     public record AdminPageResponse(List<AdminRowResponse> items, long total) {
     }
 
-    /// 管理端详情(抬头快照平铺+订单明细)。
+    /// 管理端详情(抬头快照平铺——含提交时核验章——+订单明细)。
     public record AdminDetailResponse(String id, String requestNo, String userId, String email, BigDecimal amount,
                                       BigDecimal fee, String status, String profileType, String profileTitle,
                                       String profileTaxNo, String profileRegAddress, String profileRegPhone,
-                                      String profileBankName, String profileBankAccount, String remark,
-                                      String rejectReason, Instant feeChargedAt, Instant issuedAt,
+                                      String profileBankName, String profileBankAccount, Instant profileVerifiedAt,
+                                      String remark, String rejectReason, Instant feeChargedAt, Instant issuedAt,
                                       Instant createdAt, List<OrderResponse> orders) {
         public static AdminDetailResponse of(AdminInvoiceDetailDto dto) {
             var d = dto.detail();
             return new AdminDetailResponse(String.valueOf(d.id()), d.requestNo(), String.valueOf(d.userId()),
                     dto.email(), d.amount(), d.fee(), d.status().name(), d.profileType().name(), d.profileTitle(),
                     d.profileTaxNo(), d.profileRegAddress(), d.profileRegPhone(), d.profileBankName(),
-                    d.profileBankAccount(), d.remark(), d.rejectReason(), d.feeChargedAt(), d.issuedAt(),
-                    d.createdAt(), d.orders().stream().map(OrderResponse::of).toList());
+                    d.profileBankAccount(), d.profileVerifiedAt(), d.remark(), d.rejectReason(), d.feeChargedAt(),
+                    d.issuedAt(), d.createdAt(), d.orders().stream().map(OrderResponse::of).toList());
         }
     }
 }

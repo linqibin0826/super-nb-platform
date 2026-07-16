@@ -24,6 +24,7 @@ import me.supernb.invoice.app.usecase.profile.command.CreateInvoiceProfileComman
 import me.supernb.invoice.app.usecase.profile.command.DeleteInvoiceProfileCommand;
 import me.supernb.invoice.app.usecase.profile.command.UpdateInvoiceProfileCommand;
 import me.supernb.invoice.app.usecase.profile.query.ProfileQueryService;
+import me.supernb.invoice.app.usecase.registry.RegistryLookupService;
 import me.supernb.invoice.app.usecase.request.command.CancelInvoiceRequestCommand;
 import me.supernb.invoice.app.usecase.request.command.CreateInvoiceRequestCommand;
 import me.supernb.invoice.app.usecase.request.dto.BillableOverview;
@@ -36,6 +37,7 @@ import me.supernb.invoice.domain.model.read.InvoiceRequestView;
 import me.supernb.invoice.domain.model.read.OrderLine;
 import me.supernb.invoice.domain.model.read.PdfFile;
 import me.supernb.invoice.domain.model.read.ProfileView;
+import me.supernb.invoice.domain.port.registry.CompanyRegistryPort.CompanyRecord;
 import me.supernb.invoice.domain.port.repository.InvoiceProfileRepository.ProfileData;
 import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
 import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
@@ -58,6 +60,7 @@ class InvoiceControllerTest {
     final ProfileQueryService profileQueries = mock(ProfileQueryService.class);
     final BillableOrderQueryService billableQueries = mock(BillableOrderQueryService.class);
     final MyInvoiceQueryService myQueries = mock(MyInvoiceQueryService.class);
+    final RegistryLookupService registryLookup = mock(RegistryLookupService.class);
     final Sub2apiIntrospectClient introspect = mock(Sub2apiIntrospectClient.class);
 
     MockMvc mvc;
@@ -66,7 +69,7 @@ class InvoiceControllerTest {
     void setup() {
         when(introspect.introspect("Bearer u")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
         mvc = MockMvcBuilders.standaloneSetup(
-                        new InvoiceController(commandBus, profileQueries, billableQueries, myQueries))
+                        new InvoiceController(commandBus, profileQueries, billableQueries, myQueries, registryLookup))
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
     }
@@ -74,11 +77,34 @@ class InvoiceControllerTest {
     @Test
     void profilesListSerializesIdAsString() throws Exception {
         when(profileQueries.listByUser(7)).thenReturn(List.of(
-                new ProfileView(123, ProfileType.COMPANY, "某某科技", "91X", null, null, null, null)));
+                new ProfileView(123, ProfileType.COMPANY, "某某科技", "91X", null, null, null, null,
+                        Instant.parse("2026-07-16T00:00:00Z"))));
         mvc.perform(get("/invoice/v1/profiles").header("Authorization", "Bearer u"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value("123"))
-                .andExpect(jsonPath("$[0].type").value("COMPANY"));
+                .andExpect(jsonPath("$[0].type").value("COMPANY"))
+                .andExpect(jsonPath("$[0].verifiedAt").exists());
+    }
+
+    @Test
+    void registryLookupFoundAndMiss() throws Exception {
+        when(registryLookup.lookup(7, "腾讯科技（深圳）有限公司")).thenReturn(Optional.of(new CompanyRecord(
+                "腾讯科技（深圳）有限公司", "9144030071526726XG", "深圳市南山区腾讯大厦35层",
+                "0755-86013388", "招商银行深圳汉京中心支行", "817281823910001")));
+        mvc.perform(post("/invoice/v1/registry/lookup").header("Authorization", "Bearer u")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"腾讯科技（深圳）有限公司\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.found").value(true))
+                .andExpect(jsonPath("$.official.taxNo").value("9144030071526726XG"))
+                .andExpect(jsonPath("$.official.phone").value("0755-86013388"));
+
+        when(registryLookup.lookup(7, "不存在的公司")).thenReturn(Optional.empty());
+        mvc.perform(post("/invoice/v1/registry/lookup").header("Authorization", "Bearer u")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"不存在的公司\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.found").value(false));
     }
 
     @Test

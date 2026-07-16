@@ -98,3 +98,8 @@ invoice:
   ratelimit:
     burst: 30
     per-minute: 60
+  # 抬头核验(聚美智数,阿里云云市场按次付费):appcode 缺省空值=核验功能整体静默关闭
+  registry:
+    appcode: ${JUMEI_INVOICE_APPCODE:}
+    user-daily: 10
+    global-daily: 40

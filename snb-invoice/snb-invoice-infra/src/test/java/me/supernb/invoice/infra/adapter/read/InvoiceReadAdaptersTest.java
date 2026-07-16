@@ -74,15 +74,16 @@ class InvoiceReadAdaptersTest {
 
     @Test
     void fullReadRoundTrip() {
-        long profileId = profiles.create(500, PERSONAL);
+        long profileId = profiles.create(500, PERSONAL, null);
         assertThat(profileRead.listByUser(500)).singleElement()
                 .satisfies(p -> {
                     assertThat(p.id()).isEqualTo(profileId);
                     assertThat(p.title()).isEqualTo("张三");
+                    assertThat(p.verifiedAt()).isNull();
                 });
 
         var created = requests.create(new NewRequest(500, new BigDecimal("1200.00"), new BigDecimal("60.00"),
-                PERSONAL, "七月", List.of(
+                PERSONAL, null, "七月", List.of(
                         new OrderLine(8001, "T8001", new BigDecimal("700"), Instant.parse("2026-07-01T00:00:00Z")),
                         new OrderLine(8002, "T8002", new BigDecimal("500"), Instant.parse("2026-07-02T00:00:00Z")))));
 

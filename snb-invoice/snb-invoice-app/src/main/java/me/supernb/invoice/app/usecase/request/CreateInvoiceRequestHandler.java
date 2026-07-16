@@ -51,8 +51,9 @@ public class CreateInvoiceRequestHandler
         if (remark != null && remark.length() > 200) {
             throw InvoiceException.invalidInput("备注过长");
         }
-        var profile = profiles.find(cmd.userId(), cmd.profileId())
+        var stored = profiles.find(cmd.userId(), cmd.profileId())
                 .orElseThrow(() -> InvoiceException.profileNotFound(cmd.profileId()));
+        var profile = stored.data();
 
         Map<Long, OrderLine> mine = billableOrders.completedOrders(cmd.userId()).stream()
                 .collect(Collectors.toMap(OrderLine::orderId, Function.identity()));
@@ -83,7 +84,7 @@ public class CreateInvoiceRequestHandler
         }
 
         var created = requests.create(new InvoiceRequestRepository.NewRequest(
-                cmd.userId(), total, fee, profile, remark, picked));
+                cmd.userId(), total, fee, profile, stored.verifiedAt(), remark, picked));
         return new CreateInvoiceRequestResult(String.valueOf(created.id()), created.requestNo(), total, fee);
     }
 }

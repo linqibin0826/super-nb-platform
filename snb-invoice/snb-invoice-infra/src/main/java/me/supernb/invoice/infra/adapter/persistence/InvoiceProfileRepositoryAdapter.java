@@ -1,5 +1,6 @@
 package me.supernb.invoice.infra.adapter.persistence;
 
+import java.time.Instant;
 import java.util.Optional;
 import me.supernb.invoice.domain.model.ProfileType;
 import me.supernb.invoice.domain.port.repository.InvoiceProfileRepository;
@@ -23,15 +24,15 @@ public class InvoiceProfileRepositoryAdapter implements InvoiceProfileRepository
     }
 
     @Override
-    public long create(long userId, ProfileData data) {
-        return txTemplate.execute(status -> dao.save(new InvoiceProfileEntity(userId, data)).getId());
+    public long create(long userId, ProfileData data, Instant verifiedAt) {
+        return txTemplate.execute(status -> dao.save(new InvoiceProfileEntity(userId, data, verifiedAt)).getId());
     }
 
     @Override
-    public boolean update(long userId, long profileId, ProfileData data) {
+    public boolean update(long userId, long profileId, ProfileData data, Instant verifiedAt) {
         return Boolean.TRUE.equals(txTemplate.execute(status -> dao.findByIdAndUserId(profileId, userId)
                 .map(e -> {
-                    e.apply(data);
+                    e.apply(data, verifiedAt);
                     dao.save(e);
                     return true;
                 })
@@ -44,10 +45,10 @@ public class InvoiceProfileRepositoryAdapter implements InvoiceProfileRepository
     }
 
     @Override
-    public Optional<ProfileData> find(long userId, long profileId) {
-        return dao.findByIdAndUserId(profileId, userId).map(e -> new ProfileData(
+    public Optional<StoredProfile> find(long userId, long profileId) {
+        return dao.findByIdAndUserId(profileId, userId).map(e -> new StoredProfile(new ProfileData(
                 ProfileType.valueOf(e.getType()), e.getTitle(), e.getTaxNo(), e.getRegAddress(),
-                e.getRegPhone(), e.getBankName(), e.getBankAccount()));
+                e.getRegPhone(), e.getBankName(), e.getBankAccount()), e.getVerifiedAt()));
     }
 
     @Override

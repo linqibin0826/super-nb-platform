@@ -76,4 +76,14 @@ public class InvoiceException extends DomainException {
     public static InvoiceException invalidPdf(String detail) {
         return new InvoiceException("发票文件不合法: " + detail, StandardErrorTrait.RULE_VIOLATION);
     }
+
+    /// 核验通道不可用(未配置/供应商故障)。核验是辅助不是门槛,前端提示后照常保存。
+    public static InvoiceException registryUnavailable(String detail) {
+        return new InvoiceException("核验服务暂不可用: " + detail, StandardErrorTrait.RULE_VIOLATION);
+    }
+
+    /// 核验次数超日配额(付费接口的烧钱保护)。
+    public static InvoiceException registryQuotaExceeded() {
+        return new InvoiceException("今日核验次数已用完,请明天再试", StandardErrorTrait.QUOTA_EXCEEDED);
+    }
 }

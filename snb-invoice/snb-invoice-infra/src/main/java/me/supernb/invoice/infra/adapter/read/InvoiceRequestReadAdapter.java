@@ -81,7 +81,10 @@ public class InvoiceRequestReadAdapter implements InvoiceRequestReadPort {
                         ProfileType.valueOf(rs.getString("profile_type")), rs.getString("profile_title"),
                         rs.getString("profile_tax_no"), rs.getString("profile_reg_address"),
                         rs.getString("profile_reg_phone"), rs.getString("profile_bank_name"),
-                        rs.getString("profile_bank_account"), rs.getString("remark"), rs.getString("reject_reason"),
+                        rs.getString("profile_bank_account"),
+                        rs.getTimestamp("profile_verified_at") == null
+                                ? null : rs.getTimestamp("profile_verified_at").toInstant(),
+                        rs.getString("remark"), rs.getString("reject_reason"),
                         rs.getTimestamp("fee_charged_at") == null ? null : rs.getTimestamp("fee_charged_at").toInstant(),
                         rs.getTimestamp("issued_at") == null ? null : rs.getTimestamp("issued_at").toInstant(),
                         rs.getTimestamp("created_at").toInstant(), List.of()),
@@ -89,7 +92,7 @@ public class InvoiceRequestReadAdapter implements InvoiceRequestReadPort {
         return found.stream().findFirst().map(d -> new InvoiceRequestDetail(d.id(), d.requestNo(), d.userId(),
                 d.amount(), d.fee(), d.status(), d.profileType(), d.profileTitle(), d.profileTaxNo(),
                 d.profileRegAddress(), d.profileRegPhone(), d.profileBankName(), d.profileBankAccount(),
-                d.remark(), d.rejectReason(), d.feeChargedAt(), d.issuedAt(), d.createdAt(),
+                d.profileVerifiedAt(), d.remark(), d.rejectReason(), d.feeChargedAt(), d.issuedAt(), d.createdAt(),
                 jdbc.query("SELECT order_id, order_no, amount, completed_at FROM invoice.invoice_request_order "
                                 + "WHERE request_id = ? ORDER BY completed_at",
                         (rs, i) -> new OrderLine(rs.getLong("order_id"), rs.getString("order_no"),

@@ -59,6 +59,7 @@ class InvoiceRepositoriesTest {
 
     static final ProfileData COMPANY = new ProfileData(ProfileType.COMPANY, "某某科技", "91330100XXX",
             "杭州", "0571-000", "招行", "123456");
+    static final Instant STAMP = Instant.parse("2026-07-16T00:00:00Z");
 
     @BeforeEach
     void clean() {
@@ -75,15 +76,18 @@ class InvoiceRepositoriesTest {
     NewRequest newRequest(long userId, long... orderIds) {
         List<OrderLine> lines = java.util.Arrays.stream(orderIds).mapToObj(id -> order(id, "600")).toList();
         BigDecimal total = new BigDecimal(600L * orderIds.length);
-        return new NewRequest(userId, total, new BigDecimal("55.00"), COMPANY, "备注", lines);
+        return new NewRequest(userId, total, new BigDecimal("55.00"), COMPANY, STAMP, "备注", lines);
     }
 
     @Test
     void profileCrudIsScopedByOwner() {
-        long id = profiles.create(100, COMPANY);
-        assertThat(profiles.find(100, id)).contains(COMPANY);
-        assertThat(profiles.find(999, id)).isEmpty();          // 他人不可见
-        assertThat(profiles.update(999, id, COMPANY)).isFalse(); // 他人不可改
+        long id = profiles.create(100, COMPANY, STAMP);
+        assertThat(profiles.find(100, id).orElseThrow().data()).isEqualTo(COMPANY);
+        assertThat(profiles.find(100, id).orElseThrow().verifiedAt()).isEqualTo(STAMP); // 章原样回读
+        assertThat(profiles.find(999, id)).isEmpty();                 // 他人不可见
+        assertThat(profiles.update(999, id, COMPANY, null)).isFalse(); // 他人不可改
+        assertThat(profiles.update(100, id, COMPANY, null)).isTrue();  // 掉章落库
+        assertThat(profiles.find(100, id).orElseThrow().verifiedAt()).isNull();
         assertThat(profiles.countByUser(100)).isEqualTo(1);
         assertThat(profiles.delete(100, id)).isTrue();
         assertThat(profiles.countByUser(100)).isZero();
@@ -95,6 +99,8 @@ class InvoiceRepositoriesTest {
         assertThat(created.requestNo()).isEqualTo("INV" + created.id());
         assertThat(jdbc.queryForObject("SELECT profile_title FROM invoice.invoice_request WHERE id=?",
                 String.class, created.id())).isEqualTo("某某科技");
+        assertThat(jdbc.queryForObject("SELECT profile_verified_at IS NOT NULL FROM invoice.invoice_request "
+                + "WHERE id=?", Boolean.class, created.id())).isTrue(); // 核验章快照随单落库
         assertThat(jdbc.queryForObject("SELECT count(*) FROM invoice.invoice_request_order WHERE request_id=? AND active",
                 Long.class, created.id())).isEqualTo(2L);
         assertThat(requests.findState(created.id()).orElseThrow().status()).isEqualTo(InvoiceStatus.PENDING);

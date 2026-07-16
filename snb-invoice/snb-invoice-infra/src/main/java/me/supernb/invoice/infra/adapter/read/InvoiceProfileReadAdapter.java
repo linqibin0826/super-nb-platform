@@ -21,11 +21,12 @@ public class InvoiceProfileReadAdapter implements InvoiceProfileReadPort {
     @Override
     public List<ProfileView> listByUser(long userId) {
         return jdbc.query(
-                "SELECT id, type, title, tax_no, reg_address, reg_phone, bank_name, bank_account "
+                "SELECT id, type, title, tax_no, reg_address, reg_phone, bank_name, bank_account, verified_at "
                         + "FROM invoice.invoice_profile WHERE user_id = ? ORDER BY created_at, id",
                 (rs, i) -> new ProfileView(rs.getLong("id"), ProfileType.valueOf(rs.getString("type")),
                         rs.getString("title"), rs.getString("tax_no"), rs.getString("reg_address"),
-                        rs.getString("reg_phone"), rs.getString("bank_name"), rs.getString("bank_account")),
+                        rs.getString("reg_phone"), rs.getString("bank_name"), rs.getString("bank_account"),
+                        rs.getTimestamp("verified_at") == null ? null : rs.getTimestamp("verified_at").toInstant()),
                 userId);
     }
 }

@@ -1,6 +1,7 @@
 package me.supernb.invoice.domain.port.repository;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -11,9 +12,11 @@ import me.supernb.invoice.domain.model.read.OrderLine;
 /// PDF 与申请 1:1,归本聚合(attachPdfAndIssue 同事务写 PDF + 置 ISSUED)。
 public interface InvoiceRequestRepository {
 
-    /// 新申请(amount/fee 已算好,profile 为快照,orders 为订单快照行)。
+    /// 新申请(amount/fee 已算好,profile 为快照,profileVerifiedAt=提交那一刻抬头的核验章,
+    /// orders 为订单快照行)。
     record NewRequest(long userId, BigDecimal amount, BigDecimal fee,
-                      InvoiceProfileRepository.ProfileData profile, String remark, List<OrderLine> orders) {
+                      InvoiceProfileRepository.ProfileData profile, Instant profileVerifiedAt,
+                      String remark, List<OrderLine> orders) {
     }
 
     /// 创建结果。

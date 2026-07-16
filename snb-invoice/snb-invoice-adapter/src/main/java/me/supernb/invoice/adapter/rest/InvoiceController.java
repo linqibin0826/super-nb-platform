@@ -5,14 +5,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import me.supernb.invoice.adapter.rest.request.CreateRequestInput;
 import me.supernb.invoice.adapter.rest.request.ProfileInput;
+import me.supernb.invoice.adapter.rest.request.RegistryLookupInput;
 import me.supernb.invoice.adapter.rest.response.Responses.IdResponse;
 import me.supernb.invoice.adapter.rest.response.Responses.OrdersOverviewResponse;
 import me.supernb.invoice.adapter.rest.response.Responses.ProfileResponse;
+import me.supernb.invoice.adapter.rest.response.Responses.RegistryLookupResponse;
 import me.supernb.invoice.adapter.rest.response.Responses.RequestResponse;
 import me.supernb.invoice.app.usecase.profile.command.CreateInvoiceProfileCommand;
 import me.supernb.invoice.app.usecase.profile.command.DeleteInvoiceProfileCommand;
 import me.supernb.invoice.app.usecase.profile.command.UpdateInvoiceProfileCommand;
 import me.supernb.invoice.app.usecase.profile.query.ProfileQueryService;
+import me.supernb.invoice.app.usecase.registry.RegistryLookupService;
 import me.supernb.invoice.app.usecase.request.command.CancelInvoiceRequestCommand;
 import me.supernb.invoice.app.usecase.request.command.CreateInvoiceRequestCommand;
 import me.supernb.invoice.app.usecase.request.dto.CreateInvoiceRequestResult;
@@ -44,14 +47,17 @@ public class InvoiceController {
     private final ProfileQueryService profileQueries;
     private final BillableOrderQueryService billableQueries;
     private final MyInvoiceQueryService myQueries;
+    private final RegistryLookupService registryLookup;
 
     /// 构造:读注入查询服务,写只注入 CommandBus。
     public InvoiceController(CommandBus commandBus, ProfileQueryService profileQueries,
-            BillableOrderQueryService billableQueries, MyInvoiceQueryService myQueries) {
+            BillableOrderQueryService billableQueries, MyInvoiceQueryService myQueries,
+            RegistryLookupService registryLookup) {
         this.commandBus = commandBus;
         this.profileQueries = profileQueries;
         this.billableQueries = billableQueries;
         this.myQueries = myQueries;
+        this.registryLookup = registryLookup;
     }
 
     /// 我的抬头列表。
@@ -76,6 +82,13 @@ public class InvoiceController {
     @DeleteMapping("/profiles/{id}")
     public void deleteProfile(@CurrentUser UserProfile user, @PathVariable long id) {
         commandBus.handle(new DeleteInvoiceProfileCommand(user.id(), id));
+    }
+
+    /// 抬头核验:按企业全称查官方开票资料(付费第三方,双层日配额;found=false=查无)。
+    @PostMapping("/registry/lookup")
+    public RegistryLookupResponse registryLookup(@CurrentUser UserProfile user,
+            @RequestBody RegistryLookupInput body) {
+        return RegistryLookupResponse.of(registryLookup.lookup(user.id(), body.name()));
     }
 
     /// 可开票总览(未占用订单+合计+余额+业务常量)。

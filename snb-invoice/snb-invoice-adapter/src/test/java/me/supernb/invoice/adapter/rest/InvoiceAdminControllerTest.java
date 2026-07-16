@@ -77,7 +77,7 @@ class InvoiceAdminControllerTest {
     void detailChargeRejectDispatch() throws Exception {
         when(queries.detail(9)).thenReturn(new AdminInvoiceDetailDto(new InvoiceRequestDetail(
                 9, "INV9", 7, new BigDecimal("1100.00"), new BigDecimal("55.00"), InvoiceStatus.PENDING,
-                ProfileType.PERSONAL, "张三", null, null, null, null, null, "备注", null, null, null,
+                ProfileType.PERSONAL, "张三", null, null, null, null, null, null, "备注", null, null, null,
                 Instant.parse("2026-07-15T00:00:00Z"), List.of()), "alice@qq.com"));
         mvc.perform(get("/invoice/v1/admin/requests/9").header("Authorization", "Bearer admin"))
                 .andExpect(status().isOk())

@@ -58,6 +58,10 @@ public class InvoiceRequestEntity extends BaseJpaEntity {
     @Column(name = "profile_bank_account")
     private String profileBankAccount;
 
+    /// 提交那一刻抬头的核验章快照(之后改抬头不影响本单)。
+    @Column(name = "profile_verified_at")
+    private Instant profileVerifiedAt;
+
     @Column
     private String remark;
 
@@ -70,8 +74,9 @@ public class InvoiceRequestEntity extends BaseJpaEntity {
     @Column(name = "issued_at")
     private Instant issuedAt;
 
-    /// 新建:雪花取号、单号派生、抬头快照独立列、初始 PENDING。
-    public InvoiceRequestEntity(long userId, BigDecimal amount, BigDecimal fee, ProfileData profile, String remark) {
+    /// 新建:雪花取号、单号派生、抬头快照独立列(含核验章)、初始 PENDING。
+    public InvoiceRequestEntity(long userId, BigDecimal amount, BigDecimal fee, ProfileData profile,
+            Instant profileVerifiedAt, String remark) {
         setId(SnowflakeIdGenerator.getId());
         this.requestNo = "INV" + getId();
         this.userId = userId;
@@ -85,6 +90,7 @@ public class InvoiceRequestEntity extends BaseJpaEntity {
         this.profileRegPhone = profile.regPhone();
         this.profileBankName = profile.bankName();
         this.profileBankAccount = profile.bankAccount();
+        this.profileVerifiedAt = profileVerifiedAt;
         this.remark = remark;
     }
 }

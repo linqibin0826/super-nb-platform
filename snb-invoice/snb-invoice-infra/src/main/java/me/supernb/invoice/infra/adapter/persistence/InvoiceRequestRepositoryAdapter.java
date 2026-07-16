@@ -42,7 +42,8 @@ public class InvoiceRequestRepositoryAdapter implements InvoiceRequestRepository
         try {
             return txTemplate.execute(status -> {
                 InvoiceRequestEntity e = requests.save(new InvoiceRequestEntity(
-                        request.userId(), request.amount(), request.fee(), request.profile(), request.remark()));
+                        request.userId(), request.amount(), request.fee(), request.profile(),
+                        request.profileVerifiedAt(), request.remark()));
                 request.orders().forEach(line -> orders.save(new InvoiceRequestOrderEntity(e.getId(), line)));
                 // saveAndFlush 语义:占用行唯一索引冲突要在本事务内爆出来,不能拖到提交后
                 orders.flush();
