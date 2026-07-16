@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button, Input, Modal } from '../../ui'
 import { t } from '../../i18n'
 import { api, type ProfileT, type RegistryOfficialT } from '../api'
 import { isValidTaxNo } from '../taxno'
-import { parseInvoiceInfo } from '../pasteParse'
+import { aiParsedPatch, parseInvoiceInfo } from '../pasteParse'
 import { ErrorBar } from './shared'
 
 /** 核验面板状态机:未核验 → 查询中 → 查得(比对)/查无/通道异常 */
@@ -47,21 +47,60 @@ export function ProfileFormModal({
 
   const set = (patch: Partial<ProfileDraft>) => setDraft((d) => ({ ...d, ...patch }))
 
-  /** 智能粘贴:整段开票资料 → 识别出的字段直接填入(粘贴即宣告数据来源,识别项覆盖) */
+  const aiSeq = useRef(0)
+  const aiTimer = useRef<number | undefined>(undefined)
+  const lastAiText = useRef('')
+
+  /** AI 兜底:规则识别吃不下时静默升级(自家中转 LLM);竞态用序号守卫,同文本只调一次 */
+  const runAiParse = (value: string, ruleCount: number) => {
+    const text = value.trim()
+    if (text.length < 10 || text === lastAiText.current) return
+    lastAiText.current = text
+    const seq = ++aiSeq.current
+    setPasteMsg(t('invoice.profiles.pasteAiLoading'))
+    const fallbackMsg = () =>
+      ruleCount > 0
+        ? t('invoice.profiles.pasteApplied', { n: String(ruleCount) })
+        : t('invoice.profiles.pasteNone')
+    api
+      .pasteAiParse(text)
+      .then((r) => {
+        if (seq !== aiSeq.current) return
+        const patch = r.found && r.fields ? aiParsedPatch(r.fields) : {}
+        const n = Object.values(patch).filter(Boolean).length
+        if (n > 0) {
+          set(patch)
+          setPasteMsg(t('invoice.profiles.pasteAiApplied', { n: String(n) }))
+        } else {
+          setPasteMsg(fallbackMsg())
+        }
+      })
+      .catch(() => {
+        // 未达门槛/超配额/通道未配——都静默退回规则识别的结果,粘贴功能不因 AI 缺席而失灵
+        if (seq === aiSeq.current) setPasteMsg(fallbackMsg())
+      })
+  }
+
+  /** 智能粘贴级联:规则先跑(零延迟零成本);标准格式直接吃下,乱格式 700ms 防抖后升级 AI */
   const handlePasteText = (value: string) => {
     setPasteText(value)
+    window.clearTimeout(aiTimer.current)
     if (value.trim().length < 8) {
       setPasteMsg('')
       return
     }
     const parsed = parseInvoiceInfo(value)
     const count = Object.values(parsed).filter(Boolean).length
-    if (count === 0) {
-      setPasteMsg(t('invoice.profiles.pasteNone'))
+    if (count > 0) set(parsed)
+    const rulesEnough = count >= 4 || !!(parsed.title && parsed.taxNo)
+    if (rulesEnough) {
+      setPasteMsg(t('invoice.profiles.pasteApplied', { n: String(count) }))
       return
     }
-    set(parsed)
-    setPasteMsg(t('invoice.profiles.pasteApplied', { n: String(count) }))
+    setPasteMsg(count > 0
+      ? t('invoice.profiles.pasteApplied', { n: String(count) })
+      : t('invoice.profiles.pasteAiLoading'))
+    aiTimer.current = window.setTimeout(() => runAiParse(value, count), 700)
   }
 
   // 税号填了但格式不合法(18 位国标校验位/15 位老号,与后端同规则)——红提示 + 禁保存

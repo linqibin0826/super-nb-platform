@@ -105,6 +105,16 @@ export interface RegistryOfficialT {
   bankAccount: string | null
 }
 
+/** AI 识别出的抬头字段(缺席即 null,后端已过防幻觉守卫) */
+export interface ParsedFieldsT {
+  title: string | null
+  taxNo: string | null
+  regAddress: string | null
+  regPhone: string | null
+  bankName: string | null
+  bankAccount: string | null
+}
+
 export interface OrderT {
   orderId: string
   orderNo: string
@@ -179,6 +189,11 @@ export const api = {
     invoiceFetch<{ found: boolean; official: RegistryOfficialT | null }>('/registry/lookup', {
       method: 'POST',
       body: JSON.stringify({ name }),
+    }),
+  pasteAiParse: (text: string) =>
+    invoiceFetch<{ found: boolean; fields: ParsedFieldsT | null }>('/paste/parse', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
     }),
   deleteProfile: (id: string) => invoiceFetch<void>(`/profiles/${id}`, { method: 'DELETE' }),
   orders: () => invoiceFetch<OverviewT>('/orders'),

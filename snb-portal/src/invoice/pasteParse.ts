@@ -111,3 +111,24 @@ export function parseInvoiceInfo(text: string): ParsedInvoiceInfo {
   if (out.bankAccount) out.bankAccount = out.bankAccount.replace(/ /g, '')
   return out
 }
+
+/** AI 识别结果 → 表单补丁:有值字段收进来,税号必须过校验位(后端防幻觉之上的最后一道);
+ *  归一与规则识别同口径(税号大写、账号去空格)。 */
+export function aiParsedPatch(fields: { [K in keyof ParsedInvoiceInfo]-?: string | null }): ParsedInvoiceInfo {
+  const out: ParsedInvoiceInfo = {}
+  const pick = (v: string | null): string | undefined => {
+    const s = (v ?? '').trim()
+    return s ? s : undefined
+  }
+  out.title = pick(fields.title)
+  const tax = pick(fields.taxNo)
+  if (tax && isValidTaxNo(tax)) out.taxNo = tax.toUpperCase()
+  out.regAddress = pick(fields.regAddress)
+  out.regPhone = pick(fields.regPhone)
+  out.bankName = pick(fields.bankName)
+  out.bankAccount = pick(fields.bankAccount)?.replace(/ /g, '')
+  for (const k of Object.keys(out) as (keyof ParsedInvoiceInfo)[]) {
+    if (out[k] === undefined) delete out[k]
+  }
+  return out
+}

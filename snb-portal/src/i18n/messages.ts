@@ -405,6 +405,8 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         pastePlaceholder: '把对方发来的开票资料整段粘到这里，自动识别填入下方表单',
         pasteApplied: '已识别填入 {n} 项，请核对',
         pasteNone: '没识别出开票信息，请检查粘贴内容',
+        pasteAiLoading: '正在用 AI 识别…',
+        pasteAiApplied: 'AI 已识别填入 {n} 项，请核对',
       },
       admin: {
         title: '发票申请管理',
@@ -837,6 +839,8 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         pastePlaceholder: 'Paste the whole invoice-info blob here — fields are recognized and filled automatically',
         pasteApplied: 'Recognized and filled {n} field(s) — please review',
         pasteNone: 'No invoice info recognized in the pasted text',
+        pasteAiLoading: 'Recognizing with AI…',
+        pasteAiApplied: 'AI recognized and filled {n} field(s) — please review',
       },
       admin: {
         title: 'Invoice Requests Admin',
