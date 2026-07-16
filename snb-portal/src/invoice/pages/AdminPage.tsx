@@ -146,6 +146,11 @@ export function AdminPage() {
                             {' · '}
                             {detail.profileTitle}
                           </span>
+                          {detail.profileVerifiedAt && (
+                            <span className="iv-stamp-verified" title={t('invoice.profiles.verifiedTip')}>
+                              {t('invoice.profiles.verifiedBadge')}
+                            </span>
+                          )}
                         </div>
                         <div className="iv-fp-field">
                           <span className="lb">{t('invoice.apply.taxLabel')}</span>

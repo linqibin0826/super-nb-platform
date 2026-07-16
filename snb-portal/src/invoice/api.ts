@@ -91,6 +91,18 @@ export interface ProfileT {
   regPhone: string | null
   bankName: string | null
   bankAccount: string | null
+  /** 核验章:名称+税号与官方开票档案一致的时刻;null=未核验(服务端判定,只读) */
+  verifiedAt: string | null
+}
+
+/** 官方开票档案(第三方核验返回,字段可能残缺) */
+export interface RegistryOfficialT {
+  name: string | null
+  taxNo: string | null
+  address: string | null
+  phone: string | null
+  bankName: string | null
+  bankAccount: string | null
 }
 
 export interface OrderT {
@@ -149,6 +161,7 @@ export interface AdminDetailT extends Omit<AdminRowT, 'email'> {
   profileRegPhone: string | null
   profileBankName: string | null
   profileBankAccount: string | null
+  profileVerifiedAt: string | null
   remark: string | null
   rejectReason: string | null
   feeChargedAt: string | null
@@ -158,10 +171,15 @@ export interface AdminDetailT extends Omit<AdminRowT, 'email'> {
 
 export const api = {
   profiles: () => invoiceFetch<ProfileT[]>('/profiles'),
-  createProfile: (body: Omit<ProfileT, 'id'>) =>
+  createProfile: (body: Omit<ProfileT, 'id' | 'verifiedAt'>) =>
     invoiceFetch<{ id: string }>('/profiles', { method: 'POST', body: JSON.stringify(body) }),
-  updateProfile: (id: string, body: Omit<ProfileT, 'id'>) =>
+  updateProfile: (id: string, body: Omit<ProfileT, 'id' | 'verifiedAt'>) =>
     invoiceFetch<void>(`/profiles/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  registryLookup: (name: string) =>
+    invoiceFetch<{ found: boolean; official: RegistryOfficialT | null }>('/registry/lookup', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
   deleteProfile: (id: string) => invoiceFetch<void>(`/profiles/${id}`, { method: 'DELETE' }),
   orders: () => invoiceFetch<OverviewT>('/orders'),
   createRequest: (orderIds: string[], profileId: string, remark: string) =>

@@ -169,6 +169,11 @@ export function ApplyPage() {
                     <span className={`vl font-mono ${profile?.taxNo ? '' : 'dim'}`}>
                       {profile ? profile.taxNo || t('invoice.profiles.noTax') : '—'}
                     </span>
+                    {profile?.verifiedAt && (
+                      <span className="iv-stamp-verified" title={t('invoice.profiles.verifiedTip')}>
+                        {t('invoice.profiles.verifiedBadge')}
+                      </span>
+                    )}
                   </div>
                 </>
               )}

@@ -51,6 +51,11 @@ export function ProfilesPage() {
           <Card key={p.id} className="flex flex-col overflow-hidden p-0">
             <div className="iv-pf-head">
               <b className="min-w-0 flex-1 truncate text-[15px]">{p.title}</b>
+              {p.verifiedAt && (
+                <span className="iv-stamp-verified" title={t('invoice.profiles.verifiedTip')}>
+                  {t('invoice.profiles.verifiedBadge')}
+                </span>
+              )}
               <span className={`iv-badge ${p.type === 'COMPANY' ? 'co' : 'me'}`}>
                 {p.type === 'COMPANY' ? t('invoice.profiles.typeCompany') : t('invoice.profiles.typePersonal')}
               </span>
