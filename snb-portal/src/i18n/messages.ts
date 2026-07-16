@@ -346,6 +346,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         addProfileCta: '添加开票抬头',
         addProfileHint: '首次开票需要先设置企业或个人抬头，点这里就地填写',
         needProfile: '还没有开票抬头——点击票面上的「添加开票抬头」',
+        refreshFailed: '抬头已保存，但列表刷新失败，请刷新页面后重试',
       },
       requests: {
         empty: '还没有发票申请',
@@ -762,6 +763,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         addProfileCta: 'Add a billing profile',
         addProfileHint: 'Required before your first invoice — fill it in right here',
         needProfile: 'No billing profile yet — use "Add a billing profile" on the ticket',
+        refreshFailed: 'Profile saved, but the list failed to refresh — reload the page and retry',
       },
       requests: {
         empty: 'No invoice requests yet',

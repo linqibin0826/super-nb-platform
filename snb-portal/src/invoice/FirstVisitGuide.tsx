@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../ui'
 import { t } from '../i18n'
 
@@ -7,6 +7,7 @@ import { t } from '../i18n'
  *  点遮罩不关闭(防误触永久已读),Esc = onSkip 临时跳过(不落库,下次再提醒)。 */
 export function FirstVisitGuide({ onConfirm, onSkip }: { onConfirm: () => void; onSkip: () => void }) {
   const [closing, setClosing] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
 
   const close = () => {
     if (closing) return
@@ -26,11 +27,29 @@ export function FirstVisitGuide({ onConfirm, onSkip }: { onConfirm: () => void; 
   return (
     <div className="iv-guide-mask" role="presentation">
       <div
+        ref={cardRef}
         className="iv-guide-card"
         role="dialog"
         aria-modal="true"
         aria-labelledby="iv-guide-title"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          // 焦点陷阱:Tab/Shift+Tab 在卡内循环,防键盘穿透到遮罩背后操作看不见的元素
+          if (e.key !== 'Tab') return
+          const nodes = cardRef.current?.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          )
+          if (!nodes || nodes.length === 0) return
+          const first = nodes[0]
+          const last = nodes[nodes.length - 1]
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault()
+            last.focus()
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault()
+            first.focus()
+          }
+        }}
       >
         <div className="iv-fapiao px-6 py-6">
           <div className={`iv-guide-dim ${closing ? 'off' : ''}`}>

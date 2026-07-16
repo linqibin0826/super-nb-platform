@@ -122,6 +122,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 无值占位灰:.vl.dim 类选择器提权,压过 .iv-fp-field .vl 描边默认色(否则条件 text-snb-t3 工具类被吃) */
+.iv-fp-field .vl.dim {
+  color: rgb(var(--snb-t3));
+}
 .iv-fp-select {
   flex: 1;
   min-width: 0;
@@ -482,6 +486,10 @@
   word-break: break-all;
   font-variant-numeric: tabular-nums;
 }
+/* 无税号占位灰:同 .iv-fp-field .vl.dim,提权压过描边默认色 */
+.iv-pf-row .vl.dim {
+  color: rgb(var(--snb-t3));
+}
 .iv-pf-add {
   border: 1.5px dashed var(--snb-hairline-strong);
   border-radius: 10px;
@@ -544,6 +552,8 @@
   position: relative;
   width: 100%;
   max-width: 420px;
+  max-height: calc(100vh - 40px); /* 矮视口(横屏手机)防卡死:内容超高时卡内滚动,确认按钮永远够得到 */
+  overflow-y: auto;
   animation: iv-guide-in 0.18s ease-out;
 }
 @keyframes iv-guide-in {

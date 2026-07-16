@@ -149,7 +149,7 @@ export function AdminPage() {
                         </div>
                         <div className="iv-fp-field">
                           <span className="lb">{t('invoice.apply.taxLabel')}</span>
-                          <span className={`vl font-mono ${detail.profileTaxNo ? '' : 'text-snb-t3'}`}>
+                          <span className={`vl font-mono ${detail.profileTaxNo ? '' : 'dim'}`}>
                             {detail.profileTaxNo || '—'}
                           </span>
                         </div>
@@ -218,7 +218,11 @@ export function AdminPage() {
                                 type="file"
                                 accept="application/pdf"
                                 className="hidden"
-                                onChange={(e) => e.target.files?.[0] && uploadPdf(detail.id, e.target.files[0])}
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0]
+                                  e.target.value = '' // 复位:上传失败后重选同一文件仍能触发 change
+                                  if (f) uploadPdf(detail.id, f)
+                                }}
                               />
                               <b>{t('invoice.admin.upload')}</b>
                               <span className="mt-0.5 block text-[11.5px] text-snb-t3">{t('invoice.admin.uploadHint')}</span>
@@ -250,7 +254,7 @@ export function AdminPage() {
                             )}
                             <Button
                               variant="secondary"
-                              className="!text-[#B3382C] hover:!border-[#B3382C]"
+                              className="!text-[color:var(--iv-seal)] hover:!border-[color:var(--iv-seal)]"
                               disabled={busy || !reason.trim()}
                               onClick={() => act(() => api.adminReject(detail.id, reason.trim(), refundFee))}
                             >
@@ -268,7 +272,7 @@ export function AdminPage() {
           ))}
         </Card>
       )}
-      {rows && rows.length > 0 && (
+      {total > 0 && (
         <div className="mt-4 flex items-center gap-3 text-sm text-snb-t2">
           <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>←</Button>
           <span>{page} / {Math.max(1, Math.ceil(total / 20))}</span>

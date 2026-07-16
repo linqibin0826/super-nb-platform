@@ -166,7 +166,7 @@ export function ApplyPage() {
                   </div>
                   <div className="iv-fp-field">
                     <span className="lb">{t('invoice.apply.taxLabel')}</span>
-                    <span className={`vl font-mono ${profile?.taxNo ? '' : 'text-snb-t3'}`}>
+                    <span className={`vl font-mono ${profile?.taxNo ? '' : 'dim'}`}>
                       {profile ? profile.taxNo || t('invoice.profiles.noTax') : '—'}
                     </span>
                   </div>
@@ -301,10 +301,13 @@ export function ApplyPage() {
           onClose={() => setAdding(false)}
           onSaved={async (id) => {
             setAdding(false)
-            const ps = await api.profiles().catch(() => null)
-            if (ps) {
+            try {
+              const ps = await api.profiles()
               setProfiles(ps)
               setProfileId(id)
+            } catch {
+              // 抬头已建好但刷新失败:提示用户,别让 profileId 空着导致提交按钮一直灰
+              setError(t('invoice.apply.refreshFailed'))
             }
           }}
         />

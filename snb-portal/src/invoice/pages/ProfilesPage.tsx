@@ -59,7 +59,7 @@ export function ProfilesPage() {
               {infoRows(p).map((row) => (
                 <div key={row.label} className="iv-pf-row">
                   <span className="lb">{row.label}</span>
-                  <span className={`vl ${row.mono ? 'font-mono text-[12.5px]' : ''} ${row.value === t('invoice.profiles.noTax') ? 'text-snb-t3' : ''}`}>
+                  <span className={`vl ${row.mono ? 'font-mono text-[12.5px]' : ''} ${row.value === t('invoice.profiles.noTax') ? 'dim' : ''}`}>
                     {row.value}
                   </span>
                 </div>
