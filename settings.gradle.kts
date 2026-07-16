@@ -53,4 +53,11 @@ includeAt(":snb-invoice:snb-invoice-adapter", "snb-invoice/snb-invoice-adapter")
 includeAt(":snb-invoice:snb-invoice-api", "snb-invoice/snb-invoice-api")
 project(":snb-invoice").projectDir = file("snb-invoice")
 
+includeAt(":snb-guide:snb-guide-domain", "snb-guide/snb-guide-domain")
+includeAt(":snb-guide:snb-guide-app", "snb-guide/snb-guide-app")
+includeAt(":snb-guide:snb-guide-infra", "snb-guide/snb-guide-infra")
+includeAt(":snb-guide:snb-guide-adapter", "snb-guide/snb-guide-adapter")
+includeAt(":snb-guide:snb-guide-api", "snb-guide/snb-guide-api")
+project(":snb-guide").projectDir = file("snb-guide")
+
 includeAt(":snb-boot", "snb-boot")

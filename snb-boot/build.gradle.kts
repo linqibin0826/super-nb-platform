@@ -19,6 +19,9 @@ dependencies {
     implementation(project(":snb-invoice:snb-invoice-adapter"))
     implementation(project(":snb-invoice:snb-invoice-infra"))
     implementation(project(":snb-invoice:snb-invoice-api"))
+    implementation(project(":snb-guide:snb-guide-adapter"))
+    implementation(project(":snb-guide:snb-guide-infra"))
+    implementation(project(":snb-guide:snb-guide-api"))
     implementation(project(":snb-common"))
     implementation(project(":snb-sub2api"))
 
