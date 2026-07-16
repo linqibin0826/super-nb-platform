@@ -129,7 +129,9 @@ export function ProfileFormModal({
           <Input
             value={draft.title}
             onChange={(e) => set({ title: e.target.value })}
-            placeholder={t('invoice.profiles.titleHint')}
+            placeholder={t(draft.type === 'COMPANY'
+              ? 'invoice.profiles.titleHintCompany'
+              : 'invoice.profiles.titleHintPersonal')}
           />
         </label>
         {fields
