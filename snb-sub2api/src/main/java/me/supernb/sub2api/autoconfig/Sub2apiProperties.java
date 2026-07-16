@@ -1,8 +1,11 @@
 package me.supernb.sub2api.autoconfig;
 
+import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 
 /// sub2api 防腐层的配置属性(前缀 `sub2api.*`)。
 @Getter
@@ -32,5 +35,21 @@ public class Sub2apiProperties {
         private String username;
         /// 只读账号密码。
         private String password;
+        /// 每个只读读模型独立持有一个连接池;上限默认 5。原走 HikariCP 默认 10,
+        /// 7 个只读池 × 10 曾把 sub2api 主库连接打满(实测 106/100),2026-07-16 站长拍板每池减半。
+        private int maxPoolSize = 5;
+
+        /// 现场构建只读 DataSource(内嵌 HikariCP,池上限 maxPoolSize)。各 autoconfig 的
+        /// @Bean 方法调用它,拿到的是方法内局部 DataSource——绝不作为 Bean 暴露(防挤退主 jdbcTemplate)。
+        public DataSource build() {
+            HikariDataSource ds = DataSourceBuilder.create()
+                    .type(HikariDataSource.class)
+                    .url(url)
+                    .username(username)
+                    .password(password)
+                    .build();
+            ds.setMaximumPoolSize(maxPoolSize);
+            return ds;
+        }
     }
 }
