@@ -1,6 +1,6 @@
 package me.supernb.sub2api.autoconfig;
 
-import javax.sql.DataSource;
+import com.zaxxer.hikari.HikariDataSource;
 import me.supernb.sub2api.invoice.InvoiceOrderReadModel;
 import me.supernb.sub2api.invoice.JdbcInvoiceOrderReadModel;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -24,11 +24,17 @@ public class Sub2apiInvoiceAutoConfiguration {
     @ConditionalOnMissingBean
     public InvoiceOrderReadModel invoiceOrderReadModel(Sub2apiProperties props) {
         Sub2apiProperties.ReadDatasource rd = props.getReadDatasource();
-        DataSource ds = DataSourceBuilder.create()
+        // ⚠️ 连接池封顶:本分支 merge-base 早于 main 的连接池减半修复(ReadDatasource.build() 池上限 5),
+        //   且本文件是新增文件、三方合并不会自动帮它补上修复——先手动 setMaximumPoolSize(5),
+        //   即使漏了合 main 后的统一改造,也不会复现主库连接打满(曾 7 池×默认10 = 106/100)。
+        //   合 main 后请统一改成 `DataSource ds = rd.build();`(与其余只读 autoconfig 一致)。
+        HikariDataSource ds = DataSourceBuilder.create()
+                .type(HikariDataSource.class)
                 .url(rd.getUrl())
                 .username(rd.getUsername())
                 .password(rd.getPassword())
                 .build();
+        ds.setMaximumPoolSize(5);
         return new JdbcInvoiceOrderReadModel(new JdbcTemplate(ds));
     }
 }

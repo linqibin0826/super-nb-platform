@@ -9,6 +9,9 @@ public final class GuideKey {
 
     private static final Pattern VALID = Pattern.compile("^[a-z0-9][a-z0-9._-]{0,63}$");
 
+    /// 单用户已读上限:正常用户一辈子的引导数(各站几个)远够不到,给脚本刷表封顶。
+    public static final int MAX_PER_USER = 100;
+
     private GuideKey() {
     }
 

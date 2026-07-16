@@ -111,7 +111,13 @@ public class InvoiceRequestRepositoryAdapter implements InvoiceRequestRepository
                     },
                     () -> pdfs.save(new InvoicePdfEntity(requestId, pdf)));
             if (current.get() == InvoiceStatus.INVOICING) {
-                requests.markIssued(requestId, Instant.now());
+                // 守卫:markIssued 命中 0 行 = INVOICING 已被并发(驳回/撤回)改走(current 是本事务
+                //   开头读的快照,可能过期)。此时 PDF 不能落库(否则终态单据凭空挂 PDF、账务对不上),
+                //   整体回滚 + 返回 false;上层 UploadInvoicePdfHandler 据此抛 invalidState 报错。
+                if (requests.markIssued(requestId, Instant.now()) == 0) {
+                    status.setRollbackOnly();
+                    return false;
+                }
             }
             return true;
         }));

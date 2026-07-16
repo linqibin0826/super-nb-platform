@@ -14,4 +14,9 @@ public class GuideException extends DomainException {
     public static GuideException invalidKey(String key) {
         return new GuideException("引导 key 不合法: " + key, StandardErrorTrait.RULE_VIOLATION);
     }
+
+    /// 单用户引导已读记录数超上限(429,防脚本刷不同 key 膨胀 guide_ack 表)。
+    public static GuideException tooMany(int max) {
+        return new GuideException("引导已读记录已达上限 " + max, StandardErrorTrait.QUOTA_EXCEEDED);
+    }
 }
