@@ -51,10 +51,11 @@ export function ProfileFormModal({
   const aiTimer = useRef<number | undefined>(undefined)
   const lastAiText = useRef('')
 
-  /** AI 兜底:规则识别吃不下时静默升级(自家中转 LLM);竞态用序号守卫,同文本只调一次 */
-  const runAiParse = (value: string, ruleCount: number) => {
+  /** AI 兜底:规则识别吃不下时静默升级(自家中转 LLM);竞态用序号守卫,同文本只调一次;
+   *  force=手动按钮显式触发,跳过同文本去重(用户点了就是要重试) */
+  const runAiParse = (value: string, ruleCount: number, force = false) => {
     const text = value.trim()
-    if (text.length < 10 || text === lastAiText.current) return
+    if (text.length < 10 || (!force && text === lastAiText.current)) return
     lastAiText.current = text
     const seq = ++aiSeq.current
     setPasteMsg(t('invoice.profiles.pasteAiLoading'))
@@ -81,7 +82,8 @@ export function ProfileFormModal({
       })
   }
 
-  /** 智能粘贴级联:规则先跑(零延迟零成本);标准格式直接吃下,乱格式 700ms 防抖后升级 AI */
+  /** 智能粘贴级联:规则先跑(零延迟零成本)。「够用」看质量不看数量——只有干净抬头+过
+   *  校验位的税号都在手才不升级;否则 700ms 防抖后静默走 AI(手动按钮随时可强制) */
   const handlePasteText = (value: string) => {
     setPasteText(value)
     window.clearTimeout(aiTimer.current)
@@ -92,7 +94,7 @@ export function ProfileFormModal({
     const parsed = parseInvoiceInfo(value)
     const count = Object.values(parsed).filter(Boolean).length
     if (count > 0) set(parsed)
-    const rulesEnough = count >= 4 || !!(parsed.title && parsed.taxNo)
+    const rulesEnough = !!(parsed.title && parsed.taxNo)
     if (rulesEnough) {
       setPasteMsg(t('invoice.profiles.pasteApplied', { n: String(count) }))
       return
@@ -101,6 +103,13 @@ export function ProfileFormModal({
       ? t('invoice.profiles.pasteApplied', { n: String(count) })
       : t('invoice.profiles.pasteAiLoading'))
     aiTimer.current = window.setTimeout(() => runAiParse(value, count), 700)
+  }
+
+  /** 手动强制 AI 识别(按钮):不管规则判定,直接走 LLM;服务端配额照常把门 */
+  const forceAiParse = () => {
+    window.clearTimeout(aiTimer.current)
+    const count = Object.values(parseInvoiceInfo(pasteText)).filter(Boolean).length
+    runAiParse(pasteText, count, true)
   }
 
   // 税号填了但格式不合法(18 位国标校验位/15 位老号,与后端同规则)——红提示 + 禁保存
@@ -218,7 +227,14 @@ export function ProfileFormModal({
               onChange={(e) => handlePasteText(e.target.value)}
               placeholder={t('invoice.profiles.pastePlaceholder')}
             />
-            {pasteMsg && <span className="mt-0.5 block text-xs text-snb-t3">{pasteMsg}</span>}
+            <div className="mt-0.5 flex items-center gap-2">
+              {pasteMsg && <span className="min-w-0 flex-1 text-xs text-snb-t3">{pasteMsg}</span>}
+              {pasteText.trim().length >= 10 && (
+                <Button size="xs" variant="ghost" onClick={forceAiParse}>
+                  {t('invoice.profiles.pasteAiButton')}
+                </Button>
+              )}
+            </div>
           </div>
         )}
         <label className="block">

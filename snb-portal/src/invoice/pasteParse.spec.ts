@@ -73,6 +73,25 @@ describe('parseInvoiceInfo', () => {
   it('纯废话识别为空对象', () => {
     expect(parseInvoiceInfo('今天天气不错，适合开发票')).toEqual({})
   })
+
+  it('话术型文本捕获卫生:剥口语前缀/脏地址砍断/税号靠段落轮捞回', () => {
+    const out = parseInvoiceInfo(
+      '帮我开下票哈，抬头是深圳市腾讯计算机系统有限公司，税号我记得是91440300708461136T来着，'
+        + '地址就写深圳市南山区高新区科技中一路腾讯大厦，电话0755-86013388，'
+        + '开户是招商银行深圳市分行科技园支行 账户7559123456109',
+    )
+    expect(out.title).toBe('深圳市腾讯计算机系统有限公司') // 「是」前缀已剥
+    expect(out.taxNo).toBe('91440300708461136T')
+    expect(out.regAddress).toBe('深圳市南山区高新区科技中一路腾讯大厦') // 「就写」已剥、电话开户已砍
+    expect(out.regPhone).toBe('0755-86013388')
+    expect(out.bankAccount).toBe('7559123456109')
+  })
+
+  it('标签捕到的假税号作废,不冒充识别成功', () => {
+    const out = parseInvoiceInfo('名称:某某科技有限公司\n税号:9144030071526726XA')
+    expect(out.taxNo).toBeUndefined()
+    expect(out.title).toBe('某某科技有限公司')
+  })
 })
 
 describe('aiParsedPatch', () => {

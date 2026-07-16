@@ -51,10 +51,27 @@ export function parseInvoiceInfo(text: string): ParsedInvoiceInfo {
     const m = src.match(re)
     if (m) out[key] = clean(m[1])
   }
-  // 地址值里混着尾部电话 → 拆
+  // 捕获卫生(话术型文本的标签捕获常拖泥带水,脏值不配冒充「识别成功」——注意一律 delete
+  // 而不是置 undefined,显式 undefined 会在 set() 展开时抹掉用户已填的值):
+  // 抬头剥「是/为/叫/写」一类口语前缀
+  if (out.title) {
+    const t = out.title.replace(/^(?:就?[是为叫]|写上?|用)\s*/, '').trim()
+    if (t) out.title = t
+    else delete out.title
+  }
+  // 标签捕到的「税号」必须过校验位,过不了当没捕到(留给无标签轮或 AI)
+  if (out.taxNo && !isValidTaxNo(out.taxNo)) {
+    delete out.taxNo
+  }
+  // 地址值:剥口语前缀 → 混进「电话/开户/账号/税号」关键词从关键词处砍断 → 尾部电话拆走
   if (out.regAddress) {
-    const { address, phone } = splitTrailingPhone(out.regAddress)
-    out.regAddress = address
+    const cut = out.regAddress
+      .replace(/^(?:就?[是为写]|写上?|填)\s*/, '')
+      .split(/[,，]?\s*(?:联系电话|电话|开户|银行账|账[号户]|税号|纳税人)/)[0]
+      .trim()
+    const { address, phone } = splitTrailingPhone(cut)
+    if (address.length >= 6) out.regAddress = address
+    else delete out.regAddress
     if (!out.regPhone && phone) out.regPhone = phone
   }
   // 「开户行及账号」混排:开户行值尾部的长数字串挪去账号

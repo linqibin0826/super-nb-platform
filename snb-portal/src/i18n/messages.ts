@@ -407,6 +407,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         pasteNone: '没识别出开票信息，请检查粘贴内容',
         pasteAiLoading: '正在用 AI 识别…',
         pasteAiApplied: 'AI 已识别填入 {n} 项，请核对',
+        pasteAiButton: '用 AI 识别',
       },
       admin: {
         title: '发票申请管理',
@@ -841,6 +842,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         pasteNone: 'No invoice info recognized in the pasted text',
         pasteAiLoading: 'Recognizing with AI…',
         pasteAiApplied: 'AI recognized and filled {n} field(s) — please review',
+        pasteAiButton: 'Recognize with AI',
       },
       admin: {
         title: 'Invoice Requests Admin',
