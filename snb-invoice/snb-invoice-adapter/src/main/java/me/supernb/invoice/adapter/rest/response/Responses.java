@@ -10,6 +10,7 @@ import me.supernb.invoice.domain.model.FeePolicy;
 import me.supernb.invoice.domain.model.read.InvoiceRequestView;
 import me.supernb.invoice.domain.model.read.OrderLine;
 import me.supernb.invoice.domain.model.read.ProfileView;
+import me.supernb.invoice.domain.port.parse.PasteAiParsePort.ParsedInfo;
 import me.supernb.invoice.domain.port.registry.CompanyRegistryPort.CompanyRecord;
 
 /// /invoice/v1 响应形状(全部 record;实体 id 一律字符串)。
@@ -46,6 +47,20 @@ public final class Responses {
             return record.map(r -> new RegistryLookupResponse(true, new RegistryCompany(
                             r.name(), r.taxNo(), r.address(), r.phone(), r.bankName(), r.bankAccount())))
                     .orElseGet(() -> new RegistryLookupResponse(false, null));
+        }
+    }
+
+    /// AI 识别结果:found=false=模型什么都没提取到(通道故障走异常 422/429)。
+    public record PasteParseResponse(boolean found, ParsedFields fields) {
+        /// 识别出的抬头字段(缺席即 null,已过防幻觉守卫)。
+        public record ParsedFields(String title, String taxNo, String regAddress, String regPhone,
+                                   String bankName, String bankAccount) {
+        }
+
+        public static PasteParseResponse of(Optional<ParsedInfo> info) {
+            return info.map(i -> new PasteParseResponse(true, new ParsedFields(
+                            i.title(), i.taxNo(), i.regAddress(), i.regPhone(), i.bankName(), i.bankAccount())))
+                    .orElseGet(() -> new PasteParseResponse(false, null));
         }
     }
 

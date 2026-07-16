@@ -4,13 +4,16 @@ import dev.linqibin.commons.cqrs.CommandBus;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import me.supernb.invoice.adapter.rest.request.CreateRequestInput;
+import me.supernb.invoice.adapter.rest.request.PasteParseInput;
 import me.supernb.invoice.adapter.rest.request.ProfileInput;
 import me.supernb.invoice.adapter.rest.request.RegistryLookupInput;
 import me.supernb.invoice.adapter.rest.response.Responses.IdResponse;
 import me.supernb.invoice.adapter.rest.response.Responses.OrdersOverviewResponse;
+import me.supernb.invoice.adapter.rest.response.Responses.PasteParseResponse;
 import me.supernb.invoice.adapter.rest.response.Responses.ProfileResponse;
 import me.supernb.invoice.adapter.rest.response.Responses.RegistryLookupResponse;
 import me.supernb.invoice.adapter.rest.response.Responses.RequestResponse;
+import me.supernb.invoice.app.usecase.parse.PasteAiParseService;
 import me.supernb.invoice.app.usecase.profile.command.CreateInvoiceProfileCommand;
 import me.supernb.invoice.app.usecase.profile.command.DeleteInvoiceProfileCommand;
 import me.supernb.invoice.app.usecase.profile.command.UpdateInvoiceProfileCommand;
@@ -48,16 +51,18 @@ public class InvoiceController {
     private final BillableOrderQueryService billableQueries;
     private final MyInvoiceQueryService myQueries;
     private final RegistryLookupService registryLookup;
+    private final PasteAiParseService pasteAiParse;
 
     /// 构造:读注入查询服务,写只注入 CommandBus。
     public InvoiceController(CommandBus commandBus, ProfileQueryService profileQueries,
             BillableOrderQueryService billableQueries, MyInvoiceQueryService myQueries,
-            RegistryLookupService registryLookup) {
+            RegistryLookupService registryLookup, PasteAiParseService pasteAiParse) {
         this.commandBus = commandBus;
         this.profileQueries = profileQueries;
         this.billableQueries = billableQueries;
         this.myQueries = myQueries;
         this.registryLookup = registryLookup;
+        this.pasteAiParse = pasteAiParse;
     }
 
     /// 我的抬头列表。
@@ -89,6 +94,13 @@ public class InvoiceController {
     public RegistryLookupResponse registryLookup(@CurrentUser UserProfile user,
             @RequestBody RegistryLookupInput body) {
         return RegistryLookupResponse.of(registryLookup.lookup(user.id(), body.name()));
+    }
+
+    /// 开票资料 AI 识别:整段粘贴文本 → 抬头字段(自家中转 LLM,规则识别吃不下时的级联兜底;
+    /// found=false=模型什么都没提取到)。
+    @PostMapping("/paste/parse")
+    public PasteParseResponse pasteParse(@CurrentUser UserProfile user, @RequestBody PasteParseInput body) {
+        return PasteParseResponse.of(pasteAiParse.parse(user.id(), body.text()));
     }
 
     /// 可开票总览(未占用订单+合计+余额+业务常量)。

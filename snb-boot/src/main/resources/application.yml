@@ -106,3 +106,8 @@ invoice:
     appcode: ${JUMEI_INVOICE_APPCODE:}
     user-daily: 10
     global-daily: 40
+  # 开票资料 AI 识别(自家中转 gpt-5.6-luna,~400 tokens/次):key 走 env SUB2API_INVOICE_AI_KEY
+  # (sub2api.invoice-ai-key 相对宽松绑定,绝不进 yml——缺席即整体不装配 fail-closed)
+  ai:
+    user-daily: 20
+    global-daily: 200

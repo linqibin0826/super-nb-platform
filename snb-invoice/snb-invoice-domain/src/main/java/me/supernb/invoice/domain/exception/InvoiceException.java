@@ -82,9 +82,19 @@ public class InvoiceException extends DomainException {
         return new InvoiceException("核验服务暂不可用: " + detail, StandardErrorTrait.RULE_VIOLATION);
     }
 
-    /// 核验资格未达标:付费接口只服务够得着开票门槛的用户,防白嫖烧配额。
+    /// 资格未达标:付费能力(核验/AI 识别)只服务够得着开票门槛的用户,防白嫖烧配额。
     public static InvoiceException registryRequiresRecharge(BigDecimal min) {
-        return new InvoiceException("累计充值满 ¥" + min + " 后才可使用抬头核验", StandardErrorTrait.RULE_VIOLATION);
+        return new InvoiceException("累计充值满 ¥" + min + " 后才可使用此功能", StandardErrorTrait.RULE_VIOLATION);
+    }
+
+    /// AI 识别通道不可用(未配置/模型故障)。识别是辅助,前端静默降级回规则识别结果。
+    public static InvoiceException aiParseUnavailable(String detail) {
+        return new InvoiceException("AI 识别暂不可用: " + detail, StandardErrorTrait.RULE_VIOLATION);
+    }
+
+    /// AI 识别次数超日配额(烧 token 的保护)。
+    public static InvoiceException aiParseQuotaExceeded() {
+        return new InvoiceException("今日 AI 识别次数已用完,请明天再试", StandardErrorTrait.QUOTA_EXCEEDED);
     }
 
     /// 核验次数超日配额(付费接口的烧钱保护)。

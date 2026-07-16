@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import me.supernb.invoice.app.usecase.profile.command.CreateInvoiceProfileCommand;
 import me.supernb.invoice.app.usecase.profile.command.DeleteInvoiceProfileCommand;
 import me.supernb.invoice.app.usecase.profile.command.UpdateInvoiceProfileCommand;
+import me.supernb.invoice.app.usecase.parse.PasteAiParseService;
 import me.supernb.invoice.app.usecase.profile.query.ProfileQueryService;
 import me.supernb.invoice.app.usecase.registry.RegistryLookupService;
 import me.supernb.invoice.app.usecase.request.command.CancelInvoiceRequestCommand;
@@ -61,6 +62,7 @@ class InvoiceControllerTest {
     final BillableOrderQueryService billableQueries = mock(BillableOrderQueryService.class);
     final MyInvoiceQueryService myQueries = mock(MyInvoiceQueryService.class);
     final RegistryLookupService registryLookup = mock(RegistryLookupService.class);
+    final PasteAiParseService pasteAiParse = mock(PasteAiParseService.class);
     final Sub2apiIntrospectClient introspect = mock(Sub2apiIntrospectClient.class);
 
     MockMvc mvc;
@@ -69,7 +71,8 @@ class InvoiceControllerTest {
     void setup() {
         when(introspect.introspect("Bearer u")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
         mvc = MockMvcBuilders.standaloneSetup(
-                        new InvoiceController(commandBus, profileQueries, billableQueries, myQueries, registryLookup))
+                        new InvoiceController(commandBus, profileQueries, billableQueries, myQueries,
+                                registryLookup, pasteAiParse))
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
     }
@@ -103,6 +106,27 @@ class InvoiceControllerTest {
         mvc.perform(post("/invoice/v1/registry/lookup").header("Authorization", "Bearer u")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"不存在的公司\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.found").value(false));
+    }
+
+    @Test
+    void pasteAiParseFoundAndMiss() throws Exception {
+        when(pasteAiParse.parse(7, "抬头是腾讯科技（深圳）有限公司,税号9144030071526726XG"))
+                .thenReturn(Optional.of(new me.supernb.invoice.domain.port.parse.PasteAiParsePort.ParsedInfo(
+                        "腾讯科技（深圳）有限公司", "9144030071526726XG", null, null, null, null)));
+        mvc.perform(post("/invoice/v1/paste/parse").header("Authorization", "Bearer u")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"text\":\"抬头是腾讯科技（深圳）有限公司,税号9144030071526726XG\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.found").value(true))
+                .andExpect(jsonPath("$.fields.taxNo").value("9144030071526726XG"))
+                .andExpect(jsonPath("$.fields.regAddress").doesNotExist());
+
+        when(pasteAiParse.parse(7, "什么都没有的一段废话文本")).thenReturn(Optional.empty());
+        mvc.perform(post("/invoice/v1/paste/parse").header("Authorization", "Bearer u")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"text\":\"什么都没有的一段废话文本\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.found").value(false));
     }

@@ -25,6 +25,13 @@ public class Sub2apiProperties {
     /// admin API 令牌(`x-api-key` 请求头);缺省空值时 `Sub2apiAdminAutoConfiguration` 整体不装配。
     private String adminKey;
 
+    /// 开票资料 AI 识别用的中转 API key(admin 自有账号的 sk- key,自家消费;Bearer 头)。
+    /// 缺省时 `Sub2apiChatAutoConfiguration` 整体不装配——同 adminKey,绝不给 yml 默认值。
+    private String invoiceAiKey;
+
+    /// AI 识别用模型(走 /v1/chat/completions);默认 gpt-5.6-luna(轻量快,实测单次 ~400 tokens)。
+    private String invoiceAiModel = "gpt-5.6-luna";
+
     /// 只读源连接参数;`url` 缺配则充值读模型能力整体不装配。
     @Getter
     @Setter
