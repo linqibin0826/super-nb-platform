@@ -9,7 +9,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -30,11 +29,7 @@ public class Sub2apiRechargeAutoConfiguration {
     @ConditionalOnMissingBean
     public RechargeReadModel rechargeReadModel(Sub2apiProperties props) {
         Sub2apiProperties.ReadDatasource rd = props.getReadDatasource();
-        DataSource ds = DataSourceBuilder.create()
-                .url(rd.getUrl())
-                .username(rd.getUsername())
-                .password(rd.getPassword())
-                .build();
+        DataSource ds = rd.build();
         return new JdbcRechargeReadModel(new JdbcTemplate(ds));
     }
 
@@ -43,11 +38,7 @@ public class Sub2apiRechargeAutoConfiguration {
     @ConditionalOnMissingBean
     public ReferralReadModel referralReadModel(Sub2apiProperties props) {
         Sub2apiProperties.ReadDatasource rd = props.getReadDatasource();
-        DataSource ds = DataSourceBuilder.create()
-                .url(rd.getUrl())
-                .username(rd.getUsername())
-                .password(rd.getPassword())
-                .build();
+        DataSource ds = rd.build();
         return new JdbcReferralReadModel(new JdbcTemplate(ds));
     }
 }
