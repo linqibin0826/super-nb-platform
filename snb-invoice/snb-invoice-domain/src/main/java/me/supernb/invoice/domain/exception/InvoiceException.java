@@ -82,6 +82,11 @@ public class InvoiceException extends DomainException {
         return new InvoiceException("核验服务暂不可用: " + detail, StandardErrorTrait.RULE_VIOLATION);
     }
 
+    /// 核验资格未达标:付费接口只服务够得着开票门槛的用户,防白嫖烧配额。
+    public static InvoiceException registryRequiresRecharge(BigDecimal min) {
+        return new InvoiceException("累计充值满 ¥" + min + " 后才可使用抬头核验", StandardErrorTrait.RULE_VIOLATION);
+    }
+
     /// 核验次数超日配额(付费接口的烧钱保护)。
     public static InvoiceException registryQuotaExceeded() {
         return new InvoiceException("今日核验次数已用完,请明天再试", StandardErrorTrait.QUOTA_EXCEEDED);
