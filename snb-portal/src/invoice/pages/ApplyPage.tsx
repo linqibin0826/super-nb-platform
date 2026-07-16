@@ -5,6 +5,7 @@ import { t } from '../../i18n'
 import { api, InvoiceApiError, InvoiceAuthError, type OverviewT, type ProfileT } from '../api'
 import { feeCents, fmtYuan, fmtYuanGrouped, rmbUpper, selectedTotalCents } from '../fee'
 import { ErrorBar, Loading, PageHead } from './shared'
+import { EMPTY_DRAFT, ProfileFormModal } from './ProfileFormModal'
 import { loginUrl } from '../../auth/apiFetch'
 
 const today = () => new Date().toLocaleDateString('sv')
@@ -21,6 +22,7 @@ export function ApplyPage() {
   const [needLogin, setNeedLogin] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [doneNo, setDoneNo] = useState('')
+  const [adding, setAdding] = useState(false)
 
   useEffect(() => {
     Promise.all([api.orders(), api.profiles()])
@@ -111,11 +113,14 @@ export function ApplyPage() {
   const profile = profiles.find((p) => p.id === profileId)
   const allOn = overview.orders.length > 0 && selected.size === overview.orders.length
 
-  const warn = feeShort
-    ? t('invoice.apply.feeShort', { fee: fmtYuan(fee) })
-    : totalCents > 0 && belowMin
+  const warn =
+    totalCents > 0 && belowMin
       ? t('invoice.apply.belowMin', { diff: fmtYuan(minCents - totalCents) })
-      : ''
+      : profiles.length === 0
+        ? t('invoice.apply.needProfile')
+        : feeShort
+          ? t('invoice.apply.feeShort', { fee: fmtYuan(fee) })
+          : ''
 
   return (
     <>
@@ -136,31 +141,37 @@ export function ApplyPage() {
           <div className="iv-fp-row">
             <div className="iv-fp-side">{t('invoice.apply.buyerSide')}</div>
             <div className="iv-fp-cell">
-              <div className="iv-fp-field">
-                <span className="lb">{t('invoice.apply.nameLabel')}</span>
-                {profiles.length === 0 ? (
-                  <Link to="/profiles" className="text-[13px] underline underline-offset-4 hover:text-snb-t1">
-                    {t('invoice.apply.noProfile')}
-                  </Link>
-                ) : (
-                  <select
-                    className="iv-fp-select"
-                    value={profileId}
-                    onChange={(e) => setProfileId(e.target.value)}
-                    aria-label={t('invoice.apply.profile')}
-                  >
-                    {profiles.map((p) => (
-                      <option key={p.id} value={p.id}>{p.title}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-              <div className="iv-fp-field">
-                <span className="lb">{t('invoice.apply.taxLabel')}</span>
-                <span className={`vl font-mono ${profile?.taxNo ? '' : 'text-snb-t3'}`}>
-                  {profile ? profile.taxNo || t('invoice.profiles.noTax') : '—'}
-                </span>
-              </div>
+              {profiles.length === 0 ? (
+                <button type="button" className="iv-fp-addpf" onClick={() => setAdding(true)}>
+                  <b>＋ {t('invoice.apply.addProfileCta')}</b>
+                  <span>{t('invoice.apply.addProfileHint')}</span>
+                </button>
+              ) : (
+                <>
+                  <div className="iv-fp-field">
+                    <span className="lb">{t('invoice.apply.nameLabel')}</span>
+                    <select
+                      className="iv-fp-select"
+                      value={profileId}
+                      onChange={(e) => setProfileId(e.target.value)}
+                      aria-label={t('invoice.apply.profile')}
+                    >
+                      {profiles.map((p) => (
+                        <option key={p.id} value={p.id}>{p.title}</option>
+                      ))}
+                    </select>
+                    <Button size="xs" variant="ghost" title={t('invoice.profiles.add')} onClick={() => setAdding(true)}>
+                      ＋
+                    </Button>
+                  </div>
+                  <div className="iv-fp-field">
+                    <span className="lb">{t('invoice.apply.taxLabel')}</span>
+                    <span className={`vl font-mono ${profile?.taxNo ? '' : 'text-snb-t3'}`}>
+                      {profile ? profile.taxNo || t('invoice.profiles.noTax') : '—'}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -182,6 +193,7 @@ export function ApplyPage() {
                         setSelected(e.target.checked ? new Set(overview.orders.map((o) => o.orderId)) : new Set())
                       }
                     />
+                    <span className="sel">{t('invoice.apply.selectAll')}</span>
                     <span className="nm">{t('invoice.apply.itemName')}</span>
                     <span className="meta">
                       {t('invoice.apply.ordMeta', {
@@ -281,6 +293,22 @@ export function ApplyPage() {
         </div>
         <div className="iv-warn">{warn}</div>
       </div>
+
+      {adding && (
+        <ProfileFormModal
+          id={null}
+          initial={{ ...EMPTY_DRAFT }}
+          onClose={() => setAdding(false)}
+          onSaved={async (id) => {
+            setAdding(false)
+            const ps = await api.profiles().catch(() => null)
+            if (ps) {
+              setProfiles(ps)
+              setProfileId(id)
+            }
+          }}
+        />
+      )}
     </>
   )
 }

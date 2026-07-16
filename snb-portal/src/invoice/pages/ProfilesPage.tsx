@@ -1,48 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Button, Card, Input, Modal } from '../../ui'
+import { Button, Card } from '../../ui'
 import { t } from '../../i18n'
 import { api, type ProfileT } from '../api'
 import { ErrorBar, Loading, PageHead } from './shared'
+import { EMPTY_DRAFT, ProfileFormModal, type ProfileDraft } from './ProfileFormModal'
 
-type Draft = Omit<ProfileT, 'id'>
-
-const EMPTY: Draft = {
-  type: 'COMPANY',
-  title: '',
-  taxNo: '',
-  regAddress: '',
-  regPhone: '',
-  bankName: '',
-  bankAccount: '',
-}
-
-/** 抬头管理(购买方信息):票据单元格卡 + 弹窗增改 + 删除(带确认)。 */
+/** 抬头管理(购买方信息):票据单元格卡 + 共享表单弹窗增改 + 删除(带确认)。 */
 export function ProfilesPage() {
   const [rows, setRows] = useState<ProfileT[] | null>(null)
   const [error, setError] = useState('')
-  const [editing, setEditing] = useState<{ id: string | null; draft: Draft } | null>(null)
-  const [saving, setSaving] = useState(false)
+  const [editing, setEditing] = useState<{ id: string | null; draft: ProfileDraft } | null>(null)
 
   const load = () => api.profiles().then(setRows).catch((e) => setError(String(e.message)))
   useEffect(() => {
     load()
   }, [])
-
-  const save = async () => {
-    if (!editing) return
-    setSaving(true)
-    setError('')
-    try {
-      if (editing.id) await api.updateProfile(editing.id, editing.draft)
-      else await api.createProfile(editing.draft)
-      setEditing(null)
-      load()
-    } catch (e) {
-      setError(String((e as Error).message))
-    } finally {
-      setSaving(false)
-    }
-  }
 
   const remove = async (id: string) => {
     if (!window.confirm(t('invoice.profiles.confirmDel'))) return
@@ -54,22 +26,11 @@ export function ProfilesPage() {
     }
   }
 
-  const set = (patch: Partial<Draft>) =>
-    setEditing((cur) => (cur ? { ...cur, draft: { ...cur.draft, ...patch } } : cur))
-
   const head = (
     <PageHead eyebrow={t('invoice.profiles.eyebrow')} title={t('invoice.tabs.profiles')} sub={t('invoice.profiles.sub')} />
   )
 
   if (!rows) return error ? <>{head}<ErrorBar msg={error} /></> : <>{head}<Loading /></>
-
-  const fields: { key: keyof Draft; label: string; companyOnly?: boolean }[] = [
-    { key: 'taxNo', label: t('invoice.profiles.taxNo'), companyOnly: true },
-    { key: 'regAddress', label: t('invoice.profiles.regAddress'), companyOnly: true },
-    { key: 'regPhone', label: t('invoice.profiles.regPhone'), companyOnly: true },
-    { key: 'bankName', label: t('invoice.profiles.bankName'), companyOnly: true },
-    { key: 'bankAccount', label: t('invoice.profiles.bankAccount'), companyOnly: true },
-  ]
 
   /** 单元格行:有值才成行;mono 控制税号/电话/账号的数字感 */
   const infoRows = (p: ProfileT): { label: string; value: string; mono?: boolean }[] =>
@@ -115,7 +76,7 @@ export function ProfilesPage() {
           </Card>
         ))}
 
-        <button type="button" className="iv-pf-add" onClick={() => setEditing({ id: null, draft: { ...EMPTY } })}>
+        <button type="button" className="iv-pf-add" onClick={() => setEditing({ id: null, draft: { ...EMPTY_DRAFT } })}>
           <span className="text-center text-sm">
             <span className="mb-2 block text-3xl font-light leading-none">＋</span>
             {t('invoice.profiles.add')}
@@ -124,47 +85,15 @@ export function ProfilesPage() {
       </div>
 
       {editing && (
-        <Modal
-          open
+        <ProfileFormModal
+          id={editing.id}
+          initial={editing.draft}
           onClose={() => setEditing(null)}
-          title={editing.id ? t('invoice.profiles.editTitle') : t('invoice.profiles.add')}
-        >
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              {(['COMPANY', 'PERSONAL'] as const).map((type) => (
-                <Button
-                  key={type}
-                  size="sm"
-                  variant={editing.draft.type === type ? 'primary' : 'secondary'}
-                  onClick={() => set({ type })}
-                >
-                  {type === 'COMPANY' ? t('invoice.profiles.typeCompany') : t('invoice.profiles.typePersonal')}
-                </Button>
-              ))}
-            </div>
-            <Input
-              value={editing.draft.title}
-              onChange={(e) => set({ title: e.target.value })}
-              placeholder={t('invoice.profiles.title')}
-            />
-            {fields
-              .filter((f) => !f.companyOnly || editing.draft.type === 'COMPANY')
-              .map((f) => (
-                <Input
-                  key={f.key}
-                  value={editing.draft[f.key] ?? ''}
-                  onChange={(e) => set({ [f.key]: e.target.value } as Partial<Draft>)}
-                  placeholder={f.label}
-                />
-              ))}
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setEditing(null)}>{t('invoice.profiles.cancel')}</Button>
-              <Button variant="primary" disabled={saving} onClick={save}>
-                {t('invoice.profiles.save')}
-              </Button>
-            </div>
-          </div>
-        </Modal>
+          onSaved={() => {
+            setEditing(null)
+            load()
+          }}
+        />
       )}
     </>
   )
