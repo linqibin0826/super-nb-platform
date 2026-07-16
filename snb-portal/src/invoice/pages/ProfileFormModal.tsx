@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react'
-import { Button, Input, Modal } from '../../ui'
+import { useEffect, useRef, useState } from 'react'
+import { Button, Modal } from '../../ui'
 import { t } from '../../i18n'
 import { api, type ProfileT, type RegistryOfficialT } from '../api'
 import { isValidTaxNo } from '../taxno'
-import { aiParsedPatch } from '../pasteParse'
+import { aiParsedPatch, type ParsedInvoiceInfo } from '../pasteParse'
 import { ErrorBar } from './shared'
 
 /** 核验面板状态机:未核验 → 查询中 → 查得(比对)/查无/通道异常 */
@@ -25,7 +25,13 @@ export const EMPTY_DRAFT: ProfileDraft = {
   bankAccount: '',
 }
 
+/** 誊写落格顺序(AI 识别/核验带出/回填共用):按票面行序阶梯闪光 */
+const PATCH_ORDER = ['title', 'taxNo', 'regAddress', 'regPhone', 'bankName', 'bankAccount'] as const
+type PatchKey = (typeof PATCH_ORDER)[number]
+
 /** 抬头表单弹窗(新增/编辑共用):ProfilesPage 管理 + ApplyPage 就地新增复用。
+ *  2026-07-17 重设计(静态稿站长过目定稿):表单本体=购买方信息格,
+ *  三条动线=来料区(粘贴→AI 誊写)/名称行「核验」(官方底单)/手填。
  *  保存成功回调 onSaved(id),父组件决定关闭/选中/刷新。 */
 export function ProfileFormModal({
   id,
@@ -43,74 +49,109 @@ export function ProfileFormModal({
   const [error, setError] = useState('')
   const [check, setCheck] = useState<VerifyState | null>(null)
   const [pasteText, setPasteText] = useState('')
-  const [pasteMsg, setPasteMsg] = useState('')
+  const [pasteMsg, setPasteMsg] = useState<{ text: string; bad?: boolean }>({ text: '' })
+  const [aiBusy, setAiBusy] = useState(false)
+  const [flashed, setFlashed] = useState<Record<string, boolean>>({})
 
   const set = (patch: Partial<ProfileDraft>) => setDraft((d) => ({ ...d, ...patch }))
+  const isCo = draft.type === 'COMPANY'
 
   const aiSeq = useRef(0)
-  const aiTimer = useRef<number | undefined>(undefined)
-  const lastAiText = useRef('')
+  const timers = useRef<number[]>([])
+  useEffect(() => () => timers.current.forEach(window.clearTimeout), [])
+  const draftRef = useRef(draft)
+  useEffect(() => {
+    draftRef.current = draft
+  }, [draft])
 
-  /** 智能粘贴全量走 AI(自家中转 LLM;规则识别 2026-07-17 退役,话术型文本识别率太差)。
-   *  竞态用序号守卫;同文本只自动调一次,force=手动按钮显式触发,跳过去重(点了就是要重试)。
-   *  超长截到 2000 字(后端同上限,开票资料没这么长)。 */
-  const runAiParse = (value: string, force = false) => {
-    const text = value.trim().slice(0, 2000)
-    if (text.length < 10 || (!force && text === lastAiText.current)) return
-    lastAiText.current = text
+  /* ---------- textarea 自动长高(永不出滚动条;来料区超上限才细条内滚) ---------- */
+  const pasteRef = useRef<HTMLTextAreaElement>(null)
+  const addrRef = useRef<HTMLTextAreaElement>(null)
+  const autoGrow = (el: HTMLTextAreaElement | null, cap?: number) => {
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, cap ?? 9999)}px`
+    if (cap) el.classList.toggle('of', el.scrollHeight > cap)
+  }
+  useEffect(() => autoGrow(addrRef.current), [draft.regAddress, isCo])
+  useEffect(() => autoGrow(pasteRef.current, 150), [pasteText, isCo])
+
+  /* ---------- 誊写:补丁按票面行序逐格落格,90ms 阶梯 + 落格闪光 ---------- */
+  const flashField = (k: string) => {
+    setFlashed((f) => ({ ...f, [k]: true }))
+    timers.current.push(window.setTimeout(() => setFlashed((f) => ({ ...f, [k]: false })), 950))
+  }
+  const applyPatch = (patch: ParsedInvoiceInfo, onlyEmpty = false) => {
+    let i = 0
+    for (const k of PATCH_ORDER) {
+      const v = patch[k]
+      if (!v) continue
+      if (onlyEmpty && String(draftRef.current[k] ?? '').trim()) continue
+      timers.current.push(
+        window.setTimeout(() => {
+          setDraft((d) => (onlyEmpty && String(d[k] ?? '').trim() ? d : { ...d, [k]: v }))
+          flashField(k)
+        }, i++ * 90)
+      )
+    }
+    return i
+  }
+
+  /* ---------- 来料区:「用 AI 识别」唯一触发口(站长拍板不做自动,点了才花一次调用) ----------
+     自家中转 LLM 拆字段;进行中禁按钮防连点,竞态再用序号守卫兜底;
+     超长截 2000 字(后端同上限);服务端资格闸+配额照常把门 */
+  const runAiParse = () => {
+    const text = pasteText.trim().slice(0, 2000)
+    if (text.length < 10) return
     const seq = ++aiSeq.current
-    setPasteMsg(t('invoice.profiles.pasteAiLoading'))
+    setAiBusy(true)
+    setPasteMsg({ text: t('invoice.profiles.pasteAiLoading') })
     api
       .pasteAiParse(text)
       .then((r) => {
         if (seq !== aiSeq.current) return
         const patch = r.found && r.fields ? aiParsedPatch(r.fields) : {}
-        const n = Object.values(patch).filter(Boolean).length
+        const n = applyPatch(patch)
         if (n > 0) {
-          set(patch)
-          setPasteMsg(t('invoice.profiles.pasteAiApplied', { n: String(n) }))
+          setPasteMsg({ text: t('invoice.profiles.pasteAiApplied', { n: String(n) }) })
         } else {
-          setPasteMsg(t('invoice.profiles.pasteNone'))
+          setPasteMsg({ text: t('invoice.profiles.pasteNone'), bad: true })
         }
       })
       .catch(() => {
         // 未达门槛/超配额/通道未配——识别失败要说清,别冒充「没识别出」
-        if (seq === aiSeq.current) setPasteMsg(t('invoice.profiles.pasteAiFailed'))
+        if (seq === aiSeq.current) setPasteMsg({ text: t('invoice.profiles.pasteAiFailed'), bad: true })
+      })
+      .finally(() => {
+        if (seq === aiSeq.current) setAiBusy(false)
       })
   }
 
-  /** 粘贴/输入 → 700ms 防抖后走 AI;不足 10 字不值一次调用 */
-  const handlePasteText = (value: string) => {
-    setPasteText(value)
-    window.clearTimeout(aiTimer.current)
-    if (value.trim().length < 10) {
-      setPasteMsg('')
-      return
-    }
-    aiTimer.current = window.setTimeout(() => runAiParse(value), 700)
-  }
-
-  /** 手动重试 AI 识别(按钮):跳过同文本去重;服务端配额照常把门 */
-  const forceAiParse = () => {
-    window.clearTimeout(aiTimer.current)
-    runAiParse(pasteText, true)
-  }
-
-  // 税号填了但格式不合法(18 位国标校验位/15 位老号,与后端同规则)——红提示 + 禁保存
+  // 税号填了但格式不合法(18 位国标校验位/15 位老号,与后端同规则)——红格线 + 禁保存
   const taxNoBad = !!(draft.taxNo ?? '').trim() && !isValidTaxNo(draft.taxNo ?? '')
 
   const incomplete =
-    !draft.title.trim() || (draft.type === 'COMPANY' && !(draft.taxNo ?? '').trim()) || taxNoBad
+    !draft.title.trim() || (isCo && !(draft.taxNo ?? '').trim()) || taxNoBad
 
-  /** 官方档案核验:查得后逐字段比对 + 自动补全空字段,不拦保存(核验是辅助不是门槛)。
-   *  用户只需要输全称——税号/地址/开户行都能由这里带出(必填的税号也算回填满足)。 */
+  /* ---------- 核验:官方底单(复核联)。查得后空字段自动带出,不拦保存 ---------- */
   const verify = async () => {
     setCheck({ kind: 'loading' })
     try {
       const r = await api.registryLookup(draft.title.trim())
       if (r.found && r.official) {
         setCheck({ kind: 'found', o: r.official })
-        fillEmptyFrom(r.official)
+        // 只补空:官方档案填进还空着的字段,已填内容一律不动(开票地址≠注册地址是合法场景);
+        // 名称不动——它是查询键,对不上由 ✗ 提示、按回填按钮显式覆盖
+        applyPatch(
+          {
+            taxNo: r.official.taxNo ?? undefined,
+            regAddress: r.official.address ?? undefined,
+            regPhone: r.official.phone ?? undefined,
+            bankName: r.official.bankName ?? undefined,
+            bankAccount: r.official.bankAccount ?? undefined,
+          },
+          true
+        )
       } else {
         setCheck({ kind: 'miss' })
       }
@@ -119,32 +160,17 @@ export function ProfileFormModal({
     }
   }
 
-  /** 只补空:官方档案填进还空着的字段,已填内容一律不动(开票地址与注册地址不同是合法场景);
-   *  名称不动——它是用户输入的查询键,对不上由 ✗ 提示、按回填按钮显式覆盖 */
-  const fillEmptyFrom = (o: RegistryOfficialT) => {
-    const keep = (mine: string | null | undefined, official: string | null) =>
-      (mine ?? '').trim() ? (mine as string) : (official ?? mine ?? '')
-    setDraft((d) => ({
-      ...d,
-      taxNo: keep(d.taxNo, o.taxNo),
-      regAddress: keep(d.regAddress, o.address),
-      regPhone: keep(d.regPhone, o.phone),
-      bankName: keep(d.bankName, o.bankName),
-      bankAccount: keep(d.bankAccount, o.bankAccount),
-    }))
-  }
-
   /** 一键回填(纠错用):官方档案有值的字段全部覆盖,含名称;残缺字段保留手填 */
   const fillFromOfficial = () => {
     if (check?.kind !== 'found') return
     const o = check.o
-    set({
-      title: o.name ?? draft.title,
-      taxNo: o.taxNo ?? draft.taxNo,
-      regAddress: o.address ?? draft.regAddress,
-      regPhone: o.phone ?? draft.regPhone,
-      bankName: o.bankName ?? draft.bankName,
-      bankAccount: o.bankAccount ?? draft.bankAccount,
+    applyPatch({
+      title: o.name ?? undefined,
+      taxNo: o.taxNo ?? undefined,
+      regAddress: o.address ?? undefined,
+      regPhone: o.phone ?? undefined,
+      bankName: o.bankName ?? undefined,
+      bankAccount: o.bankAccount ?? undefined,
     })
   }
 
@@ -153,6 +179,11 @@ export function ProfileFormModal({
     check?.kind === 'found' &&
     !!check.o.taxNo &&
     (draft.taxNo ?? '').trim().toUpperCase() === check.o.taxNo.toUpperCase()
+  // 章预览:名称+税号都对上官方档案,保存后即真盖章
+  const stampPreview = isCo && nameMatches && taxMatches
+
+  const titleLen = draft.title.trim().length
+  const verifyReady = titleLen >= 4 && check?.kind !== 'found' && check?.kind !== 'loading'
 
   const save = async () => {
     setSaving(true)
@@ -171,155 +202,229 @@ export function ProfileFormModal({
     }
   }
 
-  const fields: { key: keyof ProfileDraft; label: string; hint?: string; companyOnly?: boolean }[] = [
-    { key: 'taxNo', label: t('invoice.profiles.taxNo'), hint: t('invoice.profiles.taxHint'), companyOnly: true },
-    { key: 'regAddress', label: t('invoice.profiles.regAddress'), companyOnly: true },
-    { key: 'regPhone', label: t('invoice.profiles.regPhone'), companyOnly: true },
-    { key: 'bankName', label: t('invoice.profiles.bankName'), companyOnly: true },
-    { key: 'bankAccount', label: t('invoice.profiles.bankAccount'), companyOnly: true },
-  ]
+  const setType = (type: ProfileDraft['type']) => {
+    set({ type })
+    if (type !== 'COMPANY') {
+      aiSeq.current++ // 在途 AI 作废,别往个人抬头里回填企业字段
+      setCheck(null)
+      setPasteText('')
+      setPasteMsg({ text: '' })
+      setAiBusy(false)
+    }
+  }
+
+  const fpin = (k: PatchKey, extra = '') =>
+    `iv-fpin${extra}${flashed[k] ? ' flash' : ''}`
 
   return (
-    <Modal open onClose={onClose} title={id ? t('invoice.profiles.editTitle') : t('invoice.profiles.add')}>
-      <div className="space-y-3">
-        {error && <ErrorBar msg={error} />}
-        <div className="flex gap-2">
-          {(['COMPANY', 'PERSONAL'] as const).map((type) => (
-            <Button
-              key={type}
-              size="sm"
-              variant={draft.type === type ? 'primary' : 'secondary'}
-              onClick={() => {
-                set({ type })
-                if (type !== 'COMPANY') {
-                  setCheck(null)
-                  setPasteText('')
-                  setPasteMsg('')
-                }
-              }}
-            >
-              {type === 'COMPANY' ? t('invoice.profiles.typeCompany') : t('invoice.profiles.typePersonal')}
-            </Button>
-          ))}
-        </div>
-        {draft.type === 'COMPANY' && (
-          <div>
-            <textarea
-              className="iv-paste"
-              rows={2}
-              value={pasteText}
-              onChange={(e) => handlePasteText(e.target.value)}
-              placeholder={t('invoice.profiles.pastePlaceholder')}
-            />
-            <div className="mt-0.5 flex items-center gap-2">
-              {pasteMsg && <span className="min-w-0 flex-1 text-xs text-snb-t3">{pasteMsg}</span>}
-              {pasteText.trim().length >= 10 && (
-                <Button size="xs" variant="ghost" onClick={forceAiParse}>
-                  {t('invoice.profiles.pasteAiButton')}
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-        <label className="block">
-          <span className="mb-1 block text-xs text-snb-t3">
-            {t('invoice.profiles.title')}
-            <b className="ml-0.5" style={{ color: 'var(--iv-no-red)' }}>*</b>
+    <Modal
+      open
+      onClose={onClose}
+      title={
+        <>
+          <span className="iv-m-eyebrow">{t('invoice.profiles.eyebrow')}</span>
+          {id ? t('invoice.profiles.editTitle') : t('invoice.profiles.add')}
+        </>
+      }
+      footer={
+        <>
+          <span className="min-w-0 flex-1 text-xs" style={{ color: 'var(--iv-no-red)' }}>
+            {taxNoBad ? t('invoice.profiles.footWarnTax') : ''}
           </span>
-          <Input
-            value={draft.title}
-            onChange={(e) => set({ title: e.target.value })}
-            placeholder={t(draft.type === 'COMPANY'
-              ? 'invoice.profiles.titleHintCompany'
-              : 'invoice.profiles.titleHintPersonal')}
-          />
-        </label>
-        {draft.type === 'COMPANY' && (
-          <div className="iv-verify">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={check?.kind === 'loading' || draft.title.trim().length < 4}
-                onClick={verify}
-              >
-                {t('invoice.profiles.verify')}
-              </Button>
-              {check?.kind === 'loading' && (
-                <span className="text-xs text-snb-t3">{t('invoice.profiles.verifying')}</span>
-              )}
-              {check?.kind === 'miss' && (
-                <span className="text-xs" style={{ color: 'var(--iv-seal)' }}>
-                  {t('invoice.profiles.verifyMiss')}
-                </span>
-              )}
-              {check?.kind === 'error' && (
-                <span className="text-xs" style={{ color: 'var(--iv-seal)' }}>{check.msg}</span>
-              )}
-            </div>
-            {check?.kind === 'found' && (
-              <div className="mt-2.5 space-y-1.5">
-                <div className="iv-verify-head">{t('invoice.profiles.verifyOfficial')}</div>
-                <div className="iv-verify-row">
-                  <span className="k">{t('invoice.profiles.title')}</span>
-                  <span className="v">{check.o.name ?? '—'}</span>
-                  <span className={nameMatches ? 'iv-verify-ok' : 'iv-verify-bad'}>
-                    {t(nameMatches ? 'invoice.profiles.verifyMatch' : 'invoice.profiles.verifyDiff')}
-                  </span>
-                </div>
-                <div className="iv-verify-row">
-                  <span className="k">{t('invoice.profiles.taxNo')}</span>
-                  <span className="v font-mono">{check.o.taxNo ?? '—'}</span>
-                  <span className={taxMatches ? 'iv-verify-ok' : 'iv-verify-bad'}>
-                    {t(taxMatches ? 'invoice.profiles.verifyMatch' : 'invoice.profiles.verifyDiff')}
-                  </span>
-                </div>
-                {check.o.address && (
-                  <div className="iv-verify-row">
-                    <span className="k">{t('invoice.profiles.regAddress')}</span>
-                    <span className="v">{check.o.address}</span>
-                  </div>
-                )}
-                {check.o.bankName && (
-                  <div className="iv-verify-row">
-                    <span className="k">{t('invoice.profiles.bankName')}</span>
-                    <span className="v">{[check.o.bankName, check.o.bankAccount].filter(Boolean).join(' · ')}</span>
-                  </div>
-                )}
-                <Button size="xs" variant="ghost" onClick={fillFromOfficial}>
-                  {t('invoice.profiles.verifyFill')}
-                </Button>
-              </div>
-            )}
-            <p className="iv-verify-note">{t('invoice.profiles.verifyNote')}</p>
-          </div>
-        )}
-        {fields
-          .filter((f) => !f.companyOnly || draft.type === 'COMPANY')
-          .map((f) => (
-            <label key={f.key} className="block">
-              <span className="mb-1 block text-xs text-snb-t3">
-                {f.label}
-                {f.key === 'taxNo' && <b className="ml-0.5" style={{ color: 'var(--iv-no-red)' }}>*</b>}
-              </span>
-              <Input
-                value={draft[f.key] ?? ''}
-                onChange={(e) => set({ [f.key]: e.target.value } as Partial<ProfileDraft>)}
-                placeholder={f.hint ?? ''}
-              />
-              {f.key === 'taxNo' && taxNoBad && (
-                <span className="mt-1 block text-xs" style={{ color: 'var(--iv-seal)' }}>
-                  {t('invoice.profiles.taxNoInvalid')}
-                </span>
-              )}
-            </label>
-          ))}
-        <div className="flex justify-end gap-2 pt-1">
           <Button variant="secondary" onClick={onClose}>{t('invoice.profiles.cancel')}</Button>
           <Button variant="primary" disabled={saving || incomplete} onClick={save}>
             {t('invoice.profiles.save')}
           </Button>
+        </>
+      }
+    >
+      <div className="space-y-3.5">
+        {error && <ErrorBar msg={error} />}
+
+        {/* 联次:企业/个人 */}
+        <div className="flex gap-2" role="group" aria-label={t('invoice.profiles.eyebrow')}>
+          {(['COMPANY', 'PERSONAL'] as const).map((type) => (
+            <button
+              key={type}
+              type="button"
+              className="iv-type-tab"
+              aria-pressed={draft.type === type}
+              onClick={() => setType(type)}
+            >
+              {type === 'COMPANY'
+                ? t('invoice.profiles.typeCompanyTab')
+                : t('invoice.profiles.typePersonalTab')}
+            </button>
+          ))}
         </div>
+
+        {/* 来料区(仅企业):粘贴对方发来的资料 → 点「用 AI 识别」誊写进票面 */}
+        {isCo && (
+          <div className="iv-tray">
+            <span className="iv-tray-tag">{t('invoice.profiles.trayTag')}</span>
+            <textarea
+              ref={pasteRef}
+              rows={2}
+              value={pasteText}
+              onChange={(e) => {
+                setPasteText(e.target.value)
+                if (e.target.value.trim().length < 10) setPasteMsg({ text: '' })
+              }}
+              placeholder={t('invoice.profiles.pastePlaceholder')}
+            />
+            <div className="iv-tray-foot">
+              {pasteMsg.text && (
+                <span className={`iv-tray-msg${pasteMsg.bad ? ' bad' : ''}`}>{pasteMsg.text}</span>
+              )}
+              {pasteText.trim().length >= 10 && (
+                <button type="button" className="iv-tool lg" disabled={aiBusy} onClick={runAiParse}>
+                  {t(aiBusy ? 'invoice.profiles.pasteAiBusy' : 'invoice.profiles.pasteAiButton')}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 购买方信息格:表单即票面 */}
+        <div className="iv-blk">
+          {stampPreview && (
+            <span className="iv-blk-stamp">
+              <span className="tip">{t('invoice.profiles.stampTip')}</span>
+              <span className="chip">{t('invoice.profiles.verifiedBadge')}</span>
+            </span>
+          )}
+          <span className="iv-blk-side" aria-hidden="true">购买方</span>
+          <div className="iv-blk-cell">
+            <div className="iv-fprow">
+              <span className="lb">
+                {t('invoice.profiles.rowTitle')}
+                <i>*</i>
+              </span>
+              <input
+                className={fpin('title')}
+                value={draft.title}
+                onChange={(e) => set({ title: e.target.value })}
+                placeholder={t(isCo
+                  ? 'invoice.profiles.titleHintCompany'
+                  : 'invoice.profiles.titleHintPersonal')}
+                autoComplete="organization"
+              />
+              {isCo && (
+                <button
+                  type="button"
+                  className={`iv-tool${verifyReady ? ' ready' : ''}`}
+                  disabled={titleLen < 4 || check?.kind === 'loading'}
+                  onClick={verify}
+                >
+                  {t(check?.kind === 'found'
+                    ? 'invoice.profiles.verifyAgain'
+                    : 'invoice.profiles.verify')}
+                </button>
+              )}
+            </div>
+            {isCo && (
+              <>
+                <div className="iv-fprow">
+                  <span className="lb">
+                    {t('invoice.profiles.rowTaxNo')}
+                    <i>*</i>
+                  </span>
+                  <input
+                    className={fpin('taxNo', ' mono') + (taxNoBad ? ' bad' : '')}
+                    value={draft.taxNo ?? ''}
+                    onChange={(e) => set({ taxNo: e.target.value })}
+                    placeholder={t('invoice.profiles.taxHint')}
+                    maxLength={20}
+                  />
+                </div>
+                {taxNoBad && <div className="iv-fperr">{t('invoice.profiles.taxNoInvalid')}</div>}
+                <div className="iv-fprow tall">
+                  <span className="lb">{t('invoice.profiles.rowAddrPhone')}</span>
+                  <div className="iv-fpcol">
+                    <textarea
+                      ref={addrRef}
+                      rows={1}
+                      className={fpin('regAddress')}
+                      value={draft.regAddress ?? ''}
+                      onChange={(e) => set({ regAddress: e.target.value })}
+                      placeholder={t('invoice.profiles.regAddress')}
+                    />
+                    <input
+                      className={fpin('regPhone', ' half')}
+                      value={draft.regPhone ?? ''}
+                      onChange={(e) => set({ regPhone: e.target.value })}
+                      placeholder={t('invoice.profiles.regPhone')}
+                    />
+                  </div>
+                </div>
+                <div className="iv-fprow tall">
+                  <span className="lb">{t('invoice.profiles.rowBankAcct')}</span>
+                  <div className="iv-fpcol">
+                    <input
+                      className={fpin('bankName')}
+                      value={draft.bankName ?? ''}
+                      onChange={(e) => set({ bankName: e.target.value })}
+                      placeholder={t('invoice.profiles.bankName')}
+                    />
+                    <input
+                      className={fpin('bankAccount', ' half mono')}
+                      value={draft.bankAccount ?? ''}
+                      onChange={(e) => set({ bankAccount: e.target.value })}
+                      placeholder={t('invoice.profiles.bankAccount')}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* 官方底单(核验结果·复核联) */}
+        {isCo && check?.kind === 'loading' && (
+          <div className="iv-carbon dim">{t('invoice.profiles.verifying')}</div>
+        )}
+        {isCo && check?.kind === 'miss' && (
+          <div className="iv-carbon miss">{t('invoice.profiles.verifyMiss')}</div>
+        )}
+        {isCo && check?.kind === 'error' && (
+          <div className="iv-carbon miss">{check.msg}</div>
+        )}
+        {isCo && check?.kind === 'found' && (
+          <div className="iv-carbon">
+            <div className="iv-carbon-head">{t('invoice.profiles.verifyOfficial')}</div>
+            <div className="iv-carbon-row">
+              <span className="k">{t('invoice.profiles.rowTitle')}</span>
+              <span className="v">{check.o.name ?? '—'}</span>
+              <span className={nameMatches ? 'mk-ok' : 'mk-bad'}>
+                {t(nameMatches ? 'invoice.profiles.verifyMatch' : 'invoice.profiles.verifyDiff')}
+              </span>
+            </div>
+            <div className="iv-carbon-row">
+              <span className="k">{t('invoice.profiles.taxNo')}</span>
+              <span className="v mono">{check.o.taxNo ?? '—'}</span>
+              <span className={taxMatches ? 'mk-ok' : 'mk-bad'}>
+                {t(taxMatches ? 'invoice.profiles.verifyMatch' : 'invoice.profiles.verifyDiff')}
+              </span>
+            </div>
+            {(check.o.address || check.o.bankName) && (
+              <div className="iv-carbon-ref">
+                {check.o.address &&
+                  `${t('invoice.profiles.carbonAddr')}：${check.o.address}${check.o.phone ? ` ${check.o.phone}` : ''}`}
+                {check.o.address && check.o.bankName && '　·　'}
+                {check.o.bankName &&
+                  `${t('invoice.profiles.carbonBank')}：${check.o.bankName}${check.o.bankAccount ? ` ${check.o.bankAccount}` : ''}`}
+              </div>
+            )}
+            <div className="iv-carbon-foot">
+              <button type="button" className="iv-tool" onClick={fillFromOfficial}>
+                {t('invoice.profiles.verifyFill')}
+              </button>
+              <span className="hint">{t('invoice.profiles.stampHint')}</span>
+            </div>
+          </div>
+        )}
+
+        {isCo && <p className="iv-blk-note">{t('invoice.profiles.verifyNote')}</p>}
       </div>
     </Modal>
   )
