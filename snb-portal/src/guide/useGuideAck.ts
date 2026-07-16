@@ -27,7 +27,7 @@ function markLocal(key: string): void {
   }
 }
 
-export function useGuideAck(key: string): { show: boolean; ack: () => void } {
+export function useGuideAck(key: string): { show: boolean; ack: () => void; hide: () => void } {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
@@ -59,5 +59,8 @@ export function useGuideAck(key: string): { show: boolean; ack: () => void } {
     postGuideAck(key).catch(() => {}) // 未登录/瞬断静默,靠下次进站对账补写
   }, [key])
 
-  return { show, ack }
+  /// 仅本次收起(Esc 临时跳过):不写任何存储,下次进站再提醒。
+  const hide = useCallback(() => setShow(false), [])
+
+  return { show, ack, hide }
 }

@@ -2,20 +2,21 @@ import { useEffect, useState } from 'react'
 import { Button } from '../ui'
 import { t } from '../i18n'
 
-/** 首次进站「开票须知」单:三步办事顺序 + 关键规则;
- *  点「知道了」盖「已阅」章(240ms)后关闭。弹与不弹由 useGuideAck 决定(服务端真源)。 */
-export function FirstVisitGuide({ onDismiss }: { onDismiss: () => void }) {
+/** 首次进站「开票须知」单:三步办事顺序 + 关键规则。
+ *  确认(=永久已读)的唯一出口是「知道了」按钮——盖「已阅」章后回调 onConfirm;
+ *  点遮罩不关闭(防误触永久已读),Esc = onSkip 临时跳过(不落库,下次再提醒)。 */
+export function FirstVisitGuide({ onConfirm, onSkip }: { onConfirm: () => void; onSkip: () => void }) {
   const [closing, setClosing] = useState(false)
 
   const close = () => {
     if (closing) return
     setClosing(true)
-    window.setTimeout(onDismiss, 320)
+    window.setTimeout(onConfirm, 320)
   }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close()
+      if (e.key === 'Escape' && !closing) onSkip()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -23,7 +24,7 @@ export function FirstVisitGuide({ onDismiss }: { onDismiss: () => void }) {
   }, [closing])
 
   return (
-    <div className="iv-guide-mask" onClick={close} role="presentation">
+    <div className="iv-guide-mask" role="presentation">
       <div
         className="iv-guide-card"
         role="dialog"

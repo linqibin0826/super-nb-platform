@@ -44,7 +44,7 @@ export function AppRoutes() {
   const guide = useGuideAck('invoice.intro.v1')
   return (
     <ThemeScope theme={theme} className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
-      {guide.show && <FirstVisitGuide onDismiss={guide.ack} />}
+      {guide.show && <FirstVisitGuide onConfirm={guide.ack} onSkip={guide.hide} />}
       <InvoiceHeader theme={theme} onToggleTheme={toggleTheme} />
       <SubNav />
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-7">
