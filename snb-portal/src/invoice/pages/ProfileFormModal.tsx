@@ -46,18 +46,39 @@ export function ProfileFormModal({
   const incomplete =
     !draft.title.trim() || (draft.type === 'COMPANY' && !(draft.taxNo ?? '').trim())
 
-  /** 官方档案核验:查得后逐字段比对,不拦保存(核验是辅助不是门槛) */
+  /** 官方档案核验:查得后逐字段比对 + 自动补全空字段,不拦保存(核验是辅助不是门槛)。
+   *  用户只需要输全称——税号/地址/开户行都能由这里带出(必填的税号也算回填满足)。 */
   const verify = async () => {
     setCheck({ kind: 'loading' })
     try {
       const r = await api.registryLookup(draft.title.trim())
-      setCheck(r.found && r.official ? { kind: 'found', o: r.official } : { kind: 'miss' })
+      if (r.found && r.official) {
+        setCheck({ kind: 'found', o: r.official })
+        fillEmptyFrom(r.official)
+      } else {
+        setCheck({ kind: 'miss' })
+      }
     } catch (e) {
       setCheck({ kind: 'error', msg: String((e as Error).message) })
     }
   }
 
-  /** 一键回填:官方档案有值的字段覆盖,残缺字段保留手填 */
+  /** 只补空:官方档案填进还空着的字段,已填内容一律不动(开票地址与注册地址不同是合法场景);
+   *  名称不动——它是用户输入的查询键,对不上由 ✗ 提示、按回填按钮显式覆盖 */
+  const fillEmptyFrom = (o: RegistryOfficialT) => {
+    const keep = (mine: string | null | undefined, official: string | null) =>
+      (mine ?? '').trim() ? (mine as string) : (official ?? mine ?? '')
+    setDraft((d) => ({
+      ...d,
+      taxNo: keep(d.taxNo, o.taxNo),
+      regAddress: keep(d.regAddress, o.address),
+      regPhone: keep(d.regPhone, o.phone),
+      bankName: keep(d.bankName, o.bankName),
+      bankAccount: keep(d.bankAccount, o.bankAccount),
+    }))
+  }
+
+  /** 一键回填(纠错用):官方档案有值的字段全部覆盖,含名称;残缺字段保留手填 */
   const fillFromOfficial = () => {
     if (check?.kind !== 'found') return
     const o = check.o
@@ -134,21 +155,6 @@ export function ProfileFormModal({
               : 'invoice.profiles.titleHintPersonal')}
           />
         </label>
-        {fields
-          .filter((f) => !f.companyOnly || draft.type === 'COMPANY')
-          .map((f) => (
-            <label key={f.key} className="block">
-              <span className="mb-1 block text-xs text-snb-t3">
-                {f.label}
-                {f.key === 'taxNo' && <b className="ml-0.5" style={{ color: 'var(--iv-no-red)' }}>*</b>}
-              </span>
-              <Input
-                value={draft[f.key] ?? ''}
-                onChange={(e) => set({ [f.key]: e.target.value } as Partial<ProfileDraft>)}
-                placeholder={f.hint ?? ''}
-              />
-            </label>
-          ))}
         {draft.type === 'COMPANY' && (
           <div className="iv-verify">
             <div className="flex flex-wrap items-center gap-2">
@@ -201,16 +207,29 @@ export function ProfileFormModal({
                     <span className="v">{[check.o.bankName, check.o.bankAccount].filter(Boolean).join(' · ')}</span>
                   </div>
                 )}
-                {!(nameMatches && taxMatches) && (
-                  <Button size="xs" variant="ghost" onClick={fillFromOfficial}>
-                    {t('invoice.profiles.verifyFill')}
-                  </Button>
-                )}
+                <Button size="xs" variant="ghost" onClick={fillFromOfficial}>
+                  {t('invoice.profiles.verifyFill')}
+                </Button>
               </div>
             )}
             <p className="iv-verify-note">{t('invoice.profiles.verifyNote')}</p>
           </div>
         )}
+        {fields
+          .filter((f) => !f.companyOnly || draft.type === 'COMPANY')
+          .map((f) => (
+            <label key={f.key} className="block">
+              <span className="mb-1 block text-xs text-snb-t3">
+                {f.label}
+                {f.key === 'taxNo' && <b className="ml-0.5" style={{ color: 'var(--iv-no-red)' }}>*</b>}
+              </span>
+              <Input
+                value={draft[f.key] ?? ''}
+                onChange={(e) => set({ [f.key]: e.target.value } as Partial<ProfileDraft>)}
+                placeholder={f.hint ?? ''}
+              />
+            </label>
+          ))}
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="secondary" onClick={onClose}>{t('invoice.profiles.cancel')}</Button>
           <Button variant="primary" disabled={saving || incomplete} onClick={save}>
