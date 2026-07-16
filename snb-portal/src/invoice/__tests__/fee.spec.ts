@@ -22,3 +22,25 @@ describe('fee mirror of FeePolicy', () => {
     expect(fmtYuan(0)).toBe('0.00')
   })
 })
+
+import { rmbUpper } from '../fee'
+
+describe('rmbUpper 人民币大写(票面用,恒中文)', () => {
+  it('整元', () => {
+    expect(rmbUpper(0)).toBe('零圆整')
+    expect(rmbUpper(130000)).toBe('壹仟叁佰圆整')
+    expect(rmbUpper(100500)).toBe('壹仟零伍圆整')
+    expect(rmbUpper(360000)).toBe('叁仟陆佰圆整')
+  })
+  it('角分', () => {
+    expect(rmbUpper(123456)).toBe('壹仟贰佰叁拾肆圆伍角陆分')
+    expect(rmbUpper(300050)).toBe('叁仟圆伍角')
+    expect(rmbUpper(100005)).toBe('壹仟圆零伍分')
+  })
+  it('万亿段与段间零', () => {
+    expect(rmbUpper(100000000)).toBe('壹佰万圆整')
+    expect(rmbUpper(10020000)).toBe('壹拾万零贰佰圆整')
+    expect(rmbUpper(800000000)).toBe('捌佰万圆整')
+    expect(rmbUpper(800000000000)).toBe('捌拾亿圆整')
+  })
+})
