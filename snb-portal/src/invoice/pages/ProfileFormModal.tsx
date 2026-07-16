@@ -3,7 +3,7 @@ import { Button, Input, Modal } from '../../ui'
 import { t } from '../../i18n'
 import { api, type ProfileT, type RegistryOfficialT } from '../api'
 import { isValidTaxNo } from '../taxno'
-import { aiParsedPatch, parseInvoiceInfo } from '../pasteParse'
+import { aiParsedPatch } from '../pasteParse'
 import { ErrorBar } from './shared'
 
 /** 核验面板状态机:未核验 → 查询中 → 查得(比对)/查无/通道异常 */
@@ -51,18 +51,15 @@ export function ProfileFormModal({
   const aiTimer = useRef<number | undefined>(undefined)
   const lastAiText = useRef('')
 
-  /** AI 兜底:规则识别吃不下时静默升级(自家中转 LLM);竞态用序号守卫,同文本只调一次;
-   *  force=手动按钮显式触发,跳过同文本去重(用户点了就是要重试) */
-  const runAiParse = (value: string, ruleCount: number, force = false) => {
-    const text = value.trim()
+  /** 智能粘贴全量走 AI(自家中转 LLM;规则识别 2026-07-17 退役,话术型文本识别率太差)。
+   *  竞态用序号守卫;同文本只自动调一次,force=手动按钮显式触发,跳过去重(点了就是要重试)。
+   *  超长截到 2000 字(后端同上限,开票资料没这么长)。 */
+  const runAiParse = (value: string, force = false) => {
+    const text = value.trim().slice(0, 2000)
     if (text.length < 10 || (!force && text === lastAiText.current)) return
     lastAiText.current = text
     const seq = ++aiSeq.current
     setPasteMsg(t('invoice.profiles.pasteAiLoading'))
-    const fallbackMsg = () =>
-      ruleCount > 0
-        ? t('invoice.profiles.pasteApplied', { n: String(ruleCount) })
-        : t('invoice.profiles.pasteNone')
     api
       .pasteAiParse(text)
       .then((r) => {
@@ -73,43 +70,30 @@ export function ProfileFormModal({
           set(patch)
           setPasteMsg(t('invoice.profiles.pasteAiApplied', { n: String(n) }))
         } else {
-          setPasteMsg(fallbackMsg())
+          setPasteMsg(t('invoice.profiles.pasteNone'))
         }
       })
       .catch(() => {
-        // 未达门槛/超配额/通道未配——都静默退回规则识别的结果,粘贴功能不因 AI 缺席而失灵
-        if (seq === aiSeq.current) setPasteMsg(fallbackMsg())
+        // 未达门槛/超配额/通道未配——识别失败要说清,别冒充「没识别出」
+        if (seq === aiSeq.current) setPasteMsg(t('invoice.profiles.pasteAiFailed'))
       })
   }
 
-  /** 智能粘贴级联:规则先跑(零延迟零成本)。「够用」看质量不看数量——只有干净抬头+过
-   *  校验位的税号都在手才不升级;否则 700ms 防抖后静默走 AI(手动按钮随时可强制) */
+  /** 粘贴/输入 → 700ms 防抖后走 AI;不足 10 字不值一次调用 */
   const handlePasteText = (value: string) => {
     setPasteText(value)
     window.clearTimeout(aiTimer.current)
-    if (value.trim().length < 8) {
+    if (value.trim().length < 10) {
       setPasteMsg('')
       return
     }
-    const parsed = parseInvoiceInfo(value)
-    const count = Object.values(parsed).filter(Boolean).length
-    if (count > 0) set(parsed)
-    const rulesEnough = !!(parsed.title && parsed.taxNo)
-    if (rulesEnough) {
-      setPasteMsg(t('invoice.profiles.pasteApplied', { n: String(count) }))
-      return
-    }
-    setPasteMsg(count > 0
-      ? t('invoice.profiles.pasteApplied', { n: String(count) })
-      : t('invoice.profiles.pasteAiLoading'))
-    aiTimer.current = window.setTimeout(() => runAiParse(value, count), 700)
+    aiTimer.current = window.setTimeout(() => runAiParse(value), 700)
   }
 
-  /** 手动强制 AI 识别(按钮):不管规则判定,直接走 LLM;服务端配额照常把门 */
+  /** 手动重试 AI 识别(按钮):跳过同文本去重;服务端配额照常把门 */
   const forceAiParse = () => {
     window.clearTimeout(aiTimer.current)
-    const count = Object.values(parseInvoiceInfo(pasteText)).filter(Boolean).length
-    runAiParse(pasteText, count, true)
+    runAiParse(pasteText, true)
   }
 
   // 税号填了但格式不合法(18 位国标校验位/15 位老号,与后端同规则)——红提示 + 禁保存
