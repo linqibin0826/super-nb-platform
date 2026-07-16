@@ -32,6 +32,11 @@ public class Sub2apiProperties {
     /// AI 识别用模型(走 /v1/chat/completions);默认 gpt-5.6-luna(轻量快,实测单次 ~400 tokens)。
     private String invoiceAiModel = "gpt-5.6-luna";
 
+    /// AI 识别通道的独立基址(可选)。本地联调用:introspect 必须指本地 relay,而 luna 只在
+    /// 生产 relay 有路由——本地把这条指 https://api.super-nb.me 即可全链体验;生产不配,
+    /// 缺省回落 baseUrl(容器内网 sub2api:8080)。
+    private String invoiceAiBaseUrl;
+
     /// 只读源连接参数;`url` 缺配则充值读模型能力整体不装配。
     @Getter
     @Setter

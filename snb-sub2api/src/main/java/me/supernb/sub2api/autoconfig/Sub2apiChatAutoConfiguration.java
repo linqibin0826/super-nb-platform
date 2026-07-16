@@ -19,15 +19,19 @@ import org.springframework.web.client.RestClient;
 @EnableConfigurationProperties(Sub2apiProperties.class)
 public class Sub2apiChatAutoConfiguration {
 
-    /// chat 客户端 Bean(Bearer 默认头 + 连 5s/读 25s)。
+    /// chat 客户端 Bean(Bearer 默认头 + 连 5s/读 25s);基址优先 invoiceAiBaseUrl(本地联调),
+    /// 缺省回落 baseUrl(生产容器内网)。
     @Bean
     @ConditionalOnMissingBean
     public Sub2apiChatClient sub2apiChatClient(Sub2apiProperties props) {
         HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(http);
         factory.setReadTimeout(Duration.ofSeconds(25));
+        String base = props.getInvoiceAiBaseUrl() == null || props.getInvoiceAiBaseUrl().isBlank()
+                ? props.getBaseUrl()
+                : props.getInvoiceAiBaseUrl();
         RestClient restClient = RestClient.builder()
-                .baseUrl(props.getBaseUrl() + "/v1")
+                .baseUrl(base + "/v1")
                 .requestFactory(factory)
                 .defaultHeader("Authorization", "Bearer " + props.getInvoiceAiKey())
                 .build();
