@@ -93,14 +93,14 @@ public class InvoiceController {
     @PostMapping("/registry/lookup")
     public RegistryLookupResponse registryLookup(@CurrentUser UserProfile user,
             @RequestBody RegistryLookupInput body) {
-        return RegistryLookupResponse.of(registryLookup.lookup(user.id(), body.name()));
+        return RegistryLookupResponse.of(registryLookup.lookup(user.id(), user.isAdmin(), body.name()));
     }
 
     /// 开票资料 AI 识别:整段粘贴文本 → 抬头字段(自家中转 LLM,规则识别吃不下时的级联兜底;
     /// found=false=模型什么都没提取到)。
     @PostMapping("/paste/parse")
     public PasteParseResponse pasteParse(@CurrentUser UserProfile user, @RequestBody PasteParseInput body) {
-        return PasteParseResponse.of(pasteAiParse.parse(user.id(), body.text()));
+        return PasteParseResponse.of(pasteAiParse.parse(user.id(), user.isAdmin(), body.text()));
     }
 
     /// 可开票总览(未占用订单+合计+余额+业务常量)。

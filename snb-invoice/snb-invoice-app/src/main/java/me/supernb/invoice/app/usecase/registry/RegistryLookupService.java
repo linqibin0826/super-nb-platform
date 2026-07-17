@@ -30,12 +30,13 @@ public class RegistryLookupService {
     }
 
     /// 按企业名称核验;empty = 供应商查无此企业。资格未达标/超配额 422/429、通道不可用 422。
-    public Optional<CompanyRecord> lookup(long userId, String enterpriseName) {
+    /// admin 豁免充值门槛(配额照常计,见 InvoiceEligibility)。
+    public Optional<CompanyRecord> lookup(long userId, boolean admin, String enterpriseName) {
         String name = enterpriseName == null ? "" : enterpriseName.strip();
         if (name.length() < 4 || name.length() > 100) {
             throw InvoiceException.invalidInput("企业名称长度不合法");
         }
-        InvoiceEligibility.requireRecharged(billableOrders, userId);
+        InvoiceEligibility.requireRecharged(billableOrders, userId, admin);
         quota.consume(userId, InvoiceException::registryQuotaExceeded);
         return registry.lookup(name);
     }

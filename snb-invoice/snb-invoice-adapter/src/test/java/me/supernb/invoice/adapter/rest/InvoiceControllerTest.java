@@ -91,7 +91,7 @@ class InvoiceControllerTest {
 
     @Test
     void registryLookupFoundAndMiss() throws Exception {
-        when(registryLookup.lookup(7, "腾讯科技（深圳）有限公司")).thenReturn(Optional.of(new CompanyRecord(
+        when(registryLookup.lookup(7, false, "腾讯科技（深圳）有限公司")).thenReturn(Optional.of(new CompanyRecord(
                 "腾讯科技（深圳）有限公司", "9144030071526726XG", "深圳市南山区腾讯大厦35层",
                 "0755-86013388", "招商银行深圳汉京中心支行", "817281823910001")));
         mvc.perform(post("/invoice/v1/registry/lookup").header("Authorization", "Bearer u")
@@ -102,7 +102,7 @@ class InvoiceControllerTest {
                 .andExpect(jsonPath("$.official.taxNo").value("9144030071526726XG"))
                 .andExpect(jsonPath("$.official.phone").value("0755-86013388"));
 
-        when(registryLookup.lookup(7, "不存在的公司")).thenReturn(Optional.empty());
+        when(registryLookup.lookup(7, false, "不存在的公司")).thenReturn(Optional.empty());
         mvc.perform(post("/invoice/v1/registry/lookup").header("Authorization", "Bearer u")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"不存在的公司\"}"))
@@ -112,7 +112,7 @@ class InvoiceControllerTest {
 
     @Test
     void pasteAiParseFoundAndMiss() throws Exception {
-        when(pasteAiParse.parse(7, "抬头是腾讯科技（深圳）有限公司,税号9144030071526726XG"))
+        when(pasteAiParse.parse(7, false, "抬头是腾讯科技（深圳）有限公司,税号9144030071526726XG"))
                 .thenReturn(Optional.of(new me.supernb.invoice.domain.port.parse.PasteAiParsePort.ParsedInfo(
                         "腾讯科技（深圳）有限公司", "9144030071526726XG", null, null, null, null)));
         mvc.perform(post("/invoice/v1/paste/parse").header("Authorization", "Bearer u")
@@ -123,7 +123,7 @@ class InvoiceControllerTest {
                 .andExpect(jsonPath("$.fields.taxNo").value("9144030071526726XG"))
                 .andExpect(jsonPath("$.fields.regAddress").doesNotExist());
 
-        when(pasteAiParse.parse(7, "什么都没有的一段废话文本")).thenReturn(Optional.empty());
+        when(pasteAiParse.parse(7, false, "什么都没有的一段废话文本")).thenReturn(Optional.empty());
         mvc.perform(post("/invoice/v1/paste/parse").header("Authorization", "Bearer u")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"text\":\"什么都没有的一段废话文本\"}"))

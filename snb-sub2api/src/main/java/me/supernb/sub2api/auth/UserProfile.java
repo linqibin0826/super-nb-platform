@@ -15,4 +15,9 @@ public record UserProfile(long id, String role, String status) {
     public boolean isActiveAccount() {
         return ("user".equals(role) || "admin".equals(role)) && "active".equals(status);
     }
+
+    /// 是否管理员:运营豁免判定用(如开票资格闸对站长自测放行,2026-07-17 站长拍板)。
+    public boolean isAdmin() {
+        return "admin".equals(role);
+    }
 }

@@ -29,12 +29,13 @@ public class PasteAiParseService {
     }
 
     /// 识别一段粘贴文本;empty = 模型什么都没提取到。资格/配额/通道异常分别 422/429/422。
-    public Optional<ParsedInfo> parse(long userId, String text) {
+    /// admin 豁免充值门槛(配额照常计,见 InvoiceEligibility)。
+    public Optional<ParsedInfo> parse(long userId, boolean admin, String text) {
         String blob = text == null ? "" : text.strip();
         if (blob.length() < 10 || blob.length() > 2000) {
             throw InvoiceException.invalidInput("识别文本长度不合法(10~2000 字符)");
         }
-        InvoiceEligibility.requireRecharged(billableOrders, userId);
+        InvoiceEligibility.requireRecharged(billableOrders, userId, admin);
         quota.consume(userId, InvoiceException::aiParseQuotaExceeded);
         return parser.parse(blob);
     }

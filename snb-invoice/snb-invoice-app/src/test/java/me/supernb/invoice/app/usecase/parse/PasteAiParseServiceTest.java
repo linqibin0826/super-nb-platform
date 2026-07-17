@@ -41,32 +41,42 @@ class PasteAiParseServiceTest {
         var service = new PasteAiParseService(parser, billable, 20, 200);
         recharged(7, "1500");
         when(parser.parse("抬头是腾讯科技（深圳）有限公司")).thenReturn(Optional.of(INFO));
-        assertThat(service.parse(7, "  抬头是腾讯科技（深圳）有限公司  ")).contains(INFO);
+        assertThat(service.parse(7, false, "  抬头是腾讯科技（深圳）有限公司  ")).contains(INFO);
     }
 
     @Test
     void tooShortOrTooLongRejectedWithoutBurningQuota() {
         var service = new PasteAiParseService(parser, billable, 1, 200);
         recharged(7, "1500");
-        assertThatThrownBy(() -> service.parse(7, "太短了")).isInstanceOf(InvoiceException.class)
+        assertThatThrownBy(() -> service.parse(7, false, "太短了")).isInstanceOf(InvoiceException.class)
                 .hasMessageContaining("长度");
-        assertThatThrownBy(() -> service.parse(7, "长".repeat(2001))).isInstanceOf(InvoiceException.class)
+        assertThatThrownBy(() -> service.parse(7, false, "长".repeat(2001))).isInstanceOf(InvoiceException.class)
                 .hasMessageContaining("长度");
         verify(parser, never()).parse(anyString());
         when(parser.parse(anyString())).thenReturn(Optional.empty());
-        service.parse(7, "这是一段足够长的开票资料文本"); // 把门失败不占配额
+        service.parse(7, false, "这是一段足够长的开票资料文本"); // 把门失败不占配额
     }
 
     @Test
     void belowRechargeThresholdRejectedBeforeQuota() {
         var service = new PasteAiParseService(parser, billable, 20, 1); // 全站仅 1 次
         recharged(7, "999.99");
-        assertThatThrownBy(() -> service.parse(7, "这是一段足够长的开票资料文本"))
+        assertThatThrownBy(() -> service.parse(7, false, "这是一段足够长的开票资料文本"))
                 .isInstanceOf(InvoiceException.class).hasMessageContaining("充值");
         verify(parser, never()).parse(anyString());
         recharged(8, "3000");
         when(parser.parse(anyString())).thenReturn(Optional.empty());
-        service.parse(8, "合格用户仍可用最后一个全站名额");
+        service.parse(8, false, "合格用户仍可用最后一个全站名额");
+    }
+
+    @Test
+    void adminBypassesRechargeGateButQuotaStillCounts() {
+        var service = new PasteAiParseService(parser, billable, 1, 200); // 单用户仅 1 次
+        // 不给 billable 垫单:管理员零充值,若资格闸仍去查会 NPE 立刻暴露
+        when(parser.parse(anyString())).thenReturn(Optional.empty());
+        service.parse(9, true, "站长自测的一段开票资料文本"); // 充值门槛放行
+        assertThatThrownBy(() -> service.parse(9, true, "第二段识别文本该吃配额限制"))
+                .isInstanceOf(InvoiceException.class).hasMessageContaining("次数"); // 配额照常把门
     }
 
     @Test
@@ -74,8 +84,8 @@ class PasteAiParseServiceTest {
         var service = new PasteAiParseService(parser, billable, 1, 200);
         recharged(7, "1500");
         when(parser.parse(anyString())).thenReturn(Optional.empty());
-        service.parse(7, "第一次识别的开票资料文本");
-        assertThatThrownBy(() -> service.parse(7, "第二次识别的开票资料文本"))
+        service.parse(7, false, "第一次识别的开票资料文本");
+        assertThatThrownBy(() -> service.parse(7, false, "第二次识别的开票资料文本"))
                 .isInstanceOf(InvoiceException.class).hasMessageContaining("次数");
     }
 }
