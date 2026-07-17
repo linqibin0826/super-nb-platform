@@ -1,4 +1,4 @@
-import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeScope } from '../ui'
 import { useTheme } from '../theme'
 import { t } from '../i18n'
@@ -9,8 +9,11 @@ import { RequestsPage } from './pages/RequestsPage'
 import { ProfilesPage } from './pages/ProfilesPage'
 import { AdminPage } from './pages/AdminPage'
 
-/** 站内二级导航(申请/我的申请/抬头;admin 不放导航,直链 /admin) */
+/** 站内二级导航(申请/我的申请/抬头;admin 不放导航,直链 /admin)。
+ *  柜台页(/admin)不渲染——那是站长在控制台里嵌的管理入口,用户端页签混进去不像话 */
 function SubNav() {
+  const { pathname } = useLocation()
+  if (pathname.startsWith('/admin')) return null
   const tabs = [
     { to: '/', label: t('invoice.tabs.apply') },
     { to: '/requests', label: t('invoice.tabs.requests') },
