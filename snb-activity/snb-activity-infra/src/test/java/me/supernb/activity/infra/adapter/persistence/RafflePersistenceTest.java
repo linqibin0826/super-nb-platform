@@ -12,7 +12,9 @@ import me.supernb.activity.infra.adapter.persistence.entity.RafflePrizeEntity;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import me.supernb.activity.domain.exception.RaffleNotFoundException;
+import me.supernb.activity.domain.exception.RafflePrizeNotFoundException;
 import me.supernb.activity.domain.model.raffle.GateType;
 import me.supernb.activity.domain.model.raffle.WeightMode;
 import me.supernb.activity.domain.model.read.raffle.PersonWinsView;
@@ -224,5 +226,63 @@ class RafflePersistenceTest {
                 Instant.now().plusSeconds(1), Instant.now().plusSeconds(2), GateType.RECHARGE,
                 new BigDecimal("1"), Instant.now(), null, WeightMode.EQUAL))
                 .isInstanceOf(RaffleNotFoundException.class);
+    }
+
+    @Test
+    void createPersistsPrizeWithSnowflakeId() {
+        long id = prizeAdapter.create(1, "A", "测试奖品", "ALIPAY_CODE", "PLACEHOLDER", 5);
+        assertThat(id).isGreaterThan(1_000_000_000L);
+        Map<String, Object> row = jdbc.queryForMap(
+                "SELECT campaign_id, payload, sort_order FROM activity.raffle_prize WHERE id = " + id);
+        assertThat(((Number) row.get("campaign_id")).longValue()).isEqualTo(1);
+        assertThat(row.get("payload")).isEqualTo("PLACEHOLDER");
+    }
+
+    @Test
+    void updateMutatesExistingPrize() {
+        long id = prizeAdapter.create(1, "A", "旧名", "ALIPAY_CODE", "OLD", 5);
+        prizeAdapter.update(id, "S", "新名", "ALIPAY_CODE", "NEW", 0);
+        Map<String, Object> row = jdbc.queryForMap(
+                "SELECT tier, display_name, payload, sort_order FROM activity.raffle_prize WHERE id = " + id);
+        assertThat(row.get("tier")).isEqualTo("S");
+        assertThat(row.get("payload")).isEqualTo("NEW");
+    }
+
+    @Test
+    void updatePayloadOnlyTouchesPayload() {
+        long id = prizeAdapter.create(1, "A", "保持不变", "ALIPAY_CODE", "", 9);
+        prizeAdapter.updatePayload(id, "SuperNB7X9K2M");
+        Map<String, Object> row = jdbc.queryForMap(
+                "SELECT display_name, payload, sort_order FROM activity.raffle_prize WHERE id = " + id);
+        assertThat(row.get("display_name")).isEqualTo("保持不变"); // 未被 updatePayload 动过
+        assertThat(row.get("payload")).isEqualTo("SuperNB7X9K2M");
+        assertThat(((Number) row.get("sort_order")).intValue()).isEqualTo(9);
+    }
+
+    @Test
+    void deleteRemovesPrize() {
+        long id = prizeAdapter.create(1, "D", "待删", "ALIPAY_CODE", "X", 99);
+        prizeAdapter.delete(id);
+        assertThat(jdbc.queryForList("SELECT 1 FROM activity.raffle_prize WHERE id = " + id)).isEmpty();
+    }
+
+    @Test
+    void createBatchInsertsAllInOneTransaction() {
+        List<Long> ids = prizeAdapter.createBatch(1, "C", "批量兑换码",
+                "REDEEM_CODE", List.of("code-a", "code-b", "code-c"), 10);
+        assertThat(ids).hasSize(3);
+        String idList = ids.stream().map(String::valueOf).collect(Collectors.joining(","));
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT payload, sort_order FROM activity.raffle_prize WHERE id IN (" + idList + ") ORDER BY sort_order");
+        assertThat(rows).hasSize(3);
+        assertThat(rows.get(0).get("payload")).isEqualTo("code-a");
+        assertThat(((Number) rows.get(0).get("sort_order")).intValue()).isEqualTo(10);
+        assertThat(((Number) rows.get(2).get("sort_order")).intValue()).isEqualTo(12);
+    }
+
+    @Test
+    void updateUnknownPrizeThrowsNotFound() {
+        assertThatThrownBy(() -> prizeAdapter.update(999_999_999_999L, "x", "x", "ALIPAY_CODE", "x", 0))
+                .isInstanceOf(RafflePrizeNotFoundException.class);
     }
 }
