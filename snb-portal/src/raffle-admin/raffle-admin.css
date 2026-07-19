@@ -93,3 +93,72 @@
 .rf-row:hover {
   background: rgb(var(--snb-t1) / 0.04);
 }
+
+/* ---------- 盒式下拉:与 Input 同皮肤(照 invoice iv-fp-select 先例),
+   终结「下划线下拉贴白盒输入框」的控件语言打架 ---------- */
+:root {
+  --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23736356' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.dark {
+  --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238F8578' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.rf-select {
+  width: 100%;
+  appearance: none;
+  background-color: rgb(var(--snb-elv));
+  border: 1px solid var(--snb-hairline-strong);
+  border-radius: 0.75rem;
+  padding: 10px 34px 10px 16px;
+  font: inherit;
+  font-size: 14px;
+  color: rgb(var(--snb-t1));
+  background-image: var(--rf-chevron);
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.rf-select:focus {
+  outline: none;
+  border-color: #cc785c;
+  box-shadow: 0 0 0 2px rgb(204 120 92 / 0.3);
+}
+.rf-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.rf-select-sm {
+  padding: 5px 26px 5px 10px;
+  font-size: 12.5px;
+  border-radius: 8px;
+  background-position: right 8px center;
+  background-size: 12px;
+}
+
+/* ---------- 档位铭牌:同档位行成组,只在组首亮牌 ---------- */
+.rf-tier {
+  display: inline-flex;
+  align-items: center;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 1px 7px;
+  border: 1px solid var(--snb-hairline-strong);
+  border-radius: 6px;
+  color: rgb(var(--snb-t2));
+  background: rgb(var(--snb-well) / 0.6);
+}
+
+/* ---------- 行尾删除:安静灰字,悬停才见朱砂 ---------- */
+.rf-del {
+  font-size: 12px;
+  color: rgb(var(--snb-t3));
+  transition: color 0.15s ease;
+}
+.rf-del:hover {
+  color: #e0604c;
+}
+.rf-del:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

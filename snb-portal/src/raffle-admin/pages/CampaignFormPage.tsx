@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Alert, Button, Card, Input, TicketSelect } from '../../ui'
+import { Alert, Button, Card, Input } from '../../ui'
 import { t } from '../../i18n'
 import {
   api,
@@ -14,7 +14,7 @@ import {
   type PrizeT,
   type WeightMode,
 } from '../api'
-import { Cluster, ErrorBar, Jack, Lamp, Loading, PageHead } from './shared'
+import { Cluster, ErrorBar, Jack, Lamp, Loading, PageHead, RfSelect } from './shared'
 
 function toLocalInput(iso: string): string {
   const d = new Date(iso)
@@ -178,7 +178,6 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
     displayName: '',
     kind: 'ALIPAY_CODE' as PrizeKind,
     payload: '',
-    sortOrder: 0,
   })
   const [redeemForm, setRedeemForm] = useState({
     tier: '',
@@ -186,12 +185,15 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
     groupId: 0,
     validityDays: 1,
     count: 1,
-    sortOrderStart: 0,
   })
 
   const reloadDetail = async () => {
     if (id) setDetail(await api.detail(id))
   }
+
+  // 排序号不再暴露给站长:新奖品一律自动接在清单末尾(行序即排序)
+  const nextSort = () =>
+    detail && detail.prizes.length ? Math.max(...detail.prizes.map((p) => p.sortOrder)) + 1 : 0
 
   const addPrize = async () => {
     if (!id) return
@@ -207,8 +209,8 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
     setPrizeBusy('new')
     setError('')
     try {
-      await api.addPrize(id, newPrize)
-      setNewPrize({ tier: '', displayName: '', kind: 'ALIPAY_CODE', payload: '', sortOrder: 0 })
+      await api.addPrize(id, { ...newPrize, sortOrder: nextSort() })
+      setNewPrize({ tier: '', displayName: '', kind: 'ALIPAY_CODE', payload: '' })
       await reloadDetail()
     } catch (e) {
       setError(String((e as Error).message))
@@ -244,7 +246,7 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
         prizeId: existing?.id ?? null,
         tier: existing?.tier ?? newPrize.tier,
         displayName: existing?.displayName ?? newPrize.displayName,
-        sortOrder: existing?.sortOrder ?? newPrize.sortOrder,
+        sortOrder: existing?.sortOrder ?? nextSort(),
       })
       await reloadDetail()
     } catch (e) {
@@ -254,26 +256,21 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
     }
   }
 
-  // 逐行生成:每个空壳兑换码行自带 分组ID/天数 小输入,点亮后码值就地回填(克隆骨架主路径)
-  const [rowRedeem, setRowRedeem] = useState<Record<string, { groupId: string; validityDays: string }>>({})
-  const rowParams = (pid: string) => rowRedeem[pid] ?? { groupId: '', validityDays: '1' }
+  // 逐行生成:空壳兑换码行只选分组,一行固定出 1 张码、有效期固定 1 天(日卡即本站奖品常态;
+  // 非 1 天的少数情况走下方批量生成区的天数字段)
+  const [rowGroup, setRowGroup] = useState<Record<string, string>>({})
 
   const generateRedeemForPrize = async (p: PrizeT) => {
     if (!id) return
-    const groupId = Number(rowParams(p.id).groupId)
-    const validityDays = Number(rowParams(p.id).validityDays)
+    const groupId = Number(rowGroup[p.id] ?? '')
     if (!(groupId > 0)) {
       setError(t('raffle.admin.validation.redeemGroupIdPositive'))
-      return
-    }
-    if (!(validityDays >= 1)) {
-      setError(t('raffle.admin.validation.redeemValidityMin'))
       return
     }
     setPrizeBusy(p.id)
     setError('')
     try {
-      await api.generateRedeemCodeForPrize(id, p.id, { groupId, validityDays })
+      await api.generateRedeemCodeForPrize(id, p.id, { groupId, validityDays: 1 })
       await reloadDetail()
     } catch (e) {
       setError(String((e as Error).message))
@@ -304,8 +301,7 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
     setPrizeBusy('redeem')
     setError('')
     try {
-      await api.generateRedeemCodes(id, redeemForm)
-      setRedeemForm({ ...redeemForm, sortOrderStart: redeemForm.sortOrderStart + redeemForm.count })
+      await api.generateRedeemCodes(id, { ...redeemForm, sortOrderStart: nextSort() })
       await reloadDetail()
     } catch (e) {
       setError(String((e as Error).message))
@@ -364,15 +360,15 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
         </Cluster>
         <Cluster label={t('raffle.admin.clusters.gate')}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <TicketSelect
+            <RfSelect
+              label={t('raffle.admin.fields.gateType')}
               value={scalars.gateType}
               disabled={!editable}
-              options={[
-                { value: 'RECHARGE', label: t('raffle.admin.gateTypes.RECHARGE') },
-                { value: 'SPEND', label: t('raffle.admin.gateTypes.SPEND') },
-              ]}
               onChange={(e) => setScalars({ ...scalars, gateType: e.target.value as GateType })}
-            />
+            >
+              <option value="RECHARGE">{t('raffle.admin.gateTypes.RECHARGE')}</option>
+              <option value="SPEND">{t('raffle.admin.gateTypes.SPEND')}</option>
+            </RfSelect>
             <Input
               type="number"
               label={t('raffle.admin.fields.gateAmount')}
@@ -405,15 +401,15 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
                 })
               }
             />
-            <TicketSelect
+            <RfSelect
+              label={t('raffle.admin.fields.weightMode')}
               value={scalars.weightMode}
               disabled={!editable}
-              options={[
-                { value: 'EQUAL', label: t('raffle.admin.weightModes.EQUAL') },
-                { value: 'WEIGHTED', label: t('raffle.admin.weightModes.WEIGHTED') },
-              ]}
               onChange={(e) => setScalars({ ...scalars, weightMode: e.target.value as WeightMode })}
-            />
+            >
+              <option value="EQUAL">{t('raffle.admin.weightModes.EQUAL')}</option>
+              <option value="WEIGHTED">{t('raffle.admin.weightModes.WEIGHTED')}</option>
+            </RfSelect>
           </div>
         </Cluster>
         <div className="rf-cluster flex items-center gap-3">
@@ -435,103 +431,89 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
           <h2 className="font-display text-lg font-semibold">{t('raffle.admin.prizesTitle')}</h2>
           <div className="mt-4 overflow-hidden rounded-lg border border-snb-hairline">
             <table className="w-full text-[13px]">
-              <thead className="bg-snb-well text-left text-snb-t3">
+              <thead className="bg-snb-well text-left">
                 <tr>
-                  <th className="px-3 py-2">{t('raffle.admin.fields.tier')}</th>
-                  <th className="px-3 py-2">{t('raffle.admin.fields.displayName')}</th>
-                  <th className="px-3 py-2">{t('raffle.admin.fields.kind')}</th>
-                  <th className="px-3 py-2">{t('raffle.admin.fields.payload')}</th>
-                  <th className="px-3 py-2">{t('raffle.admin.fields.sortOrder')}</th>
-                  <th className="px-3 py-2" />
+                  <th className="rf-plate-label w-20 px-4 py-2.5 font-normal">{t('raffle.admin.fields.tier')}</th>
+                  <th className="rf-plate-label px-3 py-2.5 font-normal">{t('raffle.admin.fields.displayName')}</th>
+                  <th className="rf-plate-label px-3 py-2.5 font-normal">{t('raffle.admin.fields.payload')}</th>
+                  <th className="w-14 px-4 py-2.5" />
                 </tr>
               </thead>
               <tbody>
-                {detail.prizes.map((p) => (
+                {detail.prizes.map((p, i) => (
                   <tr key={p.id} className="rf-row border-t border-snb-hairline">
-                    <td className="px-3 py-2">{p.tier}</td>
-                    <td className="px-3 py-2">{p.displayName}</td>
-                    <td className="px-3 py-2">{t(`raffle.admin.kinds.${p.kind}`)}</td>
-                    <td className="px-3 py-2 font-mono">
-                      <span className="inline-flex items-center gap-2">
-                        <Jack lit={!!p.payload} />
-                        {p.payload || <span className="text-snb-t3">{t('raffle.admin.pendingPayload')}</span>}
-                      </span>
+                    {/* 同档位成组:只在组首亮铭牌,行序即台账序 */}
+                    <td className="px-4 py-2.5 align-middle">
+                      {(i === 0 || detail.prizes[i - 1].tier !== p.tier) && (
+                        <span className="rf-tier">{p.tier}</span>
+                      )}
                     </td>
-                    <td className="px-3 py-2">{p.sortOrder}</td>
-                    <td className="px-3 py-2 text-right">
-                      {editable && (
-                        <div className="flex items-center justify-end gap-1.5">
-                          {p.kind === 'REDEEM_CODE' && !p.payload && (
-                            <>
-                              {groupOptions.length > 0 ? (
-                                <TicketSelect
-                                  className="max-w-52 flex-none"
-                                  value={rowParams(p.id).groupId}
-                                  options={[{ value: '', label: t('raffle.admin.pickGroup') }, ...groupOptions]}
-                                  onChange={(e) =>
-                                    setRowRedeem({
-                                      ...rowRedeem,
-                                      [p.id]: { ...rowParams(p.id), groupId: e.target.value },
-                                    })
-                                  }
-                                />
-                              ) : (
-                                <Input
-                                  className="w-24 flex-none"
-                                  type="number"
-                                  min={1}
-                                  placeholder={t('raffle.admin.fields.groupId')}
-                                  value={rowParams(p.id).groupId}
-                                  onChange={(e) =>
-                                    setRowRedeem({
-                                      ...rowRedeem,
-                                      [p.id]: { ...rowParams(p.id), groupId: e.target.value },
-                                    })
-                                  }
-                                />
-                              )}
+                    <td className="px-3 py-2.5 align-middle">{p.displayName}</td>
+                    {/* 码值格:已生成=亮点+等宽码值;空壳=生成控件就地放在码值将出现的位置 */}
+                    <td className="px-3 py-2 align-middle">
+                      <div className="flex items-center gap-2.5">
+                        <Jack lit={!!p.payload} />
+                        {p.payload ? (
+                          <span className="font-mono">{p.payload}</span>
+                        ) : editable && p.kind === 'REDEEM_CODE' ? (
+                          <>
+                            {groupOptions.length > 0 ? (
+                              <RfSelect
+                                size="sm"
+                                className="w-56 flex-none"
+                                value={rowGroup[p.id] ?? ''}
+                                onChange={(e) => setRowGroup({ ...rowGroup, [p.id]: e.target.value })}
+                              >
+                                <option value="">{t('raffle.admin.pickGroup')}</option>
+                                {groupOptions.map((o) => (
+                                  <option key={o.value} value={o.value}>
+                                    {o.label}
+                                  </option>
+                                ))}
+                              </RfSelect>
+                            ) : (
                               <Input
-                                className="w-16 flex-none"
+                                className="w-24 flex-none"
                                 type="number"
                                 min={1}
-                                placeholder={t('raffle.admin.fields.validityDays')}
-                                value={rowParams(p.id).validityDays}
-                                onChange={(e) =>
-                                  setRowRedeem({
-                                    ...rowRedeem,
-                                    [p.id]: { ...rowParams(p.id), validityDays: e.target.value },
-                                  })
-                                }
+                                placeholder={t('raffle.admin.fields.groupId')}
+                                value={rowGroup[p.id] ?? ''}
+                                onChange={(e) => setRowGroup({ ...rowGroup, [p.id]: e.target.value })}
                               />
-                              <Button
-                                size="xs"
-                                variant="secondary"
-                                disabled={prizeBusy === p.id}
-                                onClick={() => generateRedeemForPrize(p)}
-                              >
-                                {t('raffle.admin.generateCode')}
-                              </Button>
-                            </>
-                          )}
-                          {p.kind === 'ALIPAY_CODE' && !p.payload && (
+                            )}
                             <Button
                               size="xs"
                               variant="secondary"
                               disabled={prizeBusy === p.id}
-                              onClick={() => generateAlipay(p)}
+                              onClick={() => generateRedeemForPrize(p)}
                             >
-                              {t('raffle.admin.generatePassphrase')}
+                              {t('raffle.admin.generateCode')}
                             </Button>
-                          )}
+                          </>
+                        ) : editable && p.kind === 'ALIPAY_CODE' ? (
                           <Button
                             size="xs"
-                            variant="ghost"
+                            variant="secondary"
                             disabled={prizeBusy === p.id}
-                            onClick={() => deletePrize(p.id)}
+                            onClick={() => generateAlipay(p)}
                           >
-                            {t('raffle.admin.delete')}
+                            {t('raffle.admin.generatePassphrase')}
                           </Button>
-                        </div>
+                        ) : (
+                          <span className="text-snb-t3">{t('raffle.admin.pendingPayload')}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 text-right align-middle">
+                      {editable && (
+                        <button
+                          type="button"
+                          className="rf-del"
+                          disabled={prizeBusy === p.id}
+                          onClick={() => deletePrize(p.id)}
+                        >
+                          {t('raffle.admin.delete')}
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -543,7 +525,7 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
           {editable && (
             <>
               <Cluster label={t('raffle.admin.addPrizeManually')}>
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+                <div className="grid grid-cols-2 gap-2.5 md:grid-cols-[8rem_1fr_10rem_16rem]">
                   <Input
                     placeholder={t('raffle.admin.fields.tier')}
                     value={newPrize.tier}
@@ -554,24 +536,17 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
                     value={newPrize.displayName}
                     onChange={(e) => setNewPrize({ ...newPrize, displayName: e.target.value })}
                   />
-                  <TicketSelect
+                  <RfSelect
                     value={newPrize.kind}
-                    options={[
-                      { value: 'ALIPAY_CODE', label: t('raffle.admin.kinds.ALIPAY_CODE') },
-                      { value: 'REDEEM_CODE', label: t('raffle.admin.kinds.REDEEM_CODE') },
-                    ]}
                     onChange={(e) => setNewPrize({ ...newPrize, kind: e.target.value as PrizeKind })}
-                  />
+                  >
+                    <option value="ALIPAY_CODE">{t('raffle.admin.kinds.ALIPAY_CODE')}</option>
+                    <option value="REDEEM_CODE">{t('raffle.admin.kinds.REDEEM_CODE')}</option>
+                  </RfSelect>
                   <Input
                     placeholder={t('raffle.admin.fields.payload')}
                     value={newPrize.payload}
                     onChange={(e) => setNewPrize({ ...newPrize, payload: e.target.value })}
-                  />
-                  <Input
-                    type="number"
-                    placeholder={t('raffle.admin.fields.sortOrder')}
-                    value={newPrize.sortOrder}
-                    onChange={(e) => setNewPrize({ ...newPrize, sortOrder: Number(e.target.value) })}
                   />
                 </div>
                 <div className="flex gap-2">
@@ -590,7 +565,7 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
               </Cluster>
 
               <Cluster label={t('raffle.admin.generateRedeemCodes')}>
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-6">
+                <div className="grid grid-cols-2 gap-2.5 md:grid-cols-[8rem_1fr_16rem_6rem_6rem]">
                   <Input
                     placeholder={t('raffle.admin.fields.tier')}
                     value={redeemForm.tier}
@@ -602,11 +577,17 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
                     onChange={(e) => setRedeemForm({ ...redeemForm, displayName: e.target.value })}
                   />
                   {groupOptions.length > 0 ? (
-                    <TicketSelect
+                    <RfSelect
                       value={redeemForm.groupId ? String(redeemForm.groupId) : ''}
-                      options={[{ value: '', label: t('raffle.admin.pickGroup') }, ...groupOptions]}
                       onChange={(e) => setRedeemForm({ ...redeemForm, groupId: Number(e.target.value) || 0 })}
-                    />
+                    >
+                      <option value="">{t('raffle.admin.pickGroup')}</option>
+                      {groupOptions.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </RfSelect>
                   ) : (
                     <Input
                       type="number"
@@ -630,12 +611,6 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
                     placeholder={t('raffle.admin.fields.count')}
                     value={redeemForm.count}
                     onChange={(e) => setRedeemForm({ ...redeemForm, count: Number(e.target.value) })}
-                  />
-                  <Input
-                    type="number"
-                    placeholder={t('raffle.admin.fields.sortOrderStart')}
-                    value={redeemForm.sortOrderStart}
-                    onChange={(e) => setRedeemForm({ ...redeemForm, sortOrderStart: Number(e.target.value) })}
                   />
                 </div>
                 <Button size="sm" variant="primary" disabled={prizeBusy === 'redeem'} onClick={generateRedeemCodes}>
@@ -671,26 +646,25 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
                     setPrizeSkeleton(prizeSkeleton.map((x, j) => (j === i ? { ...x, displayName: e.target.value } : x)))
                   }
                 />
-                <TicketSelect
-                  className="flex-none"
+                <RfSelect
+                  className="w-40 flex-none"
                   value={p.kind}
-                  options={[
-                    { value: 'ALIPAY_CODE', label: t('raffle.admin.kinds.ALIPAY_CODE') },
-                    { value: 'REDEEM_CODE', label: t('raffle.admin.kinds.REDEEM_CODE') },
-                  ]}
                   onChange={(e) =>
                     setPrizeSkeleton(
                       prizeSkeleton.map((x, j) => (j === i ? { ...x, kind: e.target.value as PrizeKind } : x)),
                     )
                   }
-                />
-                <Button
-                  size="xs"
-                  variant="ghost"
+                >
+                  <option value="ALIPAY_CODE">{t('raffle.admin.kinds.ALIPAY_CODE')}</option>
+                  <option value="REDEEM_CODE">{t('raffle.admin.kinds.REDEEM_CODE')}</option>
+                </RfSelect>
+                <button
+                  type="button"
+                  className="rf-del flex-none"
                   onClick={() => setPrizeSkeleton(prizeSkeleton.filter((_, j) => j !== i))}
                 >
                   {t('raffle.admin.delete')}
-                </Button>
+                </button>
               </div>
             ))}
           </div>

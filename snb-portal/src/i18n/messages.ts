@@ -474,11 +474,9 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
           displayName: '展示名',
           kind: '类型',
           payload: '码值/口令',
-          sortOrder: '排序',
           groupId: '分组 ID',
           validityDays: '有效天数',
           count: '数量',
-          sortOrderStart: '起始排序号',
         },
         weightModes: { EQUAL: '等权(一人一签)', WEIGHTED: '加权(按门槛指标)' },
         validation: {
@@ -995,11 +993,9 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
           displayName: 'Display name',
           kind: 'Kind',
           payload: 'Code / passphrase',
-          sortOrder: 'Sort order',
           groupId: 'Group ID',
           validityDays: 'Validity (days)',
           count: 'Count',
-          sortOrderStart: 'Starting sort order',
         },
         weightModes: { EQUAL: 'Equal (one entry, one ticket)', WEIGHTED: 'Weighted (by gate metric)' },
         validation: {

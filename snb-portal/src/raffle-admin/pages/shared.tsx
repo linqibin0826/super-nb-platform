@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, SelectHTMLAttributes } from 'react'
 import { Alert, Skeleton } from '../../ui'
 import { t } from '../../i18n'
 import type { CampaignStatus } from '../api'
@@ -32,6 +32,21 @@ export function Jack({ lit }: { lit: boolean }) {
 /** 读数井:mono 数值嵌浅凹槽,机房仪表盘既视感 */
 export function Well({ children }: { children: ReactNode }) {
   return <span className="rf-well font-mono text-[12.5px] text-snb-t2">{children}</span>
+}
+
+/** 盒式下拉:与 Input 同皮肤(rf-select),可选 label 与紧凑尺寸;选项用 children 传 <option> */
+export function RfSelect({
+  label,
+  size,
+  className,
+  ...rest
+}: { label?: string; size?: 'sm' } & Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'>) {
+  return (
+    <div className={className}>
+      {label && <label className="mb-1.5 block text-sm font-medium text-snb-t2">{label}</label>}
+      <select className={`rf-select ${size === 'sm' ? 'rf-select-sm' : ''}`} {...rest} />
+    </div>
+  )
 }
 
 /** 面板分区:铭牌体标签 + 顶部分隔线,表单/清单里成组归拢字段用 */
