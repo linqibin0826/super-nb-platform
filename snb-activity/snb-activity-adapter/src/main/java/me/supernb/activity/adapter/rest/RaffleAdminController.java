@@ -11,6 +11,7 @@ import me.supernb.activity.adapter.rest.request.UpdateRaffleCampaignRequest;
 import me.supernb.activity.adapter.rest.request.UpdateRafflePrizeRequest;
 import me.supernb.activity.adapter.rest.response.RaffleAdminCampaignDetail;
 import me.supernb.activity.adapter.rest.response.RaffleAdminCampaignSummary;
+import me.supernb.activity.adapter.rest.response.RaffleAdminGroup;
 import me.supernb.activity.adapter.rest.response.RaffleAdminPrize;
 import me.supernb.activity.app.usecase.raffle.command.AddRafflePrizeCommand;
 import me.supernb.activity.app.usecase.raffle.command.CancelRaffleCampaignCommand;
@@ -31,6 +32,7 @@ import me.supernb.activity.domain.model.raffle.RafflePrize;
 import me.supernb.activity.domain.model.raffle.WeightMode;
 import me.supernb.activity.domain.port.raffle.RaffleCampaignPort;
 import me.supernb.activity.domain.port.raffle.RafflePrizePort;
+import me.supernb.activity.domain.port.read.SubscriptionGroupReadPort;
 import me.supernb.sub2api.auth.CurrentUser;
 import me.supernb.sub2api.auth.UserProfile;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,11 +54,14 @@ public class RaffleAdminController {
     private final CommandBus commandBus;
     private final RaffleCampaignPort campaignPort;
     private final RafflePrizePort prizePort;
+    private final SubscriptionGroupReadPort groupReadPort;
 
-    public RaffleAdminController(CommandBus commandBus, RaffleCampaignPort campaignPort, RafflePrizePort prizePort) {
+    public RaffleAdminController(CommandBus commandBus, RaffleCampaignPort campaignPort, RafflePrizePort prizePort,
+            SubscriptionGroupReadPort groupReadPort) {
         this.commandBus = commandBus;
         this.campaignPort = campaignPort;
         this.prizePort = prizePort;
+        this.groupReadPort = groupReadPort;
     }
 
     private static void requireAdmin(UserProfile user) {
@@ -151,6 +156,13 @@ public class RaffleAdminController {
         long filled = commandBus.handle(new GenerateRaffleRedeemCodeForPrizeCommand(id, prizeId,
                 body.groupId(), body.validityDays()));
         return toPrize(id, filled);
+    }
+
+    /// 可生成兑换码的 sub2api 订阅分组列表(分组下拉数据源;admin 通道未配置时 503)。
+    @GetMapping("/subscription-groups")
+    public List<RaffleAdminGroup> subscriptionGroups(@CurrentUser UserProfile user) {
+        requireAdmin(user);
+        return groupReadPort.listForRedeemCode().stream().map(RaffleAdminGroup::of).toList();
     }
 
     @PostMapping("/campaigns/{id}/prizes/generate-alipay-code")

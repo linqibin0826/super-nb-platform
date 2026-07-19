@@ -8,6 +8,7 @@ import {
   type CampaignDetailT,
   type CampaignScalarsT,
   type GateType,
+  type GroupT,
   type PrizeKind,
   type PrizeSkeletonT,
   type PrizeT,
@@ -101,6 +102,18 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
   }, [mode, id, cloneFrom])
 
   const editable = mode === 'create' || detail?.status === 'active'
+
+  // 分组下拉数据源:仅可编辑的编辑页需要;拉不到(admin 通道缺席等)静默降级回手填框
+  const [groups, setGroups] = useState<GroupT[] | null>(null)
+  useEffect(() => {
+    if (mode === 'edit' && detail?.status === 'active' && groups === null) {
+      api
+        .listGroups()
+        .then(setGroups)
+        .catch(() => setGroups([]))
+    }
+  }, [mode, detail, groups])
+  const groupOptions = (groups ?? []).map((g) => ({ value: g.id, label: `${g.name}(${g.id})` }))
 
   // 前端先卡一道与后端 RaffleAdminValidation 同口径的校验,免得整卡提交到后端才报错
   const validateScalars = (): string | null => {
@@ -450,19 +463,33 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
                         <div className="flex items-center justify-end gap-1.5">
                           {p.kind === 'REDEEM_CODE' && !p.payload && (
                             <>
-                              <Input
-                                className="w-24 flex-none"
-                                type="number"
-                                min={1}
-                                placeholder={t('raffle.admin.fields.groupId')}
-                                value={rowParams(p.id).groupId}
-                                onChange={(e) =>
-                                  setRowRedeem({
-                                    ...rowRedeem,
-                                    [p.id]: { ...rowParams(p.id), groupId: e.target.value },
-                                  })
-                                }
-                              />
+                              {groupOptions.length > 0 ? (
+                                <TicketSelect
+                                  className="max-w-52 flex-none"
+                                  value={rowParams(p.id).groupId}
+                                  options={[{ value: '', label: t('raffle.admin.pickGroup') }, ...groupOptions]}
+                                  onChange={(e) =>
+                                    setRowRedeem({
+                                      ...rowRedeem,
+                                      [p.id]: { ...rowParams(p.id), groupId: e.target.value },
+                                    })
+                                  }
+                                />
+                              ) : (
+                                <Input
+                                  className="w-24 flex-none"
+                                  type="number"
+                                  min={1}
+                                  placeholder={t('raffle.admin.fields.groupId')}
+                                  value={rowParams(p.id).groupId}
+                                  onChange={(e) =>
+                                    setRowRedeem({
+                                      ...rowRedeem,
+                                      [p.id]: { ...rowParams(p.id), groupId: e.target.value },
+                                    })
+                                  }
+                                />
+                              )}
                               <Input
                                 className="w-16 flex-none"
                                 type="number"
@@ -574,13 +601,21 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
                     value={redeemForm.displayName}
                     onChange={(e) => setRedeemForm({ ...redeemForm, displayName: e.target.value })}
                   />
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder={t('raffle.admin.fields.groupId')}
-                    value={redeemForm.groupId}
-                    onChange={(e) => setRedeemForm({ ...redeemForm, groupId: Number(e.target.value) })}
-                  />
+                  {groupOptions.length > 0 ? (
+                    <TicketSelect
+                      value={redeemForm.groupId ? String(redeemForm.groupId) : ''}
+                      options={[{ value: '', label: t('raffle.admin.pickGroup') }, ...groupOptions]}
+                      onChange={(e) => setRedeemForm({ ...redeemForm, groupId: Number(e.target.value) || 0 })}
+                    />
+                  ) : (
+                    <Input
+                      type="number"
+                      min={1}
+                      placeholder={t('raffle.admin.fields.groupId')}
+                      value={redeemForm.groupId}
+                      onChange={(e) => setRedeemForm({ ...redeemForm, groupId: Number(e.target.value) })}
+                    />
+                  )}
                   <Input
                     type="number"
                     min={1}

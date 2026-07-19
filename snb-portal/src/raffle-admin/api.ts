@@ -99,6 +99,11 @@ export interface CampaignDetailT {
   prizes: PrizeT[]
 }
 
+export interface GroupT {
+  id: string
+  name: string
+}
+
 export interface PrizeSkeletonT {
   tier: string
   displayName: string
@@ -120,6 +125,7 @@ export interface CampaignScalarsT {
 
 export const api = {
   list: () => raffleFetch<CampaignSummaryT[]>('/campaigns'),
+  listGroups: () => raffleFetch<GroupT[]>('/subscription-groups'),
   detail: (id: string) => raffleFetch<CampaignDetailT>(`/campaigns/${id}`),
   create: (body: CampaignScalarsT & { prizes: PrizeSkeletonT[] }) =>
     raffleFetch<CampaignDetailT>('/campaigns', { method: 'POST', body: JSON.stringify(body) }),

@@ -21,8 +21,10 @@ import me.supernb.activity.domain.model.raffle.GateType;
 import me.supernb.activity.domain.model.raffle.RaffleCampaign;
 import me.supernb.activity.domain.model.raffle.RafflePrize;
 import me.supernb.activity.domain.model.raffle.WeightMode;
+import me.supernb.activity.domain.model.read.raffle.SubscriptionGroupView;
 import me.supernb.activity.domain.port.raffle.RaffleCampaignPort;
 import me.supernb.activity.domain.port.raffle.RafflePrizePort;
+import me.supernb.activity.domain.port.read.SubscriptionGroupReadPort;
 import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
 import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
 import me.supernb.sub2api.auth.UserProfile;
@@ -41,6 +43,7 @@ class RaffleAdminControllerTest {
     final CommandBus commandBus = mock(CommandBus.class);
     final RaffleCampaignPort campaignPort = mock(RaffleCampaignPort.class);
     final RafflePrizePort prizePort = mock(RafflePrizePort.class);
+    final SubscriptionGroupReadPort groupReadPort = mock(SubscriptionGroupReadPort.class);
     final Sub2apiIntrospectClient introspect = mock(Sub2apiIntrospectClient.class);
 
     MockMvc mvc;
@@ -49,7 +52,8 @@ class RaffleAdminControllerTest {
     void setup() {
         when(introspect.introspect("Bearer admin")).thenReturn(Optional.of(new UserProfile(1, "admin", "active")));
         when(introspect.introspect("Bearer u")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
-        mvc = MockMvcBuilders.standaloneSetup(new RaffleAdminController(commandBus, campaignPort, prizePort))
+        mvc = MockMvcBuilders.standaloneSetup(
+                        new RaffleAdminController(commandBus, campaignPort, prizePort, groupReadPort))
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
     }
@@ -98,6 +102,16 @@ class RaffleAdminControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("101"))
                 .andExpect(jsonPath("$.payload").value("SNB-NEW"));
+    }
+
+    @Test
+    void subscriptionGroupsReturnsIdAsString() throws Exception {
+        when(groupReadPort.listForRedeemCode()).thenReturn(List.of(
+                new SubscriptionGroupView(81, "Claude $50 日卡")));
+        mvc.perform(get("/activity/v1/admin/raffle/subscription-groups").header("Authorization", "Bearer admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("81"))
+                .andExpect(jsonPath("$[0].name").value("Claude $50 日卡"));
     }
 
     @Test
