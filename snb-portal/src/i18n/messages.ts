@@ -510,7 +510,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         generateRedeemCodes: '批量生成兑换码',
         generate: '生成',
         clonedPrizesTitle: '克隆自上一期的奖品骨架',
-        clonedPrizesHint: '创建后会自动生成这些空壳奖品行,payload 留空待你逐个生成/填入',
+        clonedPrizesHint: '可在此直接改档位/展示名/类型、删行或加行;创建后生成这些空壳奖品行,payload 留空待你逐个生成/填入',
         cloneFrom: '基于此期克隆',
       },
       common: { loading: '加载中…', error: '出错了:{msg}' },
@@ -1030,7 +1030,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         generate: 'Generate',
         clonedPrizesTitle: 'Prize skeleton cloned from previous campaign',
         clonedPrizesHint:
-          'These empty prize rows are created automatically on submit — generate/fill each payload afterwards',
+          'Edit tier/name/kind, remove or add rows right here; empty prize rows are created on submit — generate/fill each payload afterwards',
         cloneFrom: 'Clone this campaign',
       },
       common: { loading: 'Loading…', error: 'Error: {msg}' },

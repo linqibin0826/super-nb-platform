@@ -124,6 +124,11 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
       setError(invalid)
       return
     }
+    // 克隆骨架行同样卡档位/展示名必填,防空壳垃圾行进库
+    if (mode === 'create' && prizeSkeleton.some((p) => !p.tier.trim() || !p.displayName.trim())) {
+      setError(t('raffle.admin.validation.prizeTierNameRequired'))
+      return
+    }
     setSaving(true)
     setError('')
     try {
@@ -541,20 +546,72 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
         </Card>
       )}
 
-      {mode === 'create' && prizeSkeleton.length > 0 && (
-        <Card className="mt-6 space-y-2 p-6">
+      {mode === 'create' && cloneFrom && (
+        <Card className="mt-6 p-6">
           <h2 className="font-display text-lg font-semibold">{t('raffle.admin.clonedPrizesTitle')}</h2>
-          <p className="text-sm text-snb-t3">{t('raffle.admin.clonedPrizesHint')}</p>
-          <ul className="space-y-1.5 text-[13px]">
+          <p className="mt-1 text-sm text-snb-t3">{t('raffle.admin.clonedPrizesHint')}</p>
+          <div className="mt-4 space-y-2">
             {prizeSkeleton.map((p, i) => (
-              <li key={i} className="flex items-center gap-2">
+              <div key={i} className="flex items-center gap-2.5">
                 <Jack lit={false} />
-                <span>
-                  {p.tier} · {p.displayName} · {t(`raffle.admin.kinds.${p.kind}`)}
-                </span>
-              </li>
+                <Input
+                  className="w-32 flex-none"
+                  placeholder={t('raffle.admin.fields.tier')}
+                  value={p.tier}
+                  onChange={(e) =>
+                    setPrizeSkeleton(prizeSkeleton.map((x, j) => (j === i ? { ...x, tier: e.target.value } : x)))
+                  }
+                />
+                <Input
+                  className="min-w-0 flex-1"
+                  placeholder={t('raffle.admin.fields.displayName')}
+                  value={p.displayName}
+                  onChange={(e) =>
+                    setPrizeSkeleton(prizeSkeleton.map((x, j) => (j === i ? { ...x, displayName: e.target.value } : x)))
+                  }
+                />
+                <TicketSelect
+                  className="flex-none"
+                  value={p.kind}
+                  options={[
+                    { value: 'ALIPAY_CODE', label: t('raffle.admin.kinds.ALIPAY_CODE') },
+                    { value: 'REDEEM_CODE', label: t('raffle.admin.kinds.REDEEM_CODE') },
+                  ]}
+                  onChange={(e) =>
+                    setPrizeSkeleton(
+                      prizeSkeleton.map((x, j) => (j === i ? { ...x, kind: e.target.value as PrizeKind } : x)),
+                    )
+                  }
+                />
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => setPrizeSkeleton(prizeSkeleton.filter((_, j) => j !== i))}
+                >
+                  {t('raffle.admin.delete')}
+                </Button>
+              </div>
             ))}
-          </ul>
+          </div>
+          <div className="mt-3">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                setPrizeSkeleton([
+                  ...prizeSkeleton,
+                  {
+                    tier: '',
+                    displayName: '',
+                    kind: 'REDEEM_CODE',
+                    sortOrder: prizeSkeleton.length ? Math.max(...prizeSkeleton.map((x) => x.sortOrder)) + 1 : 0,
+                  },
+                ])
+              }
+            >
+              {t('raffle.admin.addPrize')}
+            </Button>
+          </div>
         </Card>
       )}
     </>
