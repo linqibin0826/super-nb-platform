@@ -8,7 +8,9 @@ import {
   type CampaignDetailT,
   type CampaignScalarsT,
   type GateType,
+  type PrizeKind,
   type PrizeSkeletonT,
+  type PrizeT,
   type WeightMode,
 } from '../api'
 import { ErrorBar, Loading, PageHead } from './shared'
@@ -131,6 +133,89 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
     }
   }
 
+  const [prizeBusy, setPrizeBusy] = useState<string | null>(null)
+  const [newPrize, setNewPrize] = useState({
+    tier: '',
+    displayName: '',
+    kind: 'ALIPAY_CODE' as PrizeKind,
+    payload: '',
+    sortOrder: 0,
+  })
+  const [redeemForm, setRedeemForm] = useState({
+    tier: '',
+    displayName: '',
+    groupId: 0,
+    validityDays: 1,
+    count: 1,
+    sortOrderStart: 0,
+  })
+
+  const reloadDetail = async () => {
+    if (id) setDetail(await api.detail(id))
+  }
+
+  const addPrize = async () => {
+    if (!id) return
+    setPrizeBusy('new')
+    setError('')
+    try {
+      await api.addPrize(id, newPrize)
+      setNewPrize({ tier: '', displayName: '', kind: 'ALIPAY_CODE', payload: '', sortOrder: 0 })
+      await reloadDetail()
+    } catch (e) {
+      setError(String((e as Error).message))
+    } finally {
+      setPrizeBusy(null)
+    }
+  }
+
+  const deletePrize = async (prizeId: string) => {
+    if (!id || !confirm(t('raffle.admin.confirmDeletePrize'))) return
+    setPrizeBusy(prizeId)
+    try {
+      await api.deletePrize(id, prizeId)
+      await reloadDetail()
+    } catch (e) {
+      setError(String((e as Error).message))
+    } finally {
+      setPrizeBusy(null)
+    }
+  }
+
+  const generateAlipay = async (existing?: PrizeT) => {
+    if (!id) return
+    setPrizeBusy(existing ? existing.id : 'alipay-new')
+    setError('')
+    try {
+      await api.generateAlipayCode(id, {
+        prizeId: existing?.id ?? null,
+        tier: existing?.tier ?? newPrize.tier,
+        displayName: existing?.displayName ?? newPrize.displayName,
+        sortOrder: existing?.sortOrder ?? newPrize.sortOrder,
+      })
+      await reloadDetail()
+    } catch (e) {
+      setError(String((e as Error).message))
+    } finally {
+      setPrizeBusy(null)
+    }
+  }
+
+  const generateRedeemCodes = async () => {
+    if (!id) return
+    setPrizeBusy('redeem')
+    setError('')
+    try {
+      await api.generateRedeemCodes(id, redeemForm)
+      setRedeemForm({ ...redeemForm, sortOrderStart: redeemForm.sortOrderStart + redeemForm.count })
+      await reloadDetail()
+    } catch (e) {
+      setError(String((e as Error).message))
+    } finally {
+      setPrizeBusy(null)
+    }
+  }
+
   if (forbidden) return <Alert tone="warning">{t('raffle.admin.forbidden')}</Alert>
   if (loading) return <Loading />
 
@@ -238,6 +323,158 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
           )}
         </div>
       </Card>
+
+      {mode === 'edit' && detail && (
+        <Card className="mt-6 space-y-4 p-6">
+          <h2 className="font-display text-lg font-semibold">{t('raffle.admin.prizesTitle')}</h2>
+          <div className="overflow-hidden rounded-lg border border-snb-hairline">
+            <table className="w-full text-[13px]">
+              <thead className="bg-snb-well text-left text-snb-t3">
+                <tr>
+                  <th className="px-3 py-2">{t('raffle.admin.fields.tier')}</th>
+                  <th className="px-3 py-2">{t('raffle.admin.fields.displayName')}</th>
+                  <th className="px-3 py-2">{t('raffle.admin.fields.kind')}</th>
+                  <th className="px-3 py-2">{t('raffle.admin.fields.payload')}</th>
+                  <th className="px-3 py-2">{t('raffle.admin.fields.sortOrder')}</th>
+                  <th className="px-3 py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {detail.prizes.map((p) => (
+                  <tr key={p.id} className="border-t border-snb-hairline">
+                    <td className="px-3 py-2">{p.tier}</td>
+                    <td className="px-3 py-2">{p.displayName}</td>
+                    <td className="px-3 py-2">{t(`raffle.admin.kinds.${p.kind}`)}</td>
+                    <td className="px-3 py-2 font-mono">
+                      {p.payload || <span className="text-snb-t3">{t('raffle.admin.pendingPayload')}</span>}
+                    </td>
+                    <td className="px-3 py-2">{p.sortOrder}</td>
+                    <td className="px-3 py-2 text-right">
+                      {editable && (
+                        <div className="flex justify-end gap-1.5">
+                          {p.kind === 'ALIPAY_CODE' && !p.payload && (
+                            <Button
+                              size="xs"
+                              variant="secondary"
+                              disabled={prizeBusy === p.id}
+                              onClick={() => generateAlipay(p)}
+                            >
+                              {t('raffle.admin.generatePassphrase')}
+                            </Button>
+                          )}
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            disabled={prizeBusy === p.id}
+                            onClick={() => deletePrize(p.id)}
+                          >
+                            {t('raffle.admin.delete')}
+                          </Button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {editable && (
+            <>
+              <div className="space-y-2 border-t border-snb-hairline pt-4">
+                <div className="text-sm font-semibold">{t('raffle.admin.addPrizeManually')}</div>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+                  <Input
+                    placeholder={t('raffle.admin.fields.tier')}
+                    value={newPrize.tier}
+                    onChange={(e) => setNewPrize({ ...newPrize, tier: e.target.value })}
+                  />
+                  <Input
+                    placeholder={t('raffle.admin.fields.displayName')}
+                    value={newPrize.displayName}
+                    onChange={(e) => setNewPrize({ ...newPrize, displayName: e.target.value })}
+                  />
+                  <TicketSelect
+                    value={newPrize.kind}
+                    options={[
+                      { value: 'ALIPAY_CODE', label: t('raffle.admin.kinds.ALIPAY_CODE') },
+                      { value: 'REDEEM_CODE', label: t('raffle.admin.kinds.REDEEM_CODE') },
+                    ]}
+                    onChange={(e) => setNewPrize({ ...newPrize, kind: e.target.value as PrizeKind })}
+                  />
+                  <Input
+                    placeholder={t('raffle.admin.fields.payload')}
+                    value={newPrize.payload}
+                    onChange={(e) => setNewPrize({ ...newPrize, payload: e.target.value })}
+                  />
+                  <Input
+                    type="number"
+                    placeholder={t('raffle.admin.fields.sortOrder')}
+                    value={newPrize.sortOrder}
+                    onChange={(e) => setNewPrize({ ...newPrize, sortOrder: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" disabled={prizeBusy === 'new'} onClick={addPrize}>
+                    {t('raffle.admin.addPrize')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={prizeBusy === 'alipay-new'}
+                    onClick={() => generateAlipay()}
+                  >
+                    {t('raffle.admin.generatePassphrase')}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2 border-t border-snb-hairline pt-4">
+                <div className="text-sm font-semibold">{t('raffle.admin.generateRedeemCodes')}</div>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-6">
+                  <Input
+                    placeholder={t('raffle.admin.fields.tier')}
+                    value={redeemForm.tier}
+                    onChange={(e) => setRedeemForm({ ...redeemForm, tier: e.target.value })}
+                  />
+                  <Input
+                    placeholder={t('raffle.admin.fields.displayName')}
+                    value={redeemForm.displayName}
+                    onChange={(e) => setRedeemForm({ ...redeemForm, displayName: e.target.value })}
+                  />
+                  <Input
+                    type="number"
+                    placeholder={t('raffle.admin.fields.groupId')}
+                    value={redeemForm.groupId}
+                    onChange={(e) => setRedeemForm({ ...redeemForm, groupId: Number(e.target.value) })}
+                  />
+                  <Input
+                    type="number"
+                    placeholder={t('raffle.admin.fields.validityDays')}
+                    value={redeemForm.validityDays}
+                    onChange={(e) => setRedeemForm({ ...redeemForm, validityDays: Number(e.target.value) })}
+                  />
+                  <Input
+                    type="number"
+                    placeholder={t('raffle.admin.fields.count')}
+                    value={redeemForm.count}
+                    onChange={(e) => setRedeemForm({ ...redeemForm, count: Number(e.target.value) })}
+                  />
+                  <Input
+                    type="number"
+                    placeholder={t('raffle.admin.fields.sortOrderStart')}
+                    value={redeemForm.sortOrderStart}
+                    onChange={(e) => setRedeemForm({ ...redeemForm, sortOrderStart: Number(e.target.value) })}
+                  />
+                </div>
+                <Button size="sm" variant="primary" disabled={prizeBusy === 'redeem'} onClick={generateRedeemCodes}>
+                  {t('raffle.admin.generate')}
+                </Button>
+              </div>
+            </>
+          )}
+        </Card>
+      )}
 
       {mode === 'create' && prizeSkeleton.length > 0 && (
         <Card className="mt-6 space-y-2 p-6">
