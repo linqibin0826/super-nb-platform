@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Alert, Badge, Button, Card } from '../../ui'
+import { Alert, Button, Card } from '../../ui'
 import { t } from '../../i18n'
-import { api, RaffleApiError, type CampaignStatus, type CampaignSummaryT } from '../api'
-import { ErrorBar, Loading, PageHead } from './shared'
-
-const STATUS_TONE: Record<CampaignStatus, 'primary' | 'success' | 'gray'> = {
-  active: 'primary',
-  drawn: 'success',
-  cancelled: 'gray',
-}
+import { api, RaffleApiError, type CampaignSummaryT } from '../api'
+import { ErrorBar, Lamp, Loading, PageHead, Well } from './shared'
 
 function fmt(iso: string): string {
   return new Date(iso).toLocaleString('zh-CN', { hour12: false })
@@ -70,17 +64,21 @@ export function CampaignListPage() {
             <Link
               key={c.id}
               to={`/admin/campaigns/${c.id}`}
-              className="flex items-center gap-4 border-b border-snb-hairline px-5 py-3.5 text-[13.5px] transition-colors last:border-b-0 hover:bg-snb-t1/5"
+              className="rf-row flex items-center gap-4 border-b border-snb-hairline px-5 py-4 last:border-b-0"
             >
-              <Badge tone={STATUS_TONE[c.status]}>{t(`raffle.admin.statuses.${c.status}`)}</Badge>
-              <span className="min-w-0 flex-1 truncate font-semibold">{c.name}</span>
-              <span className="w-[110px] flex-none text-right font-mono tabular-nums text-snb-t3">
-                {t('raffle.admin.gate', { type: t(`raffle.admin.gateTypes.${c.gateType}`), amount: c.gateAmount })}
-              </span>
-              <span className="w-[160px] flex-none text-right text-snb-t3 max-md:hidden">{fmt(c.drawAt)}</span>
-              <span className="w-[80px] flex-none text-right tabular-nums text-snb-t3">
-                {t('raffle.admin.prizeCount', { n: c.prizeCount })}
-              </span>
+              <Lamp status={c.status} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-display text-[15px] font-semibold tracking-wide">{c.name}</div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[12px] text-snb-t3">
+                  <span>{t(`raffle.admin.statuses.${c.status}`)}</span>
+                  <span aria-hidden="true">·</span>
+                  <Well>
+                    {t('raffle.admin.gate', { type: t(`raffle.admin.gateTypes.${c.gateType}`), amount: c.gateAmount })}
+                  </Well>
+                  <Well>{fmt(c.drawAt)}</Well>
+                  <Well>{t('raffle.admin.prizeCount', { n: c.prizeCount })}</Well>
+                </div>
+              </div>
               <Button
                 size="xs"
                 variant="ghost"

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '../src/ui/styles.css'
+import '../src/raffle-admin/raffle-admin.css'
 import App from '../src/raffle-admin/App'
 import { reconcileFromCookie } from '../src/auth/tokens'
 
