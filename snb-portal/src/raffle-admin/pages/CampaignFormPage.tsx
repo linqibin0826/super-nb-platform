@@ -241,6 +241,34 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
     }
   }
 
+  // 逐行生成:每个空壳兑换码行自带 分组ID/天数 小输入,点亮后码值就地回填(克隆骨架主路径)
+  const [rowRedeem, setRowRedeem] = useState<Record<string, { groupId: string; validityDays: string }>>({})
+  const rowParams = (pid: string) => rowRedeem[pid] ?? { groupId: '', validityDays: '1' }
+
+  const generateRedeemForPrize = async (p: PrizeT) => {
+    if (!id) return
+    const groupId = Number(rowParams(p.id).groupId)
+    const validityDays = Number(rowParams(p.id).validityDays)
+    if (!(groupId > 0)) {
+      setError(t('raffle.admin.validation.redeemGroupIdPositive'))
+      return
+    }
+    if (!(validityDays >= 1)) {
+      setError(t('raffle.admin.validation.redeemValidityMin'))
+      return
+    }
+    setPrizeBusy(p.id)
+    setError('')
+    try {
+      await api.generateRedeemCodeForPrize(id, p.id, { groupId, validityDays })
+      await reloadDetail()
+    } catch (e) {
+      setError(String((e as Error).message))
+    } finally {
+      setPrizeBusy(null)
+    }
+  }
+
   const generateRedeemCodes = async () => {
     if (!id) return
     if (!redeemForm.tier.trim() || !redeemForm.displayName.trim()) {
@@ -419,7 +447,45 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
                     <td className="px-3 py-2">{p.sortOrder}</td>
                     <td className="px-3 py-2 text-right">
                       {editable && (
-                        <div className="flex justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {p.kind === 'REDEEM_CODE' && !p.payload && (
+                            <>
+                              <Input
+                                className="w-24 flex-none"
+                                type="number"
+                                min={1}
+                                placeholder={t('raffle.admin.fields.groupId')}
+                                value={rowParams(p.id).groupId}
+                                onChange={(e) =>
+                                  setRowRedeem({
+                                    ...rowRedeem,
+                                    [p.id]: { ...rowParams(p.id), groupId: e.target.value },
+                                  })
+                                }
+                              />
+                              <Input
+                                className="w-16 flex-none"
+                                type="number"
+                                min={1}
+                                placeholder={t('raffle.admin.fields.validityDays')}
+                                value={rowParams(p.id).validityDays}
+                                onChange={(e) =>
+                                  setRowRedeem({
+                                    ...rowRedeem,
+                                    [p.id]: { ...rowParams(p.id), validityDays: e.target.value },
+                                  })
+                                }
+                              />
+                              <Button
+                                size="xs"
+                                variant="secondary"
+                                disabled={prizeBusy === p.id}
+                                onClick={() => generateRedeemForPrize(p)}
+                              >
+                                {t('raffle.admin.generateCode')}
+                              </Button>
+                            </>
+                          )}
                           {p.kind === 'ALIPAY_CODE' && !p.payload && (
                             <Button
                               size="xs"

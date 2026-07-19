@@ -153,6 +153,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  generateRedeemCodeForPrize: (id: string, prizeId: string, body: { groupId: number; validityDays: number }) =>
+    raffleFetch<PrizeT>(`/campaigns/${id}/prizes/${prizeId}/generate-redeem-code`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   generateAlipayCode: (
     id: string,
     body: { prizeId: string | null; tier: string; displayName: string; sortOrder: number },

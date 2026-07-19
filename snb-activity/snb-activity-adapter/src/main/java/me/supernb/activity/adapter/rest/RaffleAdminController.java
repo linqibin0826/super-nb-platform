@@ -5,6 +5,7 @@ import java.util.List;
 import me.supernb.activity.adapter.rest.request.AddRafflePrizeRequest;
 import me.supernb.activity.adapter.rest.request.CreateRaffleCampaignRequest;
 import me.supernb.activity.adapter.rest.request.GenerateAlipayCodeRequest;
+import me.supernb.activity.adapter.rest.request.GenerateRedeemCodeForPrizeRequest;
 import me.supernb.activity.adapter.rest.request.GenerateRedeemCodesRequest;
 import me.supernb.activity.adapter.rest.request.UpdateRaffleCampaignRequest;
 import me.supernb.activity.adapter.rest.request.UpdateRafflePrizeRequest;
@@ -16,6 +17,7 @@ import me.supernb.activity.app.usecase.raffle.command.CancelRaffleCampaignComman
 import me.supernb.activity.app.usecase.raffle.command.CreateRaffleCampaignCommand;
 import me.supernb.activity.app.usecase.raffle.command.DeleteRafflePrizeCommand;
 import me.supernb.activity.app.usecase.raffle.command.GenerateRaffleAlipayCodeCommand;
+import me.supernb.activity.app.usecase.raffle.command.GenerateRaffleRedeemCodeForPrizeCommand;
 import me.supernb.activity.app.usecase.raffle.command.GenerateRaffleRedeemCodesCommand;
 import me.supernb.activity.app.usecase.raffle.command.UpdateRaffleCampaignCommand;
 import me.supernb.activity.app.usecase.raffle.command.UpdateRafflePrizeCommand;
@@ -139,6 +141,16 @@ public class RaffleAdminController {
         List<Long> prizeIds = commandBus.handle(new GenerateRaffleRedeemCodesCommand(id, body.tier(),
                 body.displayName(), body.groupId(), body.validityDays(), body.count(), body.sortOrderStart()));
         return prizeIds.stream().map(pid -> toPrize(id, pid)).toList();
+    }
+
+    /// 对指定空壳兑换码行生成 1 张码就地回填(克隆骨架逐行点亮)。
+    @PostMapping("/campaigns/{id}/prizes/{prizeId}/generate-redeem-code")
+    public RaffleAdminPrize generateRedeemCodeForPrize(@CurrentUser UserProfile user, @PathVariable long id,
+            @PathVariable long prizeId, @RequestBody GenerateRedeemCodeForPrizeRequest body) {
+        requireAdmin(user);
+        long filled = commandBus.handle(new GenerateRaffleRedeemCodeForPrizeCommand(id, prizeId,
+                body.groupId(), body.validityDays()));
+        return toPrize(id, filled);
     }
 
     @PostMapping("/campaigns/{id}/prizes/generate-alipay-code")

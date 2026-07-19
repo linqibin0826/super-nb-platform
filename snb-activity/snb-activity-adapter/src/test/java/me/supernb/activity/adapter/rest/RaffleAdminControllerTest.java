@@ -16,8 +16,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import me.supernb.activity.app.usecase.raffle.command.CancelRaffleCampaignCommand;
+import me.supernb.activity.app.usecase.raffle.command.GenerateRaffleRedeemCodeForPrizeCommand;
 import me.supernb.activity.domain.model.raffle.GateType;
 import me.supernb.activity.domain.model.raffle.RaffleCampaign;
+import me.supernb.activity.domain.model.raffle.RafflePrize;
 import me.supernb.activity.domain.model.raffle.WeightMode;
 import me.supernb.activity.domain.port.raffle.RaffleCampaignPort;
 import me.supernb.activity.domain.port.raffle.RafflePrizePort;
@@ -27,6 +29,7 @@ import me.supernb.sub2api.auth.UserProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -81,6 +84,20 @@ class RaffleAdminControllerTest {
         mvc.perform(post("/activity/v1/admin/raffle/campaigns/3/cancel").header("Authorization", "Bearer admin"))
                 .andExpect(status().isOk());
         verify(commandBus).handle(new CancelRaffleCampaignCommand(3));
+    }
+
+    @Test
+    void generateRedeemCodeForPrizeDispatchesAndReturnsPrize() throws Exception {
+        when(commandBus.handle(new GenerateRaffleRedeemCodeForPrizeCommand(3, 101, 77, 1))).thenReturn(101L);
+        when(prizePort.byCampaign(3)).thenReturn(List.of(
+                new RafflePrize(101, "C", "GPT $20 日卡", "REDEEM_CODE", "SNB-NEW", 3, null, null)));
+        mvc.perform(post("/activity/v1/admin/raffle/campaigns/3/prizes/101/generate-redeem-code")
+                        .header("Authorization", "Bearer admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"groupId\":77,\"validityDays\":1}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("101"))
+                .andExpect(jsonPath("$.payload").value("SNB-NEW"));
     }
 
     @Test
