@@ -12,6 +12,11 @@ import me.supernb.activity.infra.adapter.persistence.entity.RafflePrizeEntity;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import me.supernb.activity.domain.exception.RaffleNotFoundException;
+import me.supernb.activity.domain.exception.RafflePrizeNotFoundException;
+import me.supernb.activity.domain.model.raffle.GateType;
+import me.supernb.activity.domain.model.raffle.WeightMode;
 import me.supernb.activity.domain.model.read.raffle.PersonWinsView;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -165,5 +170,119 @@ class RafflePersistenceTest {
         // cancelled 一律隐身
         jdbc.update("UPDATE activity.raffle_campaign SET status = 'cancelled' WHERE id = 3");
         assertThat(campaignAdapter.current()).hasValueSatisfying(c -> assertThat(c.id()).isEqualTo(1));
+    }
+
+    @Test
+    void createPersistsActiveCampaignWithSnowflakeId() {
+        long id = campaignAdapter.create("测试期", Instant.parse("2026-08-01T00:00:00Z"),
+                Instant.parse("2026-08-02T00:00:00Z"), Instant.parse("2026-08-02T00:30:00Z"),
+                GateType.RECHARGE, new BigDecimal("30"), Instant.parse("2026-06-01T00:00:00Z"), null,
+                WeightMode.EQUAL);
+        assertThat(id).isGreaterThan(1_000_000_000L); // 雪花量级,不撞种子小整数 id=1
+        Map<String, Object> row = jdbc.queryForMap(
+                "SELECT status, name, gate_amount FROM activity.raffle_campaign WHERE id = " + id);
+        assertThat(row.get("status")).isEqualTo("active");
+        assertThat(row.get("name")).isEqualTo("测试期");
+    }
+
+    @Test
+    void updateMutatesExistingCampaign() {
+        long id = campaignAdapter.create("初版", Instant.now(), Instant.now().plusSeconds(3600),
+                Instant.now().plusSeconds(7200), GateType.RECHARGE, new BigDecimal("20"),
+                Instant.parse("2026-06-01T00:00:00Z"), null, WeightMode.EQUAL);
+        campaignAdapter.update(id, "改名后", Instant.now(), Instant.now().plusSeconds(3600),
+                Instant.now().plusSeconds(7200), GateType.RECHARGE, new BigDecimal("50"),
+                Instant.parse("2026-06-01T00:00:00Z"), 7, WeightMode.EQUAL);
+        Map<String, Object> row = jdbc.queryForMap(
+                "SELECT name, gate_amount, min_account_age_days FROM activity.raffle_campaign WHERE id = " + id);
+        assertThat(row.get("name")).isEqualTo("改名后");
+        assertThat(((Number) row.get("gate_amount")).doubleValue()).isEqualTo(50.0);
+        assertThat(row.get("min_account_age_days")).isEqualTo(7);
+    }
+
+    @Test
+    void cancelWorksRegardlessOfCurrentStatus() {
+        // 已开奖的期也能作废(彩排局 id=1 先例):种子期 id=1 先手工翻成 drawn 再作废
+        jdbc.update("UPDATE activity.raffle_campaign SET status = 'drawn', drawn_at = now() WHERE id = 1");
+        campaignAdapter.cancel(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT status FROM activity.raffle_campaign WHERE id = 1", String.class))
+                .isEqualTo("cancelled");
+    }
+
+    @Test
+    void listAllIncludesEveryStatus() {
+        jdbc.update("UPDATE activity.raffle_campaign SET status = 'cancelled' WHERE id = 1");
+        long freshId = campaignAdapter.create("新种子期", Instant.now(), Instant.now().plusSeconds(3600),
+                Instant.now().plusSeconds(7200), GateType.RECHARGE, new BigDecimal("30"),
+                Instant.parse("2026-06-01T00:00:00Z"), null, WeightMode.EQUAL);
+        List<Long> ids = campaignAdapter.listAll().stream().map(c -> c.id()).toList();
+        assertThat(ids).contains(1L, freshId); // cancelled 的种子期与新建的 active 期都要出现
+    }
+
+    @Test
+    void updateUnknownCampaignThrowsNotFound() {
+        assertThatThrownBy(() -> campaignAdapter.update(999_999_999_999L, "x", Instant.now(),
+                Instant.now().plusSeconds(1), Instant.now().plusSeconds(2), GateType.RECHARGE,
+                new BigDecimal("1"), Instant.now(), null, WeightMode.EQUAL))
+                .isInstanceOf(RaffleNotFoundException.class);
+    }
+
+    @Test
+    void createPersistsPrizeWithSnowflakeId() {
+        long id = prizeAdapter.create(1, "A", "测试奖品", "ALIPAY_CODE", "PLACEHOLDER", 5);
+        assertThat(id).isGreaterThan(1_000_000_000L);
+        Map<String, Object> row = jdbc.queryForMap(
+                "SELECT campaign_id, payload, sort_order FROM activity.raffle_prize WHERE id = " + id);
+        assertThat(((Number) row.get("campaign_id")).longValue()).isEqualTo(1);
+        assertThat(row.get("payload")).isEqualTo("PLACEHOLDER");
+    }
+
+    @Test
+    void updateMutatesExistingPrize() {
+        long id = prizeAdapter.create(1, "A", "旧名", "ALIPAY_CODE", "OLD", 5);
+        prizeAdapter.update(id, "S", "新名", "ALIPAY_CODE", "NEW", 0);
+        Map<String, Object> row = jdbc.queryForMap(
+                "SELECT tier, display_name, payload, sort_order FROM activity.raffle_prize WHERE id = " + id);
+        assertThat(row.get("tier")).isEqualTo("S");
+        assertThat(row.get("payload")).isEqualTo("NEW");
+    }
+
+    @Test
+    void updatePayloadOnlyTouchesPayload() {
+        long id = prizeAdapter.create(1, "A", "保持不变", "ALIPAY_CODE", "", 9);
+        prizeAdapter.updatePayload(id, "SuperNB7X9K2M");
+        Map<String, Object> row = jdbc.queryForMap(
+                "SELECT display_name, payload, sort_order FROM activity.raffle_prize WHERE id = " + id);
+        assertThat(row.get("display_name")).isEqualTo("保持不变"); // 未被 updatePayload 动过
+        assertThat(row.get("payload")).isEqualTo("SuperNB7X9K2M");
+        assertThat(((Number) row.get("sort_order")).intValue()).isEqualTo(9);
+    }
+
+    @Test
+    void deleteRemovesPrize() {
+        long id = prizeAdapter.create(1, "D", "待删", "ALIPAY_CODE", "X", 99);
+        prizeAdapter.delete(id);
+        assertThat(jdbc.queryForList("SELECT 1 FROM activity.raffle_prize WHERE id = " + id)).isEmpty();
+    }
+
+    @Test
+    void createBatchInsertsAllInOneTransaction() {
+        List<Long> ids = prizeAdapter.createBatch(1, "C", "批量兑换码",
+                "REDEEM_CODE", List.of("code-a", "code-b", "code-c"), 10);
+        assertThat(ids).hasSize(3);
+        String idList = ids.stream().map(String::valueOf).collect(Collectors.joining(","));
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT payload, sort_order FROM activity.raffle_prize WHERE id IN (" + idList + ") ORDER BY sort_order");
+        assertThat(rows).hasSize(3);
+        assertThat(rows.get(0).get("payload")).isEqualTo("code-a");
+        assertThat(((Number) rows.get(0).get("sort_order")).intValue()).isEqualTo(10);
+        assertThat(((Number) rows.get(2).get("sort_order")).intValue()).isEqualTo(12);
+    }
+
+    @Test
+    void updateUnknownPrizeThrowsNotFound() {
+        assertThatThrownBy(() -> prizeAdapter.update(999_999_999_999L, "x", "x", "ALIPAY_CODE", "x", 0))
+                .isInstanceOf(RafflePrizeNotFoundException.class);
     }
 }

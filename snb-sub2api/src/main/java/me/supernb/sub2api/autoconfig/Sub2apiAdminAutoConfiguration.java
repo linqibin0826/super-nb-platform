@@ -1,6 +1,7 @@
 package me.supernb.sub2api.autoconfig;
 
 import me.supernb.sub2api.admin.Sub2apiAdminBalanceClient;
+import me.supernb.sub2api.admin.Sub2apiAdminRedeemCodeClient;
 import me.supernb.sub2api.admin.Sub2apiAdminSubscriptionClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -30,5 +31,13 @@ public class Sub2apiAdminAutoConfiguration {
     public Sub2apiAdminBalanceClient sub2apiAdminBalanceClient(Sub2apiProperties props) {
         RestClient restClient = RestClient.builder().baseUrl(props.getBaseUrl() + "/api/v1/admin").build();
         return new Sub2apiAdminBalanceClient(restClient, props.getAdminKey());
+    }
+
+    /// admin 兑换码批量生成客户端(抽奖奖品用)。
+    @Bean
+    @ConditionalOnMissingBean
+    public Sub2apiAdminRedeemCodeClient sub2apiAdminRedeemCodeClient(Sub2apiProperties props) {
+        RestClient restClient = RestClient.builder().baseUrl(props.getBaseUrl() + "/api/v1/admin").build();
+        return new Sub2apiAdminRedeemCodeClient(restClient, props.getAdminKey());
     }
 }
