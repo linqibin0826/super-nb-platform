@@ -1,6 +1,5 @@
 import { BrowserRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeScope } from '../ui'
-import { useTheme } from '../theme'
 import { t } from '../i18n'
 import { FirstVisitGuide } from './FirstVisitGuide'
 import { useGuideAck } from '../guide/useGuideAck'
@@ -44,10 +43,9 @@ function SubNav() {
 export function AppRoutes() {
   // 无站点 Header:本站以 iframe 嵌进控制台(2026-07-17 站长拍板),站头/主题开关由宿主提供;
   // 主题跟父域 cookie snb_theme(加载即正确,宿主切主题后点进 iframe 聚焦对账跟上)
-  const [theme] = useTheme()
   const guide = useGuideAck('invoice.intro.v1')
   return (
-    <ThemeScope theme={theme} className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
+    <ThemeScope theme="dark" className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
       {guide.show && <FirstVisitGuide onConfirm={guide.ack} onSkip={guide.hide} />}
       <SubNav />
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-7">

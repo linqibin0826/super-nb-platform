@@ -1,11 +1,10 @@
-import { AppHeader, ThemeSwitch } from '../ui'
+import { AppHeader } from '../ui'
 import { useAuthUser } from '../auth/useAuth'
 import { loginUrl } from '../auth/apiFetch'
 import { t } from '../i18n'
-import type { Theme } from '../themeCookie'
 
 /** hub 顶栏：统一 AppHeader（规范 v1）+ 场景槽（主题切换 → 登录态）。照 studio TopBar 裁剪。 */
-export function HubHeader({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: () => void }) {
+export function HubHeader() {
   const user = useAuthUser()
   return (
     <AppHeader
@@ -13,12 +12,7 @@ export function HubHeader({ theme, onToggleTheme }: { theme: Theme; onToggleThem
       subtitle={t('hub.title')}
       labelFor={(item) => t(`hub.nav.${item.key}`)}
     >
-      <ThemeSwitch
-        dark={theme === 'dark'}
-        onToggle={onToggleTheme}
-        aria-label={t('hub.nav.theme')}
-        title={t('hub.nav.theme')}
-      />
+      {/* 主题开关已下线（港风霓虹改造 2026-07-27，全站恒暗、浅色退役） */}
       {user ? (
         <a
           className="hidden text-sm text-snb-t2 underline-offset-4 hover:text-snb-t1 hover:underline sm:inline"

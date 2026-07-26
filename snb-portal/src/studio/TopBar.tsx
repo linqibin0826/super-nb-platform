@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react'
-import { AppHeader, ThemeSwitch, type SiteNavItem } from '../ui'
+import { AppHeader, type SiteNavItem } from '../ui'
 import { useAuthUser } from '../auth/useAuth'
 import { apiFetch, loginUrl } from '../auth/apiFetch'
 import { t } from '../i18n'
-
-interface TopBarProps {
-  theme: 'light' | 'dark'
-  onToggleTheme: () => void
-}
 
 /** GET /user/profile 返回体中顶栏只关心余额（后端 dto.User 的 `json:"balance"`，float64） */
 interface ProfileBalance {
@@ -34,7 +29,7 @@ const NAV_LABEL_KEYS: Record<string, string> = {
 }
 
 /** 顶栏 = 统一 AppHeader（规范 v1）+ studio 场景槽（主题切换 → 余额 → 头像/登录） */
-export function TopBar({ theme, onToggleTheme }: TopBarProps) {
+export function TopBar() {
   const user = useAuthUser()
   const [balance, setBalance] = useState<number | null>(null)
 
@@ -57,8 +52,6 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
     }
   }, [user])
 
-  const isDark = theme === 'dark'
-
   return (
     <AppHeader
       site="studio"
@@ -67,13 +60,7 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
       resolveHref={isLocalDev ? (item: SiteNavItem) => DEV_HREFS[item.key] ?? item.href : undefined}
       labelFor={(item: SiteNavItem) => t(NAV_LABEL_KEYS[item.key])}
     >
-      {/* 主题开关：全站统一 ThemeSwitch（规范 v1，2026-07-05 由图标圆钮换成开关） */}
-      <ThemeSwitch
-        dark={isDark}
-        onToggle={onToggleTheme}
-        aria-label={t('studio.nav.themeToggle')}
-        title={t('studio.nav.themeToggle')}
-      />
+      {/* 主题开关已下线（港风霓虹改造 2026-07-27，全站恒暗、浅色退役） */}
 
       {user ? (
         <>

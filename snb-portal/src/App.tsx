@@ -14,7 +14,6 @@ import { useRefImages } from './studio/useRefImages'
 import { TAB_ITEMS, type TabId } from './studio/tabs'
 import { useEligibleKeys } from './keys/useEligibleKeys'
 import { useAuthUser } from './auth/useAuth'
-import { useTheme } from './theme'
 import { estimateCost } from './lib/cost'
 import { SIZE_PRESETS, sizeForRatio } from './lib/sizes'
 import { useSelectableModels } from './studio/useSelectableModels'
@@ -42,7 +41,6 @@ export default function App() {
   const user = useAuthUser()
   const { loading: keysLoading, keys: eligible, rates } = useEligibleKeys()
   const queue = useGenerationQueue()
-  const [theme, toggleTheme] = useTheme()
 
   const [prompt, setPrompt] = useState('')
   // 默认 9:16 竖图 · 2K（站长 2026-07-05 拍板；sizeForRatio('9:16','2K')=1152x2048）
@@ -168,10 +166,10 @@ export default function App() {
   const showEmptyState = user !== null && !keysLoading && eligible.length === 0
 
   return (
-    <ThemeScope theme={theme} className="min-h-screen">
-      {theme === 'dark' && <AmbientBackground variant="hero" />}
+    <ThemeScope theme="dark" className="min-h-screen">
+      <AmbientBackground variant="hero" />
       <div className="relative z-[1] flex min-h-screen flex-col">
-        <TopBar theme={theme} onToggleTheme={toggleTheme} />
+        <TopBar />
 
         <main className="w-full flex-1">
           {/* 画墙即页面主体：近满屏宽（1760 封顶防超宽屏失控），创作面板收进底部悬浮票据。

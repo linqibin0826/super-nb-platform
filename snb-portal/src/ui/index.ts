@@ -21,7 +21,6 @@ export { QuoteLine, type QuoteLineProps } from './components/QuoteLine/QuoteLine
 export { BrandLogo, type BrandLogoProps } from './components/BrandLogo/BrandLogo'
 export { AppHeader, type AppHeaderProps } from './components/AppHeader/AppHeader'
 export { SITE_NAV_ITEMS, siteNavItems, type SiteKey, type SiteNavItem } from './components/AppHeader/nav'
-export { ThemeSwitch, type ThemeSwitchProps } from './components/ThemeSwitch/ThemeSwitch'
 export { MasonryGrid, MasonryCard, type MasonryGridProps, type MasonryCardProps } from './components/MasonryCard/MasonryCard'
 export { Lightbox, type LightboxProps } from './components/Lightbox/Lightbox'
 export { AmbientBackground, type AmbientBackgroundProps, type AmbientVariant } from './components/AmbientBackground/AmbientBackground'

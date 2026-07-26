@@ -2,59 +2,57 @@
  * @vitest-environment jsdom
  * @vitest-environment-options {"url": "https://studio.super-nb.me/"}
  *
- * Secure+Domain 校验需 https 的 *.super-nb.me 环境。契约与 fork utils/themeCookie.ts 一致，改必两边同步。
+ * 环境 URL 必须是 https 的 *.super-nb.me：jsdom 真校验 Secure（http 下写入被丢）
+ * 与 Domain=.super-nb.me（域不匹配写入被拒）。有了它，删除断言测的是真实
+ * cookie 行为，而不是「有没有拼对字符串」。
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  clearThemeCookie,
-  effectiveTheme,
-  migrateLegacyThemeKey,
-  readThemeCookie,
-  writeThemeCookie,
-} from '../themeCookie'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { purgeLegacyThemeState } from '../themeCookie'
 
-function setMatchMedia(dark: boolean) {
-  vi.stubGlobal('matchMedia', (q: string) => ({
-    matches: dark,
-    media: q,
-    addEventListener() {},
-    removeEventListener() {},
-  }))
+/** 种一枚存量 cookie，模拟老用户浏览器里遗留的显式主题选择 */
+function seedLegacyCookie(v: 'dark' | 'light') {
+  document.cookie = `snb_theme=${v}; Domain=.super-nb.me; Path=/; Secure; SameSite=Lax; Max-Age=31536000`
 }
+const hasThemeCookie = () => /(?:^|;\s*)snb_theme=(dark|light)\b/.test(document.cookie)
+
 beforeEach(() => {
   document.cookie = 'snb_theme=; Domain=.super-nb.me; Path=/; Max-Age=0'
   localStorage.clear()
-  setMatchMedia(false)
 })
-afterEach(() => vi.unstubAllGlobals())
 
-describe('studio themeCookie 契约', () => {
-  it('无 cookie 跟随系统', () => {
-    setMatchMedia(true)
-    expect(effectiveTheme()).toBe('dark')
+describe('恒暗后的主题状态清理（四边契约第二边）', () => {
+  it('真删掉存量父域 snb_theme cookie（Domain 不匹配是删不掉的）', () => {
+    seedLegacyCookie('light')
+    expect(hasThemeCookie()).toBe(true)
+    purgeLegacyThemeState()
+    expect(hasThemeCookie()).toBe(false)
   })
-  it('write/read/clear 往返', () => {
-    writeThemeCookie('light')
-    expect(readThemeCookie()).toBe('light')
-    clearThemeCookie()
-    expect(readThemeCookie()).toBeNull()
+
+  it('cookie 本就缺席时也不报错', () => {
+    expect(hasThemeCookie()).toBe(false)
+    expect(() => purgeLegacyThemeState()).not.toThrow()
   })
-  it('cookie 显式值优先于系统', () => {
-    setMatchMedia(true)
-    writeThemeCookie('light')
-    expect(effectiveTheme()).toBe('light')
-  })
-  it('迁移旧键 snb-studio-theme 并退役', () => {
-    localStorage.setItem('snb-studio-theme', 'dark')
-    migrateLegacyThemeKey('snb-studio-theme')
-    expect(readThemeCookie()).toBe('dark')
+
+  it('退役旧 localStorage 键 snb-studio-theme，防「删了又被复活」', () => {
+    localStorage.setItem('snb-studio-theme', 'light')
+    purgeLegacyThemeState()
     expect(localStorage.getItem('snb-studio-theme')).toBeNull()
   })
-  it('cookie 已存在时迁移不覆盖但退役旧键（防复活）', () => {
-    writeThemeCookie('light')
-    localStorage.setItem('snb-studio-theme', 'dark')
-    migrateLegacyThemeKey('snb-studio-theme')
-    expect(readThemeCookie()).toBe('light')
-    expect(localStorage.getItem('snb-studio-theme')).toBeNull()
+
+  it('localStorage 不可用时不抛错（隐私模式）', () => {
+    const spy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('SecurityError')
+    })
+    expect(() => purgeLegacyThemeState()).not.toThrow()
+    spy.mockRestore()
+  })
+
+  it('切换 API 已下线——留任何写入口都可能让某处又把站点切回浅色', async () => {
+    const m = (await import('../themeCookie')) as Record<string, unknown>
+    expect(m.writeThemeCookie).toBeUndefined()
+    expect(m.clearThemeCookie).toBeUndefined()
+    expect(m.readThemeCookie).toBeUndefined()
+    expect(m.effectiveTheme).toBeUndefined()
+    expect(m.migrateLegacyThemeKey).toBeUndefined()
   })
 })
