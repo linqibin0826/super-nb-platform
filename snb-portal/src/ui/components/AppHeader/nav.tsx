@@ -4,8 +4,8 @@ import type { NavCapsuleItem } from '../NavCapsule/NavCapsule'
 /**
  * 全站导航的唯一真源（Header 规范 v2，2026-07-12 站长拍板；spec 见 ai-relay
  * docs/superpowers/specs/2026-07-12-header-nav-v2-design.md）。
- * 四项固定：控制台 / 创作工坊 / 内容中心 / 活动（促销描边+呼吸点）；
- * 「使用指南」入口收进内容中心（hub 首页常驻「使用手册」直达位），新站不再进顶栏。
+ * 四项固定：我的机位 / 画图机位 / 杂志架 / 今日活动（促销描边+呼吸点）；
+ * 「使用指南」入口收进杂志架（hub 首页常驻「使用手册」直达位），新站不再进顶栏。
  * 响应式两段：≥1024 胶囊 / <1024 菜单钮+玻璃下拉浮卡（唯一例外：help 站保留 VitePress 三档）。
  * 非 React 消费方（fork Vue / learn VitePress / activity 静态页）按 templates/app-header.html
  * 模板抄写——项目/顺序/链接改动必须与本常量同步（契约互指）。
@@ -43,7 +43,7 @@ function Icon({ children }: { children: ReactNode }) {
 export const SITE_NAV_ITEMS: SiteNavItem[] = [
   {
     key: 'console',
-    label: '控制台',
+    label: '我的机位',
     href: 'https://super-nb.me/dashboard',
     icon: (
       <Icon>
@@ -56,7 +56,7 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
   },
   {
     key: 'studio',
-    label: '创作工坊',
+    label: '画图机位',
     href: 'https://studio.super-nb.me/',
     icon: (
       <Icon>
@@ -67,7 +67,7 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
   },
   {
     key: 'hub',
-    label: '内容中心',
+    label: '杂志架',
     href: 'https://hub.super-nb.me/',
     icon: (
       <Icon>

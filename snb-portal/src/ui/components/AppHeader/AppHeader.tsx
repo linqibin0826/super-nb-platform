@@ -7,7 +7,7 @@ import { siteNavItems, type SiteKey, type SiteNavItem } from './nav'
 export interface AppHeaderProps {
   /** 当前站（导航胶囊高亮 + 缺省副标） */
   site?: SiteKey
-  /** 品牌锁定区副标（「控制台/创作工坊/使用指南」等）；不传则只出词标 */
+  /** 品牌锁定区副标（「我的机位/画图机位/使用指南」等）；不传则只出词标 */
   subtitle?: string
   /**
    * solid（默认）：64px 实底 + hairline 底边，内容站用（明暗随 ThemeScope token 翻转）；

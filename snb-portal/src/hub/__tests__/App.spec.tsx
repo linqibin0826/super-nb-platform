@@ -21,13 +21,13 @@ vi.stubGlobal('matchMedia', (q: string) => ({
 vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
 
 describe('hub AppRoutes', () => {
-  it('列表路由渲染顶栏（站名内容中心）与列表骨架', () => {
+  it('列表路由渲染顶栏（站名杂志架）与列表骨架', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <AppRoutes />
       </MemoryRouter>,
     )
-    expect(screen.getAllByText('内容中心').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('杂志架').length).toBeGreaterThan(0)
     expect(screen.getByTestId('hub-list')).toBeTruthy()
   })
 
@@ -38,7 +38,7 @@ describe('hub AppRoutes', () => {
       </MemoryRouter>,
     )
     expect(screen.getByTestId('hub-article')).toBeTruthy() // 落在文章页（loading 态）
-    expect(screen.getAllByText('内容中心').length).toBeGreaterThan(0) // AppHeader 已挂载
+    expect(screen.getAllByText('杂志架').length).toBeGreaterThan(0) // AppHeader 已挂载
   })
 
   it('页脚整理声明全路由可见（整理自互联网 + 侵权联删）', () => {

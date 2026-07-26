@@ -4,12 +4,12 @@ import type { LocaleDict } from './core'
 export const messages: Record<'zh' | 'en', LocaleDict> = {
   zh: {
     hub: {
-      title: '内容中心',
+      title: '杂志架',
       nav: {
-        console: '控制台',
-        studio: '创作工坊',
-        hub: '内容中心',
-        activity: '活动',
+        console: '我的机位',
+        studio: '画图机位',
+        hub: '杂志架',
+        activity: '今日活动',
         login: '登录',
         theme: '切换明暗主题',
       },
@@ -48,7 +48,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       },
       article: {
         notFound: '内容不存在或已下架',
-        backHome: '返回内容中心',
+        backHome: '返回杂志架',
         source: '来源：',
         original: '原文链接',
         readingTime: '约 {n} 分钟读完',
@@ -72,11 +72,11 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       },
     },
     studio: {
-      title: '创作工坊',
+      title: '画图机位',
       nav: {
-        console: '控制台',
-        hub: '内容中心',
-        activity: '活动',
+        console: '我的机位',
+        hub: '杂志架',
+        activity: '今日活动',
         login: '登录',
         balance: '余额',
         themeToggle: '切换明暗主题',
@@ -215,7 +215,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         close: '关闭',
       },
       footer: {
-        brand: 'SUPER·NB · 创作工坊',
+        brand: 'SUPER·NB · 画图机位',
         notice: '生成内容由 AI 产生 · 请遵守当地法规与平台条款',
       },
     },
@@ -299,7 +299,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
     },
     invoice: {
       title: '发票中心',
-      nav: { console: '控制台', studio: '创作工坊', hub: '内容中心', activity: '活动', login: '登录', theme: '切换明暗主题' },
+      nav: { console: '我的机位', studio: '画图机位', hub: '杂志架', activity: '今日活动', login: '登录', theme: '切换明暗主题' },
       tabs: { apply: '申请开票', requests: '我的申请', profiles: '抬头管理' },
       guide: {
         title: '开票须知',
