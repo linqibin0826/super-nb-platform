@@ -14,7 +14,7 @@
   --iv-stub-line: rgba(151, 80, 60, 0.14);     /* 存根账页横线 */
   --iv-no-red: #c24a38;                        /* 票号红/眉题红 */
   --iv-brand: #97503c;                         /* 票据工具字色(棕红) */
-  --iv-flash: color-mix(in srgb, #cc785c 16%, transparent); /* 誊写落格闪光 */
+  --iv-flash: color-mix(in srgb, #FF6B35 16%, transparent); /* 誊写落格闪光 */
 }
 .dark {
   --iv-frame: rgba(217, 163, 92, 0.5);         /* 暗色票框 → 黄铜烫金 */
@@ -32,6 +32,13 @@
 /* 票据字体:仿宋(公文/票据脸),英文与缺字回退衬线 */
 .iv-doc {
   font-family: 'FangSong', 'STFangsong', 'FangSong_GB2312', '仿宋', Georgia, serif;
+}
+
+/* 页面大标题(2026-07-27 网吧化):原用 preset 的 font-display,该键随衬线退役已删除。
+   ⚠️ 这里不跟着换 sans——标题紧邻仿宋红眉题、属票据风延伸,与 spec §7.1
+   「外壳换、票据本体不换」的边界一致。故改成显式衬线栈,不再依赖已删的 preset 键。 */
+.iv-page-title {
+  font-family: Georgia, 'Songti SC', 'STSong', 'Noto Serif SC', serif;
 }
 
 /* ---------- 页头眉题 ---------- */
@@ -141,7 +148,7 @@
   font-size: 13.5px;
   color: rgb(var(--snb-t1));
 }
-.iv-fp-select:focus { outline: 2px solid #cc785c; outline-offset: 1px; }
+.iv-fp-select:focus { outline: 2px solid #FF6B35; outline-offset: 1px; }
 .iv-fp-items { width: 100%; border-collapse: collapse; font-size: 13px; }
 .iv-fp-items th {
   font-family: 'FangSong', 'STFangsong', '仿宋', serif;
@@ -192,7 +199,7 @@
 .iv-fp-ord input {
   width: 15px;
   height: 15px;
-  accent-color: #b5634a;
+  accent-color: #FF6B35;
   cursor: pointer;
   flex: none;
 }
@@ -271,7 +278,7 @@
   resize: none;
   height: 52px;
 }
-.iv-fp-remark:focus { outline: 2px solid #cc785c; outline-offset: 1px; }
+.iv-fp-remark:focus { outline: 2px solid #FF6B35; outline-offset: 1px; }
 .iv-fp-hint { font-size: 12px; color: rgb(var(--snb-t3)); flex: 1; line-height: 1.5; }
 .iv-warn { font-size: 12.5px; color: var(--iv-no-red); margin-top: 8px; min-height: 18px; }
 
@@ -288,7 +295,7 @@
   transition: background 0.15s;
 }
 .dark .iv-fp-addpf { color: #d9a35c; }
-.iv-fp-addpf:hover { background: color-mix(in srgb, #cc785c 12%, transparent); }
+.iv-fp-addpf:hover { background: color-mix(in srgb, #FF6B35 12%, transparent); }
 .iv-fp-addpf b {
   display: block;
   font-size: 14px;
@@ -794,7 +801,7 @@ textarea.iv-fpin { resize: none; overflow: hidden; display: block; width: 100%; 
   transition: color 0.15s, border-color 0.15s;
   background: transparent;
 }
-.iv-pf-add:hover { color: #b5634a; border-color: #cc785c; }
+.iv-pf-add:hover { color: #FF6B35; border-color: #FF6B35; }
 
 /* ---------- 柜台(管理台) ---------- */
 .iv-st-pill {

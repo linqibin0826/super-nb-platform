@@ -176,7 +176,7 @@ export default function App() {
               标题降格为眉行——墙本身才是 hero。 */}
           <section className="mx-auto w-full max-w-[1760px] px-5 pb-10 pt-10 sm:px-8">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h1 className="font-display text-[24px] font-semibold tracking-[0.01em] text-snb-t1">
+              <h1 className="font-sans text-[24px] font-semibold tracking-[0.01em] text-snb-t1">
                 {t('studio.hero.title')}
               </h1>
               <p className="text-sm text-snb-t3">{t('studio.hero.subtitle')}</p>

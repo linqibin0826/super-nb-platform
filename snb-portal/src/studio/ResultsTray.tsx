@@ -48,7 +48,7 @@ export function ResultsTray({ queue, onPreview, onClose }: Props) {
           scalar: 0.8,
           ticks: 130,
           disableForReducedMotion: true,
-          colors: ['#CC785C', '#FFE0CC', '#E8A184', '#8C5A44'],
+          colors: ['#FF6B35', '#FFDFCF', '#FFBE9F', '#93340F'],
           origin: { x: 0.5, y: 0.78 },
         })
       )
@@ -69,7 +69,7 @@ export function ResultsTray({ queue, onPreview, onClose }: Props) {
       <div className="max-h-[min(60vh,640px,calc(100dvh-380px))] overflow-y-auto p-5">
         {/* 节头：标题 + 聚合 meta + 收起（带字，不然会被读成「取消任务」） */}
         <div className="flex items-center justify-between gap-4">
-          <h2 className="font-display text-[19px] font-semibold text-snb-t1">{t('studio.queue.title')}</h2>
+          <h2 className="font-sans text-[19px] font-semibold text-snb-t1">{t('studio.queue.title')}</h2>
           <div className="flex items-center gap-3">
             <span className="font-mono text-xs text-snb-t3">
               {queueLabel(queue.runningCount, queue.queuedCount, queue.finishedCount)}

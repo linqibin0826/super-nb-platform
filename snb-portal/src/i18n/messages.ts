@@ -78,7 +78,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         hub: '杂志架',
         activity: '今日活动',
         login: '登录',
-        balance: '余额',
+        balance: '网费余额',
         themeToggle: '切换明暗主题',
         siteNav: '全站导航',
         avatar: '账户头像',
@@ -103,7 +103,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         estimate: '预估费用',
         estimateNote: '按官方价计',
         generate: '开始生成',
-        guestLead: '登录后即可按官方价生成，充值 1:1 到账，生成记录永久保存在你的账户里。',
+        guestLead: '登录后即可按官方价生成，充网费 1:1 到账，生成记录永久保存在你的账户里。',
       },
       composer: {
         expand: '展开配置',
@@ -221,12 +221,12 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
     },
   playground: {
       title: '生图工坊',
-      description: '用你的 API Key 在线体验 GPT-IMAGE-2 生图',
+      description: '用你的上机卡在线体验 GPT-IMAGE-2 生图',
       empty: {
         title: '当前没有可用于生图的 Key',
         description:
-          '生图需要「OpenAI 平台且已开通生图权限」分组下的 API Key。去密钥页看看你的 Key 所属分组，或联系站长开通。',
-        goKeys: '去密钥页看看'
+          '生图需要「OpenAI 平台且已开通生图权限」分组下的上机卡。去上机卡页看看你的卡所属分组，或联系站长开通。',
+        goKeys: '去上机卡页看看'
       },
       form: {
         prompt: '提示词',
@@ -286,7 +286,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       errors: {
         unauthorized: 'Key 无效或已被禁用，请换一个 Key',
         permissionDenied: '当前分组未开通生图权限',
-        insufficientBalance: '余额不足，请先充值',
+        insufficientBalance: '网费不够了，先去充网费',
         rateLimited: '请求过于频繁或并发已满，请稍后重试',
         contentPolicy: '内容未通过安全审核，请调整提示词后重试',
         invalidSize: '当前尺寸暂不支持，请换一档尺寸',
@@ -307,7 +307,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         step2: '在票面上勾选要开票的充值订单，合计满 ¥1000 可开',
         step3: '提交申请，管理员 1–3 个工作日内开出电子发票，随时可下载',
         ruleMain: '单张满 ¥3000 免收 5% 手续费',
-        ruleSub: '未满按 5% 从余额扣除；受理前可随时撤回申请',
+        ruleSub: '未满按 5% 从网费余额扣除；受理前可随时撤回申请',
         cta: '知道了，开始填票',
         read: '已阅',
       },
@@ -319,7 +319,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         remark: '备注(选填)',
         submit: '提交申请',
         belowMin: '合计不足 ¥1000,还差 ¥{diff}',
-        feeShort: '余额不足以支付手续费(需 ¥{fee})',
+        feeShort: '网费余额不足以支付手续费(需 ¥{fee})',
         pendingExists: '已有进行中的申请,可到「我的申请」查看',
         eyebrow: '填开联',
         docTitle: '发票申请单',
@@ -342,7 +342,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         processNote: '管理员将在 1–3 个工作日内处理，开出后可在「我的申请」下载',
         goRequests: '去「我的申请」查看',
         ordMeta: '已选 {n} 笔 · {total}',
-        feeNoteWithBal: '提交后从账户余额扣除（当前余额 {balance}）；满 ¥3000 免收',
+        feeNoteWithBal: '提交后从网费余额扣除（当前余额 {balance}）；满 ¥3000 免收',
         addProfileCta: '添加开票抬头',
         addProfileHint: '首次开票需要先设置企业或个人抬头，点这里就地填写',
         needProfile: '还没有开票抬头——点击票面上的「添加开票抬头」',
@@ -744,7 +744,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         title: 'No key available for image generation',
         description:
           'Image generation requires an API key under an OpenAI-platform group with image generation enabled. Check your keys, or contact the admin.',
-        goKeys: 'Go to API Keys'
+        goKeys: 'Go to Access Cards'
       },
       form: {
         prompt: 'Prompt',

@@ -173,7 +173,7 @@ export function HistoryTab({ refreshToken, onApply, onPreview, onGoGallery }: Pr
   if (items.length === 0) {
     return (
       <div className="mt-7 rounded-[20px] border border-dashed border-snb-hairline-strong bg-snb-panel px-8 py-14 text-center">
-        <p className="font-display text-lg font-semibold text-snb-t1">
+        <p className="font-sans text-lg font-semibold text-snb-t1">
           {t('studio.history.emptyTitle')}
         </p>
         <p className="mx-auto mt-2 max-w-[360px] text-[13.5px] leading-relaxed text-snb-t3">

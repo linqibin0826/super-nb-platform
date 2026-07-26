@@ -23,7 +23,7 @@ export function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: stri
   return (
     <div className="mb-7">
       <div className="iv-eyebrow">{eyebrow}</div>
-      <h1 className="font-display text-3xl font-semibold tracking-wide">{title}</h1>
+      <h1 className="iv-page-title text-3xl font-semibold tracking-wide">{title}</h1>
       {sub && <p className="mt-1.5 text-sm text-snb-t3">{sub}</p>}
     </div>
   )

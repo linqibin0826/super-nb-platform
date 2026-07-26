@@ -2,11 +2,11 @@
    全部走 token 变量，明暗主题自动跟随。 */
 
 :root {
-  --hub-accent: 204 120 92; /* primary-500 #CC785C */
+  --hub-accent: 255 107 53; /* primary-500 #FF6B35 */
   --hub-ink: 50 42 34;      /* 正文阅读墨 #322A22：暖褐，长读比 t1 近黑柔和（参照站同档） */
 }
 .dark {
-  --hub-accent: 226 168 143; /* primary-300 #E2A88F，墨底上保持可读 */
+  --hub-accent: 226 168 143; /* primary-300 #FF9C6F，墨底上保持可读 */
   --hub-ink: 224 213 197;    /* 暗色阅读墨 #E0D5C5：奶白降半档，降眩光 */
 }
 
@@ -90,7 +90,7 @@
 }
 .hub-sheet-title {
   margin: 14px 0 0;
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-weight: 700;
   font-size: clamp(1.7rem, 3.8vw, 2.3rem);
   line-height: 1.3;
@@ -157,7 +157,7 @@
 /* 书内小节头走衬线（与讲题同血统），长章里的路标 */
 .hub-prose h3 {
   margin: 2.3em 0 0.65em;
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-size: 1.24em;
 }
 .hub-prose h4 { margin: 1.9em 0 0.55em; font-size: 1.02em; }
@@ -169,7 +169,7 @@
   align-items: baseline;
   gap: 0.7em;
   margin: 2.3em 0 0.75em;
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-size: 1.35em;
   font-weight: 700;
   line-height: 1.45;
@@ -395,7 +395,7 @@
   border: 1px solid var(--snb-hairline-strong);
   border-radius: 16px;
   background: rgb(var(--snb-panel));
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-size: 1.02em;
   line-height: 1.9;
   color: rgb(var(--snb-t1));
@@ -405,7 +405,7 @@
   position: absolute;
   top: 0.06em;
   left: 14px;
-  font-family: Georgia, serif;
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif);
   font-style: normal;
   font-size: 4.4rem;
   line-height: 1;
@@ -492,7 +492,7 @@
 .hub-prose .book-card-name {
   padding-bottom: 10px;
   border-bottom: 1px solid var(--snb-hairline);
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-weight: 700;
   font-size: 1.05rem;
   color: rgb(var(--snb-t1));
@@ -558,7 +558,7 @@
    衬线只用 3 处：masthead 标题 / 章题 / 引语卡。--hub-brass = 强调金属光（暗色黄铜：续读点/舞台）。
    ══════════════════════════════════════════════════════════════════════════ */
 
-:root { --hub-brass: 204 120 92; }  /* 亮色=赤陶 */
+:root { --hub-brass: 255 107 53; }  /* 亮色=赤陶 */
 .dark { --hub-brass: 217 163 92; }  /* 暗色=黄铜 #D9A35C */
 
 .hub-book { position: relative; }
@@ -577,7 +577,7 @@
 .hub-cover-eyebrow .dot { width: 5px; height: 5px; border-radius: 999px; background: rgb(var(--hub-accent)); }
 .hub-cover-title {
   margin: 22px 0 0;
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-weight: 700; font-size: clamp(2.3rem, 5.6vw, 3.4rem); line-height: 1.16;
   letter-spacing: 0.01em; color: rgb(var(--snb-t1)); text-wrap: balance;
 }
@@ -590,7 +590,7 @@
   border: 1px solid rgb(var(--hub-accent) / 0.38); border-radius: 999px;
   padding: 4px 12px; background: rgb(var(--hub-accent) / 0.06);
 }
-.hub-forms .fa { font-family: Georgia, serif; color: rgb(var(--hub-accent)); font-size: 13px; }
+.hub-forms .fa { font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif); color: rgb(var(--hub-accent)); font-size: 13px; }
 .hub-forms .fcap {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10.5px; letter-spacing: 0.16em; color: rgb(var(--snb-t3)); margin-left: 6px;
@@ -643,7 +643,7 @@
 @media (prefers-reduced-motion: reduce) { .hub-row { animation: none; } }
 .hub-row:hover { background: rgb(var(--snb-panel)); border-bottom-color: transparent; }
 .hub-row .num {
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-size: 1.65rem; line-height: 1.15; color: rgb(var(--snb-t3));
   font-variant-numeric: tabular-nums; opacity: 0.62;
   transition: color 0.16s ease, opacity 0.16s ease;
@@ -727,7 +727,7 @@
 .hub-eyebrow .min { color: rgb(var(--snb-t3)); }
 .hub-sec-title {
   margin: 16px 0 0;
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-weight: 700; font-size: clamp(1.9rem, 4.4vw, 2.5rem); line-height: 1.25;
   color: rgb(var(--snb-t1)); text-wrap: balance;
 }
@@ -749,7 +749,7 @@
   color: rgb(var(--snb-t1));
   transition: color 0.16s ease;
 }
-.hub-part-next .na { font-family: Georgia, serif; font-size: 1.5rem; color: rgb(var(--hub-accent)); transition: transform 0.16s ease; }
+.hub-part-next .na { font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif); font-size: 1.5rem; color: rgb(var(--hub-accent)); transition: transform 0.16s ease; }
 .hub-part-next .next-link:hover .nt { color: rgb(var(--hub-accent)); }
 .hub-part-next .next-link:hover .na { transform: translateX(6px); }
 .hub-part-next .next-hook {
@@ -828,7 +828,7 @@
 }
 .hub-serial-title {
   margin: 0;
-  font-family: Georgia, 'Songti SC', STSong, 'Noto Serif SC', serif;
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-size: 1.42rem; font-weight: 700; line-height: 1.3; color: rgb(var(--snb-t1));
 }
 .hub-serial-deck {

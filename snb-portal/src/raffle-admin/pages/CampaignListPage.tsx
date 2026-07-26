@@ -68,7 +68,7 @@ export function CampaignListPage() {
             >
               <Lamp status={c.status} />
               <div className="min-w-0 flex-1">
-                <div className="truncate font-display text-[15px] font-semibold tracking-wide">{c.name}</div>
+                <div className="truncate font-sans text-[15px] font-semibold tracking-wide">{c.name}</div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[12px] text-snb-t3">
                   <span>{t(`raffle.admin.statuses.${c.status}`)}</span>
                   <span aria-hidden="true">·</span>

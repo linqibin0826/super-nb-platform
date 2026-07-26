@@ -1,8 +1,8 @@
 /* ============================================================
-   抽奖机房场景样式(2026-07-19,静态稿站长过目定稿)。
+   抽奖机房场景样式(2026-07-19 静态稿站长过目定稿;2026-07-27 港风霓虹换色板与字体,布局未动)。
    通用视觉(按钮/卡片/输入)仍走 @super-nb/ui;本文件只放机房人格:
    指示灯/读数井/铭牌标签/清单跳线柱——都是既有 --snb-* 语义槽位的再组合,
-   零新配色(赤陶 #cc785c = primary-500、绿 #10b981 = emerald-500,均已在别处使用)。
+   零新配色(霓虹橙 #FF6B35 = primary-500、青玉 #00E5C7 = jade-500,均已在别处使用)。
    ============================================================ */
 
 /* ---------- 指示灯:活体信号,仅「进行中」呼吸,其余静止 ---------- */
@@ -16,13 +16,13 @@
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.2), 0 0 0 3px rgb(var(--snb-well));
 }
 .rf-lamp-active {
-  background: #cc785c;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 8px 1px rgba(204, 120, 92, 0.7);
+  background: #FF6B35;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 8px 1px rgba(255, 107, 53, 0.7);
   animation: rfLampPulse 2.4s ease-in-out infinite;
 }
 .rf-lamp-drawn {
-  background: #10b981;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 5px 0 rgba(16, 185, 129, 0.5);
+  background: #00E5C7;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 5px 0 rgba(0, 229, 199, 0.5);
 }
 .rf-lamp-cancelled {
   background: rgb(var(--snb-t3) / 0.4);
@@ -30,10 +30,10 @@
 @keyframes rfLampPulse {
   0%,
   100% {
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 8px 1px rgba(204, 120, 92, 0.7);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 8px 1px rgba(255, 107, 53, 0.7);
   }
   50% {
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 13px 3px rgba(204, 120, 92, 0.9);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 13px 3px rgba(255, 107, 53, 0.9);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -82,8 +82,8 @@
 }
 .rf-jack-lit {
   border-color: transparent;
-  background: #10b981;
-  box-shadow: 0 0 4px 0 rgba(16, 185, 129, 0.6);
+  background: #00E5C7;
+  box-shadow: 0 0 4px 0 rgba(0, 229, 199, 0.6);
 }
 
 /* ---------- 面板行:悬停微亮,呼应机房面板逐行巡检的既视感 ---------- */
@@ -100,7 +100,7 @@
   --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23736356' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 .dark {
-  --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238F8578' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A08876' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 .rf-select {
   width: 100%;
@@ -120,8 +120,8 @@
 }
 .rf-select:focus {
   outline: none;
-  border-color: #cc785c;
-  box-shadow: 0 0 0 2px rgb(204 120 92 / 0.3);
+  border-color: #FF6B35;
+  box-shadow: 0 0 0 2px rgb(255 107 53 / 0.3);
 }
 .rf-select:disabled {
   opacity: 0.6;
@@ -156,7 +156,7 @@
   transition: color 0.15s ease;
 }
 .rf-del:hover {
-  color: #e0604c;
+  color: #FF3B5C;
 }
 .rf-del:disabled {
   opacity: 0.5;

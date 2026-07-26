@@ -75,7 +75,7 @@ export function PageHead({
     <div className="mb-7">
       <div className="text-xs font-semibold uppercase tracking-wide text-snb-t3">{eyebrow}</div>
       <div className="flex items-center gap-2.5">
-        <h1 className="font-display text-3xl font-semibold tracking-wide">{title}</h1>
+        <h1 className="font-sans text-3xl font-semibold tracking-wide">{title}</h1>
         {status}
       </div>
       {sub && <p className="mt-1.5 text-sm text-snb-t3">{sub}</p>}

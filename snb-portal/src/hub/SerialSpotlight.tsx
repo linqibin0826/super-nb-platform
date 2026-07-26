@@ -23,16 +23,16 @@ function SerialJacket({ slug }: { slug: string }) {
       <text x="14" y="27" fontFamily="ui-monospace, Menlo, monospace" fontSize="9" letterSpacing="1" fill="#D9A35C">
         {codex ? '❯ codex' : '❯ _'}
       </text>
-      <text x="56" y="76" textAnchor="middle" fontFamily="Georgia, 'Songti SC', serif" fontSize="23" fill="#F0E9DD">
+      <text x="56" y="76" textAnchor="middle" fontFamily="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif" fontSize="23" fill="#F0E9DD">
         {codex ? 'Codex' : '连载'}
       </text>
-      <text x="56" y="93" textAnchor="middle" fontFamily="Georgia, 'Songti SC', serif" fontSize="8.5" fill="#F0E9DD" fillOpacity="0.72">
+      <text x="56" y="93" textAnchor="middle" fontFamily="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif" fontSize="8.5" fill="#F0E9DD" fillOpacity="0.72">
         {codex ? '从入门到精通' : '成体系长读'}
       </text>
       {/* 底部信号带：呼应目录页五形态带的节奏 */}
-      <rect x="14" y="112" width="56" height="3" rx="1.5" fill="#CC785C" />
+      <rect x="14" y="112" width="56" height="3" rx="1.5" fill="#FF6B35" />
       <rect x="14" y="119" width="40" height="3" rx="1.5" fill="#D9A35C" fillOpacity="0.8" />
-      <rect x="14" y="126" width="66" height="3" rx="1.5" fill="#CC785C" fillOpacity="0.6" />
+      <rect x="14" y="126" width="66" height="3" rx="1.5" fill="#FF6B35" fillOpacity="0.6" />
       <rect x="14" y="133" width="30" height="3" rx="1.5" fill="#D9A35C" fillOpacity="0.4" />
       {codex && (
         <text x="98" y="136" textAnchor="end" fontFamily="ui-monospace, Menlo, monospace" fontSize="7" fill="#F0E9DD" fillOpacity="0.55">

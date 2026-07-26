@@ -31,10 +31,10 @@
 /* 灵感库「直接使用」后创作票据的一次性赤陶光晕（Composer 覆盖层 animate-[snbComposerPulse_…] 引用） */
 @keyframes snbComposerPulse {
   from {
-    box-shadow: 0 0 0 0 rgba(204, 120, 92, 0.5);
+    box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.5);
   }
   to {
-    box-shadow: 0 0 0 20px rgba(204, 120, 92, 0);
+    box-shadow: 0 0 0 20px rgba(255, 107, 53, 0);
   }
 }
 
@@ -88,10 +88,10 @@
 /* 参考图样片就位的一次性赤陶微光（RefThumb 由骨架变真图那一刻，确认「加好了」）*/
 @keyframes snbRefLand {
   from {
-    box-shadow: 0 0 0 0 rgba(204, 120, 92, 0.45);
+    box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.45);
   }
   to {
-    box-shadow: 0 0 0 7px rgba(204, 120, 92, 0);
+    box-shadow: 0 0 0 7px rgba(255, 107, 53, 0);
   }
 }
 

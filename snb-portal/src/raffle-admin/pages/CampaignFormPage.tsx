@@ -428,7 +428,7 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
 
       {mode === 'edit' && detail && (
         <Card className="mt-6 p-6">
-          <h2 className="font-display text-lg font-semibold">{t('raffle.admin.prizesTitle')}</h2>
+          <h2 className="font-sans text-lg font-semibold">{t('raffle.admin.prizesTitle')}</h2>
           <div className="mt-4 overflow-hidden rounded-lg border border-snb-hairline">
             <table className="w-full text-[13px]">
               <thead className="bg-snb-well text-left">
@@ -624,7 +624,7 @@ export function CampaignFormPage({ mode }: { mode: 'create' | 'edit' }) {
 
       {mode === 'create' && cloneFrom && (
         <Card className="mt-6 p-6">
-          <h2 className="font-display text-lg font-semibold">{t('raffle.admin.clonedPrizesTitle')}</h2>
+          <h2 className="font-sans text-lg font-semibold">{t('raffle.admin.clonedPrizesTitle')}</h2>
           <p className="mt-1 text-sm text-snb-t3">{t('raffle.admin.clonedPrizesHint')}</p>
           <div className="mt-4 space-y-2">
             {prizeSkeleton.map((p, i) => (
