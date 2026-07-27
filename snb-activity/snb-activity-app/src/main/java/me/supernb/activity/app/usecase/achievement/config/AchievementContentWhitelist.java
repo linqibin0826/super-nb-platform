@@ -16,9 +16,21 @@ public class AchievementContentWhitelist implements InitializingBean {
 
     // 深化稿 §3 开篇:"类目共 8 个启用 + 2 个占位"。占位类目当前 0 行使用,但字面允许——
     // 一旦运营真的往"情报站"/"限时特刊"里加行,不需要先改这份白名单。
+    //
+    // 2026-07-27 网吧化改造(Spec 4):类目按新世界观重命名,见 V15 migration。
+    // 🚨 新旧两套**同时保留**,不是偷懒。理由:
+    //   本校验失败会直接 throw 让应用启动不来(见类注释),而 Flyway migration 是
+    //   单向的——若某次发版后需要单独回滚 platform 镜像,DB 里已是新类目名,旧镜像的
+    //   白名单认不出来就会**启动失败**,把一次普通回滚变成生产事故。
+    //   保留旧值的代价接近零(它们是本站已知的正当历史值,不是错别字),换来的是
+    //   镜像可独立回滚。等这批改动稳定运行一段时间、确认不会回滚后,可再删旧值。
     private static final Set<String> ALLOWED_CATEGORIES = Set.of(
-            "入职档案", "机房作业", "补给记录", "联动矩阵", "造像车间", "考勤本纪", "机密档案", "元编年史",
-            "情报站", "限时特刊");
+            // 现行(V15 起)
+            "开卡入场", "上机记录", "充网费记录", "全网联机", "画图机位", "上网时长", "隐藏关卡", "元老档案",
+            // 占位(0 行使用,字面允许)
+            "情报站", "限时特刊",
+            // 🪦 V15 之前的旧类目名,仅为镜像可回滚而保留
+            "入职档案", "机房作业", "补给记录", "联动矩阵", "造像车间", "考勤本纪", "机密档案", "元编年史");
     private static final Set<String> ALLOWED_STATUSES = Set.of("draft", "active", "retired");
     private static final Set<String> ALLOWED_PREDICATE_KINDS =
             Set.of("metric_threshold", "meta_combo", "custom_code");

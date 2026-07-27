@@ -59,7 +59,7 @@ class AchievementCatalogAndUnlockAdapterTest {
     @Test
     void byCodeFindsSeededRowWithCorrectFields() {
         var def = catalog.byCode("checkin_first").orElseThrow();
-        assertThat(def.category()).isEqualTo("入职档案");
+        assertThat(def.category()).isEqualTo("开卡入场"); // V15 网吧化重命名后的类目名
         assertThat(def.nbPoints()).isEqualTo(5);
         assertThat(def.rarity()).isEqualTo("T1");
     }

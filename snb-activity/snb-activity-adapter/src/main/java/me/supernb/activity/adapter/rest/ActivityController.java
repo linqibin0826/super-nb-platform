@@ -338,7 +338,7 @@ public class ActivityController {
         return CheckinRewardsResponse.of(checkinRewardQuery.myRewards(user.id()));
     }
 
-    /// 我的成就墙(需登录,仅本人;机密档案未解锁项服务端脱敏,name/condition 恒 null)。
+    /// 我的成就墙(需登录,仅本人;隐藏关卡未解锁项服务端脱敏,name/condition 恒 null)。
     @GetMapping("/checkin/achievements")
     public AchievementWallResponse checkinAchievements(@CurrentUser UserProfile user) {
         return AchievementWallResponse.of(achievementWallQuery.wall(user.id()));

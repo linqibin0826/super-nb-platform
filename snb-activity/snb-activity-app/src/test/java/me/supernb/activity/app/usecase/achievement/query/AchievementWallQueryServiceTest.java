@@ -104,7 +104,7 @@ class AchievementWallQueryServiceTest {
 
         AchievementCategoryView secret = wall.categories().get(0);
         assertThat(secret.hidden()).isTrue();
-        assertThat(secret.series()).isEmpty(); // 机密档案恒不建系列分组,即便个别行带 tier_level
+        assertThat(secret.series()).isEmpty(); // 隐藏关卡恒不建系列分组,即便个别行带 tier_level
 
         AchievementItemView sealed = secret.items().stream()
                 .filter(i -> i.code().equals("midnight_courier")).findFirst().orElseThrow();
@@ -116,7 +116,7 @@ class AchievementWallQueryServiceTest {
                 .filter(i -> i.code().equals("raffle_companion_1")).findFirst().orElseThrow();
         assertThat(revealed.name()).isEqualTo("陪跑");
         assertThat(revealed.condition()).isEqualTo("报名 raffle 未中奖(仅计已开奖期次)");
-        assertThat(revealed.revealedLabel()).isEqualTo("曾是机密档案 #02"); // 该类目第 2 条(60=1st,63=2nd)
+        assertThat(revealed.revealedLabel()).isEqualTo("曾是隐藏关卡 #02"); // 该类目第 2 条(60=1st,63=2nd)
     }
 
     @Test
