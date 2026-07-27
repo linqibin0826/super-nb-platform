@@ -33,7 +33,7 @@ class CheckinRewardQueryServiceTest {
         assertThat(summaries).hasSize(1);
         assertThat(summaries.get(0).month()).isEqualTo("2026-06");
         assertThat(summaries.get(0).tier()).isEqualTo("B");
-        assertThat(summaries.get(0).label()).isEqualTo("GPT-Pro 补给 · 3 天");
+        assertThat(summaries.get(0).label()).isEqualTo("GPT-Pro 加时 · 3 天");
         assertThat(summaries.get(0).grantedAt()).isEqualTo(Instant.parse("2026-06-30T15:58:00Z"));
     }
 

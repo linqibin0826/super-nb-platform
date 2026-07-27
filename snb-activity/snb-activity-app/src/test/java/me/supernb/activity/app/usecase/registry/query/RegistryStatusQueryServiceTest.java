@@ -19,8 +19,8 @@ import me.supernb.activity.domain.port.campaign.CampaignPort;
 import me.supernb.activity.domain.port.raffle.RaffleCampaignPort;
 import org.junit.jupiter.api.Test;
 
-/// 注册表状态聚合:四源→四固定 id;窗口 [start,end) 判 upcoming/running/ended;
-/// 无进行中 lottery/raffle 时对应条目缺席(前端无徽章降级),qq 与 leaderboard 恒在。
+/// 注册表状态聚合:五固定 id;窗口 [start,end) 判 upcoming/running/ended;
+/// 无进行中 lottery/raffle 时对应条目缺席(前端无徽章降级),qq/leaderboard/checkin 恒在。
 class RegistryStatusQueryServiceTest {
 
     private final CampaignPort campaignPort = mock(CampaignPort.class);
@@ -44,11 +44,13 @@ class RegistryStatusQueryServiceTest {
                 service(now.minus(1, ChronoUnit.DAYS), now.plus(3, ChronoUnit.DAYS)).status();
 
         assertThat(out).extracting(RegistryEntryStatus::id)
-                .containsExactly("lottery", "raffle", "qq-referral", "leaderboard");
+                .containsExactly("lottery", "raffle", "qq-referral", "leaderboard", "checkin");
         assertThat(out).extracting(RegistryEntryStatus::status)
-                .containsExactly("running", "running", "running", "running");
+                .containsExactly("running", "running", "running", "running", "running");
         assertThat(out.get(3).kind()).isEqualTo("evergreen");
         assertThat(out.get(3).startsAt()).isNull();
+        assertThat(out.get(4).kind()).isEqualTo("evergreen"); // checkin 常驻,与 leaderboard 同款无时间窗
+        assertThat(out.get(4).startsAt()).isNull();
     }
 
     @Test
@@ -59,7 +61,7 @@ class RegistryStatusQueryServiceTest {
                 service(now.minus(2, ChronoUnit.DAYS), now.minus(1, ChronoUnit.DAYS)).status();
 
         assertThat(out).extracting(RegistryEntryStatus::id)
-                .containsExactly("qq-referral", "leaderboard");
+                .containsExactly("qq-referral", "leaderboard", "checkin");
         assertThat(out.get(0).status()).isEqualTo("ended"); // 窗口已过,end 排他
     }
 

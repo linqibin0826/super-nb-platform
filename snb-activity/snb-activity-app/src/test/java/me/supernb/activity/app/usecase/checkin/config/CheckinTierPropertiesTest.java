@@ -29,6 +29,6 @@ class CheckinTierPropertiesTest {
     @Test
     void tierForAndLabelForStillWorkUnchanged() {
         assertThat(props.tierFor(new BigDecimal("36"))).contains("A");
-        assertThat(props.labelFor("C")).isEqualTo("GPT-Pro 补给 · 7 天");
+        assertThat(props.labelFor("C")).isEqualTo("GPT-Pro 加时 · 7 天"); // 展示词随网吧 v2 叫「加时」
     }
 }

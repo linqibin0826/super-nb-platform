@@ -82,11 +82,11 @@ class CheckinEndpointTest {
     /// 复用同一 CheckinStatusQueryService,故契约测试里状态快照的形状本就该相同。
     private static CheckinStatusView statusView(boolean punchedToday) {
         var supply = new CheckinSupplyView(new BigDecimal("36"), 43, "距 B 档还差 ¥14", List.of(
-                new CheckinSupplyTierView("A", "GPT-Plus 补给 · 3 天", "…", new BigDecimal("30"),
+                new CheckinSupplyTierView("A", "GPT-Plus 加时 · 3 天", "…", new BigDecimal("30"),
                         "armed", "充值已达标 · 满勤在轨"),
-                new CheckinSupplyTierView("B", "GPT-Pro 补给 · 3 天", "…", new BigDecimal("50"),
+                new CheckinSupplyTierView("B", "GPT-Pro 加时 · 3 天", "…", new BigDecimal("50"),
                         "progress", "差 ¥14"),
-                new CheckinSupplyTierView("C", "GPT-Pro 补给 · 7 天", "…", new BigDecimal("500"),
+                new CheckinSupplyTierView("C", "GPT-Pro 加时 · 7 天", "…", new BigDecimal("500"),
                         "dim", "未在轨")));
         var milestones = List.of(
                 new CheckinMilestoneView("days_5", "出勤 5 天", 5, true, "已打穿"),
@@ -137,14 +137,14 @@ class CheckinEndpointTest {
     @Test
     void rewardsRequiresLoginAndReturnsGrantsWrapper() throws Exception {
         when(rewardQuery.myRewards(42)).thenReturn(List.of(
-                new CheckinRewardSummary("2026-06", "B", "GPT-Pro 补给 · 3 天",
+                new CheckinRewardSummary("2026-06", "B", "GPT-Pro 加时 · 3 天",
                         Instant.parse("2026-06-30T15:58:00Z"))));
 
         mvc.perform(get("/activity/v1/checkin/rewards").header("Authorization", "Bearer T"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.grants[0].month").value("2026-06"))
                 .andExpect(jsonPath("$.grants[0].tier").value("B"))
-                .andExpect(jsonPath("$.grants[0].label").value("GPT-Pro 补给 · 3 天"))
+                .andExpect(jsonPath("$.grants[0].label").value("GPT-Pro 加时 · 3 天"))
                 // 契约示例 "2026-06-30T23:58:00+08:00":Instant 转 Asia/Shanghai 偏移量而非默认 UTC "Z"
                 .andExpect(jsonPath("$.grants[0].grantedAt").value("2026-06-30T23:58:00+08:00"));
     }

@@ -33,14 +33,17 @@ public class CheckinTierProperties {
             @Value("${activity.checkin.tier.a.cost-cny:0.9}") BigDecimal costA,
             @Value("${activity.checkin.tier.b.cost-cny:1.9}") BigDecimal costB,
             @Value("${activity.checkin.tier.c.cost-cny:4.4}") BigDecimal costC) {
+        // 展示词随零发光网吧 v2 词汇表叫「加时」(2026-07-28;机制内部代号仍是"补给",
+        // 结算 notes `checkin-reward-*` 是 sub2api 对账凭据更不能动)——label 经
+        // GET /checkin/rewards 的 grants[].label 原样上台账,是签到页唯一上屏的档位名。
         this.tiers = List.of(
-                new TierInfo("A", "GPT-Plus 补给 · 3 天",
+                new TierInfo("A", "GPT-Plus 加时 · 3 天",
                         "满勤 + 当月新增充值 ¥" + thresholdA.toPlainString() + " 起",
                         thresholdA, groupIdA, 3, costA),
-                new TierInfo("B", "GPT-Pro 补给 · 3 天",
+                new TierInfo("B", "GPT-Pro 加时 · 3 天",
                         "满勤 + 当月新增充值 ¥" + thresholdB.toPlainString() + " 起",
                         thresholdB, groupIdB, 3, costB),
-                new TierInfo("C", "GPT-Pro 补给 · 7 天",
+                new TierInfo("C", "GPT-Pro 加时 · 7 天",
                         "满勤 + 当月新增充值 ¥" + thresholdC.toPlainString() + " 起",
                         thresholdC, groupIdC, 7, costC));
     }
