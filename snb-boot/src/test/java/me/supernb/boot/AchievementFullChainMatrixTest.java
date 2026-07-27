@@ -300,7 +300,7 @@ class AchievementFullChainMatrixTest {
         seedUser(1136, today.minusDays(100));
         seedUser(1137, today.minusDays(365));
 
-        // —— 元编年史组合用户:一轮内凑满 10 枚 + 入职档案齐 ——
+        // —— 元老档案组合用户:一轮内凑满 10 枚 + 开卡入场齐(V15 后类目名) ——
         seedCheckinRun(1140, today, 7);          // checkin_first + cum_1
         seedUsage(1140, 100);                     // api_first_call + api_calls_1
         seedGeneration(1140, 1140_500L, 20, "done"); // image_gen_1 + image_gen_2

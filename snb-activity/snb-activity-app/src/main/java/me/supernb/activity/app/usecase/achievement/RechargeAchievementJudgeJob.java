@@ -15,7 +15,9 @@ import me.supernb.activity.domain.port.scan.ScanWatermarkPort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-/// 补给记录成就直判(日频,不入 user_metric——"现查透传不落表",深化稿 §6.1)。
+/// 充网费记录成就直判(日频,不入 user_metric——"现查透传不落表",深化稿 §6.1;
+/// 类目原名"补给记录",V15 网吧换名后本类的 category 过滤串必须与 DB 同步——
+/// 2026-07-28 矩阵测试抓出漏改:旧串筛出空集,网费四条成就在真实链路上永不解锁)。
 @Slf4j
 @Service
 public class RechargeAchievementJudgeJob {
@@ -41,20 +43,20 @@ public class RechargeAchievementJudgeJob {
     @Scheduled(cron = "0 20 1 * * *", zone = "Asia/Shanghai")
     public void judgeDaily() {
         if (!settlementProperties.scanEnabled()) {
-            log.info("补给记录成就判定已跳过:scanEnabled=false");
+            log.info("充网费记录成就判定已跳过:scanEnabled=false");
             return;
         }
         Instant now = Instant.now();
         Instant since = watermarkPort.get(JOB_NAME).orElse(now.minus(Duration.ofDays(2)));
         List<Long> candidates = rechargePort.usersWithNewRechargeSince(since, now);
         List<AchievementDefinition> recDefs = catalogPort.activeDefinitions().stream()
-                .filter(d -> "补给记录".equals(d.category()))
+                .filter(d -> "充网费记录".equals(d.category()))
                 .toList();
         for (long userId : candidates) {
             try {
                 judgeUser(userId, recDefs);
             } catch (Exception e) {
-                log.error("补给记录成就判定失败 user={}", userId, e);
+                log.error("充网费记录成就判定失败 user={}", userId, e);
             }
         }
         watermarkPort.advance(JOB_NAME, now);

@@ -78,4 +78,16 @@ class AchievementRenameMigrationTest {
                 .contains("'机房作业'")
                 .doesNotContain("'开卡入场'");
     }
+
+    /// 类目名被代码/数据当**查询键**用的地方，换名一个都不能漏——初版 V15 只改了 category 列，
+    /// 漏了 prerequisite 列（meta_category_onboarding 的判定引擎按它现查类目成就，旧名筛出
+    /// 空集该成就永不解锁）与 RechargeAchievementJudgeJob 的 category 过滤串，全靠 boot
+    /// 全链矩阵(真库)才抓出来。这条把 prerequisite 覆盖钉死，防未来再加"类目引用列"时重蹈。
+    @Test
+    void v15AlsoRenamesCategoryReferencesStoredInPrerequisiteColumn() throws IOException {
+        String v15 = read("V15__achievement_wangba_rename.sql");
+        assertThat(v15).as("V9 里唯一的 prerequisite 类目引用(900041)必须被 V15 改成新名")
+                .contains("SET prerequisite = '开卡入场'")
+                .contains("WHERE prerequisite = '入职档案'");
+    }
 }

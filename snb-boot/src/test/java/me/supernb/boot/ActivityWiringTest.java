@@ -107,6 +107,7 @@ class ActivityWiringTest {
         mvc.perform(get("/activity/v1/registry-status"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.campaigns[*].id").value(hasItem("leaderboard")))
+                .andExpect(jsonPath("$.campaigns[*].id").value(hasItem("checkin")))
                 .andExpect(jsonPath("$.campaigns[*].id").value(hasItem("qq-referral")))
                 .andExpect(jsonPath("$.campaigns[?(@.kind=='evergreen')].status").value(hasItem("running")));
     }
@@ -163,7 +164,7 @@ class ActivityWiringTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.summary.totalCount").value(42))
                 .andExpect(jsonPath("$.summary.unlockedCount").value(0))
-                .andExpect(jsonPath("$.categories[0].name").value("入职档案"))
+                .andExpect(jsonPath("$.categories[0].name").value("开卡入场")) // V15 网吧换名
                 .andExpect(jsonPath("$.metaAchievements[0].code").value("meta_regular"));
     }
 

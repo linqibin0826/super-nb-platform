@@ -16,6 +16,9 @@
 --    ② AchievementWallQueryService.META_CATEGORY —— 元老档案类目靠它筛出
 --       metaAchievements[]，不同步会让该类目分组错乱
 --    ③ activity-achievements/index.html 的 mapAchievementItem(it,'…') 与 aria-label
+--    ④ RechargeAchievementJudgeJob 的 category 过滤串（"补给记录"→"充网费记录"）——
+--       2026-07-28 全链矩阵测试抓出初版漏了它：旧串筛出空集，网费四条成就永不解锁。
+--       类目名被代码当查询键的地方，换名时一个都不能漏（本文件 ⑤ 的 prerequisite 同教训）。
 --
 -- 幂等：全部是按 code / category 定位的 UPDATE，重跑无副作用。
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -152,3 +155,11 @@ UPDATE activity.achievement_definition SET name = '系列通关',
 UPDATE activity.achievement_definition
    SET condition_text = replace(condition_text, '点亮「入职档案」全部成就', '点亮「开卡入场」全部成就')
  WHERE condition_text LIKE '%入职档案%';
+
+-- ── ⑤ prerequisite 列里的类目引用（2026-07-28 矩阵测试抓出的初版漏改）──
+-- meta_category_onboarding 的判定引擎按 prerequisite 存的类目名现查该类目全部成就
+-- （AchievementJudgeEngine.categoryFullyUnlocked）；① 改了 category 列却漏了这里，
+-- 旧名筛出空集 → 「开卡手续齐了」永不解锁。全库 prerequisite 存类目名的只此一行
+-- （V9:900041,即 meta_category_onboarding）,按 prerequisite 值定位即可精确幂等。
+UPDATE activity.achievement_definition SET prerequisite = '开卡入场'
+ WHERE prerequisite = '入职档案';

@@ -111,6 +111,7 @@ class AchievementCatalogAndUnlockAdapterTest {
     void allSeriesLabelsReturnsSeededDisplayNames() {
         Map<String, String> labels = catalog.allSeriesLabels();
         assertThat(labels).containsKey("api_calls");
-        assertThat(labels.get("api_calls")).contains("API CALLS");
+        // 钉 V15 网吧换名后的全值(此前 contains("API CALLS") 钉的是 V10 旧名)
+        assertThat(labels.get("api_calls")).isEqualTo("局数系列 · SESSIONS");
     }
 }

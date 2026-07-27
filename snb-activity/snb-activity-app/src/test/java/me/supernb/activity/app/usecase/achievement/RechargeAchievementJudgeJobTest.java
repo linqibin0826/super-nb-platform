@@ -35,8 +35,10 @@ class RechargeAchievementJudgeJobTest {
                 settlementProperties);
     }
 
+    // ⚠️ 类目名必须与 DB 真值(V15 后="充网费记录")一致——job 按它过滤。夹具与被测代码
+    //    若同错同串会互相"自洽通过",V15 换名漏改正是靠 boot 全链矩阵(真库)才抓出来的。
     private static AchievementDefinition def(String code, String metricCode, BigDecimal threshold) {
-        return new AchievementDefinition(code, null, null, "补给记录", "T1", 5, false, true, "active",
+        return new AchievementDefinition(code, null, null, "充网费记录", "T1", 5, false, true, "active",
                 "metric_threshold", metricCode, threshold, "gte", null,
                 LocalDate.of(2026, 7, 13), 0, code, "f", null, "测试条件");
     }
