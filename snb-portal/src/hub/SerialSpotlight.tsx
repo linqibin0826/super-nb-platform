@@ -30,9 +30,9 @@ function SerialJacket({ slug }: { slug: string }) {
         {codex ? '从入门到精通' : '成体系长读'}
       </text>
       {/* 底部信号带：呼应目录页五形态带的节奏 */}
-      <rect x="14" y="112" width="56" height="3" rx="1.5" fill="#FF6B35" />
+      <rect x="14" y="112" width="56" height="3" rx="1.5" fill="#FF5C00" />
       <rect x="14" y="119" width="40" height="3" rx="1.5" fill="#D9A35C" fillOpacity="0.8" />
-      <rect x="14" y="126" width="66" height="3" rx="1.5" fill="#FF6B35" fillOpacity="0.6" />
+      <rect x="14" y="126" width="66" height="3" rx="1.5" fill="#FF5C00" fillOpacity="0.6" />
       <rect x="14" y="133" width="30" height="3" rx="1.5" fill="#D9A35C" fillOpacity="0.4" />
       {codex && (
         <text x="98" y="136" textAnchor="end" fontFamily="ui-monospace, Menlo, monospace" fontSize="7" fill="#F0E9DD" fillOpacity="0.55">

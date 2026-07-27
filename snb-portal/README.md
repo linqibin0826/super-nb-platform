@@ -23,8 +23,8 @@ pnpm dev   # http://localhost:3100/studio/
 
 目标路径写死不接受参数。线上是独立子域名站点块 `studio.super-nb.me { ... }`（非 `api.super-nb.me` 子路径）——Caddy 拓扑见 ai-relay `deployment/18`。
 
-⚠️ 发版前必须 `pnpm build && pnpm preview` 手验 dist：`@super-nb/ui` 走 `link:` 联包，双 React 实例会导致生产 bundle 白屏（`useId` null），`vite.config.ts` 的 `resolve.dedupe` 是唯一防线，dev 正常不代表生产正常。
+⚠️ 发版前必须 `pnpm build && pnpm preview` 手验 dist：双 React 实例会导致生产 bundle 白屏（`useId` null），`vite.config.ts` 的 `resolve.dedupe` 是唯一防线，dev 正常不代表生产正常。
 
 ## 门禁
 
-`pnpm typecheck` 绿 + `pnpm test:run` 全绿。`src/lib/` 模块拷自 sub2api fork（`feat/image-playground@4f873b56`），与 fork 同步演进须手动。设计系统组件来自 `../super-nb-ui`（`link:`），改 ui 后须在该仓 `pnpm build` 本仓才可见。
+`pnpm typecheck` 绿 + `pnpm test:run` 全绿。`src/lib/` 模块拷自 sub2api fork（`feat/image-playground@4f873b56`），与 fork 同步演进须手动。设计系统组件是 `../super-nb-ui` 的**手工全量拷贝**（vendor 进 `src/ui/`，🪦 `link:` 联包已退役）：改 ui 后须整拷回本仓（rsync src/ → src/ui/ 排除 *.test.*，另拷 tailwind-preset.js），`vendor-sync.spec.ts` 兜漂移。

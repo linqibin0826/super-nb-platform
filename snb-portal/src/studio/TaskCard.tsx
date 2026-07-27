@@ -227,7 +227,7 @@ export function TaskCard(p: TaskCardProps) {
               <div className="mt-4">
                 <div className="h-[3px] overflow-hidden rounded-full bg-snb-t1/10">
                   <div
-                    className="h-full rounded-full bg-gradient-primary transition-[width] duration-1000 ease-out"
+                    className="h-full rounded-full bg-paper transition-[width] duration-1000 ease-out"
                     style={{ width: `${Math.min(92, Math.round(92 * (1 - Math.exp(-elapsed / 45))))}%` }}
                   />
                 </div>

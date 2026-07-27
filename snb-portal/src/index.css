@@ -12,13 +12,9 @@
     @apply bg-primary-500/30 text-snb-t1;
   }
 
-  /* 滚动条适配：color-scheme 让原生控件（滚动条等）跟随主题，暗色下不再蹦出白色滚动条。
-     .dark 管 ThemeScope 子树内的滚动容器（托盘/输入框）；页面级滚动条在 <html> 上，
-     由 useTheme 同步 documentElement.style.colorScheme（class 只盖在 ThemeScope div 上够不到它） */
+  /* 滚动条适配：color-scheme 让原生控件（滚动条等）走暗色。恒暗单主题
+     （html.dark 硬编码常驻），🪦 浅色分支与 useTheme 同步逻辑已随主题切换能力退役 */
   :root {
-    color-scheme: light;
-  }
-  .dark {
     color-scheme: dark;
   }
   /* 细滚动条 + 品牌墨色滑块（Firefox 全版本 / Chromium 121+；其余浏览器退回 color-scheme 原生深浅） */
@@ -28,13 +24,13 @@
   }
 }
 
-/* 灵感库「直接使用」后创作票据的一次性赤陶光晕（Composer 覆盖层 animate-[snbComposerPulse_…] 引用） */
+/* 灵感库「直接使用」后创作票据的一次性安全橙扩散环（Composer 覆盖层 animate-[snbComposerPulse_…] 引用） */
 @keyframes snbComposerPulse {
   from {
-    box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.5);
+    box-shadow: 0 0 0 0 rgba(255, 92, 0, 0.5);
   }
   to {
-    box-shadow: 0 0 0 20px rgba(255, 107, 53, 0);
+    box-shadow: 0 0 0 20px rgba(255, 92, 0, 0);
   }
 }
 
@@ -85,13 +81,13 @@
   }
 }
 
-/* 参考图样片就位的一次性赤陶微光（RefThumb 由骨架变真图那一刻，确认「加好了」）*/
+/* 参考图样片就位的一次性安全橙微环（RefThumb 由骨架变真图那一刻，确认「加好了」）*/
 @keyframes snbRefLand {
   from {
-    box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.45);
+    box-shadow: 0 0 0 0 rgba(255, 92, 0, 0.45);
   }
   to {
-    box-shadow: 0 0 0 7px rgba(255, 107, 53, 0);
+    box-shadow: 0 0 0 7px rgba(255, 92, 0, 0);
   }
 }
 

@@ -48,7 +48,7 @@ export function ResultsTray({ queue, onPreview, onClose }: Props) {
           scalar: 0.8,
           ticks: 130,
           disableForReducedMotion: true,
-          colors: ['#FF6B35', '#FFDFCF', '#FFBE9F', '#93340F'],
+          colors: ['#FF5C00', '#FFE4D3', '#FFC7A6', '#B04000'],
           origin: { x: 0.5, y: 0.78 },
         })
       )

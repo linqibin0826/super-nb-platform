@@ -15,7 +15,7 @@ export interface StatCardProps {
 const iconTones: Record<StatTone, string> = {
   primary: 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400',
   success: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-  warning: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+  warning: 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400',
   danger: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
 }
 

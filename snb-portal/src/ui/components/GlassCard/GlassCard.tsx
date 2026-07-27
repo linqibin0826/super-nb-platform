@@ -2,14 +2,18 @@ import type { HTMLAttributes } from 'react'
 import { cx } from '../../lib/cx'
 
 export interface GlassCardProps extends HTMLAttributes<HTMLDivElement> {
-  /** soft=站内玻璃卡（随主题）；cinematic=电影页登录卡（始终深色，用于视频/暗景之上） */
+  /** soft=站内卡；cinematic=登录/暗景大卡（更大圆角与投影） */
   variant?: 'soft' | 'cinematic'
 }
 
+/* 🪦 玻璃已随零发光网吧 v2 退役（2026-07-27 站长拍板实心化）：
+   blur+saturate+内高光整段删除，换实心面板 panel + 栏位线 rule——
+   与 fork 的开卡台/机柜面同一材质。组件名与 API 保持不动（消费方零改动），
+   名字里的 Glass 留作历史：它现在是一块实心的「玻璃」。
+   backdrop-filter 全站唯一例外是滚动内容上的 sticky 顶栏（AppHeader）。 */
 const variants = {
-  soft: 'rounded-2xl border border-[var(--snb-glass-border)] bg-[var(--snb-glass-bg)] shadow-glass backdrop-blur-xl transition-all duration-300',
-  cinematic:
-    'relative overflow-hidden rounded-glass border border-white/[0.14] bg-[rgba(13,17,26,0.62)] text-white shadow-[0_24px_60px_-28px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-[20px] backdrop-saturate-[1.4]',
+  soft: 'rounded-2xl border border-dark-700 bg-dark-800 shadow-card transition-all duration-300',
+  cinematic: 'relative overflow-hidden rounded-glass border border-dark-700 bg-dark-800 text-white shadow-glass',
 } as const
 
 export function GlassCard({ variant = 'soft', className, ...rest }: GlassCardProps) {

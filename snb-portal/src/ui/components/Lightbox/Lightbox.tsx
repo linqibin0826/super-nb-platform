@@ -70,7 +70,7 @@ export function Lightbox({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex cursor-zoom-out flex-col items-center justify-center gap-4 bg-black/85 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex cursor-zoom-out flex-col items-center justify-center gap-4 bg-black/85 p-4"
       onClick={onClose}
     >
       <div
@@ -93,7 +93,7 @@ export function Lightbox({
           <button
             type="button"
             aria-label={closeLabel}
-            className="cursor-pointer rounded-full border border-white/35 bg-black/35 px-2.5 py-1.5 text-sm text-white backdrop-blur-sm"
+            className="cursor-pointer rounded-full border border-white/35 bg-black/55 px-2.5 py-1.5 text-sm text-white"
             onClick={onClose}
           >
             ✕
@@ -105,7 +105,7 @@ export function Lightbox({
             <button
               type="button"
               aria-label={prevLabel}
-              className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full border border-white/35 bg-black/35 px-3 py-2 text-lg text-white backdrop-blur-sm"
+              className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full border border-white/35 bg-black/55 px-3 py-2 text-lg text-white"
               onClick={(e) => {
                 e.stopPropagation()
                 onIndexChange((index - 1 + images.length) % images.length)
@@ -116,7 +116,7 @@ export function Lightbox({
             <button
               type="button"
               aria-label={nextLabel}
-              className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full border border-white/35 bg-black/35 px-3 py-2 text-lg text-white backdrop-blur-sm"
+              className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full border border-white/35 bg-black/55 px-3 py-2 text-lg text-white"
               onClick={(e) => {
                 e.stopPropagation()
                 onIndexChange((index + 1) % images.length)

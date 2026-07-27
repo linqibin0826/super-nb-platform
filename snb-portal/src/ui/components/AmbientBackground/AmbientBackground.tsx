@@ -10,14 +10,18 @@ export interface AmbientBackgroundProps {
   className?: string
 }
 
+/* 🪦 港风霓虹大气（暖橙×青玉×品红三色 rgba 光晕）随零发光 v2 退役——
+   rgb 写法躲过了第一轮 hex 扫描，靠消费面清点才抓出来。
+   v2 的氛围只有一种：沥青顶灯提亮（#161A20，与 fork PublicShell/开卡台同配方），
+   背景无彩色——彩色只属于安全橙那一小撮状态灯。三个 variant 键保留（API 不动），
+   差异只剩灯位：hero=顶部中央 / dusk=底部余晖 / mesh=双侧低亮。 */
 const recipes: Record<AmbientVariant, string> = {
-  // 港风霓虹大气：远处招牌光晕。冷暖对撞是核心——暖橙与青玉不可只留其一
-  hero: 'radial-gradient(680px 420px at 10% -8%, rgba(255, 107, 53, 0.16) 0px, transparent 62%), radial-gradient(600px 380px at 92% 2%, rgba(0, 229, 199, 0.11) 0px, transparent 60%)',
-  dusk: 'radial-gradient(820px 460px at 62% 104%, rgba(255, 61, 219, 0.09) 0%, transparent 64%), radial-gradient(680px 420px at 12% 96%, rgba(255, 107, 53, 0.13) 0%, transparent 62%)',
-  mesh: 'radial-gradient(at 40% 20%, rgba(255, 107, 53, 0.12) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(0, 229, 199, 0.09) 0px, transparent 50%), radial-gradient(at 0% 60%, rgba(255, 61, 219, 0.06) 0px, transparent 50%)',
+  hero: 'radial-gradient(940px 640px at 50% 22%, #161A20 0%, transparent 66%)',
+  dusk: 'radial-gradient(820px 460px at 50% 104%, #161A20 0%, transparent 64%)',
+  mesh: 'radial-gradient(680px 420px at 12% -8%, #14171D 0%, transparent 62%), radial-gradient(600px 380px at 92% 2%, #14171D 0%, transparent 60%)',
 }
 
-/** 氛围光层：品牌签名元素。暗色主题的亮度靠它而非抬高底色（learn 军规） */
+/** 氛围光层：暗色的亮度靠它而非抬高底色（learn 军规） */
 export function AmbientBackground({ variant = 'hero', fixed = true, className }: AmbientBackgroundProps) {
   return (
     <div

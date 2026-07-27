@@ -78,7 +78,8 @@ export function AppHeader({
       className={cx(
         'relative grid grid-cols-[1fr_auto_1fr] items-center px-6 lg:px-10',
         variant === 'solid'
-          ? // sticky 毛玻璃：滚动中导航常驻（studio 顶栏验证过的形态，吸收为规范）
+          ? // sticky 毛玻璃：🚨 这是零发光 v2 全站唯一允许 backdrop-filter 的位置
+            // （滚动内容上的 sticky 顶栏，fork PublicShell 同款例外）
             'sticky top-0 z-40 h-16 border-b border-snb-hairline bg-snb-bg/85 backdrop-blur-md'
           : // hero 永远浮在暗色画面上：加 dark 类锁死暗色 token，不随 ThemeScope 翻浅
             'dark h-20 bg-gradient-to-b from-black/45 to-transparent',
@@ -125,7 +126,7 @@ export function AppHeader({
           )}
           {!menuOpen && items.some((i) => i.dot) && (
             <span
-              className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary-400 animate-pulse motion-reduce:animate-none"
+              className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary-500 animate-snb-dot motion-reduce:animate-none"
               aria-hidden="true"
             />
           )}
@@ -133,13 +134,13 @@ export function AppHeader({
         {children}
       </div>
 
-      {/* <lg 玻璃下拉浮卡（规范 v2：右对齐锚在顶栏下方，与胶囊同玻璃语言） */}
+      {/* <lg 实心下拉浮卡（规范 v2；🪦 玻璃 blur 已随零发光退役，浮卡=实心面板+黑投影） */}
       {menuOpen && (
         <div ref={menuWrapRef} className="lg:hidden">
           <nav
             id={menuId}
             aria-label="全站导航"
-            className="absolute right-4 top-[calc(100%+8px)] z-40 min-w-[210px] rounded-2xl border border-snb-hairline bg-snb-bg/95 shadow-glass-sm backdrop-blur-md"
+            className="absolute right-4 top-[calc(100%+8px)] z-40 min-w-[210px] rounded-[10px] border border-dark-700 bg-dark-800 shadow-glass-sm"
           >
             <ul className="flex flex-col gap-0.5 p-2">
               {items.map((item) => (
@@ -150,18 +151,18 @@ export function AppHeader({
                     aria-current={item.current ? 'page' : undefined}
                     onClick={() => setMenuOpen(false)}
                     className={cx(
-                      'flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-medium no-underline transition-colors',
+                      'flex items-center gap-2.5 rounded-md px-3.5 py-2.5 text-sm font-medium no-underline transition-colors',
                       item.current
-                        ? 'bg-snb-t1/[0.08] text-snb-t1'
+                        ? 'bg-snb-t1/[0.07] text-snb-t1'
                         : item.accent
-                          ? 'text-primary-500 hover:bg-primary-500/10'
+                          ? 'text-snb-t1 hover:bg-snb-t1/[0.06] [&_svg]:text-snb-safety'
                           : 'text-snb-t2 hover:bg-snb-t1/[0.06] hover:text-snb-t1'
                     )}
                   >
                     {item.icon}
                     {item.label}
                     {item.dot && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary-400" aria-hidden="true" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary-500" aria-hidden="true" />
                     )}
                   </a>
                 </li>

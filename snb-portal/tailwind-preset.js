@@ -1,6 +1,9 @@
-/** super-nb 品牌 Tailwind preset：港风霓虹网咖（2026-07-26 换装）
+/** super-nb 品牌 Tailwind preset：零发光网吧 v2（2026-07-27 换装，取代港风霓虹）
  *  语义槽位映射 tokens.css 的 CSS 变量（恒暗单主题，:root 与 .dark 合并声明）。
- *  spec: ai-relay/docs/superpowers/specs/2026-07-26-wangba-visual-language-design.md */
+ *  🚨 色值真源对齐 sub2api fork frontend/tailwind.config.js（safety 阶 / 沥青阶 /
+ *  paper），两边逐字同值、改必同步。
+ *  🪦 三灯管（霓虹橙/jade/magenta）、管芯 core、五层辉光 tube/glow、tubeOn 点火
+ *  随霓虹整条退役——发光是「土」的根因，v2 的强调只有大、亮、橙三样。 */
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -8,36 +11,24 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 主灯管：霓虹橙（钱）——取代赤陶橙 #CC785C
+        // 工业安全橙：全站唯一强调色（fork primary 阶同值）
         primary: {
-          50: '#FFF1EA', 100: '#FFDFCF', 200: '#FFBE9F', 300: '#FF9C6F',
-          400: '#FF843F', 500: '#FF6B35', 600: '#E5551F', 700: '#BC4315',
-          800: '#93340F', 900: '#6B250A', 950: '#3D1404'
+          50: '#FFF3EB', 100: '#FFE4D3', 200: '#FFC7A6', 300: '#FFA372',
+          400: '#FF8342', 500: '#FF5C00', 600: '#DB4F00', 700: '#B04000',
+          800: '#853000', 900: '#5C2100', 950: '#331200'
         },
-        // 副灯管：青玉（量）
-        jade: {
-          50: '#E6FFFB', 100: '#B8FFF3', 200: '#7AFAE7', 300: '#3DEFD8',
-          400: '#12E2CB', 500: '#00E5C7', 600: '#00B8A0', 700: '#008D7B',
-          800: '#00655A', 900: '#00423B', 950: '#00221E'
-        },
-        // 点缀：品红（仪式）
-        // ⚠️ 命名为 magenta 而非 fuchsia——Tailwind 3 内置已有 fuchsia 色阶，
-        //    同名定义会静默覆盖它，让既有的 bg-fuchsia-* 用法变色且不报错
-        magenta: {
-          50: '#FFEBFB', 100: '#FFD1F5', 200: '#FFA3EB', 300: '#FF75E1',
-          400: '#FF52DA', 500: '#FF3DDB', 600: '#DB1FB6', 700: '#AB158D',
-          800: '#7C0F66', 900: '#530A44', 950: '#2C0524'
-        },
-        // 管芯过曝白：所有灯管字本身用它（发光纪律①）
-        core: '#FFF4EA',
-        // 湿沥青夜
-        asphalt: { DEFAULT: '#070910', lit: '#0D111A', plate: '#090C13' },
-        // 中性阶：原暖褐 dark 阶换值保名——MasonryCard/Alert/Skeleton/NavCapsule
-        // 都在用 bg-dark-900 / border-l-dark-500 等，改名会让它们静默失效
+        // 主字纸米白：覆盖 white 一次到位落实「主字不是纯白」纪律（fork 同款）
+        white: '#EFEBE4',
+        // 沥青底（偏青，不是纯黑；fork asphalt 同值）
+        asphalt: { DEFAULT: '#0E1014', lit: '#12151B', plate: '#10131A' },
+        // 中性阶：换值保名——MasonryCard/Alert/Skeleton/NavCapsule 都在用
+        // bg-dark-900 / border-l-dark-500 等，改名会让它们静默失效。
+        // 值 = fork 的 --ink 沥青阶（hex 形式），⚠️ 500→600 断崖是故意的：
+        // 比 faint(500) 更暗的字不许存在，600 起是面色不是字色
         dark: {
-          50: '#EDEFF4', 100: '#D6DAE4', 200: '#AEB5C6', 300: '#828CA3',
-          400: '#5D6780', 500: '#434C61', 600: '#333A4A', 700: '#252B38',
-          800: '#181D27', 900: '#0D111A', 950: '#070910'
+          50: '#F6F4EF', 100: '#EFEBE4', 200: '#CACFD5', 300: '#B2B8C0',
+          400: '#A0A7B0', 500: '#828B96', 600: '#2E3540', 700: '#242A33',
+          800: '#171A20', 900: '#12151B', 950: '#0E1014'
         },
         // 辅助色（中性图表色，不承载品牌，随主题换装不动）
         accent: {
@@ -45,10 +36,10 @@ export default {
           400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
           800: '#1e293b', 900: '#0f172a', 950: '#020617'
         },
-        // 恒暗后 paper 不再是奶油纸，语义变成「亮色前景」（NavCapsule 用 text-paper）
-        paper: { DEFAULT: '#F3E7DA', soft: '#FFF4EA', card: '#FFF4EA' },
-        // 夜色底
-        night: '#070910',
+        // 恒暗后 paper 语义=「亮色前景」（NavCapsule 用 text-paper，键名保留）
+        paper: { DEFAULT: '#EFEBE4', soft: '#EFEBE4', card: '#EFEBE4' },
+        // 夜色底（playground 在用，保名换值）
+        night: '#0E1014',
         // 语义槽位：值来自 tokens.css
         snb: {
           bg: 'rgb(var(--snb-bg) / <alpha-value>)',
@@ -60,43 +51,36 @@ export default {
           t3: 'rgb(var(--snb-t3) / <alpha-value>)',
           hairline: 'var(--snb-hairline)',
           'hairline-strong': 'var(--snb-hairline-strong)',
-          tangerine: 'rgb(var(--snb-tangerine) / <alpha-value>)',
-          jade: 'rgb(var(--snb-jade) / <alpha-value>)',
-          fuchsia: 'rgb(var(--snb-fuchsia) / <alpha-value>)',
-          core: 'rgb(var(--snb-core) / <alpha-value>)',
-          // Alert 的 warning/danger 语义色（键名保留，值换霓虹告警档）
-          amber: '#FFB020',
-          ember: '#FF3B5C'
+          // 强调只有两个：安全橙 + 功能红（🪦 tangerine/jade/fuchsia/core 已删）
+          safety: 'rgb(var(--snb-safety) / <alpha-value>)',
+          danger: 'rgb(var(--snb-danger) / <alpha-value>)',
+          // Alert 的 warning/danger 语义色（键名保留，值收进 v2 双强调——
+          // v2 色板没有黄：警告就是安全橙，危险就是功能红）
+          amber: '#FF5C00',
+          ember: '#E5484D'
         }
       },
       fontFamily: {
-        // 招牌：几何无衬线（Jost = Futura 开源复刻，自托管子集 SUPERNB 七字母，spec §9.2）
+        // 招牌：几何无衬线（Jost = Futura 开源复刻，自托管子集，spec §9.2）
+        // 🚨 v2 纪律：Jost 只给字标与数字
         sign: ['Jost', 'Futura', 'Avenir Next', 'Century Gothic', 'Helvetica Neue', 'Arial', 'sans-serif'],
         sans: [
           'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto',
           'Helvetica Neue', 'Arial', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'sans-serif'
         ],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
-        // ⚠️ display（Georgia 衬线）已删除：编辑风遗产，与霓虹冲突最大。
+        // ⚠️ display（Georgia 衬线）已删除：编辑风遗产。
         //    所有 font-display 使用点须改 font-mono（数字）或 font-sans（中文）。
       },
       boxShadow: {
         card: 'var(--snb-shadow-card)',
         'card-hover': 'var(--snb-shadow-card-hover)',
-        // Hero 级五层衰减辉光（发光纪律②）——全页仅一处
-        tube:
-          '0 0 3px rgb(var(--snb-tangerine) / 1), 0 0 10px rgb(var(--snb-tangerine) / .9), 0 0 26px rgb(var(--snb-tangerine) / .62), 0 0 58px rgb(var(--snb-tangerine) / .36), 0 0 116px rgb(var(--snb-tangerine) / .18)',
-        // 次级两层辉光
-        glow: '0 0 8px rgb(var(--snb-tangerine) / .85), 0 0 24px rgb(var(--snb-tangerine) / .42)',
-        'glow-jade': '0 0 8px rgb(var(--snb-jade) / .85), 0 0 24px rgb(var(--snb-jade) / .42)',
-        // 玻璃卡阴影（键名保留——GlassCard/AppHeader/NavCapsule 都在用，
-        // 删键会让 Tailwind 静默不生成类且不报错）。恒暗后改纯黑阴影。
+        // 🪦 tube / glow / glow-jade 辉光随零发光纪律退役。
+        // glass 两键保名：纯黑投影非辉光，浮层在用（删键会静默不生成类）
         glass: '0 8px 32px rgba(0, 0, 0, 0.45)',
         'glass-sm': '0 4px 16px rgba(0, 0, 0, 0.35)'
       },
-      backgroundImage: {
-        'gradient-primary': 'linear-gradient(135deg, #FF6B35 0%, #E5551F 100%)'
-      },
+      // 🪦 gradient-primary 已删：霓虹渐变，v2 主按钮是纸白平钮不是橙渐变
       borderRadius: {
         lg: '0.625rem', xl: '0.875rem', '2xl': '1.25rem', '3xl': '1.75rem', '4xl': '2rem',
         glass: '18px'
@@ -115,29 +99,20 @@ export default {
           from: { opacity: '0', transform: 'translateY(10px)' },
           to: { opacity: '1', transform: 'translateY(0)' }
         },
-        // 呼吸点：霓虹橙。唯一消费方 NavCapsule 配的是 bg-primary-400 橙色圆点，
-        // 且语义是「活动促销」属钱那一档——光晕必须与点同色，否则橙点发青光
+        // 呼吸点：安全橙扩散环（透明度归零的 ring，不是光晕）。
+        // 全站唯一会动的点——数据永远不闪，会动的只有状态灯
         snbDotPulse: {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgb(var(--snb-tangerine) / .55)' },
-          '50%': { boxShadow: '0 0 0 5px rgb(var(--snb-tangerine) / 0)' }
-        },
-        // 开机点亮：灯管通电过冲闪烁两次后稳定（spec §3.5）
-        tubeOn: {
-          '0%': { opacity: '.1' },
-          '22%': { opacity: '1' },
-          '30%': { opacity: '.25' },
-          '38%': { opacity: '1' },
-          '46%': { opacity: '.5' },
-          '100%': { opacity: '1' }
+          '0%, 100%': { boxShadow: '0 0 0 0 rgb(var(--snb-safety) / .5)' },
+          '50%': { boxShadow: '0 0 0 5px rgb(var(--snb-safety) / 0)' }
         }
+        // 🪦 tubeOn 点火闪烁已删：那是灯管的行为，新体系里没有灯管
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
         'fade-up': 'fadeUp 0.3s ease-out backwards',
-        'snb-dot': 'snbDotPulse 2.4s ease-in-out infinite',
-        'tube-on': 'tubeOn 1.15s both'
+        'snb-dot': 'snbDotPulse 2.2s ease-in-out infinite'
       }
     }
   }

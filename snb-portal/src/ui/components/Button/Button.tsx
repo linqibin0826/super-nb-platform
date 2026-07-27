@@ -13,17 +13,20 @@ const base =
   'inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 disabled:cursor-not-allowed disabled:opacity-50'
 
 const variants: Record<ButtonVariant, string> = {
-  // 签名主键：扁平霓虹橙（填充 600）+ 偏移硬阴影按压（hover 下沉 1px、active 2px）
+  // 签名主键：纸白平钮 + 沥青字（零发光 v2，fork .btn-primary 同款——
+  // 🪦 霓虹橙填充与偏移硬阴影按压随霓虹退役；主按钮靠明度赢，不靠颜色）
   primary:
-    'bg-primary-600 text-white shadow-[0_3px_0_#BC4315] hover:bg-primary-700 hover:translate-y-px hover:shadow-[0_2px_0_#93340F] active:translate-y-0.5 active:shadow-[0_1px_0_#93340F] disabled:translate-y-0 disabled:shadow-[0_3px_0_#BC4315]',
+    'bg-paper font-semibold text-asphalt hover:bg-[#E2DDD3] active:bg-[#D6D0C4]',
   secondary:
     'border border-snb-hairline-strong bg-snb-elv text-snb-t2 shadow-sm hover:bg-snb-panel hover:text-snb-t1',
   ghost: 'bg-transparent text-snb-t2 hover:bg-snb-t1/5 hover:text-snb-t1',
-  // 压在图片上的玻璃键（赞/藏/下载/复制浮层）：暗玻璃 + 内描边，不用硬阴影——阴影在图片上不读数
+  // 压在图片上的浮键（赞/藏/下载/复制）：实心暗底 + 内描边（🪦 blur 随零玻璃退役，
+  // 底加深一档补回图片上的辨识度），不用硬阴影——阴影在图片上不读数
   overlay:
-    'bg-black/40 text-white ring-1 ring-inset ring-white/25 backdrop-blur-sm hover:bg-black/60',
-  // 电影页 CTA：管芯白底 + 沥青字（零灯色，靠周围的暗衬托）
-  hero: 'bg-core text-asphalt hover:bg-white active:translate-y-px',
+    'bg-black/55 text-white ring-1 ring-inset ring-white/25 hover:bg-black/75',
+  // 暗景大 CTA：与 primary 同族纸白（🪦 bg-core 已随管芯退役——那个键删了以后
+  // 这里曾静默失效成透明钮，换键值时最典型的坑）
+  hero: 'bg-paper font-semibold text-asphalt hover:bg-[#E2DDD3] active:translate-y-px',
 }
 
 const sizes: Record<ButtonSize, string> = {

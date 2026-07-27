@@ -95,9 +95,9 @@ export function PaintingCanvas({ seed = 1 }: { seed?: number }) {
       const bx = w * (0.5 + 0.34 * Math.sin(t * 0.24 + phase[0]) + 0.11 * Math.sin(t * 0.83 + phase[1]))
       const by = h * (0.5 + 0.33 * Math.sin(t * 0.19 + phase[2]) + 0.12 * Math.sin(t * 0.67 + phase[3]))
       const dab = ctx.createRadialGradient(bx, by, 0, bx, by, 26)
-      dab.addColorStop(0, 'rgba(255, 107, 53, 0.16)')
-      dab.addColorStop(0.6, 'rgba(255, 107, 53, 0.05)')
-      dab.addColorStop(1, 'rgba(255, 107, 53, 0)')
+      dab.addColorStop(0, 'rgba(255, 92, 0, 0.16)')
+      dab.addColorStop(0.6, 'rgba(255, 92, 0, 0.05)')
+      dab.addColorStop(1, 'rgba(255, 92, 0, 0)')
       ctx.fillStyle = dab
       ctx.beginPath()
       ctx.arc(bx, by, 26, 0, Math.PI * 2)
@@ -139,7 +139,7 @@ export function PaintingCanvas({ seed = 1 }: { seed?: number }) {
         ctx.fillStyle =
           e.warm > 0.6
             ? `rgba(255, 224, 204, ${0.5 * twinkle})`
-            : `rgba(255, 107, 53, ${0.65 * twinkle})`
+            : `rgba(255, 92, 0, ${0.65 * twinkle})`
         ctx.beginPath()
         ctx.arc(ex, ey, e.r, 0, Math.PI * 2)
         ctx.fill()

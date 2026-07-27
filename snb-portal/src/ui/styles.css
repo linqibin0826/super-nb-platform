@@ -3,33 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ═══ 港风霓虹辉光工具（2026-07-26，取代墨色黄铜纪律）═══
-   发光纪律①：管芯用过曝白，彩色只活在 text-shadow 里——
-   绝不把字本身设成霓虹色，那是廉价发光的根源。
-   辉光三档不得混用，层级塌陷即掉价。 */
+/* ═══ 零发光网吧 v2（2026-07-27，取代港风霓虹辉光工具）═══
+   🪦 .snb-tube / .snb-glow / .snb-glow-jade 三档 text-shadow 辉光整段退役——
+   霓虹被站长判「土」，复盘根因就是发光：满屏都在发光等于什么都不亮。
+   v2 的强调手段只有三样：大（尺寸）、亮（paper vs dim/faint 明度差）、
+   橙（--snb-safety 一小撮）。谁都不许再往字上加光。 */
 
-/* Hero 级：五层衰减，全页仅一处 */
-.snb-tube {
-  color: rgb(var(--snb-core));
-  text-shadow:
-    0 0 3px rgb(var(--snb-tangerine) / 1),
-    0 0 10px rgb(var(--snb-tangerine) / 0.9),
-    0 0 26px rgb(var(--snb-tangerine) / 0.62),
-    0 0 58px rgb(var(--snb-tangerine) / 0.36),
-    0 0 116px rgb(var(--snb-tangerine) / 0.18);
-}
-
-/* 次级：两层 */
-.snb-glow {
-  color: rgb(var(--snb-core));
-  text-shadow: 0 0 8px rgb(var(--snb-tangerine) / 0.85), 0 0 24px rgb(var(--snb-tangerine) / 0.42);
-}
-.snb-glow-jade {
-  color: rgb(var(--snb-core));
-  text-shadow: 0 0 8px rgb(var(--snb-jade) / 0.85), 0 0 24px rgb(var(--snb-jade) / 0.42);
-}
-
-/* 大气介质（发光纪律④）：无噪点的纯 CSS 渐变会有塑料感 */
+/* 大气介质：无噪点的纯 CSS 渐变会有塑料感——颗粒不能省 */
 .snb-air::after {
   content: '';
   position: absolute;
