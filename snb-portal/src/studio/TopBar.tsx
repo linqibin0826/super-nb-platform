@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AppHeader, type SiteNavItem } from '../ui'
 import { useAuthUser } from '../auth/useAuth'
 import { apiFetch, loginUrl } from '../auth/apiFetch'
+import { UserMenu } from '../auth/UserMenu'
 import { CONSOLE_ORIGIN } from '../config'
 import { t } from '../i18n'
 
@@ -77,19 +78,14 @@ export function TopBar() {
               </span>
             </div>
           )}
-          <a
-            aria-label={t('studio.nav.avatar')}
-            href={consoleHref('/dashboard')}
-            className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full border border-snb-hairline-strong bg-snb-elv text-xs font-semibold text-snb-t2 no-underline transition-colors hover:text-snb-t1"
-          >
-            {user.email.charAt(0).toUpperCase()}
-          </a>
-          <a
-            href={consoleHref('/logout')}
-            className="inline-flex items-center whitespace-nowrap rounded-full bg-transparent px-3 py-1.5 text-xs font-medium text-snb-t2 transition-colors hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
-          >
-            {t('studio.nav.logout')}
-          </a>
+          <UserMenu
+            user={user}
+            dashboardHref={consoleHref('/dashboard')}
+            logoutHref={consoleHref('/logout')}
+            dashboardLabel={t('studio.nav.console')}
+            logoutLabel={t('studio.nav.logout')}
+            ariaLabel={t('studio.nav.avatar')}
+          />
         </>
       ) : (
         // ui Button 不支持 as/href（ButtonHTMLAttributes），用 <a> 内联复刻 ghost/primary sm 观感
