@@ -124,12 +124,19 @@ UPDATE activity.achievement_definition SET name = '百日常客',
   flavor_text = '认识满百天，网管开始跟你唠嗑了。' WHERE code = 'account_anniv_1';
 UPDATE activity.achievement_definition SET name = '周年老会员',
   flavor_text = '一整年，你比很多会员卡的寿命都长。' WHERE code = 'account_anniv_2';
+UPDATE activity.achievement_definition SET name = '开业头一批',
+  flavor_text = '开业那个月你就在场——绝版，不再版。' WHERE code = 'exclusive_founding_issue';
+UPDATE activity.achievement_definition SET name = '开业月全勤',
+  flavor_text = '开业首月一天没缺，这个章以后真印不出来了。' WHERE code = 'exclusive_founding_fullmonth';
+
+-- 隐藏关卡(5)——2026-07-28 注释归属勘正(全局 review low):midnight_courier/ghost_return
+-- 的 V9 真实 category 是「机密档案→隐藏关卡」,初版注释把它们错记在「上网时长」组;
+-- exclusive_founding_* 的 category 是「考勤本纪→上网时长」,初版错记在「元老档案」组。
+-- UPDATE 按 code 定位,挪的只是注释归属与语句位置,行为零变化。
 UPDATE activity.achievement_definition SET name = '零点上机',
   flavor_text = '零点整准时刷卡——闹钟辛苦了。' WHERE code = 'midnight_courier';
 UPDATE activity.achievement_definition SET name = '回头客',
   flavor_text = '消失一个月，你的机位还给你留着。' WHERE code = 'ghost_return';
-
--- 隐藏关卡 / 其余
 UPDATE activity.achievement_definition SET name = '通宵场',
   flavor_text = '凌晨的网吧，只剩你这台还亮着。' WHERE code = 'late_night_room';
 UPDATE activity.achievement_definition SET name = '陪跑',
@@ -137,13 +144,7 @@ UPDATE activity.achievement_definition SET name = '陪跑',
 UPDATE activity.achievement_definition SET name = '职业陪跑',
   flavor_text = '陪跑满五场，该给你发个纪念币。' WHERE code = 'raffle_companion_2';
 
--- 元老档案(3)
-UPDATE activity.achievement_definition SET name = '开业头一批',
-  flavor_text = '开业那个月你就在场——绝版，不再版。' WHERE code = 'exclusive_founding_issue';
-UPDATE activity.achievement_definition SET name = '开业月全勤',
-  flavor_text = '开业首月一天没缺，这个章以后真印不出来了。' WHERE code = 'exclusive_founding_fullmonth';
-
--- 元成就（点亮其他成就后解锁）
+-- 元老档案(3)：元成就（点亮其他成就后解锁）
 UPDATE activity.achievement_definition SET name = '熟客认证',
   flavor_text = '十枚成就到手，你已经不算新人了。' WHERE code = 'meta_regular';
 UPDATE activity.achievement_definition SET name = '开卡手续齐了',
