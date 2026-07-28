@@ -522,14 +522,14 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
   },
   en: {
     hub: {
-      title: 'Content Hub',
+      title: 'Magazine Rack',
       nav: {
-        console: 'Console',
-        studio: 'Creative Studio',
-        hub: 'Content Hub',
-        activity: 'Events',
+        console: 'My Station',
+        studio: 'Art Station',
+        hub: 'Magazine Rack',
+        activity: "Today's Events",
         login: 'Sign in',
-        signup: 'Sign up',
+        signup: 'Open a Card',
         logout: 'Sign out',
         theme: 'Toggle light / dark theme',
       },
@@ -568,7 +568,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       },
       article: {
         notFound: 'Content not found or unpublished',
-        backHome: 'Back to Content Hub',
+        backHome: 'Back to the Magazine Rack',
         source: 'Source: ',
         original: 'Original',
         readingTime: '{n} min read',
@@ -593,13 +593,13 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       },
     },
     studio: {
-      title: 'Creative Studio',
+      title: 'Art Station',
       nav: {
-        console: 'Console',
-        hub: 'Content Hub',
-        activity: 'Events',
+        console: 'My Station',
+        hub: 'Magazine Rack',
+        activity: "Today's Events",
         login: 'Sign in',
-        signup: 'Sign up',
+        signup: 'Open a Card',
         logout: 'Sign out',
         balance: 'Balance',
         themeToggle: 'Toggle light / dark theme',
@@ -741,7 +741,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
         close: 'Close',
       },
       footer: {
-        brand: 'SUPER·NB · Creative Studio',
+        brand: 'SUPER·NB · Art Station',
         notice: 'AI-generated content · follow local laws and platform terms',
       },
     },
@@ -825,7 +825,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
     },
     invoice: {
       title: 'Invoice Center',
-      nav: { console: 'Console', studio: 'Creative Studio', hub: 'Content Hub', activity: 'Events', login: 'Log in', theme: 'Toggle theme' },
+      nav: { console: 'My Station', studio: 'Art Station', hub: 'Magazine Rack', activity: "Today's Events", login: 'Log in', theme: 'Toggle theme' },
       tabs: { apply: 'Apply', requests: 'My Requests', profiles: 'Billing Profiles' },
       guide: {
         title: 'How Invoicing Works',
