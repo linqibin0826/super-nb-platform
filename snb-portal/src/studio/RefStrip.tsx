@@ -39,7 +39,7 @@ function RefThumb({ item, reduceMotion, onRemove }: RefThumbProps) {
             type="button"
             onClick={onRemove}
             aria-label={t('studio.editor.refRemove')}
-            className="absolute right-1 top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-black/50 p-0 text-[12px] leading-none text-white opacity-0 backdrop-blur-sm transition-opacity duration-150 hover:bg-black/65 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-500/60 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+            className="absolute right-1 top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-black/65 p-0 text-[12px] leading-none text-white opacity-0 transition-opacity duration-150 hover:bg-black/65 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-500/60 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
           >
             ×
           </button>

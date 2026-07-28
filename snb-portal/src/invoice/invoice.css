@@ -841,9 +841,8 @@ textarea.iv-fpin { resize: none; overflow: hidden; display: block; width: 100%; 
   position: fixed;
   inset: 0;
   z-index: 90;
-  background: rgba(17, 13, 9, 0.45);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  /* 零发光 v2:backdrop blur 摘除(review #3,唯一例外=顶栏),遮蔽力靠底色加深 */
+  background: rgba(17, 13, 9, 0.62);
   display: grid;
   place-items: center;
   padding: 20px;

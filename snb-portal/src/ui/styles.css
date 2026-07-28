@@ -3,6 +3,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 招牌字体 Jost 自托管（2026-07-28 全局 review #2 补账）：preset 的 font-sign 与
+   BrandLogo 此前是"无字体文件的承诺"——Mac 靠系统 Futura 撑着看不出来，Windows
+   直接退到 Century Gothic/Arial，几何感全丢（fork 侧 07-27 已补过同款账）。
+   可变字体 wght 100–900 一个文件全覆盖，latin 子集 26KB，Google Fonts v20，
+   SIL OFL 1.1 允许自托管；只声明 latin——招牌是英文，中文由字体栈后备逐字回退。 */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./assets/fonts/jost-latin-var.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+2013-2014, U+2018-2019, U+201C-201D, U+00B7;
+}
+
 /* ═══ 零发光网吧 v2（2026-07-27，取代港风霓虹辉光工具）═══
    🪦 .snb-tube / .snb-glow / .snb-glow-jade 三档 text-shadow 辉光整段退役——
    霓虹被站长判「土」，复盘根因就是发光：满屏都在发光等于什么都不亮。

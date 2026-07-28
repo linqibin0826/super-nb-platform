@@ -63,7 +63,7 @@ export function ResultsTray({ queue, onPreview, onClose }: Props) {
       animate={{ y: 0, opacity: 1 }}
       exit={reduceMotion ? { opacity: 0 } : { y: 16, opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 360, damping: 34 }}
-      className="pointer-events-auto overflow-hidden rounded-[20px] border border-snb-hairline-strong bg-snb-panel/95 shadow-[0_16px_40px_-10px_rgba(70,50,38,0.30)] backdrop-blur-xl dark:shadow-[0_18px_48px_-10px_rgba(0,0,0,0.6)]"
+      className="pointer-events-auto overflow-hidden rounded-[20px] border border-snb-hairline-strong bg-snb-panel shadow-[0_16px_40px_-10px_rgba(70,50,38,0.30)] dark:shadow-[0_18px_48px_-10px_rgba(0,0,0,0.6)]"
     >
       {/* 60vh 上限配合卡片 40vh 封顶；100dvh-380px 给底下票根留位，矮屏整栈不超视口 */}
       <div className="max-h-[min(60vh,640px,calc(100dvh-380px))] overflow-y-auto p-5">

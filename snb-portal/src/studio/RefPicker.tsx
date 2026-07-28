@@ -44,7 +44,7 @@ export function RefPicker({ onClose, onAddFiles, recentUploads }: Props) {
       animate={{ y: 0, opacity: 1, scale: 1 }}
       exit={reduceMotion ? { opacity: 0 } : { y: 8, opacity: 0, scale: 0.98 }}
       transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }}
-      className="absolute bottom-[calc(100%+10px)] left-0 z-20 w-full origin-bottom-left overflow-hidden rounded-[18px] border border-snb-hairline-strong bg-snb-panel/95 shadow-[0_16px_40px_-10px_rgba(70,50,38,0.30)] backdrop-blur-xl dark:shadow-[0_18px_48px_-10px_rgba(0,0,0,0.6)] sm:w-[580px]"
+      className="absolute bottom-[calc(100%+10px)] left-0 z-20 w-full origin-bottom-left overflow-hidden rounded-[18px] border border-snb-hairline-strong bg-snb-panel shadow-[0_16px_40px_-10px_rgba(70,50,38,0.30)] dark:shadow-[0_18px_48px_-10px_rgba(0,0,0,0.6)] sm:w-[580px]"
       role="dialog"
       aria-label={t('studio.composer.pickerTitle')}
     >

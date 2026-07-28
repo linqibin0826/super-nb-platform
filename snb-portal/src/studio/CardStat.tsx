@@ -24,7 +24,7 @@ export function CardStat({ kind, on, count, label, onToggle }: Props) {
         onToggle()
       }}
       // 焦点环：白/70 在亮图上糊成一圈浅灰晕（显脏）→ 改用带偏移的清晰白环，像有意的焦点态而非光晕
-      className="inline-flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-black/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50"
+      className="inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-black/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50"
     >
       <span className={`flex ${iconColor}`}>
         {kind === 'like' ? <HeartIcon filled={on} /> : <BookmarkIcon filled={on} />}

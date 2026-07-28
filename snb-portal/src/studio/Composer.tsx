@@ -235,7 +235,7 @@ export function Composer(p: ComposerProps) {
         {pulsing ? t('studio.composer.applied') : ''}
       </span>
 
-      <div className="relative overflow-hidden rounded-[22px] border border-snb-hairline-strong bg-snb-panel/90 shadow-[0_16px_40px_-10px_rgba(70,50,38,0.30)] backdrop-blur-xl dark:shadow-[0_18px_48px_-10px_rgba(0,0,0,0.6)]">
+      <div className="relative overflow-hidden rounded-[22px] border border-snb-hairline-strong bg-snb-panel shadow-[0_16px_40px_-10px_rgba(70,50,38,0.30)] dark:shadow-[0_18px_48px_-10px_rgba(0,0,0,0.6)]">
         {/* 拖拽悬停提示：整卡任意位置松手即加参考图 */}
         {dragging && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[22px] border-2 border-dashed border-primary-500 bg-primary-500/10">

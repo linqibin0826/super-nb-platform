@@ -80,7 +80,7 @@ export function PromptSheet({
         type="button"
         aria-label={t('studio.gallery.sheetClose')}
         onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70"
       />
       <motion.div
         initial={reduceMotion ? false : { y: '100%' }}

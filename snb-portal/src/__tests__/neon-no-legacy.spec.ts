@@ -64,7 +64,9 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
   })
 
   it('衬线 display 字体遗产清零（发票票据本体除外）', () => {
-    expect(offenders(/font-display|Georgia|Songti|STSong/, isInvoiceTicket)).toEqual([])
+    // font-display(?!\s*:) 否定环视:CSS 合法属性 font-display: swap(@font-face,2026-07-28
+    // 随 Jost 自托管入库)与退役的 Tailwind font-display 工具类同名,fork 侧同款断言先例
+    expect(offenders(/font-display(?!\s*:)|Georgia|Songti|STSong/, isInvoiceTicket)).toEqual([])
   })
 
   it('主题切换能力清零（恒暗，留任何入口都可能把站点切回浅色）', () => {
@@ -79,7 +81,7 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
 
   it('🪦 港风霓虹三灯/管芯/霓虹纸清零（hex 与 rgb 逗号/空格双写法全钉）', () => {
     expect(offenders(/FF6B35|00E5C7|FF3DDB|FFF4EA|F3E7DA|FF9C6F|FFBE9F/i)).toEqual([])
-    expect(offenders(/255,?\s+107,?\s+53|0,?\s+229,?\s+199|255,?\s+61,?\s+219/)).toEqual([])
+    expect(offenders(/255[,\s]+107[,\s]+53|0[,\s]+229[,\s]+199|255[,\s]+61[,\s]+219/)).toEqual([])
   })
 
   it('🪦 锈色中性档与旧沥青阶清零（v2 中性回归灰阶，沥青换 #0E1014 系）', () => {
@@ -101,5 +103,14 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
   it('text-shadow 全域清零（唯二例外：画墙图片蒙层上的可读性投影，不是辉光）', () => {
     const isImageOverlay = (p: string) => p === 'studio/GalleryTab.tsx' || p === 'studio/FavoritesTab.tsx'
     expect(offenders(/text-shadow/, isImageOverlay)).toEqual([])
+  })
+
+  it('🚨 backdrop-filter 全域清零（唯一例外：vendored AppHeader 的 sticky 顶栏）', () => {
+    // 2026-07-28 全局 review #3：这条纪律与零 text-shadow 同级，此前却零断言——
+    // studio 六处浮层 + invoice 引导蒙层的 backdrop-blur 全靠人眼漏了整整一批
+    // （旧色值扫描扫不到不含色值的 backdrop-blur-* 类，系统性盲区）。现已全部实心化，
+    // 遮蔽力走底色不透明度（GlassCard 实心化同款先例）。
+    const isStickyHeader = (p: string) => p === 'ui/components/AppHeader/AppHeader.tsx'
+    expect(offenders(/backdrop-filter|backdrop-blur/, isStickyHeader)).toEqual([])
   })
 })
