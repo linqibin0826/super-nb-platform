@@ -87,7 +87,7 @@ export default defineConfig({
     host: '127.0.0.1', // 与 studio 同理：本地 SSO cookie 靠 host 一致跨端口共享
     port: 3200,
     proxy: {
-      '/api': 'http://127.0.0.1:8080',
+      '/api': process.env.PORTAL_API_TARGET || 'http://127.0.0.1:8080',
       '/content/v1': process.env.HUB_PLATFORM_TARGET || 'http://127.0.0.1:8081',
     },
   },

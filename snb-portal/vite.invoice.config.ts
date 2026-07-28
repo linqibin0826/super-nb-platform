@@ -23,7 +23,7 @@ export default defineConfig({
     host: '127.0.0.1', // 本地 SSO cookie 靠 host 一致跨端口共享(studio/hub 同款)
     port: 3300,
     proxy: {
-      '/api': 'http://127.0.0.1:8080',
+      '/api': process.env.PORTAL_API_TARGET || 'http://127.0.0.1:8080',
       '/invoice/v1': process.env.INVOICE_PLATFORM_TARGET || 'http://127.0.0.1:8081',
       '/guide/v1': process.env.INVOICE_PLATFORM_TARGET || 'http://127.0.0.1:8081',
     },

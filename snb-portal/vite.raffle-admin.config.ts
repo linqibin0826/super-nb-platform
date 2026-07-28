@@ -23,7 +23,7 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 3400,
     proxy: {
-      '/api': 'http://127.0.0.1:8080',
+      '/api': process.env.PORTAL_API_TARGET || 'http://127.0.0.1:8080',
       '/activity/v1': process.env.RAFFLE_PLATFORM_TARGET || 'http://127.0.0.1:8081',
     },
   },

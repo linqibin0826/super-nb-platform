@@ -77,7 +77,8 @@ export default defineConfig({
     port: 3100,
     // 代理必须显式 127.0.0.1（裸 localhost 有 IPv6 坑）
     proxy: {
-      '/api': 'http://127.0.0.1:8080',
+      // PORTAL_API_TARGET：四站统一的用户 API 上游开关（本地联审接生产=指垫片 8081）
+      '/api': process.env.PORTAL_API_TARGET || 'http://127.0.0.1:8080',
       // 生成链路可单独指到假上游演示/验证（本地栈渠道是真上游 key，绝不真调上游红线）：
       // STUDIO_V1_TARGET=http://127.0.0.1:8180 pnpm dev
       '/v1': process.env.STUDIO_V1_TARGET || 'http://127.0.0.1:8080',
