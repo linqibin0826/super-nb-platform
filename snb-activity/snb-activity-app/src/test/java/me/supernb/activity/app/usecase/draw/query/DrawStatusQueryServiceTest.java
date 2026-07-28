@@ -30,19 +30,19 @@ class DrawStatusQueryServiceTest {
     @Test
     void computesEligibilityAndRemaining() {
         when(campaignPort.activeCampaign()).thenReturn(Optional.of(campaign));
-        when(rechargePort.totalRecharge(7, campaign.startsAt(), campaign.endsAt())).thenReturn(new BigDecimal("250"));
+        when(rechargePort.totalRecharge(7, campaign.startsAt(), campaign.endsAt())).thenReturn(new BigDecimal("125"));
         when(drawPort.countDraws(1, 7)).thenReturn(1);
 
         DrawStatus s = useCase.status(7);
 
         assertThat(s.eligible()).isTrue();
-        assertThat(s.remaining()).isEqualTo(1); // floor(250/100)=2 - used 1
+        assertThat(s.remaining()).isEqualTo(1); // floor(125/50)=2 - used 1
     }
 
     @Test
     void notEligibleBelowThreshold() {
         when(campaignPort.activeCampaign()).thenReturn(Optional.of(campaign));
-        when(rechargePort.totalRecharge(7, campaign.startsAt(), campaign.endsAt())).thenReturn(new BigDecimal("80"));
+        when(rechargePort.totalRecharge(7, campaign.startsAt(), campaign.endsAt())).thenReturn(new BigDecimal("40"));
         when(drawPort.countDraws(1, 7)).thenReturn(0);
 
         DrawStatus s = useCase.status(7);
