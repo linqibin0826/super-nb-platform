@@ -20,6 +20,7 @@ import me.supernb.activity.adapter.rest.response.CheckinRewardsResponse;
 import me.supernb.activity.adapter.rest.response.CheckinStatusResponse;
 import me.supernb.activity.adapter.rest.response.RegistryStatusResponse;
 import me.supernb.activity.app.usecase.achievement.command.MarkAchievementsSeenCommand;
+import me.supernb.activity.app.usecase.achievement.config.AchievementProperties;
 import me.supernb.activity.app.usecase.achievement.query.AchievementWallQueryService;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
@@ -88,9 +89,10 @@ public class ActivityController {
     private final CheckinStatusQueryService checkinStatusQuery;
     private final CheckinRewardQueryService checkinRewardQuery;
     private final AchievementWallQueryService achievementWallQuery;
+    private final AchievementProperties achievementProps;
 
     /// 构造:注入 CommandBus 与十二个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、
-    /// 拉新榜、用量榜、发布会、注册表状态、签到状态、我的补给发放记录)。
+    /// 拉新榜、用量榜、发布会、注册表状态、签到状态、我的补给发放记录)与成就系统开关。
     public ActivityController(
             CommandBus commandBus,
             DrawStatusQueryService drawStatusQuery,
@@ -105,7 +107,8 @@ public class ActivityController {
             RegistryStatusQueryService registryStatusQuery,
             CheckinStatusQueryService checkinStatusQuery,
             CheckinRewardQueryService checkinRewardQuery,
-            AchievementWallQueryService achievementWallQuery) {
+            AchievementWallQueryService achievementWallQuery,
+            AchievementProperties achievementProps) {
         this.commandBus = commandBus;
         this.drawStatusQuery = drawStatusQuery;
         this.leaderboardQuery = leaderboardQuery;
@@ -120,6 +123,7 @@ public class ActivityController {
         this.checkinStatusQuery = checkinStatusQuery;
         this.checkinRewardQuery = checkinRewardQuery;
         this.achievementWallQuery = achievementWallQuery;
+        this.achievementProps = achievementProps;
     }
 
     /// 活动期充值榜 Top10(公开)。无进行中活动 → 空列表,不是异常。
@@ -339,16 +343,26 @@ public class ActivityController {
     }
 
     /// 我的成就墙(需登录,仅本人;隐藏关卡未解锁项服务端脱敏,name/condition 恒 null)。
+    /// 🪦 成就系统停用时(activity.achievement.enabled=false,2026-07-28 站长拍板暂时下线)恒 404
+    /// ——判定 bean 已整体不装配,读端点若继续吐墙会让"下线"变成只藏入口的假下线。
     @GetMapping("/checkin/achievements")
     public AchievementWallResponse checkinAchievements(@CurrentUser UserProfile user) {
+        requireAchievementsEnabled();
         return AchievementWallResponse.of(achievementWallQuery.wall(user.id()));
     }
 
-    /// 标记成就已读(需登录;幂等,重复标记不报错,响应 acknowledged=实际新标记行数)。
+    /// 标记成就已读(需登录;幂等,重复标记不报错,响应 acknowledged=实际新标记行数)。停用时恒 404。
     @PostMapping("/checkin/achievements/seen")
     public MarkAchievementsSeenResponse markAchievementsSeen(@CurrentUser UserProfile user,
             @RequestBody MarkAchievementsSeenRequest request) {
+        requireAchievementsEnabled();
         int acknowledged = commandBus.handle(new MarkAchievementsSeenCommand(user.id(), request.codes()));
         return new MarkAchievementsSeenResponse(acknowledged);
+    }
+
+    private void requireAchievementsEnabled() {
+        if (!achievementProps.enabled()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "achievements disabled");
+        }
     }
 }

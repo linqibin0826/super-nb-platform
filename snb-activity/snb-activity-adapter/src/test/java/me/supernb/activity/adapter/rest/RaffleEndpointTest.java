@@ -18,6 +18,7 @@ import java.util.Optional;
 import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
+import me.supernb.activity.app.usecase.achievement.config.AchievementProperties;
 import me.supernb.activity.app.usecase.achievement.query.AchievementWallQueryService;
 import me.supernb.activity.app.usecase.checkin.query.CheckinRewardQueryService;
 import me.supernb.activity.app.usecase.checkin.query.CheckinStatusQueryService;
@@ -63,7 +64,8 @@ class RaffleEndpointTest {
                 mock(ReferralLeaderboardQueryService.class), mock(UsageLeaderboardQueryService.class),
                 raffleQuery, mock(RegistryStatusQueryService.class),
                 mock(CheckinStatusQueryService.class), mock(CheckinRewardQueryService.class),
-                mock(AchievementWallQueryService.class));
+                mock(AchievementWallQueryService.class),
+                new AchievementProperties(false, true));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();

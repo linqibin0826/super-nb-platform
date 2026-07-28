@@ -6,12 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
 import me.supernb.activity.domain.port.metric.UserMetricPort;
 import me.supernb.activity.domain.port.read.LeaderboardAchievementSignalPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /// 排行榜成就 metric 生产者(日频,00:10——晚于既有 RankSnapshotJob 的 00:05,
 /// 早于 30 天清理窗口,深化稿 §6.3)。
 @Slf4j
+@ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class LeaderboardMetricSyncJob {
 

@@ -6,12 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
 import me.supernb.activity.domain.port.metric.UserMetricPort;
 import me.supernb.activity.domain.port.read.ReferralAchievementSignalPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /// 拉新达人成就 metric 生产者(日频)。有效口径 = 被邀者 api_call_total_count ≥1
 /// (决策④,收紧"纯注册计数"这个滥用史同款漏洞)。
 @Slf4j
+@ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class ReferralMetricSyncJob {
 

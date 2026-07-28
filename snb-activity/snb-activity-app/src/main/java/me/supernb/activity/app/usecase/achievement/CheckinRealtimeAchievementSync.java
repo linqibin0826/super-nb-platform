@@ -3,6 +3,7 @@ package me.supernb.activity.app.usecase.achievement;
 import lombok.extern.slf4j.Slf4j;
 import me.supernb.activity.app.usecase.checkin.command.UserCheckedInEvent;
 import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 /// 全部成就判定)。异常一律吞掉——打卡已成功提交,成就同步失败由日频同步(次日 00:20)+每小时
 /// 判定引擎兜底,绝不因成就侧问题让打卡接口报错。
 @Slf4j
+@ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class CheckinRealtimeAchievementSync {
 

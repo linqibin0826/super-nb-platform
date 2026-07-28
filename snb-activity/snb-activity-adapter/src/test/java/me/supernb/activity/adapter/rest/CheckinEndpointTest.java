@@ -19,6 +19,7 @@ import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
 import me.supernb.activity.app.usecase.checkin.command.CheckInCommand;
+import me.supernb.activity.app.usecase.achievement.config.AchievementProperties;
 import me.supernb.activity.app.usecase.achievement.query.AchievementWallQueryService;
 import me.supernb.activity.app.usecase.checkin.query.CheckinRewardQueryService;
 import me.supernb.activity.app.usecase.checkin.query.CheckinStatusQueryService;
@@ -71,7 +72,8 @@ class CheckinEndpointTest {
                 mock(RecentDrawsQueryService.class), mock(MyDrawsQueryService.class),
                 mock(ReferralLeaderboardQueryService.class), mock(UsageLeaderboardQueryService.class),
                 mock(RaffleQueryService.class), mock(RegistryStatusQueryService.class),
-                statusQuery, rewardQuery, mock(AchievementWallQueryService.class));
+                statusQuery, rewardQuery, mock(AchievementWallQueryService.class),
+                new AchievementProperties(false, true));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
@@ -132,6 +134,35 @@ class CheckinEndpointTest {
                 .andExpect(jsonPath("$.milestones[0].statusText").value("已打穿"))
                 .andExpect(jsonPath("$.supply.tiers[1].state").value("progress"))
                 .andExpect(jsonPath("$.supply.gaugeNote").value("距 B 档还差 ¥14"));
+    }
+
+    /// 🪦 成就系统停用态(2026-07-28 站长拍板暂时下线,生产默认 enabled=false):
+    /// 墙/已读两个端点恒 404;签到三端点(打卡/状态/台账)不受影响——这条钉住
+    /// "下线只切成就、签到完好"的边界,防止将来有人把开关误接到签到链路上。
+    @Test
+    void achievementEndpointsReturn404WhenSystemDisabled() throws Exception {
+        ActivityController disabled = new ActivityController(
+                commandBus, mock(DrawStatusQueryService.class), mock(LeaderboardQueryService.class),
+                mock(RecentRechargesQueryService.class), mock(PoolQueryService.class),
+                mock(RecentDrawsQueryService.class), mock(MyDrawsQueryService.class),
+                mock(ReferralLeaderboardQueryService.class), mock(UsageLeaderboardQueryService.class),
+                mock(RaffleQueryService.class), mock(RegistryStatusQueryService.class),
+                statusQuery, rewardQuery, mock(AchievementWallQueryService.class),
+                new AchievementProperties(false, false));
+        MockMvc off = MockMvcBuilders.standaloneSetup(disabled)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
+                .build();
+
+        off.perform(get("/activity/v1/checkin/achievements").header("Authorization", "Bearer T"))
+                .andExpect(status().isNotFound());
+        off.perform(post("/activity/v1/checkin/achievements/seen").header("Authorization", "Bearer T")
+                .contentType("application/json").content("{\"codes\":[\"checkin_first\"]}"))
+                .andExpect(status().isNotFound());
+
+        // 签到本体在同一停用实例上完好
+        when(statusQuery.status(42)).thenReturn(statusView(false));
+        off.perform(get("/activity/v1/checkin/status").header("Authorization", "Bearer T"))
+                .andExpect(status().isOk());
     }
 
     @Test

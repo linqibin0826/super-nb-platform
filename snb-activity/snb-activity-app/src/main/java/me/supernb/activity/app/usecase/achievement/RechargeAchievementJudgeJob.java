@@ -12,6 +12,7 @@ import me.supernb.activity.domain.port.achievement.AchievementCatalogPort;
 import me.supernb.activity.domain.port.achievement.AchievementUnlockPort;
 import me.supernb.activity.domain.port.read.AchievementRechargeReadPort;
 import me.supernb.activity.domain.port.scan.ScanWatermarkPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 /// 类目原名"补给记录",V15 网吧换名后本类的 category 过滤串必须与 DB 同步——
 /// 2026-07-28 矩阵测试抓出漏改:旧串筛出空集,网费四条成就在真实链路上永不解锁)。
 @Slf4j
+@ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class RechargeAchievementJudgeJob {
 

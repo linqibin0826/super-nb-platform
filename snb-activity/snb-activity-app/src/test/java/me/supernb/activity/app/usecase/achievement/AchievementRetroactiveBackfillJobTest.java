@@ -35,8 +35,10 @@ class AchievementRetroactiveBackfillJobTest {
             new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, false));
 
     private AchievementRetroactiveBackfillJob job(boolean enabled) {
+        // 第二参=成就系统总闸:单测里直接 new job,不经 Spring 装配,@ConditionalOnProperty 不生效,
+        // 传 true 只为构造语义一致(首刷开关的行为由第一参控制)
         return new AchievementRetroactiveBackfillJob(metricPort, catalogPort, watermarkPort, judgeEngine,
-                new AchievementProperties(enabled));
+                new AchievementProperties(enabled, true));
     }
 
     @Test

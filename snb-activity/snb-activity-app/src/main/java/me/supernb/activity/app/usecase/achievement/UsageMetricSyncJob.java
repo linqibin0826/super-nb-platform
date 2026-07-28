@@ -9,6 +9,7 @@ import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementPropertie
 import me.supernb.activity.domain.port.metric.UserMetricPort;
 import me.supernb.activity.domain.port.read.UsageMetricSignalPort;
 import me.supernb.activity.domain.port.scan.ScanWatermarkPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 /// 额外把窗口下界往回多看,兜底漏跑(两个指标窗口策略故意不同,见任务说明)。
 /// 日终峰值(23:30)现查当天,不增量,只在超过既有峰值时更新。
 @Slf4j
+@ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class UsageMetricSyncJob {
 

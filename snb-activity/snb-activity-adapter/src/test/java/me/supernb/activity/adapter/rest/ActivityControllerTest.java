@@ -18,6 +18,7 @@ import me.supernb.activity.app.usecase.campaign.query.LeaderboardQueryService;
 import me.supernb.activity.app.usecase.campaign.query.PoolQueryService;
 import me.supernb.activity.app.usecase.campaign.query.RecentRechargesQueryService;
 import me.supernb.activity.app.usecase.achievement.command.MarkAchievementsSeenCommand;
+import me.supernb.activity.app.usecase.achievement.config.AchievementProperties;
 import me.supernb.activity.app.usecase.achievement.query.AchievementWallQueryService;
 import me.supernb.activity.app.usecase.checkin.query.CheckinRewardQueryService;
 import me.supernb.activity.app.usecase.checkin.query.CheckinStatusQueryService;
@@ -77,7 +78,8 @@ class ActivityControllerTest {
                 poolQuery, recentDrawsQuery, myDrawsQuery, referralQuery, usageLeaderboardQuery,
                 mock(RaffleQueryService.class), registryStatusQuery,
                 mock(CheckinStatusQueryService.class), mock(CheckinRewardQueryService.class),
-                achievementWallQuery);
+                achievementWallQuery,
+                new AchievementProperties(false, true));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();

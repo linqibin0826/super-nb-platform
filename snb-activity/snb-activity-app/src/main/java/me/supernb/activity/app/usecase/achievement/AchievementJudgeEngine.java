@@ -14,6 +14,7 @@ import me.supernb.activity.domain.port.achievement.AchievementCatalogPort;
 import me.supernb.activity.domain.port.achievement.AchievementUnlockPort;
 import me.supernb.activity.domain.port.metric.UserMetricPort;
 import me.supernb.activity.domain.port.scan.ScanWatermarkPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 /// 完成,不依赖 activeDefinitions() 的行返回顺序。类目/系列引用一律现查 activeDefinitions()
 /// (深化稿增补#7动态引用),不写死列表。
 @Slf4j
+@ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class AchievementJudgeEngine {
 

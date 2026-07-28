@@ -47,6 +47,8 @@ class ActivityWiringTest {
         r.add("sub2api.read-datasource.url", PG::getJdbcUrl);
         r.add("sub2api.read-datasource.username", PG::getUsername);
         r.add("sub2api.read-datasource.password", PG::getPassword);
+        // 成就系统生产默认停用(2026-07-28 暂时下线),测试显式开——继续验证全链,重开时不返工
+        r.add("activity.achievement.enabled", () -> "true");
     }
 
     @Autowired

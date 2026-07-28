@@ -8,12 +8,14 @@ import me.supernb.activity.domain.model.achievement.AchievementDefinition;
 import me.supernb.activity.domain.port.achievement.AchievementCatalogPort;
 import me.supernb.activity.domain.port.achievement.AchievementUnlockPort;
 import me.supernb.activity.domain.port.read.AccountAnniversaryReadPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /// 工龄成就直判(日频,不入 user_metric——"account_age_days 判定时现算,纯函数不入表",
 /// 深化稿 §6.1)。逐条阈值(100/365 天)反查"今天恰好满 N 天"的候选,零全表扫描。
 @Slf4j
+@ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class AccountAnniversaryJudgeJob {
 

@@ -7,11 +7,13 @@ import lombok.extern.slf4j.Slf4j;
 import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
 import me.supernb.activity.domain.port.metric.UserMetricPort;
 import me.supernb.activity.domain.port.read.GalleryAchievementSignalPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /// 造像车间成就 metric 生产者(日频)。
 @Slf4j
+@ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class GalleryMetricSyncJob {
 

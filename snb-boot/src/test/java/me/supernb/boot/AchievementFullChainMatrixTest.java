@@ -77,6 +77,8 @@ class AchievementFullChainMatrixTest {
         r.add("sub2api.read-datasource.password", PG::getPassword);
         r.add("activity.checkin.scan-enabled", () -> "true");
         r.add("activity.checkin.launch-date", () -> "2026-07-13"); // 钉死创始月=2026-07,绝版链路可复验
+        // 成就系统生产默认停用(2026-07-28 暂时下线),测试显式开——全链矩阵继续把守判定管线
+        r.add("activity.achievement.enabled", () -> "true");
     }
 
     @MockitoBean

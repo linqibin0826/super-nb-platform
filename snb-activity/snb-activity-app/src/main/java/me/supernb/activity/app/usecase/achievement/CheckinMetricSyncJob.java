@@ -13,6 +13,7 @@ import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementPropertie
 import me.supernb.activity.domain.port.checkin.CheckinPort;
 import me.supernb.activity.domain.port.metric.UserMetricPort;
 import me.supernb.activity.domain.port.read.CheckinMetricSignalPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 /// `scanEnabled` 复用 Plan A 的 `CheckinSettlementProperties`(同一个 CHECKIN_SCAN_ENABLED
 /// 开关,main spec 明文规定"Kill switch 关闭即停止全部成就判定")。
 @Slf4j
+@ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class CheckinMetricSyncJob {
 

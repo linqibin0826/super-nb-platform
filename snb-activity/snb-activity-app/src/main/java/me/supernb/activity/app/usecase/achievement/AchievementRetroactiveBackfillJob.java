@@ -8,6 +8,7 @@ import me.supernb.activity.domain.model.achievement.AchievementDefinition;
 import me.supernb.activity.domain.port.achievement.AchievementCatalogPort;
 import me.supernb.activity.domain.port.metric.UserMetricPort;
 import me.supernb.activity.domain.port.scan.ScanWatermarkPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 /// 尝试跑一次"的常见惯用法,真正的幂等保证在水位线检查。只补零成本层徽章,不触发补给资格
 /// (Plan A 判定窗口已是"当月新增",与本任务无交集,深化稿 §4)。
 @Slf4j
+@ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class AchievementRetroactiveBackfillJob {
 
