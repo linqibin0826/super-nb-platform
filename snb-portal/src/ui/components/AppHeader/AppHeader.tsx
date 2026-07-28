@@ -26,9 +26,10 @@ export interface AppHeaderProps {
 }
 
 /**
- * 全站统一 Header（规范 v1，2026-07-05）：三区骨架「品牌锁定 | 驿站胶囊 | 场景槽」。
- * 词标/胶囊全站恒定，场景槽是唯一允许差异的区域。
- * <lg(1024) 胶囊收起、改菜单钮+玻璃下拉浮卡（同一 siteNavItems 数据源，规范 v2 两段式）。
+ * 全站统一 Header（规范 v2）：三区骨架「品牌锁定 | 键帽行 | 场景槽」。
+ * 词标/键帽行全站恒定（2026-07-28 站长拍板键帽行，🪦 驿站胶囊当天退役），
+ * 场景槽是唯一允许差异的区域。
+ * <lg(1024) 键帽行收起、改 Menu 键+下拉浮卡（同一 siteNavItems 数据源，规范 v2 两段式）。
  * 非 React 站点（fork/learn/activity）按 templates/app-header.html 对齐，改必同步。
  */
 export function AppHeader({
@@ -105,11 +106,12 @@ export function AppHeader({
         items={items}
       />
       <div className="col-start-3 flex items-center gap-2.5 justify-self-end">
-        {/* 菜单钮：≥lg 收起；<lg 顶替胶囊，展开右下玻璃浮卡；有促销项时带呼吸点（活动曝光不丢） */}
+        {/* Menu 键：≥lg 收起；<lg 顶替键帽行，同款键帽配方——展开即按下（aria-expanded 驱动），
+            收起才弹回；有促销项时带呼吸点（活动曝光不丢） */}
         <button
           ref={burgerRef}
           type="button"
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-snb-hairline-strong bg-snb-panel p-0 text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 lg:hidden"
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-snb-hairline-strong border-b-[3px] border-b-black/50 bg-snb-panel p-0 text-snb-t2 transition-all duration-[120ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] hover:-translate-y-px hover:border-b-4 hover:text-snb-t1 aria-expanded:translate-y-[2px] aria-expanded:border-b aria-expanded:bg-snb-t1/[0.07] aria-expanded:text-snb-t1 aria-expanded:hover:translate-y-[2px] aria-expanded:hover:border-b lg:hidden"
           aria-label="打开导航菜单"
           aria-expanded={menuOpen}
           aria-controls={menuId}

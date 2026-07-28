@@ -20,17 +20,13 @@ export interface NavCapsuleProps {
   'aria-label'?: string
 }
 
-/** 全站导航胶囊：实心面板 + 栏位线（零发光网吧 v2）。
- *  🪦 玻璃底 blur 与分隔竖线随 v2 退役——平钮靠间距分组，竖线是噪声。 */
+/** 全站导航键帽行（2026-07-28 站长两轮拍板——网吧的手感记忆是键盘）：
+ *  每项一颗键帽（8px 圆角 + 底边 3px 黑半透实边非投影），hover 悬指抬 1px，
+ *  当前位 = 整颗按到底（下沉 2px + 底边收平 1px + semibold）。
+ *  🪦 药丸胶囊壳 2026-07-28 当天退役；🪦 玻璃底 blur 与分隔竖线随 v2 退役。 */
 export function NavCapsule({ items, className, ...rest }: NavCapsuleProps) {
   return (
-    <nav
-      className={cx(
-        'inline-flex items-center gap-0.5 rounded-full border border-dark-700 bg-dark-800 p-1.5 shadow-glass-sm',
-        className
-      )}
-      {...rest}
-    >
+    <nav className={cx('inline-flex items-center gap-1.5', className)} {...rest}>
       {items.map((item) => (
         <a
           key={item.href}
@@ -38,12 +34,12 @@ export function NavCapsule({ items, className, ...rest }: NavCapsuleProps) {
           target={item.target}
           aria-current={item.current ? 'page' : undefined}
           className={cx(
-            'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors',
+            'inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-dark-700 px-3.5 py-2 text-[13.5px] transition-all duration-[120ms] ease-[cubic-bezier(0.22,0.61,0.36,1)]',
             item.current
-              ? 'bg-snb-t1/[0.07] text-snb-t1'
+              ? 'translate-y-[2px] border-b border-b-dark-700 bg-snb-t1/[0.07] font-semibold text-snb-t1'
               : item.accent
-                ? 'text-snb-t1 hover:bg-snb-t1/[0.06] [&_svg]:text-snb-safety'
-                : 'text-snb-t2 hover:bg-snb-t1/[0.06] hover:text-snb-t1'
+                ? 'border-b-[3px] border-b-black/50 bg-dark-800 font-medium text-snb-t1 hover:-translate-y-px hover:border-b-4 [&_svg]:text-snb-safety'
+                : 'border-b-[3px] border-b-black/50 bg-dark-800 font-medium text-snb-t2 hover:-translate-y-px hover:border-b-4 hover:text-snb-t1'
           )}
         >
           {item.icon}
