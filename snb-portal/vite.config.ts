@@ -52,6 +52,9 @@ function devActivity(): Plugin {
 }
 
 export default defineConfig({
+  // 四份 config 共享默认 node_modules/.vite 会互踩预构建（vite 8 依赖 hash 含 config 内容，
+  // 并行 dev 时谁后启动谁活、其余全 504 Outdated Optimize Dep）——各自独立 cacheDir
+  cacheDir: 'node_modules/.vite-studio',
   // 路径部署（api.super-nb.me/studio）默认 /studio/；子域名部署构建时 STUDIO_BASE=/ 覆盖
   base: process.env.STUDIO_BASE || '/studio/',
   build: {

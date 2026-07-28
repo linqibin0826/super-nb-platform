@@ -65,6 +65,7 @@ function devBooks(): Plugin {
 // hub 内容中心第二入口：root 指到 hub/（hub/index.html 即入口），独立产物 dist-hub/，
 // 与 studio 的 vite.config.ts 完全隔离——两入口各自 tree-shake，互不打包对方。
 export default defineConfig({
+  cacheDir: 'node_modules/.vite-hub', // 四 config 独立缓存防并行 dev 互踩（见 vite.config.ts 注）
   root: 'hub',
   publicDir: 'public', // 相对 root：hub/public → dist-hub 根（favicon/logo 资产自持红线）
   base: process.env.HUB_BASE || '/',

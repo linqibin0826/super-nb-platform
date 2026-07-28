@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // invoice 发票中心第三入口:root 指到 invoice/,独立产物 dist-invoice/,与 studio/hub 完全隔离。
 export default defineConfig({
+  cacheDir: 'node_modules/.vite-invoice', // 四 config 独立缓存防并行 dev 互踩（见 vite.config.ts 注）
   root: 'invoice',
   publicDir: 'public', // 相对 root:invoice/public → dist-invoice 根(favicon/logo 资产自持红线)
   base: process.env.INVOICE_BASE || '/',
