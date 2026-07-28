@@ -52,7 +52,7 @@ class DrawAdapterBatchTest {
 
     @AfterEach
     void resetRecharge() {
-        ActivityInfraTestApp.recharge = new BigDecimal("300");
+        ActivityInfraTestApp.recharge = new BigDecimal("150");
     }
 
     Campaign seed(int slots) {
@@ -70,7 +70,7 @@ class DrawAdapterBatchTest {
 
     @Test
     void drawAllReturnsDistinctPrizesUpToEarned() {
-        Campaign campaign = seed(10); // earned 3(充值默认 300)
+        Campaign campaign = seed(10); // earned 3(充值默认 150,门槛 50)
         List<DrawResult> results = adapter.drawAllFor(campaign, USER);
 
         assertThat(results).hasSize(3);
@@ -82,7 +82,7 @@ class DrawAdapterBatchTest {
 
     @Test
     void drawAllCapsAtBatchMax() {
-        ActivityInfraTestApp.recharge = new BigDecimal("1500"); // earned 15
+        ActivityInfraTestApp.recharge = new BigDecimal("750"); // earned 15
         Campaign campaign = seed(20);
         List<DrawResult> results = adapter.drawAllFor(campaign, USER);
 
@@ -93,7 +93,7 @@ class DrawAdapterBatchTest {
 
     @Test
     void drawAllFallsBackToConsolationWhenPoolDrains() {
-        ActivityInfraTestApp.recharge = new BigDecimal("500"); // earned 5
+        ActivityInfraTestApp.recharge = new BigDecimal("250"); // earned 5
         Campaign campaign = seed(2);
         List<DrawResult> results = adapter.drawAllFor(campaign, USER);
 

@@ -4,13 +4,13 @@ import java.math.BigDecimal;
 
 /// 抽奖资格领域规则(纯函数,无框架依赖)。
 ///
-/// 口径同 activity-svc:每满 ¥100 得一次抽奖机会;应得次数 = floor(充值总额 / 100),
-/// 剩余 = max(0, 应得 - 已抽)。充值倍率 1:1,金额单位为名义额度,不是按真实汇率折算
-/// 出来的美元(见 ai-relay 红线)。
+/// 每满 ¥50 得一次抽奖机会(2026-07-28 随「新装开业」活动自 ¥100 下调,全场 V50 门槛统一);
+/// 应得次数 = floor(充值总额 / 门槛),剩余 = max(0, 应得 - 已抽)。充值倍率 1:1,
+/// 金额单位为名义额度,不是按真实汇率折算出来的美元(见 ai-relay 红线)。
 public final class DrawEligibility {
 
     /// 每次抽奖所需的充值门槛(元)。
-    public static final BigDecimal DRAW_THRESHOLD = new BigDecimal("100");
+    public static final BigDecimal DRAW_THRESHOLD = new BigDecimal("50");
 
     /// 单次「全抽」最多抽的次数(服务端硬上限,端点无客户端次数入参,防一次抽空奖池)。
     public static final int BATCH_MAX = 10;

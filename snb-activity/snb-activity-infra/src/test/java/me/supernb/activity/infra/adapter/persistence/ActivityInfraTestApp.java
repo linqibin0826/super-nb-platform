@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Import;
 class ActivityInfraTestApp {
 
     /// 桩充值额(默认 ¥300 = 应得 3 次);批量测试可改此字段调整 earned。
-    static volatile java.math.BigDecimal recharge = new java.math.BigDecimal("300");
+    static volatile java.math.BigDecimal recharge = new java.math.BigDecimal("150");
 
     @Bean
     RechargeReadPort rechargeQueryPort() {
