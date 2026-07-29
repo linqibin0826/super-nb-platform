@@ -1,9 +1,10 @@
-import { useEffect, useMemo, type ComponentType } from 'react'
+import { useEffect, useMemo, useRef, type ComponentType } from 'react'
 import { Link } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { t } from '../i18n'
 import type { BookChapter, BookData } from './api'
 import { AgentsDiscoveryStage } from './AgentsDiscoveryStage'
+import { useCodeBlocks } from './codeBlocks'
 import { actName, lessonLabel, loadProgress, markRead, numLabel, savePos, touchPos } from './bookShared'
 
 /** 机制舞台注册表（bespoke）：仅指定书的指定编号插入定制动图，非通用能力。 */
@@ -30,6 +31,17 @@ export function BookPart({ slug, book, chapter }: { slug: string; book: BookData
   const Stage = BESPOKE_STAGE[slug]?.[chapter.num ?? '']
   // eslint-disable-next-line react-hooks/exhaustive-deps -- 换讲时重读已读集（markRead 同讲内不需要回显）
   const read = useMemo(() => loadProgress(slug).read, [slug, chapter.index])
+  // 代码块机箱（复制按钮 + 长代码横向滚动）：2026-07-29 定稿里电子书只吃这一件，
+  // 讲次页版式（全站质量天花板）其余一个值都不动
+  const proseRef = useRef<HTMLDivElement>(null)
+  useCodeBlocks(proseRef, [chapter.html])
+  // 🚨 身份必须稳住：React 19 见 prop 身份变了就无条件重设 innerHTML，
+  // 每渲染新建字面量 = 冲掉上面装配好的代码机箱（详见 codeBlocks.ts 注）
+  const proseHtml = useMemo(
+    // 管线转换已白名单重建 + sanitize；前端 DOMPurify 再兜一层（放行姓名章 data-seal）
+    () => ({ __html: DOMPurify.sanitize(chapter.html, { ADD_ATTR: ['data-seal', 'target'] }) }),
+    [chapter.html],
+  )
 
   useEffect(() => {
     document.title = `${lessonLabel(chapter)} ${chapter.title} · ${book.title} · ${t('hub.title')}`
@@ -85,11 +97,7 @@ export function BookPart({ slug, book, chapter }: { slug: string; book: BookData
 
         <div className="hub-sec-body">
           {Stage && <Stage />}
-          <div
-            className="hub-prose"
-            // 管线转换已白名单重建 + sanitize；前端 DOMPurify 再兜一层（放行姓名章 data-seal）
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(chapter.html, { ADD_ATTR: ['data-seal', 'target'] }) }}
-          />
+          <div className="hub-prose" ref={proseRef} dangerouslySetInnerHTML={proseHtml} />
         </div>
 
         <nav className="hub-part-next" data-testid="hub-book-partnav">

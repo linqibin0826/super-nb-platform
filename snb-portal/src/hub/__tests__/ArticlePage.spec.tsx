@@ -55,7 +55,7 @@ describe('ArticlePage', () => {
     expect(document.title).toContain('你好 Codex')
   })
 
-  it('编辑部版式：速览面板显摘要、署名行带阅读时长与来源', async () => {
+  it('编辑部版式：速览面板显摘要、眉行只有「类目 · 日期 · 时长」', async () => {
     stubDetail(DETAIL)
     renderAt('hello')
 
@@ -63,7 +63,40 @@ describe('ArticlePage', () => {
     expect(screen.getByTestId('hub-tldr').textContent).toContain('摘要')
     const byline = screen.getByTestId('hub-byline').textContent!
     expect(byline).toMatch(/分钟读完|min read/) // 阅读时长（jsdom locale 无关）
-    expect(byline).toContain('站长整理')
+    expect(byline).toContain('教程')
+    expect(byline).toContain('2026-07-10')
+    // 2026-07-29 定稿③：这个站没有作者字段，署名不在眉行编，一律归到文末一手出处区
+    expect(byline).not.toContain('站长整理')
+    expect(screen.getByTestId('hub-source').textContent).toContain('站长整理')
+  })
+
+  it('章末不是死胡同：下一篇/相关阅读的现成件在位', async () => {
+    const LIST = {
+      items: [
+        { ...DETAIL, slug: 'hello' },
+        { ...DETAIL, slug: 'nextone', title: '下一篇标题', summary: '下一篇钩子' },
+      ],
+      total: 2,
+      page: 1,
+      pages: 1,
+    }
+    vi.stubGlobal('fetch', vi.fn(async (url: string) =>
+      new Response(JSON.stringify(String(url).includes('/articles?') ? LIST : DETAIL), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })))
+    renderAt('hello')
+
+    const nav = await screen.findByTestId('hub-artnav')
+    await waitFor(() => expect(nav.querySelector('a.next-link')).toBeTruthy())
+    expect(nav.querySelector('a.next-link')!.getAttribute('href')).toBe('/a/nextone')
+    expect(nav.querySelector('.nt')!.textContent).toBe('下一篇标题')
+    expect(nav.querySelector('.next-hook')!.textContent).toBe('下一篇钩子')
+    expect(nav.textContent).toContain('全部 2') // 「全部 N 篇 →」回杂志架
+    // 同类目相关阅读：排除本篇自己，只剩另一篇
+    const rows = document.querySelectorAll('.hub-related-row')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].getAttribute('href')).toBe('/a/nextone')
   })
 
   it('封面：coverUrl 有值渲染 <img>，为空不渲染', async () => {

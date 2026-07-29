@@ -5,11 +5,12 @@ interface State {
   items: ArticleSummary[]
   page: number
   pages: number
+  total: number
   loading: boolean
   error: boolean
 }
 
-const INITIAL: State = { items: [], page: 0, pages: 0, loading: true, error: false }
+const INITIAL: State = { items: [], page: 0, pages: 0, total: 0, loading: true, error: false }
 
 /**
  * 列表分页状态机：filters（category）变更即重置重拉第 1 页，loadMore 追加下一页。
@@ -30,6 +31,7 @@ export function useArticles(category: string | null) {
             items: append ? [...s.items, ...env.items] : env.items,
             page: env.page,
             pages: env.pages,
+            total: env.total,
             loading: false,
             error: false,
           }))
@@ -52,6 +54,8 @@ export function useArticles(category: string | null) {
 
   return {
     items: state.items,
+    /** 该筛选下的可见总条数（列表页「N 条 / 已显示 a / b」用） */
+    total: state.total,
     loading: state.loading,
     error: state.error,
     hasMore: state.page > 0 && state.page < state.pages,

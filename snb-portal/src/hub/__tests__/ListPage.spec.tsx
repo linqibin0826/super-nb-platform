@@ -56,7 +56,11 @@ describe('ListPage', () => {
     await waitFor(() => expect(screen.getByText('标题hello')).toBeTruthy())
     const tabs = screen.getAllByRole('tab')
     expect(tabs).toHaveLength(2) // 全部 + 教程；电子书类目不示人
-    expect(tabs[1].textContent).toBe('教程')
+    // 胶囊带条数（2026-07-29 定稿）：类目名 + count；「全部」的数含电子书（15 文 + 1 书）
+    expect(tabs[1].textContent).toContain('教程')
+    expect(tabs[1].textContent).toContain('2')
+    expect(tabs[0].textContent).toContain('3') // 教程 2 + 电子书 1
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true')
     // 电子书不进卡片墙，走顶部连载专栏位
     const serial = await screen.findByTestId('hub-serial')
     expect(serial.getAttribute('href')).toBe('/a/book-x')
