@@ -16,5 +16,10 @@ export function createT(messages: Record<Locale, LocaleDict>, locale: Locale) {
 export function detectLocale(): Locale {
   const saved = localStorage.getItem('sub2api_locale')
   if (saved === 'zh' || saved === 'en') return saved
-  return navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en'
+  // 兜底中文:`sub2api_locale` 只由主站 fork 写在 super-nb.me 这个 origin 上,localStorage
+  // 按 origin 隔离 ⇒ studio / hub / invoice 三个子站永远读不到用户在主站选过的语言;
+  // 而客群是中国程序员、英文系统是常态,拿 navigator.language 当代理会把中文用户判成英文
+  // (发票中心尤其伤:抬头/税号/联次没有自然英文对应,且 portal 内没有语言切换器无法自救)。
+  // 这里是止血;根治=父域 cookie `snb_locale`(Domain=.super-nb.me),契约照抄 snb_theme。
+  return 'zh'
 }
