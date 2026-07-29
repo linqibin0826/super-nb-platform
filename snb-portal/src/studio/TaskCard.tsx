@@ -1,8 +1,11 @@
 import { lazy, Suspense, useState } from 'react'
 import { Alert, Button, MasonryCard } from '../ui'
-// 懒加载：余烬画布只在展开的 running 卡挂载，收起的多任务不堆 canvas
-const PaintingCanvas = lazy(() => import('./PaintingCanvas').then((m) => ({ default: m.PaintingCanvas })))
+// 懒加载：走纸描线只在展开的 running 卡挂载，收起的多任务不堆 canvas
+// （🪦 余烬画布 PaintingCanvas 2026-07-29 退役：加法混合 + 径向光晕 + 闪烁粒子，
+//   撞「零发光」与「粒子招牌全毙」两条红线，还偏偏出现在注意力最高的那两分钟）
+const PaperTrace = lazy(() => import('./PaperTrace').then((m) => ({ default: m.PaperTrace })))
 import { t } from '../i18n'
+import { st } from './i18nStudio'
 import { SIZE_PRESETS } from '../lib/sizes'
 import { pngDimensions } from '../lib/imageSize'
 import { downloadImage } from '../lib/downloadImage'
@@ -21,7 +24,9 @@ interface TaskCardProps {
   onPreview: (images: string[], index: number) => void
 }
 
-// 生成中的阶段文案轮播：每 7 秒换一句，循环（studio.results.stage1..8，画室叙事一轮 56 秒）
+// 生成中的阶段文案轮播：每 7 秒换一句，循环（studio.results.stage1..8，一轮 56 秒）。
+// 文案 2026-07-29 从画室人格换成机房腔（i18nStudio 覆盖层里是逐字终稿），
+// 节奏与「越往后越接近完工」的递进照旧——换的是人格，不是机制。
 const STAGE_KEYS = [
   'stage1', 'stage2', 'stage3', 'stage4', 'stage5', 'stage6', 'stage7', 'stage8',
 ] as const
@@ -204,39 +209,56 @@ export function TaskCard(p: TaskCardProps) {
 
           {task.status === 'running' && (
             <>
+              {/* 走纸条的抬头：说清这条线是什么、不是什么（它不代表剩余时间） */}
+              <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <span className="font-mono text-[11px] tracking-[0.14em] text-snb-t3">
+                  {st('studio.wait.paperLabel')}
+                </span>
+                <span className="font-mono text-[11.5px] text-snb-t3">{st('studio.wait.traceNote')}</span>
+              </div>
               <div className={`mt-2 grid gap-3.5 ${gridClass(task.input.n)}`}>
                 {Array.from({ length: task.input.n }, (_, i) => (
                   <div
                     key={i}
-                    className="relative mx-auto w-full overflow-hidden rounded-2xl border border-snb-hairline bg-snb-t1/[0.05]"
+                    className="relative mx-auto w-full overflow-hidden rounded-2xl border border-snb-hairline-strong bg-snb-bg"
                     style={{ aspectRatio: `${width} / ${height}`, maxWidth: cardMaxWidth(width, height) }}
                   >
-                    {/* 余烬画布：赤陶画笔游走作画（等着也有得玩）；只在展开卡挂载 */}
+                    {/* 走纸描线：沥青底上一条纸白单色描线向左走纸，像热敏打印机/机房示波器。
+                        零发光零粒子零加法混合；只在展开卡挂载 */}
                     <Suspense fallback={null}>
-                      <PaintingCanvas seed={i + 1} />
+                      <PaperTrace seed={i + 1} />
                     </Suspense>
-                    {/* reduced-motion 兜底：画布不启动，只留静态余烬点 */}
+                    {/* reduced-motion 兜底：画布不启动，只留静态状态点 */}
                     <span
                       aria-hidden="true"
-                      className="absolute left-1/2 top-1/2 hidden h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-500/80 motion-reduce:block"
+                      className="absolute left-1/2 top-1/2 hidden h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-500 motion-reduce:block"
                     />
                   </div>
                 ))}
               </div>
-              {/* 渐近式进度：按耗时逼近 92% 不封顶——只传达「在推进」，不假装知道剩余时长 */}
+              {/* 渐近式进度：按耗时逼近 92% 不封顶——只传达「在推进」，不假装知道剩余时长。
+                  机制原样保留（八段 7 秒一换 + 92% 渐近），2026-07-29 只换了材质与人格 */}
               <div className="mt-4">
-                <div className="h-[3px] overflow-hidden rounded-full bg-snb-t1/10">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <span className="text-[15px] font-semibold leading-[1.5] text-snb-t1">
+                    {st(`studio.results.${STAGE_KEYS[Math.floor(elapsed / 7) % STAGE_KEYS.length]}`)}
+                  </span>
+                  <span className="font-mono text-xs tabular-nums text-snb-t3">
+                    {st('studio.wait.step', { step: (Math.floor(elapsed / 7) % STAGE_KEYS.length) + 1 })}
+                  </span>
+                </div>
+                <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-snb-elv">
                   <div
-                    className="h-full rounded-full bg-paper transition-[width] duration-1000 ease-out"
+                    className="h-full rounded-full bg-paper transition-[width] duration-[420ms] ease-[cubic-bezier(0.2,0,0,1)]"
                     style={{ width: `${Math.min(92, Math.round(92 * (1 - Math.exp(-elapsed / 45))))}%` }}
                   />
                 </div>
-                <p className="mt-2.5 text-xs text-snb-t3">
-                  <span className="text-snb-t2">
-                    {t(`studio.results.${STAGE_KEYS[Math.floor(elapsed / 7) % STAGE_KEYS.length]}`)}
-                  </span>{' '}
-                  · {t('playground.results.elapsed', { seconds: elapsed })} ·{' '}
-                  {t('playground.results.expectHint')}
+                <p className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-xs text-snb-t3">
+                  <span className="font-mono tabular-nums text-snb-t2">
+                    {t('playground.results.elapsed', { seconds: elapsed })} ·{' '}
+                    {t('playground.results.expectHint')}
+                  </span>
+                  <span className="font-mono">{st('studio.wait.note')}</span>
                 </p>
               </div>
             </>

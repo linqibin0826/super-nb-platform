@@ -11,7 +11,9 @@ export interface ChipOption {
 /** 配置行渐次入场（随父容器 staggerChildren 依次浮现） */
 export const rowVariants = { hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }
 
-/** 直选胶囊组（radiogroup）：选中态是一块赤陶「墨」，切换时用 layoutId 在组内滑动过去 */
+/** 直选胶囊组（radiogroup）：选中态是一块纸白「墨」，切换时用 layoutId 在组内滑动过去。
+ *  🚨 2026-07-29 起选中一律纸白填充 + 沥青字——白字压橙实测 2.61:1 读不出，
+ *  而且这些胶囊表达的多半只是**默认值**，比真正的行动按钮还响是错的层级。 */
 export function OptionChips(props: {
   groupId: string
   options: ChipOption[]
@@ -36,21 +38,21 @@ export function OptionChips(props: {
             disabled={o.disabled ?? props.disabled}
             title={o.title ?? (props.truncate ? o.label : undefined)}
             onClick={() => props.onSelect(o.value)}
-            className={`relative whitespace-nowrap rounded-full border px-3 py-1.5 text-[12.5px] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`relative whitespace-nowrap rounded-full border px-3 py-1.5 text-[12.5px] transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60 disabled:cursor-not-allowed disabled:opacity-60 ${
               active
-                ? 'border-transparent font-medium text-white'
-                : 'border-snb-hairline bg-snb-elv/60 text-snb-t2 hover:border-snb-t3 hover:text-snb-t1'
+                ? 'border-transparent font-semibold text-asphalt'
+                : 'border-snb-hairline-strong text-snb-t2 hover:border-[rgba(239,235,228,0.4)] hover:text-snb-t1'
             }`}
           >
             {active &&
               (reduceMotion ? (
-                <span aria-hidden="true" className="absolute inset-0 rounded-full bg-primary-500" />
+                <span aria-hidden="true" className="absolute inset-0 rounded-full bg-paper" />
               ) : (
                 <motion.span
                   aria-hidden="true"
                   layoutId={`chip-ink-${props.groupId}`}
                   transition={{ type: 'spring', stiffness: 520, damping: 40 }}
-                  className="absolute inset-0 rounded-full bg-primary-500"
+                  className="absolute inset-0 rounded-full bg-paper"
                 />
               ))}
             <span className={`relative z-[1] ${props.truncate ? 'inline-block max-w-[220px] truncate align-top' : ''}`}>

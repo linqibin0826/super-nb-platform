@@ -114,10 +114,12 @@ export function PromptSheet({
               aria-label={t('studio.gallery.like')}
               aria-pressed={liked}
               onClick={onToggleLike}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
+              // 选中 = 纸白填充 + 沥青字（与大图浮层的赞/藏同一种语言；
+              // 🪦 rose/amber 两枚品牌外色随 v2 双强调色板退役）
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] ${
                 liked
-                  ? 'border-rose-400/40 bg-rose-500/10 text-rose-400'
-                  : 'border-snb-hairline-strong bg-snb-elv text-snb-t1'
+                  ? 'border-transparent bg-paper font-semibold text-asphalt'
+                  : 'border-snb-hairline-strong bg-snb-elv font-medium text-snb-t1'
               }`}
             >
               <span aria-hidden>{liked ? '♥' : '♡'}</span>
@@ -128,10 +130,10 @@ export function PromptSheet({
               aria-label={t('studio.gallery.save')}
               aria-pressed={favorited}
               onClick={onToggleFavorite}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] ${
                 favorited
-                  ? 'border-amber-400/40 bg-amber-500/10 text-amber-400'
-                  : 'border-snb-hairline-strong bg-snb-elv text-snb-t1'
+                  ? 'border-transparent bg-paper font-semibold text-asphalt'
+                  : 'border-snb-hairline-strong bg-snb-elv font-medium text-snb-t1'
               }`}
             >
               <span aria-hidden>{favorited ? '★' : '☆'}</span>

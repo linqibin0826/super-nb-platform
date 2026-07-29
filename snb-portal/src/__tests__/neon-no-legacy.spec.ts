@@ -100,9 +100,13 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
     expect(offenders(/gradient-primary/)).toEqual([])
   })
 
-  it('text-shadow 全域清零（唯二例外：画墙图片蒙层上的可读性投影，不是辉光）', () => {
-    const isImageOverlay = (p: string) => p === 'studio/GalleryTab.tsx' || p === 'studio/FavoritesTab.tsx'
-    expect(offenders(/text-shadow/, isImageOverlay)).toEqual([])
+  it('text-shadow 全域清零（唯一例外：画墙灵感卡信息层的可读性实压投影，不是辉光）', () => {
+    // 2026-07-29 画图机位改版后，画墙卡片信息层收敛进 studio/WallCard.tsx 一处
+    // （GalleryTab/FavoritesTab 各自手抄一份的老形态已退役）。这里的 text-shadow 是
+    // 纯黑实压阴影——浅色图（白仪表盘/米色信息图/热敏小票）上标题与署名读不出的解法之一，
+    // 与「零发光」不冲突：它没有色相、没有扩散光晕。
+    const isWallCard = (p: string) => p === 'studio/WallCard.tsx'
+    expect(offenders(/text-shadow/, isWallCard)).toEqual([])
   })
 
   it('🚨 backdrop-filter 全域清零（唯一例外：vendored AppHeader 的 sticky 顶栏）', () => {

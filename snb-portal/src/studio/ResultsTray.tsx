@@ -3,6 +3,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { TaskCard } from './TaskCard'
 import { queueLabel } from './queueLabel'
 import { t } from '../i18n'
+import { st } from './i18nStudio'
+import { StatusLamp } from './parts'
 import type { GenerationQueue } from './useGenerationQueue'
 
 interface Props {
@@ -125,6 +127,19 @@ export function ResultsTray({ queue, onPreview, onClose }: Props) {
             ))}
           </AnimatePresence>
         </div>
+
+        {/* 「别关标签页」提醒：队列是纯前端的，页面一卸载就静默 abort——钱花了图没了。
+            这句在这种地方只能保守，不能替后端许诺「离开也照跑」 */}
+        {queue.runningCount > 0 && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-snb-hairline-strong bg-snb-well px-3 py-2.5">
+            <span className="mt-[5px] flex">
+              <StatusLamp state="pending" />
+            </span>
+            <span className="font-mono text-[11.5px] leading-[1.75] text-snb-t2">
+              {st('studio.wait.stayHint')}
+            </span>
+          </div>
+        )}
       </div>
     </motion.div>
   )

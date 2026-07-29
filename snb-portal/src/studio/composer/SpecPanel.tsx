@@ -34,23 +34,25 @@ export function SpecPanel(props: SpecPanelProps) {
   const reduceMotion = useReducedMotion()
   const { spec, sizeText, showEmptyState, hasUser } = props
 
+  // 选中 = 纸白填充 + 沥青字（与 OptionChips 同一条纪律，白字压橙整条退役）；
+  // 比例形状小方框走 border-current，选中时自然跟着变沥青
   const ratioBtnClass = (active: boolean) =>
-    `relative flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-1.5 text-[12.5px] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 disabled:cursor-not-allowed disabled:opacity-60 ${
+    `relative flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-1.5 text-[12.5px] transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60 disabled:cursor-not-allowed disabled:opacity-60 ${
       active
-        ? 'border-transparent font-medium text-white'
-        : 'border-snb-hairline bg-snb-elv/60 text-snb-t2 hover:border-snb-t3 hover:text-snb-t1'
+        ? 'border-transparent font-semibold text-asphalt'
+        : 'border-snb-hairline-strong text-snb-t2 hover:border-[rgba(239,235,228,0.4)] hover:text-snb-t1'
     }`
 
   const ratioInk = (active: boolean) =>
     active &&
     (reduceMotion ? (
-      <span aria-hidden="true" className="absolute inset-0 rounded-xl bg-primary-500" />
+      <span aria-hidden="true" className="absolute inset-0 rounded-xl bg-paper" />
     ) : (
       <motion.span
         aria-hidden="true"
         layoutId="chip-ink-ratio"
         transition={{ type: 'spring', stiffness: 520, damping: 40 }}
-        className="absolute inset-0 rounded-xl bg-primary-500"
+        className="absolute inset-0 rounded-xl bg-paper"
       />
     ))
 

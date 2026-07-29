@@ -11,6 +11,9 @@ vi.mock('../../auth/useAuth', () => ({ useAuthUser: () => mockUser.current }))
 vi.mock('../../auth/apiFetch', () => ({ loginUrl: () => 'https://api.super-nb.me/login' }))
 
 import { HistoryTab } from '../HistoryTab'
+// ⚠️ 断言走 t()：portal 语言兜底 2026-07-29 由 en 改 zh（1cb38f2），
+// 写死英文串的断言当场变红——文案断言一律经 i18n 取，别再手抄任何一种语言
+import { t } from '../../i18n'
 import { listGenerations, getGeneration } from '../../lib/generationsApi'
 
 const L = listGenerations as ReturnType<typeof vi.fn>
@@ -27,7 +30,7 @@ describe('HistoryTab', () => {
   it('未登录 → 引导登录', () => {
     mockUser.current = null
     render(<HistoryTab refreshToken={0} onApply={noop} onPreview={noop} onGoGallery={noop} />)
-    expect(screen.getByText('Log in to see your history')).toBeTruthy()
+    expect(screen.getByText(t('studio.history.loginTitle'))).toBeTruthy()
   })
 
   it('登录 → 拉列表渲染行卡', async () => {
@@ -58,6 +61,6 @@ describe('HistoryTab', () => {
     render(<HistoryTab refreshToken={0} onApply={noop} onPreview={noop} onGoGallery={noop} />)
     await waitFor(() => expect(screen.getByText('a cat')).toBeTruthy())
     fireEvent.click(screen.getByText('a cat'))
-    await waitFor(() => expect(screen.getByText('Reference images')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(t('studio.history.refImagesTitle'))).toBeTruthy())
   })
 })

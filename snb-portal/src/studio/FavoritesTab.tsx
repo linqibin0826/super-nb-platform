@@ -1,7 +1,7 @@
 // 我的收藏：登录用户的灵感库收藏清单（收藏的是灵感条目/提示词，服务端 gallery 库）。
 // 未登录 → 空态引导登录；登录 → 拉 /me/favorites 瀑布流（分页续读）。桌面 hover 浮层 + 触屏抽屉兜底。
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, Button, MasonryCard, MasonryGrid, Skeleton } from '../ui'
+import { Alert, Button, MasonryGrid, Skeleton } from '../ui'
 import { fetchMyFavorites, fetchPromptDetail, type PromptListItem } from '../lib/galleryApi'
 import { useInteractions } from './useInteractions'
 import { useAuthUser } from '../auth/useAuth'
@@ -9,7 +9,10 @@ import { loginUrl } from '../auth/apiFetch'
 import type { ApplyPayload } from '../App'
 import { BalancedMasonry } from './BalancedMasonry'
 import { PromptSheet } from './PromptSheet'
+import { WallCard } from './WallCard'
+import { WallLightbox } from './WallLightbox'
 import { CardStat } from './CardStat'
+import { useMediaQuery } from './useMediaQuery'
 import { t } from '../i18n'
 
 interface Props {
@@ -32,13 +35,15 @@ export function FavoritesTab({ onApply, active = true }: Props) {
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [sheetItem, setSheetItem] = useState<PromptListItem | null>(null)
+  const [openIndex, setOpenIndex] = useState<number | null>(null) // 大图浮层当前位
   const seqRef = useRef(0)
 
-  // 触屏（无 hover）：卡片浮层点不到，改 tap 弹抽屉
+  // 触屏（无 hover）：卡片浮层点不到。窄屏走底部抽屉，触屏宽屏与桌面走大图浮层（与灵感库同口径）
   const isTouch =
     typeof window !== 'undefined' &&
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(hover: none)').matches
+  const isWide = useMediaQuery('(min-width: 640px)')
 
   const ids = items.map((it) => it.id)
   // 本页每条都是「我已收藏」→ 用 seed 让星标首帧即 ★（避免回填前显示未收藏、点击方向反）
@@ -110,6 +115,16 @@ export function FavoritesTab({ onApply, active = true }: Props) {
     }
   }
 
+  /** 整卡点击：桌面/平板开大图浮层，触屏窄屏开底部抽屉 */
+  function openCard(item: PromptListItem): void {
+    if (isTouch && !isWide) {
+      setSheetItem(item)
+      return
+    }
+    const index = items.findIndex((it) => it.id === item.id)
+    if (index >= 0) setOpenIndex(index)
+  }
+
   async function copyItem(item: PromptListItem): Promise<void> {
     if (pendingId !== null) return
     setPendingId(item.id)
@@ -170,49 +185,42 @@ export function FavoritesTab({ onApply, active = true }: Props) {
         items={items}
         resetKey={wallGen}
         renderItem={(item) => (
-          <MasonryCard
+          <WallCard
             src={item.imageUrl}
             alt={item.title}
-            width={item.imageW > 0 ? item.imageW : 480}
-            height={item.imageH > 0 ? item.imageH : 640}
-            onActivate={isTouch ? () => setSheetItem(item) : undefined}
+            width={item.imageW}
+            height={item.imageH}
+            title={item.title}
+            author={item.authorName}
+            onOpen={() => openCard(item)}
             stats={
-              <div className="flex flex-col gap-1">
-                <p className="truncate text-[12.5px] font-medium text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.7)]">
-                  {item.title}
-                </p>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex gap-1.5">
-                    <CardStat
-                      kind="like"
-                      on={liked.has(item.id)}
-                      count={likeCounts.get(item.id) ?? item.likeCount}
-                      label={t('studio.gallery.like')}
-                      onToggle={() => toggle('like', item.id)}
-                    />
-                    <CardStat
-                      kind="save"
-                      on={favorited.has(item.id)}
-                      count={favCounts.get(item.id) ?? item.favCount}
-                      label={t('studio.gallery.save')}
-                      onToggle={() => toggle('favorite', item.id)}
-                    />
-                  </div>
-                  {item.authorName && (
-                    <span className="truncate text-[11px] text-white/70 [text-shadow:0_1px_2px_rgba(0,0,0,0.65)]">
-                      @{item.authorName}
-                    </span>
-                  )}
-                </div>
-              </div>
+              <>
+                <CardStat
+                  kind="like"
+                  on={liked.has(item.id)}
+                  count={likeCounts.get(item.id) ?? item.likeCount}
+                  label={t('studio.gallery.like')}
+                  onToggle={() => toggle('like', item.id)}
+                />
+                <CardStat
+                  kind="save"
+                  on={favorited.has(item.id)}
+                  count={favCounts.get(item.id) ?? item.favCount}
+                  label={t('studio.gallery.save')}
+                  onToggle={() => toggle('favorite', item.id)}
+                />
+              </>
             }
-            overlay={
+            actions={
               <Button
                 variant="primary"
                 size="sm"
                 className="w-full"
                 disabled={pendingId === item.id}
-                onClick={() => void applyItem(item)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void applyItem(item)
+                }}
               >
                 {t('studio.gallery.use')}
               </Button>
@@ -239,6 +247,31 @@ export function FavoritesTab({ onApply, active = true }: Props) {
             {loadingMore ? t('studio.gallery.loadingMore') : t('studio.gallery.keepBrowsing')}
           </Button>
         </div>
+      )}
+
+      {/* 桌面/平板大图浮层：与灵感库同一件（大图 + 提示词全文 + 直接使用/复制） */}
+      {openIndex !== null && openIndex < items.length && (
+        <WallLightbox
+          item={items[openIndex]}
+          index={openIndex + 1}
+          isMember
+          liked={liked.has(items[openIndex].id)}
+          favorited={favorited.has(items[openIndex].id)}
+          likeCount={likeCounts.get(items[openIndex].id) ?? items[openIndex].likeCount}
+          favCount={favCounts.get(items[openIndex].id) ?? items[openIndex].favCount}
+          onToggleLike={() => toggle('like', items[openIndex].id)}
+          onToggleFavorite={() => toggle('favorite', items[openIndex].id)}
+          pending={pendingId === items[openIndex].id}
+          copied={copiedId === items[openIndex].id}
+          onUse={() => {
+            void applyItem(items[openIndex])
+            setOpenIndex(null)
+          }}
+          onCopy={() => void copyItem(items[openIndex])}
+          onPrev={() => setOpenIndex((i) => (i === null ? null : (i + items.length - 1) % items.length))}
+          onNext={() => setOpenIndex((i) => (i === null ? null : (i + 1) % items.length))}
+          onClose={() => setOpenIndex(null)}
+        />
       )}
 
       {/* 触屏抽屉：tap 卡片弹出，含赞/藏/直接使用/复制 */}

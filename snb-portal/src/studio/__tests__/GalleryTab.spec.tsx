@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
 import { t } from '../../i18n'
+import { st } from '../i18nStudio'
 import type { PromptListItem } from '../../lib/galleryApi'
 
 vi.mock('../../lib/galleryApi', async (orig) => {
@@ -137,8 +138,8 @@ describe('排序 + 交互', () => {
   it('点赞最多 / 收藏最多 两档已可点（不再置灰）', async () => {
     render(<GalleryTab onApply={vi.fn()} />)
     await screen.findByText('作品 1')
-    const likes = screen.getByRole('button', { name: t('studio.gallery.sortLikes') }) as HTMLButtonElement
-    const favs = screen.getByRole('button', { name: t('studio.gallery.sortFavs') }) as HTMLButtonElement
+    const likes = screen.getByRole('button', { name: st('studio.gallery.sortLikes') }) as HTMLButtonElement
+    const favs = screen.getByRole('button', { name: st('studio.gallery.sortFavs') }) as HTMLButtonElement
     expect(likes.disabled).toBe(false)
     expect(favs.disabled).toBe(false)
   })
@@ -146,7 +147,7 @@ describe('排序 + 交互', () => {
   it('点「点赞最多」→ 以 sort=likes 重新拉列表', async () => {
     render(<GalleryTab onApply={vi.fn()} />)
     await screen.findByText('作品 1')
-    fireEvent.click(screen.getByRole('button', { name: t('studio.gallery.sortLikes') }))
+    fireEvent.click(screen.getByRole('button', { name: st('studio.gallery.sortLikes') }))
     await waitFor(() =>
       expect(vi.mocked(fetchPrompts).mock.calls.some((c) => c[0]?.sort === 'likes')).toBe(true)
     )

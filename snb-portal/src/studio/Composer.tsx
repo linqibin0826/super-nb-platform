@@ -361,7 +361,7 @@ export function Composer(p: ComposerProps) {
             aria-expanded={expanded}
             aria-label={expanded ? t('studio.composer.collapse') : t('studio.composer.expand')}
             title={expanded ? t('studio.composer.collapse') : t('studio.composer.expand')}
-            className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv/80 px-3 py-1.5 text-xs text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+            className="flex min-w-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv/80 px-3 py-1.5 text-xs text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
           >
             <svg
               width="12"
@@ -377,7 +377,9 @@ export function Composer(p: ComposerProps) {
               <circle cx="16" cy="8" r="2" />
               <circle cx="10" cy="16" r="2" />
             </svg>
-            {!p.showEmptyState && <span className="hidden sm:inline">{summary}</span>}
+            {/* 规格摘要手机上也必须看得见：花钱前得知道自己买的是什么比例、什么画质档、几张。
+                原来是 hidden sm:inline，手机端整条被藏掉（2026-07-29 审计问题⑦） */}
+            {!p.showEmptyState && <span className="truncate">{summary}</span>}
             <svg
               width="11"
               height="11"
