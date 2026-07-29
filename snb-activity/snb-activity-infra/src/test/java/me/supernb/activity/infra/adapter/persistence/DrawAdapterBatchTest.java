@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import me.supernb.activity.domain.exception.NoDrawsLeftException;
+import me.supernb.activity.domain.exception.PrizePoolEmptyException;
 import me.supernb.activity.domain.model.Campaign;
 import me.supernb.activity.domain.model.DrawResult;
 import org.junit.jupiter.api.AfterEach;
@@ -92,14 +93,26 @@ class DrawAdapterBatchTest {
     }
 
     @Test
-    void drawAllFallsBackToConsolationWhenPoolDrains() {
+    void drawAllTruncatesWhenPoolDrains() {
         ActivityInfraTestApp.recharge = new BigDecimal("250"); // earned 5
         Campaign campaign = seed(2);
         List<DrawResult> results = adapter.drawAllFor(campaign, USER);
 
-        assertThat(results).hasSize(5);
-        assertThat(results.stream().filter(r -> !r.consolation()).count()).isEqualTo(2);
-        assertThat(results.stream().filter(DrawResult::consolation).count()).isEqualTo(3);
+        // 池空截断(🪦 安慰奖 2026-07-29 退役):出到几张算几张,次数只烧实际出票数
+        assertThat(results).hasSize(2);
+        assertThat(results).allMatch(r -> !r.consolation());
+        assertThat(adapter.countDraws(campaign.id(), USER)).isEqualTo(2);
+    }
+
+    @Test
+    void drawAllRejectsWhenPoolAlreadyEmpty() {
+        ActivityInfraTestApp.recharge = new BigDecimal("250"); // earned 5
+        Campaign campaign = seed(0);
+
+        assertThatThrownBy(() -> adapter.drawAllFor(campaign, USER))
+                .isInstanceOf(PrizePoolEmptyException.class);
+        // 事务回滚:不落任何记录,次数保留
+        assertThat(adapter.countDraws(campaign.id(), USER)).isZero();
     }
 
     @Test

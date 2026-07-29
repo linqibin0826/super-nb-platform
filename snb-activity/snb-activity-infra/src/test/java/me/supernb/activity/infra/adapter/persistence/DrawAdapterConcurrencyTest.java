@@ -15,8 +15,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.TimeUnit;
 import me.supernb.activity.domain.exception.NoDrawsLeftException;
+import me.supernb.activity.domain.exception.PrizePoolEmptyException;
 import me.supernb.activity.domain.model.Campaign;
-import me.supernb.activity.domain.model.DrawResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,10 +81,12 @@ class DrawAdapterConcurrencyTest {
                 startGate.await();
                 String outcome;
                 try {
-                    DrawResult r = adapter.drawFor(campaign, USER);
-                    outcome = r.consolation() ? "CONSOLATION" : "PRIZE";
+                    adapter.drawFor(campaign, USER);
+                    outcome = "PRIZE"; // 池空拒抽后不存在安慰结果,能返回即真奖
                 } catch (NoDrawsLeftException e) {
                     outcome = "NO_DRAWS";
+                } catch (PrizePoolEmptyException e) {
+                    outcome = "POOL_EMPTY";
                 }
                 tally.computeIfAbsent(outcome, k -> new LongAdder()).increment();
                 return null;
@@ -107,7 +109,7 @@ class DrawAdapterConcurrencyTest {
 
         assertThat(tally.getOrDefault("PRIZE", 0L)).isEqualTo(3);
         assertThat(tally.getOrDefault("NO_DRAWS", 0L)).isEqualTo(7);
-        assertThat(tally.getOrDefault("CONSOLATION", 0L)).isZero();
+        assertThat(tally.getOrDefault("POOL_EMPTY", 0L)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM activity.draw WHERE user_id = ?", Integer.class, USER))
                 .isEqualTo(3);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM activity.prize_slot WHERE status = 'claimed'", Integer.class))
@@ -115,15 +117,16 @@ class DrawAdapterConcurrencyTest {
     }
 
     @Test
-    void poolSmallerThanEarnedFallsBackToConsolation() throws Exception {
-        Campaign campaign = seed(2); // 只 2 槽,应得 3 → 2 奖 + 1 安慰
+    void poolSmallerThanEarnedRejectsBeyondPool() throws Exception {
+        Campaign campaign = seed(2); // 只 2 槽,应得 3 → 2 奖 + 1 池空拒抽(次数保留)
         Map<String, Long> tally = raceDraw(campaign, 10);
 
         assertThat(tally.getOrDefault("PRIZE", 0L)).isEqualTo(2);
-        assertThat(tally.getOrDefault("CONSOLATION", 0L)).isEqualTo(1);
+        assertThat(tally.getOrDefault("POOL_EMPTY", 0L)).isEqualTo(1);
         assertThat(tally.getOrDefault("NO_DRAWS", 0L)).isEqualTo(7);
+        // 池空那次事务回滚不落行:draw 表只有 2 条真奖
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM activity.draw WHERE user_id = ?", Integer.class, USER))
-                .isEqualTo(3);
+                .isEqualTo(2);
     }
 
     @Test

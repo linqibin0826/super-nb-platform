@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import me.supernb.activity.domain.exception.NoDrawsLeftException;
+import me.supernb.activity.domain.exception.PrizePoolEmptyException;
 import me.supernb.activity.domain.model.Campaign;
 import me.supernb.activity.domain.model.DrawEligibility;
 import me.supernb.activity.domain.model.DrawResult;
@@ -26,7 +27,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 ///
 /// 移植自 activity-svc draw.py 的并发安全语义:事务内先 pg_advisory_xact_lock(userId) 串行化
 /// 同一用户,现查剩余次数(充值总额走只读端口,接受弱一致),再 FOR UPDATE SKIP LOCKED 原子领槽;
-/// 池空则记安慰奖占位(campaign 配置的 consolationAmount,建表默认 5 元,不发码)。用
+/// 池空拒抽(抛 PrizePoolEmptyException,事务回滚不落记录、次数保留;🪦 安慰奖占位
+/// 2026-07-29 随站长拍板退役,campaign.consolationAmount 列保留不再消费)。用
 /// TransactionTemplate 显式包裹而非 @Transactional 注解,规避同类自调用时代理失效的坑。
 @Repository
 public class DrawAdapter implements DrawPort {
@@ -51,7 +53,7 @@ public class DrawAdapter implements DrawPort {
         return txTemplate.execute(status -> doDraw(campaign, userId));
     }
 
-    /// 事务体:校验资格 → SKIP LOCKED 随机领槽 → 落中奖/安慰奖记录。
+    /// 事务体:校验资格 → SKIP LOCKED 随机领槽 → 落中奖记录;池空拒抽。
     private DrawResult doDraw(Campaign campaign, long userId) {
         // 事务级 advisory lock:随事务结束自动释放,防并发超额
         draws.acquireUserXactLock(userId);
@@ -71,10 +73,8 @@ public class DrawAdapter implements DrawPort {
             return DrawResult.prize(slot.getAmount(), slot.getRedeemCode());
         }
 
-        // 池空 → 安慰奖占位(不调 admin、不发码,人工发放)
-        BigDecimal consolation = campaign.consolationAmount();
-        draws.save(new DrawEntity(campaign.id(), userId, null, consolation, null, true));
-        return DrawResult.consolation(consolation);
+        // 池空 → 拒抽:异常令事务回滚,不落记录,次数保留到补货后
+        throw new PrizePoolEmptyException();
     }
 
     /// 事务内执行批量抽奖:advisory lock 串行化同一用户后委托 `doDrawAll`。
@@ -83,7 +83,8 @@ public class DrawAdapter implements DrawPort {
         return txTemplate.execute(status -> doDrawAll(campaign, userId));
     }
 
-    /// 批量事务体:一把锁 → 现查剩余 → 循环 min(剩余, BATCH_MAX) 次领槽/记安慰奖。
+    /// 批量事务体:一把锁 → 现查剩余 → 循环 min(剩余, BATCH_MAX) 次领槽;中途池空截断
+    /// (出到几张算几张,余下次数保留),一张未出则整体拒抽。
     /// 每领一槽显式 slots.flush() 落库,否则下一次 native SKIP LOCKED 会重选同一槽(重复发码)。
     private List<DrawResult> doDrawAll(Campaign campaign, long userId) {
         draws.acquireUserXactLock(userId);
@@ -106,10 +107,11 @@ public class DrawAdapter implements DrawPort {
                 slots.flush();
                 results.add(DrawResult.prize(slot.getAmount(), slot.getRedeemCode()));
             } else {
-                BigDecimal consolation = campaign.consolationAmount();
-                draws.save(new DrawEntity(campaign.id(), userId, null, consolation, null, true));
-                results.add(DrawResult.consolation(consolation));
+                break; // 池空截断:已领的照发,余下次数保留
             }
+        }
+        if (results.isEmpty()) {
+            throw new PrizePoolEmptyException();
         }
         return results;
     }
