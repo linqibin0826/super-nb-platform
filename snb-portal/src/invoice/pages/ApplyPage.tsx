@@ -6,9 +6,12 @@ import { api, InvoiceApiError, InvoiceAuthError, type OverviewT, type ProfileT }
 import { feeCents, fmtYuan, fmtYuanGrouped, rmbUpper, selectedTotalCents } from '../fee'
 import { ErrorBar, Loading, PageHead } from './shared'
 import { EMPTY_DRAFT, ProfileFormModal } from './ProfileFormModal'
-import { loginUrl } from '../../auth/apiFetch'
+import { GuestGate } from '../GuestGate'
+import { ti } from '../copy'
 
 const today = () => new Date().toLocaleDateString('sv')
+/** 订单成交时刻:核对开票靠订单号 + 时刻,精确到分(2026-07-24 09:18) */
+const stamp = (iso: string) => new Date(iso).toLocaleString('sv').slice(0, 16)
 
 /** 申请开票(填开联):整页一张居中票面,订单即明细行——
  *  在票上勾明细,合计/大写实时更新;跨过免收线盖「免」章(挂载即动画)。 */
@@ -51,15 +54,12 @@ export function ApplyPage() {
     <PageHead eyebrow={t('invoice.apply.eyebrow')} title={t('invoice.tabs.apply')} sub={t('invoice.apply.intro')} />
   )
 
+  // 没登录不是出错:走公用件访客态(🪦 28×17 的裸下划线「登录」已退役)
   if (needLogin) {
     return (
       <>
         {head}
-        <div className="rounded-xl border-[1.5px] border-dashed border-snb-hairline-strong p-14 text-center text-sm text-snb-t2">
-          <a className="underline underline-offset-4 hover:text-snb-t1" href={loginUrl()}>
-            {t('invoice.nav.login')}
-          </a>
-        </div>
+        <GuestGate tab="apply" />
       </>
     )
   }
@@ -113,6 +113,24 @@ export function ApplyPage() {
   const profile = profiles.find((p) => p.id === profileId)
   const allOn = overview.orders.length > 0 && selected.size === overview.orders.length
 
+  /** 选中抬头的资料行:有值才成行;税号恒在(个人抬头显灰占位),mono 管数字感 */
+  const pickedRows = profile
+    ? [
+        {
+          label: t('invoice.profiles.taxNo'),
+          value: profile.taxNo || t('invoice.profiles.noTax'),
+          mono: !!profile.taxNo,
+          dim: !profile.taxNo,
+        },
+        { label: t('invoice.profiles.regPhone'), value: profile.regPhone ?? '', mono: true },
+        { label: t('invoice.profiles.regAddress'), value: profile.regAddress ?? '' },
+        {
+          label: t('invoice.profiles.bankName'),
+          value: [profile.bankName, profile.bankAccount].filter(Boolean).join(' · '),
+        },
+      ].filter((row) => row.value)
+    : []
+
   const warn =
     totalCents > 0 && belowMin
       ? t('invoice.apply.belowMin', { diff: fmtYuan(minCents - totalCents) })
@@ -148,33 +166,56 @@ export function ApplyPage() {
                 </button>
               ) : (
                 <>
-                  <div className="iv-fp-field">
-                    <span className="lb">{t('invoice.apply.nameLabel')}</span>
-                    <select
-                      className="iv-fp-select"
-                      value={profileId}
-                      onChange={(e) => setProfileId(e.target.value)}
-                      aria-label={t('invoice.apply.profile')}
+                  {/* 抬头就在票面上选:芯片选择器 + ＋ 就地开浮层,不跳页、不丢勾选 */}
+                  <div className="iv-fp-pick" role="group" aria-label={t('invoice.apply.profile')}>
+                    {profiles.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="iv-chip-hit"
+                        aria-pressed={p.id === profileId}
+                        onClick={() => setProfileId(p.id)}
+                      >
+                        <span className={`iv-chip${p.id === profileId ? ' on' : ''}`}>{p.title}</span>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className="iv-chip-hit"
+                      title={t('invoice.profiles.add')}
+                      onClick={() => setAdding(true)}
                     >
-                      {profiles.map((p) => (
-                        <option key={p.id} value={p.id}>{p.title}</option>
-                      ))}
-                    </select>
-                    <Button size="xs" variant="ghost" title={t('invoice.profiles.add')} onClick={() => setAdding(true)}>
-                      ＋
-                    </Button>
+                      <span className="iv-chip add">{ti('invoice.apply.addProfileChip')}</span>
+                    </button>
                   </div>
-                  <div className="iv-fp-field">
-                    <span className="lb">{t('invoice.apply.taxLabel')}</span>
-                    <span className={`vl font-mono ${profile?.taxNo ? '' : 'dim'}`}>
-                      {profile ? profile.taxNo || t('invoice.profiles.noTax') : '—'}
-                    </span>
-                    {profile?.verifiedAt && (
-                      <span className="iv-stamp-verified" title={t('invoice.profiles.verifiedTip')}>
-                        {t('invoice.profiles.verifiedBadge')}
-                      </span>
-                    )}
-                  </div>
+                  <div className="iv-fp-pick-hint">{ti('invoice.apply.profilePickHint')}</div>
+                  {profile && (
+                    <div className="iv-fp-picked">
+                      <div className="hd">
+                        <b>{profile.title}</b>
+                        <span className={`iv-badge ${profile.type === 'COMPANY' ? 'co' : 'me'}`}>
+                          {profile.type === 'COMPANY'
+                            ? t('invoice.profiles.typeCompany')
+                            : t('invoice.profiles.typePersonal')}
+                        </span>
+                        {profile.verifiedAt && (
+                          <span className="iv-stamp-verified" title={t('invoice.profiles.verifiedTip')}>
+                            {t('invoice.profiles.verifiedBadge')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="bd">
+                        {pickedRows.map((row) => (
+                          <div key={row.label} className="rw">
+                            <span className="lb">{row.label}</span>
+                            <span className={`vl${row.mono ? ' font-mono' : ''}${row.dim ? ' dim' : ''}`}>
+                              {row.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -188,11 +229,11 @@ export function ApplyPage() {
                 <div className="px-4 py-10 text-center text-[13px] text-snb-t3">{t('invoice.apply.empty')}</div>
               ) : (
                 <>
-                  <div className="iv-fp-ord-head">
+                  {/* 表头整行即「全选」热区(44 高):🪦 只有 15×15 方框可点的时代结束 */}
+                  <label className="iv-fp-ord-head">
                     <input
                       type="checkbox"
                       checked={allOn}
-                      title={t('invoice.apply.selectAll')}
                       aria-label={t('invoice.apply.selectAll')}
                       onChange={(e) =>
                         setSelected(e.target.checked ? new Set(overview.orders.map((o) => o.orderId)) : new Set())
@@ -206,7 +247,8 @@ export function ApplyPage() {
                         total: '¥' + fmtYuanGrouped(totalCents),
                       })}
                     </span>
-                  </div>
+                  </label>
+                  {/* 列表整段展开:🪦 336px 内层滚动窗已删,页面只有一条滚动轴 */}
                   <div className="iv-fp-orders">
                     {overview.orders.map((o) => (
                       <label key={o.orderId} className={`iv-fp-ord ${selected.has(o.orderId) ? '' : 'off'}`}>
@@ -215,11 +257,15 @@ export function ApplyPage() {
                           checked={selected.has(o.orderId)}
                           onChange={() => toggle(o.orderId)}
                         />
-                        <span className="d">{new Date(o.completedAt).toLocaleDateString('sv')}</span>
+                        {/* 订单号整根露出、不截断:核对开票靠的就是它(sub2_ + 日期 + 8 位随机码 = 21 字符) */}
                         <span className="no">{o.orderNo}</span>
+                        <span className="d">{stamp(o.completedAt)}</span>
                         <span className="amt">¥{fmtYuanGrouped(Math.round(o.amount * 100))}</span>
                       </label>
                     ))}
+                  </div>
+                  <div className="iv-fp-ord-foot">
+                    {ti('invoice.apply.ordFoot', { n: String(overview.orders.length) })}
                   </div>
                 </>
               )}

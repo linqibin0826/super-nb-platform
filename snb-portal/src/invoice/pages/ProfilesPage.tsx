@@ -1,17 +1,24 @@
 import { useEffect, useState } from 'react'
 import { Button, Card } from '../../ui'
 import { t } from '../../i18n'
-import { api, type ProfileT } from '../api'
+import { api, InvoiceAuthError, type ProfileT } from '../api'
 import { ErrorBar, Loading, PageHead } from './shared'
+import { GuestGate } from '../GuestGate'
 import { EMPTY_DRAFT, ProfileFormModal, type ProfileDraft } from './ProfileFormModal'
 
 /** 抬头管理(购买方信息):票据单元格卡 + 共享表单弹窗增改 + 删除(带确认)。 */
 export function ProfilesPage() {
   const [rows, setRows] = useState<ProfileT[] | null>(null)
   const [error, setError] = useState('')
+  const [needLogin, setNeedLogin] = useState(false)
   const [editing, setEditing] = useState<{ id: string | null; draft: ProfileDraft } | null>(null)
 
-  const load = () => api.profiles().then(setRows).catch((e) => setError(String(e.message)))
+  // 未登录单独分流:红色留给真失败,「没登录」走访客态(🪦 红报错「出错了:未登录或登录已过期」已退役)
+  const load = () =>
+    api
+      .profiles()
+      .then(setRows)
+      .catch((e) => (e instanceof InvoiceAuthError ? setNeedLogin(true) : setError(String(e.message))))
   useEffect(() => {
     load()
   }, [])
@@ -30,6 +37,7 @@ export function ProfilesPage() {
     <PageHead eyebrow={t('invoice.profiles.eyebrow')} title={t('invoice.tabs.profiles')} sub={t('invoice.profiles.sub')} />
   )
 
+  if (needLogin) return <>{head}<GuestGate tab="profiles" /></>
   if (!rows) return error ? <>{head}<ErrorBar msg={error} /></> : <>{head}<Loading /></>
 
   /** 单元格行:有值才成行;mono 控制税号/电话/账号的数字感 */

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../ui'
 import { t } from '../../i18n'
-import { api, downloadPdf, type RequestT } from '../api'
+import { api, downloadPdf, InvoiceAuthError, type RequestT } from '../api'
 import {
   ErrorBar,
   Loading,
@@ -12,6 +12,7 @@ import {
   SealRejected,
   SealWait,
 } from './shared'
+import { GuestGate } from '../GuestGate'
 import { fmtYuanGrouped, rmbUpper } from '../fee'
 
 const day = (iso: string) => new Date(iso).toLocaleDateString('sv')
@@ -44,8 +45,14 @@ function feeLine(r: RequestT): string {
 export function RequestsPage() {
   const [rows, setRows] = useState<RequestT[] | null>(null)
   const [error, setError] = useState('')
+  const [needLogin, setNeedLogin] = useState(false)
 
-  const load = () => api.requests().then(setRows).catch((e) => setError(String(e.message)))
+  // 未登录单独分流:红色留给真失败,「没登录」走访客态(🪦 红报错「出错了:未登录或登录已过期」已退役)
+  const load = () =>
+    api
+      .requests()
+      .then(setRows)
+      .catch((e) => (e instanceof InvoiceAuthError ? setNeedLogin(true) : setError(String(e.message))))
   useEffect(() => {
     load()
   }, [])
@@ -64,6 +71,7 @@ export function RequestsPage() {
     <PageHead eyebrow={t('invoice.requests.eyebrow')} title={t('invoice.tabs.requests')} sub={t('invoice.requests.sub')} />
   )
 
+  if (needLogin) return <>{head}<GuestGate tab="requests" /></>
   if (error) return <>{head}<ErrorBar msg={error} /></>
   if (!rows) return <>{head}<Loading /></>
   if (rows.length === 0) {

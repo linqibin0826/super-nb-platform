@@ -29,6 +29,41 @@
   --iv-flash: color-mix(in srgb, #d9a35c 14%, transparent);
 }
 
+/* ---------- 回家条(仅独立标签页形态) ----------
+   高 40、底色深井、下边 hairline-strong、**在文档流里**(不 fixed、不遮票面)。
+   它不是顶栏:没有键帽行、没有余额、没有头像——那些是宿主的活。链接热区 44 高。 */
+.iv-homebar {
+  flex: none;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 clamp(16px, 3vw, 32px);
+  background: rgb(var(--snb-well));
+  border-bottom: 1px solid var(--snb-hairline-strong);
+}
+.iv-homebar-brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.iv-homebar-brand > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.iv-homebar-link {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: rgb(var(--snb-t2));
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.12s cubic-bezier(0.2, 0, 0, 1);
+}
+.iv-homebar-link:hover { color: rgb(var(--snb-t1)); }
+.iv-homebar-link.on { color: rgb(var(--snb-t1)); }
+.iv-homebar-link.on:hover { color: #ffffff; }
+@media (max-width: 480px) {
+  .iv-homebar { padding: 0 12px; gap: 8px; }
+  .iv-homebar-link { padding: 0 10px; font-size: 12.5px; }
+}
+
 /* 票据字体:仿宋(公文/票据脸),英文与缺字回退衬线 */
 .iv-doc {
   font-family: 'FangSong', 'STFangsong', 'FangSong_GB2312', '仿宋', Georgia, serif;
@@ -137,18 +172,74 @@
 .iv-fp-field .vl.dim {
   color: rgb(var(--snb-t3));
 }
-.iv-fp-select {
-  flex: 1;
-  min-width: 0;
-  background: rgb(var(--snb-elv));
-  border: 1px solid var(--snb-hairline-strong);
-  border-radius: 6px;
-  padding: 6px 10px;
-  font: inherit;
-  font-size: 13.5px;
-  color: rgb(var(--snb-t1));
+/* ---------- 票面上的抬头选择(芯片选择器 + ＋ 就地新增) ----------
+   2026-07-29 定稿:抬头必须「就地选、就地填」——不跳去抬头管理页签,
+   否则等于把勾好的单丢在身后再走一趟。视觉照公用件筛选胶囊:
+   选中=纸白填充(视觉高 30,外衬透明内边距撑 44 热区),未选=hairline-strong 描边。 */
+.iv-fp-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; padding-top: 2px; }
+.iv-chip-hit {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
-.iv-fp-select:focus { outline: 2px solid #FF5C00; outline-offset: 1px; }
+.iv-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--snb-hairline-strong);
+  color: rgb(var(--snb-t2));
+  font-size: 13px;
+  transition: color 0.12s cubic-bezier(0.2, 0, 0, 1), border-color 0.12s cubic-bezier(0.2, 0, 0, 1);
+}
+.iv-chip:hover { color: rgb(var(--snb-t1)); border-color: rgba(239, 235, 228, 0.3); }
+.iv-chip.on {
+  background: rgb(var(--snb-t1));
+  border-color: rgb(var(--snb-t1));
+  color: rgb(var(--snb-bg));
+  font-weight: 600;
+}
+.iv-chip.add { border-style: dashed; border-color: rgba(239, 235, 228, 0.28); color: rgb(var(--snb-t1)); }
+.iv-chip.add:hover { border-color: rgba(239, 235, 228, 0.4); }
+.iv-fp-pick-hint {
+  margin-top: 2px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: rgb(var(--snb-t3));
+}
+/* 选中抬头的资料快照:票面上直接看得见开给谁 */
+.iv-fp-picked {
+  margin-top: 10px;
+  background: rgb(var(--snb-well));
+  border: 1px solid var(--snb-hairline);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.iv-fp-picked .hd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.iv-fp-picked .hd b { font-size: 15px; font-weight: 600; color: rgb(var(--snb-t1)); }
+.iv-fp-picked .bd {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px 24px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.iv-fp-picked .rw { display: flex; gap: 10px; font-size: 13px; }
+.iv-fp-picked .rw .lb {
+  flex: none;
+  width: 4.5em;
+  color: rgb(var(--snb-t3));
+  font-family: 'FangSong', 'STFangsong', '仿宋', serif;
+  letter-spacing: 1px;
+}
+.iv-fp-picked .rw .vl { min-width: 0; word-break: break-all; color: rgb(var(--snb-t2)); }
+.iv-fp-picked .rw .vl.dim { color: rgb(var(--snb-t3)); }
+
 .iv-fp-items { width: 100%; border-collapse: collapse; font-size: 13px; }
 .iv-fp-items th {
   font-family: 'FangSong', 'STFangsong', '仿宋', serif;
@@ -166,15 +257,20 @@
 }
 
 /* ---------- 票面明细区:订单即商品行 ---------- */
+/* 表头 =「全选」整行热区(min-height 44,整行 label 可点) */
 .iv-fp-ord-head {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 8px 12px;
+  min-height: 44px;
+  padding: 4px 12px;
   border-bottom: 1px solid var(--iv-frame-soft);
   background: var(--iv-frame-tint);
   font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.12s cubic-bezier(0.2, 0, 0, 1);
 }
+.iv-fp-ord-head:hover { background: rgb(var(--snb-t1) / 0.07); }
 .iv-fp-ord-head .sel {
   flex: none;
   font-weight: 600;
@@ -195,20 +291,36 @@
   color: rgb(var(--snb-t3));
   font-variant-numeric: tabular-nums;
 }
+/* 勾选框:accent 用纸白不用安全橙——橙实底载白勾 = 白字压橙(实测 2.61:1),
+   零发光 v2 只留状态灯与金额两处橙。尺寸 16(手机 18),整行 label 才是热区。 */
 .iv-fp-ord-head input,
 .iv-fp-ord input {
-  width: 15px;
-  height: 15px;
-  accent-color: #FF5C00;
+  width: 16px;
+  height: 16px;
+  accent-color: #EFEBE4;
   cursor: pointer;
   flex: none;
 }
-.iv-fp-orders { max-height: 336px; overflow-y: auto; }
+@media (max-width: 480px) {
+  .iv-fp-ord-head input,
+  .iv-fp-ord input { width: 18px; height: 18px; }
+}
+/* 🪦 `.iv-fp-orders { max-height: 336px; overflow-y: auto }` 已删(2026-07-29):
+   页面本身要滚、框里也滚,手机上容易滚错层。列表整段展开,页面只有一条滚动轴。
+   .iv-fp-orders 这个类名在 TSX 里留着当 DOM 标记,故意不再带任何样式。 */
+/* 订单行:勾选框跨两行,订单号在上、时刻在下、金额靠右跨两行。
+   订单号一位都不能省——核对开票靠的就是它(sub2_ + 8 位日期 + 8 位随机码 = 21 字符), */
 .iv-fp-ord {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'chk no  amt'
+    'chk day amt';
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+  column-gap: 10px;
+  row-gap: 2px;
+  min-height: 60px;
+  padding: 10px 12px;
   border-bottom: 1px dashed var(--iv-frame-soft);
   cursor: pointer;
   font-size: 13px;
@@ -217,27 +329,50 @@
 .iv-fp-ord:last-child { border-bottom: none; }
 .iv-fp-ord:hover { background: var(--iv-frame-tint); }
 .iv-fp-ord.off { opacity: 0.48; }
+.iv-fp-ord input { grid-area: chk; align-self: center; }
 .iv-fp-ord .d {
-  flex: none;
+  grid-area: day;
   color: rgb(var(--snb-t3));
-  font-variant-numeric: tabular-nums;
-  font-size: 12.5px;
-}
-.iv-fp-ord .no {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-family: ui-monospace, Menlo, monospace;
-  font-size: 12.5px;
-  color: rgb(var(--snb-t2));
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+/* 不截断:等宽 + break-all,窄屏换行显示整根 */
+.iv-fp-ord .no {
+  grid-area: no;
+  min-width: 0;
+  word-break: break-all;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  color: rgb(var(--snb-t1));
 }
 .iv-fp-ord .amt {
-  flex: none;
+  grid-area: amt;
+  align-self: center;
   font-family: ui-monospace, Menlo, monospace;
   font-variant-numeric: tabular-nums;
+  font-size: 14px;
   font-weight: 600;
+}
+/* 手机档:时刻与金额同排在上,订单号整根落第二行(照 InvoiceMobile 稿) */
+@media (max-width: 480px) {
+  .iv-fp-ord {
+    grid-template-areas:
+      'chk day amt'
+      'chk no  no';
+    align-items: start;
+    row-gap: 4px;
+  }
+  .iv-fp-ord input { align-self: start; margin-top: 2px; }
+  .iv-fp-ord .amt { align-self: start; }
+}
+.iv-fp-ord-foot {
+  padding: 10px 12px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.8;
+  color: rgb(var(--snb-t3));
 }
 .iv-fp-cap {
   font-family: 'FangSong', 'STFangsong', '仿宋', serif;
@@ -905,6 +1040,45 @@ textarea.iv-fpin { resize: none; overflow: hidden; display: block; width: 100%; 
 }
 .iv-guide-dim { transition: opacity 0.2s; }
 .iv-guide-dim.off { opacity: 0.35; }
+/* 关闭叉:44×44 真热区(手机没有 Esc 键,这是唯一的临时出口) */
+.iv-guide-x {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgb(var(--snb-t3));
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.12s cubic-bezier(0.2, 0, 0, 1), background 0.12s cubic-bezier(0.2, 0, 0, 1);
+}
+.iv-guide-x:hover { color: rgb(var(--snb-t1)); background: rgb(var(--snb-t1) / 0.06); }
+/* 出口区:手机一列整宽,桌面并排 + 一句把两个出口的语义写清楚 */
+.iv-guide-foot {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--snb-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.iv-guide-exit {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: rgb(var(--snb-t3));
+}
+@media (min-width: 640px) {
+  .iv-guide-foot { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .iv-guide-exit { flex: 1; min-width: 200px; }
+}
 .iv-guide-seal {
   position: absolute;
   inset: 0;

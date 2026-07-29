@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../ui'
 import { t } from '../i18n'
+import { ti } from './copy'
 
-/** 首次进站「开票须知」单:三步办事顺序 + 关键规则。
- *  确认(=永久已读)的唯一出口是「知道了」按钮——盖「已阅」章后回调 onConfirm;
- *  点遮罩不关闭(防误触永久已读),Esc = onSkip 临时跳过(不落库,下次再提醒)。 */
+/** 首次进站「开票须知」单:三步办事顺序 + 关键规则(规则讲三遍是这一站最值钱的东西,一句不减)。
+ *  出口三个(2026-07-29 定稿,原先只有一个「知道了」——手机没有 Esc 键,等于没有出口):
+ *  - 「知道了,开始填票」= 永久已读,盖「已阅」章后回调 onConfirm(服务端记,换设备也不弹);
+ *  - 「稍后再看」/ 右上角 ✕ 44×44 / 点遮罩 / Esc = onSkip,只跳过这一次,不落任何存储。
+ *  拦路范围也从三条路由收成一条(只在「申请开票」弹),由 App.tsx 按路由控制。 */
 export function FirstVisitGuide({ onConfirm, onSkip }: { onConfirm: () => void; onSkip: () => void }) {
   const [closing, setClosing] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -25,7 +28,7 @@ export function FirstVisitGuide({ onConfirm, onSkip }: { onConfirm: () => void; 
   }, [closing])
 
   return (
-    <div className="iv-guide-mask" role="presentation">
+    <div className="iv-guide-mask" role="presentation" onClick={() => !closing && onSkip()}>
       <div
         ref={cardRef}
         className="iv-guide-card"
@@ -52,6 +55,16 @@ export function FirstVisitGuide({ onConfirm, onSkip }: { onConfirm: () => void; 
         }}
       >
         <div className="iv-fapiao px-6 py-6">
+          {!closing && (
+            <button
+              type="button"
+              className="iv-guide-x"
+              aria-label={ti('invoice.guide.close')}
+              onClick={onSkip}
+            >
+              ✕
+            </button>
+          )}
           <div className={`iv-guide-dim ${closing ? 'off' : ''}`}>
             <div className="iv-fp-title" id="iv-guide-title">{t('invoice.guide.title')}</div>
             <div className="iv-fp-title-rule" />
@@ -70,10 +83,19 @@ export function FirstVisitGuide({ onConfirm, onSkip }: { onConfirm: () => void; 
                 <span className="sub">{t('invoice.guide.ruleSub')}</span>
               </span>
             </div>
-            <div className="mt-5 text-center">
-              <Button variant="primary" autoFocus onClick={close}>
+            <div className="iv-guide-foot">
+              <Button
+                variant="primary"
+                autoFocus
+                className="h-12 w-full sm:h-11 sm:w-auto"
+                onClick={close}
+              >
                 {t('invoice.guide.cta')}
               </Button>
+              <Button variant="ghost" className="h-11 w-full sm:w-auto" onClick={onSkip}>
+                {ti('invoice.guide.later')}
+              </Button>
+              <span className="iv-guide-exit">{ti('invoice.guide.exitNote')}</span>
             </div>
           </div>
           {closing && (
