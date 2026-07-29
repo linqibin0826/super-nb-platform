@@ -69,8 +69,20 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
     expect(offenders(/font-display(?!\s*:)|Georgia|Songti|STSong/, isInvoiceTicket)).toEqual([])
   })
 
-  it('主题切换能力清零（恒暗，留任何入口都可能把站点切回浅色）', () => {
-    expect(offenders(/ThemeSwitch|toggleTheme|useTheme\b|writeThemeCookie|effectiveTheme|readThemeCookie/)).toEqual([])
+  it('主题实现只许有一份：契约在 vendor 真源，业务面不许手抄第二套', () => {
+    // 2026-07-29 双档补全后，这条从「切换能力清零」翻成「切换实现唯一」。
+    // 恒暗期间之所以要清零，是分期上线的临时护栏（先推网吧化整车、浅色排第二步），
+    // 不是「永远只做深色」；现在契约装回来了，要防的变成**另一个**风险：
+    // 谁在业务面又手写一份 cookie 读写，就会出现两个真源、切档只切一半。
+    // 允许出现的只有三处：vendor 进来的契约本体、它的 React 外壳、以及 portal 的转发层。
+    const isThemeSource = (p: string) =>
+      p === 'ui/theme/snbTheme.ts' ||
+      p === 'ui/theme/useTheme.ts' ||
+      p === 'ui/components/ThemeToggle/ThemeToggle.tsx' ||
+      p === 'ui/index.ts' ||
+      p === 'themeCookie.ts'
+    // 手抄的判据 = 自己拼 snb_theme cookie 字符串 / 自己读 prefers-color-scheme
+    expect(offenders(/snb_theme|prefers-color-scheme/, isThemeSource)).toEqual([])
   })
 
   it('顶栏一级导航旧文案清零（12+ 处手抄副本，漏一处就是漂移）', () => {
@@ -105,7 +117,11 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
     // （GalleryTab/FavoritesTab 各自手抄一份的老形态已退役）。这里的 text-shadow 是
     // 纯黑实压阴影——浅色图（白仪表盘/米色信息图/热敏小票）上标题与署名读不出的解法之一，
     // 与「零发光」不冲突：它没有色相、没有扩散光晕。
-    const isWallCard = (p: string) => p === 'studio/WallCard.tsx'
+    // 2026-07-29 双档补全：vendor 的 MasonryCard 同理由加入例外——它的署名行是 CC BY
+    // 授权要求，压在用户上传的任意图上（可能是白仪表盘也可能是黑夜景），
+    // 实压阴影是它两档恒定可读的手段之一。
+    const isWallCard = (p: string) =>
+      p === 'studio/WallCard.tsx' || p === 'ui/components/MasonryCard/MasonryCard.tsx'
     expect(offenders(/text-shadow/, isWallCard)).toEqual([])
   })
 

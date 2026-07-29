@@ -17,7 +17,7 @@ function Thumb(props: { dataUrl: string; onUse: () => void }) {
       type="button"
       title={t('studio.composer.pickerUse')}
       onClick={props.onUse}
-      className="group relative block aspect-square w-full overflow-hidden rounded-lg border border-snb-hairline p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+      className="group relative block aspect-square w-full overflow-hidden rounded-lg border border-snb-hairline p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
     >
       <img
         src={props.dataUrl}
@@ -25,7 +25,7 @@ function Thumb(props: { dataUrl: string; onUse: () => void }) {
         loading="lazy"
         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none"
       />
-      <span className="absolute inset-0 bg-primary-500/0 transition-colors group-hover:bg-primary-500/15" />
+      <span className="absolute inset-0 bg-snb-safety/0 transition-colors group-hover:bg-snb-safety/15" />
     </button>
   )
 }
@@ -55,7 +55,7 @@ export function RefPicker({ onClose, onAddFiles, recentUploads }: Props) {
             type="button"
             onClick={onClose}
             aria-label={t('studio.history.close')}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full p-0 text-snb-t3 transition-colors hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full p-0 text-snb-t3 transition-colors hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
           >
             <svg
               width="11"
@@ -93,7 +93,7 @@ export function RefPicker({ onClose, onAddFiles, recentUploads }: Props) {
             e.preventDefault()
             if (e.dataTransfer.files.length) onAddFiles(Array.from(e.dataTransfer.files))
           }}
-          className="mt-3 flex w-full flex-col items-center justify-center gap-1 rounded-[14px] border border-dashed border-snb-hairline-strong px-4 py-8 text-snb-t3 transition-colors hover:border-snb-t3 hover:text-snb-t2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+          className="mt-3 flex w-full flex-col items-center justify-center gap-1 rounded-[14px] border border-dashed border-snb-hairline-strong px-4 py-8 text-snb-t3 transition-colors hover:border-snb-t3 hover:text-snb-t2 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
         >
           <svg
             width="20"

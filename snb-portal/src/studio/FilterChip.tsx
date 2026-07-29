@@ -17,7 +17,7 @@ interface FilterChipProps {
 
 export function FilterChip({ active = false, count, dashed = false, onClick, children, className }: FilterChipProps) {
   const pill = active
-    ? 'bg-paper font-semibold text-asphalt'
+    ? 'bg-snb-cta font-semibold text-snb-cta-fg'
     : dashed
       ? 'border border-dashed border-[rgba(239,235,228,0.28)] text-snb-t2 group-hover/fc:border-[rgba(239,235,228,0.4)] group-hover/fc:text-snb-t1'
       : 'border border-snb-hairline-strong text-snb-t2 group-hover/fc:border-[rgba(239,235,228,0.4)] group-hover/fc:text-snb-t1'

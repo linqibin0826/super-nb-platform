@@ -90,7 +90,7 @@ export function GuestGate({ tab }: { tab: GuestTab }) {
       </div>
       <Skeleton />
       <a
-        className="flex h-12 items-center justify-center rounded-lg bg-paper text-sm font-semibold text-asphalt shadow-[0_2px_0_rgba(0,0,0,0.45)] transition-colors hover:bg-[#FFFFFF] active:bg-[#DED8CE] sm:h-11"
+        className="flex h-12 items-center justify-center rounded-lg bg-snb-cta text-sm font-semibold text-snb-cta-fg shadow-edge-2 transition-colors duration-quick ease-snb hover:bg-snb-cta-hover active:bg-snb-cta-press active:duration-press sm:h-11"
         href={loginUrl()}
         target="_top"
       >

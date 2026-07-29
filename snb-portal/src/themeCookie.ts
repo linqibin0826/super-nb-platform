@@ -1,32 +1,43 @@
 /**
- * 主题状态清理（港风霓虹恒暗改造，2026-07-27）。
+ * 明暗主题契约 —— snb-portal 侧（四边契约第二边）。
  *
- * 全站已恒定深色，`snb_theme` 父域 cookie 契约作废。本文件只剩一件事：
- * 把存量状态清干净。不清的话，cookie 面上会长期挂一枚已无消费方的
- * `snb_theme`（无害但污染），旧 localStorage 键也会一直留着。
+ * 【本文件为什么只剩转发】
+ * 契约逻辑（父域 cookie 读写、缺席=跟随系统、切到与系统同值时删 cookie、聚焦对账、
+ * 首帧防闪片段、旧键退役）现在只写在 **`src/ui/theme/snbTheme.ts`** 一处，
+ * 那是跨子域名的唯一真源；portal 已经整包 vendor 了 `super-nb-ui/src/`，
+ * 所以这里直接转发即可，不再手抄一份逻辑。
+ * ⚠️ 契约要改，改真源（`src/ui/theme/snbTheme.ts` 文件头列了四个消费方与七条硬规则），
+ * 然后重新 vendor —— 别在本文件里补分支。
  *
- * ⚠️ 原为四边契约（fork ↔ snb-portal ↔ help ↔ 活动页）。fork 侧已在 Spec 2 拆除，
- *    本文件是第二边；help 侧在 Spec 3 Task 5 拆。活动页早已恒暗、无需改动。
- * ⚠️ 本文件不再导出任何写入口。留一个 write 就可能让某处又把站点切回浅色。
+ * 【分期说明，别读成方向反复】
+ * 双档一直在计划内。2026-07-26「全站恒暗」是**分期上线的第一步**（先把网吧化改造
+ * 整车推上线），浅色皮肤排在第二步。分期期间本文件被削成只剩一次性清理、且写了
+ * 「契约作废 / 不再导出任何写入口」——那是防回潮的**临时护栏**，不是产品意图。
+ * 2026-07-29 按原计划补全第二步，契约装回。
+ *
+ * 【保留本文件而不是让业务直接 import 'src/ui'】
+ * 四个入口的 main.tsx 与既有测试都指着这个路径；留一层转发比改散在各处的 import 稳，
+ * 也给「portal 若哪天不再 vendor 整包」留一个收口点。
  */
-import { PARENT_DOMAIN, isParentDomainHost } from './config'
-
-const THEME_COOKIE_NAME = 'snb_theme'
-
-/**
- * 生产（*.super-nb.me）当年种在父域，本地开发是 host-only。
- * 删除时 Domain 必须与写入时一致，否则删不掉——这是 cookie 删除最常见的失手处。
- */
-function domainAttr(): string {
-  return isParentDomainHost(location.hostname) ? `; Domain=.${PARENT_DOMAIN}` : ''
-}
-
-/** 一次性清理：删父域 cookie + 退役旧 localStorage 键。四个入口的启动路径各调一次。 */
-export function purgeLegacyThemeState(): void {
-  document.cookie = `${THEME_COOKIE_NAME}=${domainAttr()}; Path=/; Secure; SameSite=Lax; Max-Age=0`
-  try {
-    localStorage.removeItem('snb-studio-theme')
-  } catch {
-    // localStorage 不可用（隐私模式）时跳过
-  }
-}
+export {
+  THEME_COOKIE,
+  THEME_COOKIE_DOMAIN,
+  THEME_COOKIE_MAX_AGE,
+  THEME_BOOT_SNIPPET,
+  LEGACY_THEME_KEYS,
+  themeCookieDomainAttr,
+  readThemeCookie,
+  systemTheme,
+  resolveTheme,
+  applyTheme,
+  setThemePref,
+  setTheme,
+  toggleTheme,
+  /** 旧 localStorage 键一次性迁移 + 无条件退役（含 studio 的 `snb-studio-theme`） */
+  purgeLegacyThemeState,
+  initTheme,
+  type ThemeChoice,
+  type ThemePref,
+  type InitThemeOptions,
+} from './ui/theme/snbTheme'
+export { useTheme, type UseThemeResult } from './ui/theme/useTheme'

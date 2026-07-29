@@ -46,8 +46,11 @@ export function MasonryCard({ src, alt = '', width, height, overlay, stats, capt
       onClick={interactive ? onActivate : undefined}
       onKeyDown={onKeyDown}
       className={cx(
-        'group relative mb-4 break-inside-avoid overflow-hidden rounded-xl border border-white/[0.06] bg-dark-900 shadow-card transition-shadow duration-300 focus-within:shadow-card-hover hover:shadow-card-hover',
-        interactive && 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50',
+        // 卡框（图片外的部分）跟着主题翻：浅色底走深井 well（图未加载时是块桌面色），
+        // 描边走 hairline；深色保持旧值原样。
+        // 🚨 但**图上的一切不翻**——见下面遮罩层的注释
+        'group relative mb-4 break-inside-avoid overflow-hidden rounded-xl border border-snb-hairline bg-snb-well shadow-card transition-shadow duration-quick ease-snb focus-within:shadow-card-hover hover:shadow-card-hover dark:border-white/[0.06] dark:bg-dark-900',
+        interactive && 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus',
         className
       )}
     >
@@ -58,26 +61,39 @@ export function MasonryCard({ src, alt = '', width, height, overlay, stats, capt
           loading="lazy"
           decoding="async"
           className={cx(
-            'block w-full transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transform-none',
+            'block w-full transition-transform duration-settle ease-snb group-hover:scale-[1.03] motion-reduce:transform-none',
             ratio ? 'h-full object-cover' : 'h-auto'
           )}
         />
       </div>
       {stats ? (
-        // 新版：stats 常驻图底（社会证明），overlay 在其上方 hover/聚焦时展开
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col bg-gradient-to-t from-black/70 via-black/20 to-transparent p-3">
+        // 新版：stats 常驻图底（社会证明），overlay 在其上方 hover/聚焦时展开。
+        // 🚨🚨 **图上的遮罩与其上的纸白字，两档都保持深色遮罩 + 纸白字，绝不跟着主题翻**：
+        // 图片可读性设施与主题无关——底下是用户的图（可能是白仪表盘也可能是黑夜景），
+        // 白天把遮罩翻浅、把白字翻墨，等于墨字压深底 1.06–2.25:1 全瞎。
+        // 这正是浅色化时最经典的翻车点（机械替换表里专门为它留了「深色画布语境不翻」的例外）。
+        // 🚨 遮罩必须够厚：旧版 from-black/70 via-black/20 在浅色图（白仪表盘/米色信息图/
+        // 热敏小票截图）上，署名那一档只剩 20% 黑，实测 1.6:1——5778 条素材的语义线索
+        // 与 CC BY 署名要求一起被掐掉。改四段加厚（0 → .62@34% → .9@68% → .97@100%），
+        // 合成底 ≈ #26282C，白字 ≈15:1，与深浅图无关恒定可读。
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex min-h-24 flex-col justify-end [background:linear-gradient(180deg,rgba(14,16,20,0)_0%,rgba(14,16,20,0.62)_34%,rgba(14,16,20,0.9)_68%,rgba(14,16,20,0.97)_100%)] px-3 pb-2.5">
           {overlay && (
-            <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-200 ease-out group-hover:mb-2 group-hover:max-h-44 group-hover:opacity-100 focus-within:mb-2 focus-within:max-h-44 focus-within:opacity-100 [&>*]:pointer-events-auto">
+            <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-quick ease-snb group-hover:mb-2 group-hover:max-h-44 group-hover:opacity-100 focus-within:mb-2 focus-within:max-h-44 focus-within:opacity-100 [&>*]:pointer-events-auto">
               {overlay}
             </div>
           )}
           <div className="[&_button]:pointer-events-auto">{stats}</div>
-          {caption && <p className="pointer-events-none mt-1.5 truncate text-[11px] text-white/55">{caption}</p>}
+          {/* 署名是授权要求不是装饰：实压阴影（不是辉光）保证它压在任何图上都读得出 */}
+          {caption && (
+            <p className="pointer-events-none mt-1.5 truncate text-[11px] text-[#D8D3CA] [text-shadow:0_1px_2px_rgba(0,0,0,0.95),0_2px_8px_rgba(0,0,0,0.75)]">
+              {caption}
+            </p>
+          )}
         </div>
       ) : (
         (overlay || caption) && (
           // 旧版（向后兼容）：overlay/caption 全悬停显示
-          <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/35 to-transparent p-3 opacity-0 transition-opacity duration-200 focus-within:pointer-events-auto focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+          <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/35 to-transparent p-3 opacity-0 transition-opacity duration-quick ease-snb focus-within:pointer-events-auto focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
             {overlay}
             {caption && <p className="mt-2 truncate text-center text-[11px] text-white/60">{caption}</p>}
           </div>

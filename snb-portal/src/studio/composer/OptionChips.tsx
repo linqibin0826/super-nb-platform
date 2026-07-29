@@ -40,19 +40,19 @@ export function OptionChips(props: {
             onClick={() => props.onSelect(o.value)}
             className={`relative whitespace-nowrap rounded-full border px-3 py-1.5 text-[12.5px] transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60 disabled:cursor-not-allowed disabled:opacity-60 ${
               active
-                ? 'border-transparent font-semibold text-asphalt'
+                ? 'border-transparent font-semibold text-snb-cta-fg'
                 : 'border-snb-hairline-strong text-snb-t2 hover:border-[rgba(239,235,228,0.4)] hover:text-snb-t1'
             }`}
           >
             {active &&
               (reduceMotion ? (
-                <span aria-hidden="true" className="absolute inset-0 rounded-full bg-paper" />
+                <span aria-hidden="true" className="absolute inset-0 rounded-full bg-snb-cta" />
               ) : (
                 <motion.span
                   aria-hidden="true"
                   layoutId={`chip-ink-${props.groupId}`}
                   transition={{ type: 'spring', stiffness: 520, damping: 40 }}
-                  className="absolute inset-0 rounded-full bg-paper"
+                  className="absolute inset-0 rounded-full bg-snb-cta"
                 />
               ))}
             <span className={`relative z-[1] ${props.truncate ? 'inline-block max-w-[220px] truncate align-top' : ''}`}>

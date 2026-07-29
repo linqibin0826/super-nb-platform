@@ -1,9 +1,31 @@
 /* hub 专属全局样式。--hub-accent = 详情页强调色；.hub-prose = 文章正文排版：
-   全部走 token 变量。零发光网吧 v2 恒暗单主题：🪦 明暗双值收敛为单值 */
+   全部走 token 变量。
+   2026-07-29 双档补全：恒暗期这些变量收敛成了单值（值全是深色档的），白天档下
+   「纸白 alpha 的发丝线」「压深板上的幽灵字」整批会失效。现按 tokens.css 的
+   两块结构拆开——:root 是白天、.dark 是深夜，深色值逐字未动。 */
 
 :root {
+  /* 强调橙：白天档必须压深。#FFA372 压纸 1.9:1、#FF5C00 压纸 2.7:1，都够不着大字 3:1 */
+  --hub-accent: 186 68 0;    /* #BA4400 熔铁橙 */
+  --hub-ink: 28 26 22;       /* 阅读墨 #1C1A16（纸上不降档：白天的眩光来自底不来自字）*/
+
+  /* 无图封面 / 搜索框的「板」：纸上是桌面色，板上的字标与提示都是幽灵档
+     （与深色档同样的层级关系：字标最淡、提示略深，都不承载信息）*/
+  --hub-plate: #EAE5DB;
+  --hub-plate-word: #CFC8B8;
+  --hub-plate-note: #C9C2B4;
+  --hub-skel-cv: #E5DFD3;    /* 骨架封面 = 抬升面（tokens 里 elv 本就兼「骨架色」）*/
+  --hub-chip-hover: rgba(28, 26, 22, 0.06); /* 代码块「复制」悬停底 */
+}
+.dark {
   --hub-accent: 255 163 114; /* primary-300 #FFA372，沥青底上保持可读 */
   --hub-ink: 202 207 213;    /* 阅读墨 #CACFD5：纸白降半档（ink-200），降眩光 */
+
+  --hub-plate: #141821;
+  --hub-plate-word: #2C333D;
+  --hub-plate-note: #3A424E;
+  --hub-skel-cv: #1B1F27;
+  --hub-chip-hover: #221E18;
 }
 
 /* ── 速览面板（2026-07-29 定稿：层级反转）——「这篇值不值得读」的决策器，
@@ -14,7 +36,7 @@
   position: relative;
   margin: 34px 0 8px;
   padding: 26px 26px 24px;
-  border: 1px solid rgba(239, 235, 228, 0.14);
+  border: 1px solid rgb(var(--snb-t1) / 0.14);
   border-radius: 12px;
   background: var(--hub-paper-brief, #1B1710);
 }
@@ -751,7 +773,8 @@
   background: rgb(var(--snb-panel)); text-decoration: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.hub-serial:hover { border-color: rgb(var(--hub-accent) / 0.55); box-shadow: 0 10px 30px -18px rgb(0 0 0 / 0.35); }
+/* 浮起投影走双档槽（白天档收成暖墨 .16 的自然光影，纯黑 .35 在纸上是脏的一团） */
+.hub-serial:hover { border-color: rgb(var(--hub-accent) / 0.55); box-shadow: var(--snb-shadow-card-hover); }
 .hub-serial-art {
   flex-shrink: 0; width: 104px; border-radius: 10px; overflow: hidden;
   border: 1px solid var(--snb-hairline-strong);
@@ -827,9 +850,25 @@
 
 /* ══════ 文章页 ══════ */
 
-/* 阅读区暖灰墨（定稿问题⑧）：纸是暖褐、墨换同色温暖灰，冷蓝灰让「纸」读起来像屏幕。
-   只落在文章页作用域——电子书那套 9 分配色一个值都不动。 */
+/* 阅读面配色（两档各一套，只落在文章页作用域——电子书那套 9 分配色一个值都不动）。
+   🚨 顺序：.dark .hub-article 特异度 (0,2,0) 天然压过 .hub-article (0,1,0)，
+   与 tokens.css 的「谁在后谁赢」不同，这里不靠顺序靠特异度，挪块不会翻车。 */
 .hub-article {
+  /* 白天档（值照 Claude Design 浅色定稿「杂志架文章页」逐条抄，不自己调）：
+     纸=面板色，速览卡与代码机箱都往**深**里走一档——白天里「更用力」等于更黑。
+     ⚠️ 代码四档亮度在白天档必须重新排：t3 压深井只有 4.23:1（低于正文 4.5 底线，
+     tokens.css 明写「well 上一律降级 t2」），所以注释档落在 t2 而不是 t3。 */
+  --hub-paper: #FBF9F5;        /* 阅读面（纸）= panel */
+  --hub-paper-brief: #E5DFD3;  /* 速览卡底 = 抬升面（纸上压一档，最响的一段） */
+  --hub-paper-code: #EAE5DB;   /* 代码机箱底 = 深井（定稿同值） */
+  --hub-ink: 28 26 22;         /* #1C1A16 正文墨（16.5:1，定稿值） */
+  --hub-ink-dim: #6F6B62;      /* 纸上的弱字（眉标/注/时间戳），压 panel 5.05:1 */
+  --hub-ink-quote: #3A362E;    /* 代码字符串档，压机箱 9.8:1 */
+  --hub-ink-mute: #5A5750;     /* 代码注释档，压机箱 5.74:1（不用 t3：4.23 不过线） */
+}
+.dark .hub-article {
+  /* 阅读区暖灰墨（定稿问题⑧）：纸是暖褐、墨换同色温暖灰，冷蓝灰让「纸」读起来像屏幕。
+     只落在文章页作用域——电子书那套 9 分配色一个值都不动。逐字未动。 */
   --hub-paper: #14120F;        /* 阅读面（纸） */
   --hub-paper-brief: #1B1710;  /* 速览卡底：纸上再抬一档暖 */
   --hub-paper-code: #100F0D;   /* 代码机箱底：纸上压一档 */
@@ -854,7 +893,7 @@
 /* 纸：全高纸柱（不是圆角卡）——左右发丝线把它从沥青底上「立」起来 */
 .hub-paper {
   background: var(--hub-paper);
-  border-inline: 1px solid rgba(239, 235, 228, 0.06);
+  border-inline: 1px solid rgb(var(--snb-t1) / 0.06);
   padding: 44px 36px 64px;
   color: rgb(var(--hub-ink));
 }
@@ -899,7 +938,7 @@
 .hub-paper .hub-prose h3 + p { margin-top: 14px; }
 .hub-paper .hub-prose h2 + p { margin-top: 22px; }
 .hub-paper .hub-prose p { margin: 26px 0 0; }
-.hub-paper .hub-prose blockquote { background: rgba(239, 235, 228, 0.03); }
+.hub-paper .hub-prose blockquote { background: rgb(var(--snb-t1) / 0.03); }
 
 /* 眉行：类目 · 日期 · 时长。这个站没有作者字段，署名走文末出处区，不在眉行编作者 */
 .hub-eyebrow-row {
@@ -942,7 +981,7 @@
 .hub-article-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
 /* 一手出处：内容纪律不是装饰件，固定位置、不折叠、不省略 */
-.hub-sources { margin: 52px 0 0; padding-top: 22px; border-top: 1px solid rgba(239, 235, 228, 0.14); }
+.hub-sources { margin: 52px 0 0; padding-top: 22px; border-top: 1px solid rgb(var(--snb-t1) / 0.14); }
 .hub-sources .lb {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
@@ -968,12 +1007,12 @@
 .hub-artnav { margin-top: 56px; }
 .hub-artnav .nt { font-size: 27px; line-height: 1.38; }
 .hub-artnav .next-hook { -webkit-line-clamp: 2; font-size: 16.5px; line-height: 1.8; max-width: 60ch; }
-.hub-artnav-foot { margin-top: 26px; padding: 18px 0 0; border-top: 1px solid rgba(239, 235, 228, 0.10); }
+.hub-artnav-foot { margin-top: 26px; padding: 18px 0 0; border-top: 1px solid rgb(var(--snb-t1) / 0.10); }
 .hub-artnav-foot a { min-height: 44px; display: inline-flex; align-items: center; font-size: 14.5px; }
 .hub-artnav-foot a:last-child { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px; }
 
 /* 相关阅读 · 同类目 */
-.hub-related { margin: 44px 0 0; padding-top: 24px; border-top: 1px solid rgba(239, 235, 228, 0.14); }
+.hub-related { margin: 44px 0 0; padding-top: 24px; border-top: 1px solid rgb(var(--snb-t1) / 0.14); }
 .hub-related .lb {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
@@ -989,10 +1028,10 @@
   min-height: 44px;
   padding: 12px 0;
   text-decoration: none;
-  border-bottom: 1px solid rgba(239, 235, 228, 0.08);
+  border-bottom: 1px solid rgb(var(--snb-t1) / 0.08);
 }
 .hub-related-row .rt { font-size: 17px; line-height: 1.6; color: rgb(var(--snb-t1)); transition: color 120ms cubic-bezier(0.2, 0, 0, 1); }
-.hub-related-row:hover .rt { color: #FFFFFF; }
+.hub-related-row:hover .rt { color: rgb(var(--snb-cta-hover)); }
 .hub-related-row .rc {
   flex: none;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1034,7 +1073,7 @@
   letter-spacing: 0.1em;
   color: var(--hub-ink-dim);
 }
-.hub-toc nav { display: flex; flex-direction: column; border-left: 1px solid rgba(239, 235, 228, 0.10); }
+.hub-toc nav { display: flex; flex-direction: column; border-left: 1px solid rgb(var(--snb-t1) / 0.10); }
 .hub-toc a {
   display: block;
   margin-left: -1px;
@@ -1051,7 +1090,7 @@
   color: rgb(var(--snb-t1));
   font-weight: 600;
   border-left-color: rgb(var(--snb-safety));
-  background: rgba(239, 235, 228, 0.04);
+  background: rgb(var(--snb-t1) / 0.04);
 }
 .hub-toc .pct {
   margin-top: 16px;
@@ -1078,7 +1117,7 @@
   padding: 0 16px;
   background: var(--hub-paper);
   border: none;
-  border-bottom: 1px solid rgba(239, 235, 228, 0.10);
+  border-bottom: 1px solid rgb(var(--snb-t1) / 0.10);
   color: rgb(var(--hub-ink));
   font-size: 13.5px;
   text-align: left;
@@ -1103,7 +1142,7 @@
   overflow: hidden;
   max-height: 0;
   background: var(--hub-paper);
-  border-bottom: 1px solid rgba(239, 235, 228, 0.10);
+  border-bottom: 1px solid rgb(var(--snb-t1) / 0.10);
   transition: max-height 420ms cubic-bezier(0.2, 0, 0, 1); /* 开合落定 420ms */
 }
 .hub-tocbar-panel.open { max-height: 60vh; overflow-y: auto; }
@@ -1132,7 +1171,7 @@
   letter-spacing: 0.1em;
   color: rgb(var(--snb-t3));
 }
-.hub-rail .blk { border-top: 1px solid rgba(239, 235, 228, 0.10); padding-top: 18px; }
+.hub-rail .blk { border-top: 1px solid rgb(var(--snb-t1) / 0.10); padding-top: 18px; }
 .hub-rail dl {
   margin: 12px 0 0;
   display: grid;
@@ -1170,11 +1209,12 @@
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: 0 2px 0 var(--snb-edge);
   transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), background 120ms cubic-bezier(0.2, 0, 0, 1);
 }
-.hub-cta:hover { background: #FFFFFF; transform: translateY(-1px); }
-.hub-cta:active { background: #DED8CE; transform: translateY(1px); transition-duration: 55ms; }
+/* 悬停在深色是提亮（→#FFFFFF）、在白天是加深（→#0F0E0C）：白天里「更用力」等于更黑 */
+.hub-cta:hover { background: rgb(var(--snb-cta-hover)); transform: translateY(-1px); }
+.hub-cta:active { background: rgb(var(--snb-cta-press)); transform: translateY(1px); transition-duration: 55ms; }
 .hub-cta.wide { display: flex; width: 100%; margin-top: 12px; }
 /* 次按钮 = ghost 描边纸白字 */
 .hub-btn2 {
@@ -1192,7 +1232,7 @@
   cursor: pointer;
   transition: background 120ms cubic-bezier(0.2, 0, 0, 1), border-color 120ms cubic-bezier(0.2, 0, 0, 1);
 }
-.hub-btn2:hover { background: rgb(var(--snb-panel)); border-color: rgba(239, 235, 228, 0.3); }
+.hub-btn2:hover { background: rgb(var(--snb-panel)); border-color: var(--snb-hairline-heavy); }
 .hub-btn2:active { transform: translateY(1px); transition-duration: 55ms; }
 .hub-btn2[disabled] { background: rgb(var(--snb-elv)); border-color: transparent; color: rgb(var(--snb-t3)); cursor: default; }
 /* 幽灵 */
@@ -1211,7 +1251,7 @@
   cursor: pointer;
   transition: color 120ms cubic-bezier(0.2, 0, 0, 1), background 120ms cubic-bezier(0.2, 0, 0, 1);
 }
-.hub-btn3:hover { color: rgb(var(--snb-t1)); background: rgba(239, 235, 228, 0.06); }
+.hub-btn3:hover { color: rgb(var(--snb-t1)); background: rgb(var(--snb-t1) / 0.06); }
 
 /* ── 空态 / 错误态（公用件 v3 配对件）：请求成功且空→空态，失败/超时→错误态，不可互换 ── */
 .hub-state {
@@ -1247,7 +1287,7 @@
    文件名条常驻 44 高（复制按钮壳撑足热区），复制按钮四态，长代码不折行横向滚动。 */
 .hub-prose .hub-code {
   margin: 26px 0 0;
-  border: 1px solid rgba(239, 235, 228, 0.10);
+  border: 1px solid rgb(var(--snb-t1) / 0.10);
   border-radius: 10px;
   background: var(--hub-paper-code, rgb(var(--snb-well)));
   overflow: hidden;
@@ -1259,7 +1299,7 @@
   gap: 12px;
   height: 44px;
   padding: 0 6px 0 14px;
-  border-bottom: 1px solid rgba(239, 235, 228, 0.08);
+  border-bottom: 1px solid rgb(var(--snb-t1) / 0.08);
 }
 .hub-code-lang {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1302,7 +1342,7 @@
   transition: background 120ms cubic-bezier(0.2, 0, 0, 1), color 120ms cubic-bezier(0.2, 0, 0, 1),
     border-color 120ms cubic-bezier(0.2, 0, 0, 1);
 }
-.hub-code-copy:hover > span { background: #221E18; color: rgb(var(--snb-t1)); border-color: rgba(239, 235, 228, 0.3); }
+.hub-code-copy:hover > span { background: var(--hub-chip-hover); color: rgb(var(--snb-t1)); border-color: var(--snb-hairline-heavy); }
 /* 已复制：纸白填充沥青字，1.4 秒后回落（绝不白字压橙） */
 .hub-code-copy.is-copied > span {
   background: rgb(var(--snb-t1));
@@ -1371,6 +1411,14 @@
    电子书版式的其余部分（9 分参照）一个值都没动 */
 .hub-part .hub-prose .hub-code,
 .hub-index .hub-prose .hub-code {
+  --hub-paper-code: #EAE5DB;
+  --hub-ink: 28 26 22;
+  --hub-ink-dim: #6F6B62;
+  --hub-ink-quote: #3A362E;
+  --hub-ink-mute: #5A5750;
+}
+.dark .hub-part .hub-prose .hub-code,
+.dark .hub-index .hub-prose .hub-code {
   --hub-paper-code: #100F0D;
   --hub-ink: 189 180 169;
   --hub-ink-dim: #8F877D;
@@ -1409,9 +1457,12 @@
   padding: 0 14px;
   border: 1px dashed var(--snb-hairline-strong);
   border-radius: 8px;
-  background: #141821;
+  background: var(--hub-plate);
 }
-.hub-search .ic { flex: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: rgb(var(--snb-t3)); }
+/* 🚨 搜索框底是 --hub-plate（白天档 = 深井色），t3 压它只有 4.23:1。
+   tokens.css 的纪律「t3 只许压底与面，抬升面与深井上一律降级 t2」在这里生效。
+   深色档 t2 压 #141821 是 8.5:1，比原来的 t3 更好读，不算回归。 */
+.hub-search .ic { flex: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: rgb(var(--snb-t2)); }
 .hub-search input {
   flex: 1;
   min-width: 0;
@@ -1421,7 +1472,7 @@
   color: rgb(var(--snb-t1));
   font-size: 14px;
 }
-.hub-search input::placeholder { color: rgb(var(--snb-t3)); }
+.hub-search input::placeholder { color: rgb(var(--snb-t2)); }
 .hub-search .off {
   flex: none;
   padding: 2px 6px;
@@ -1430,7 +1481,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
   letter-spacing: 0.06em;
-  color: rgb(var(--snb-t3));
+  color: rgb(var(--snb-t2));
 }
 .hub-search-note {
   margin: 8px 0 0;
@@ -1466,7 +1517,7 @@
   font-size: 13.5px;
   transition: color 120ms cubic-bezier(0.2, 0, 0, 1), border-color 120ms cubic-bezier(0.2, 0, 0, 1);
 }
-.hub-cat:hover > span { color: rgb(var(--snb-t1)); border-color: rgba(239, 235, 228, 0.3); }
+.hub-cat:hover > span { color: rgb(var(--snb-t1)); border-color: var(--snb-hairline-heavy); }
 .hub-cat[aria-selected='true'] > span {
   background: rgb(var(--snb-t1));
   border-color: rgb(var(--snb-t1));
@@ -1494,7 +1545,7 @@
   overflow: hidden;
   transition: border-color 120ms cubic-bezier(0.2, 0, 0, 1), transform 120ms cubic-bezier(0.2, 0, 0, 1);
 }
-.hub-card:hover { border-color: rgba(239, 235, 228, 0.3); transform: translateY(-1px); }
+.hub-card:hover { border-color: var(--snb-hairline-heavy); transform: translateY(-1px); }
 /* 封面槽三态：有图铺满 / 无图=类目字标平色板 / 加载中=静态骨架（不闪不呼吸） */
 .hub-card-cover {
   position: relative;
@@ -1502,7 +1553,7 @@
   display: grid;
   place-items: center;
   border-bottom: 1px solid var(--snb-hairline);
-  background: #141821;
+  background: var(--hub-plate);
   overflow: hidden;
 }
 .hub-card-cover.has-img { background: rgb(var(--snb-elv)); }
@@ -1521,7 +1572,7 @@
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #2C333D;
+  color: var(--hub-plate-word);
 }
 .hub-card-cover .skel { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .hub-card-cover .skel i { display: block; height: 10px; border-radius: 5px; background: rgb(var(--snb-elv)); }
@@ -1531,7 +1582,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
   letter-spacing: 0.06em;
-  color: #3A424E;
+  color: var(--hub-plate-note);
 }
 .hub-card-body { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 18px; }
 .hub-card-meta {
@@ -1578,7 +1629,7 @@
 
 /* 骨架卡：高度、圆角、位置与真卡完全一致，不闪不呼吸（CLS 修复③） */
 .hub-cardskel { background: rgb(var(--snb-panel)); border: 1px solid var(--snb-hairline); border-radius: 12px; overflow: hidden; }
-.hub-cardskel .cv { aspect-ratio: 16 / 9; background: #1B1F27; border-bottom: 1px solid var(--snb-hairline); }
+.hub-cardskel .cv { aspect-ratio: 16 / 9; background: var(--hub-skel-cv); border-bottom: 1px solid var(--snb-hairline); }
 .hub-cardskel .bd { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; }
 .hub-cardskel .bd i { display: block; border-radius: 7px; background: rgb(var(--snb-elv)); }
 .hub-cardskel .bd i:nth-child(1) { height: 20px; width: 84px; border-radius: 5px; }
@@ -1683,7 +1734,7 @@
   border-bottom: 1px solid var(--snb-hairline-strong);
   transition: color 120ms cubic-bezier(0.2, 0, 0, 1), border-color 120ms cubic-bezier(0.2, 0, 0, 1);
 }
-.hub-manual:hover { color: rgb(var(--snb-t1)); border-color: rgba(239, 235, 228, 0.3); }
+.hub-manual:hover { color: rgb(var(--snb-t1)); border-color: var(--snb-hairline-heavy); }
 
 /* 文章页加载骨架：静态色块，几何与正式态对齐（不闪不呼吸） */
 .hub-artskel i { display: block; border-radius: 10px; background: rgb(var(--snb-elv)); }

@@ -118,7 +118,7 @@ export function PromptSheet({
               // 🪦 rose/amber 两枚品牌外色随 v2 双强调色板退役）
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] ${
                 liked
-                  ? 'border-transparent bg-paper font-semibold text-asphalt'
+                  ? 'border-transparent bg-snb-cta font-semibold text-snb-cta-fg'
                   : 'border-snb-hairline-strong bg-snb-elv font-medium text-snb-t1'
               }`}
             >
@@ -132,7 +132,7 @@ export function PromptSheet({
               onClick={onToggleFavorite}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] ${
                 favorited
-                  ? 'border-transparent bg-paper font-semibold text-asphalt'
+                  ? 'border-transparent bg-snb-cta font-semibold text-snb-cta-fg'
                   : 'border-snb-hairline-strong bg-snb-elv font-medium text-snb-t1'
               }`}
             >

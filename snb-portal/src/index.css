@@ -9,13 +9,15 @@
   }
   /* 选区文字用语义 token，双主题下都保持可读（固定浅色阶在纸面主题会与背景趋同） */
   ::selection {
-    @apply bg-primary-500/30 text-snb-t1;
+    @apply bg-snb-safety/30 text-snb-t1;
   }
 
-  /* 滚动条适配：color-scheme 让原生控件（滚动条等）走暗色。恒暗单主题
-     （html.dark 硬编码常驻），🪦 浅色分支与 useTheme 同步逻辑已随主题切换能力退役 */
+  /* 滚动条适配：color-scheme 让原生控件（滚动条/表单）跟着换深浅。
+     ⚠️ 这里只给**兜底**值（浅色），真正生效的是主题契约在 <html> 上写的**行内**
+     style.colorScheme（首帧 boot 片段写一次、切档时 applyTheme 再写）——行内样式
+     特异度更高，两档都准。删掉这条不会出错，留着是防「JS 挂了」时滚动条错档。 */
   :root {
-    color-scheme: dark;
+    color-scheme: light;
   }
   /* 细滚动条 + 品牌墨色滑块（Firefox 全版本 / Chromium 121+；其余浏览器退回 color-scheme 原生深浅） */
   * {
@@ -27,10 +29,10 @@
 /* 灵感库「直接使用」后创作票据的一次性安全橙扩散环（Composer 覆盖层 animate-[snbComposerPulse_…] 引用） */
 @keyframes snbComposerPulse {
   from {
-    box-shadow: 0 0 0 0 rgba(255, 92, 0, 0.5);
+    box-shadow: 0 0 0 0 rgb(var(--snb-safety) / 0.5);
   }
   to {
-    box-shadow: 0 0 0 20px rgba(255, 92, 0, 0);
+    box-shadow: 0 0 0 20px rgb(var(--snb-safety) / 0);
   }
 }
 
@@ -84,10 +86,10 @@
 /* 参考图样片就位的一次性安全橙微环（RefThumb 由骨架变真图那一刻，确认「加好了」）*/
 @keyframes snbRefLand {
   from {
-    box-shadow: 0 0 0 0 rgba(255, 92, 0, 0.45);
+    box-shadow: 0 0 0 0 rgb(var(--snb-safety) / 0.45);
   }
   to {
-    box-shadow: 0 0 0 7px rgba(255, 92, 0, 0);
+    box-shadow: 0 0 0 7px rgb(var(--snb-safety) / 0);
   }
 }
 

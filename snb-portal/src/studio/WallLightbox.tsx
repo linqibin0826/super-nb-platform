@@ -44,7 +44,7 @@ function PanelToggle(props: { label: string; on: boolean; glyph: string; count: 
       onClick={props.onClick}
       className={`inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border px-4 text-[13.5px] transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60 ${
         props.on
-          ? 'border-transparent bg-paper font-semibold text-asphalt'
+          ? 'border-transparent bg-snb-cta font-semibold text-snb-cta-fg'
           : 'border-snb-hairline-strong text-snb-t1 hover:border-[rgba(239,235,228,0.3)] hover:bg-snb-panel'
       }`}
     >

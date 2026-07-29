@@ -37,7 +37,7 @@ function SubNav({ onOpenGuide }: { onOpenGuide: () => void }) {
               <span
                 className={`flex h-full w-full items-center justify-center rounded-full px-4 text-[13.5px] transition-colors sm:h-8 sm:w-auto ${
                   isActive
-                    ? 'bg-paper font-semibold text-asphalt'
+                    ? 'bg-snb-cta font-semibold text-snb-cta-fg'
                     : 'border border-snb-hairline-strong text-snb-t2 hover:border-[rgba(239,235,228,0.3)] hover:text-snb-t1'
                 }`}
               >
@@ -69,7 +69,7 @@ export function AppRoutes() {
   // 须知单只挡「申请开票」这一条路由(2026-07-29 定稿):我的申请 / 抬头管理不再被拦
   const onApply = pathname === '/'
   return (
-    <ThemeScope theme="dark" className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
+    <ThemeScope theme="inherit" className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
       {onApply && (guide.show || reopen) && (
         <FirstVisitGuide
           onConfirm={() => {

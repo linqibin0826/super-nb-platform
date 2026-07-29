@@ -65,9 +65,10 @@ export function TopBar() {
       homeHref={import.meta.env.BASE_URL}
       resolveHref={isLocalDev ? (item: SiteNavItem) => DEV_HREFS[item.key] ?? item.href : undefined}
       labelFor={(item: SiteNavItem) => t(NAV_LABEL_KEYS[item.key])}
+      // 开灯/关灯：AppHeader 把它排在场景槽最前（访客态就是「登录」左边）。
+      // 组件自带契约接线，这里不用传档位也不用接回调。
+      themeToggle
     >
-      {/* 主题开关已下线（港风霓虹改造 2026-07-27，全站恒暗、浅色退役） */}
-
       {user ? (
         <>
           {balance !== null && (
@@ -92,13 +93,13 @@ export function TopBar() {
         <>
           <a
             href={loginUrl()}
-            className="inline-flex items-center whitespace-nowrap rounded-full bg-transparent px-3 py-1.5 text-xs font-medium text-snb-t2 transition-colors hover:bg-snb-t1/5 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+            className="inline-flex items-center whitespace-nowrap rounded-full bg-transparent px-3 py-1.5 text-xs font-medium text-snb-t2 transition-colors hover:bg-snb-t1/5 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
           >
             {t('studio.nav.login')}
           </a>
           <a
             href={consoleHref('/register')}
-            className="inline-flex items-center whitespace-nowrap rounded-full bg-paper px-3.5 py-1.5 text-xs font-semibold text-asphalt no-underline transition-colors hover:bg-[#E2DDD3]"
+            className="inline-flex items-center whitespace-nowrap rounded-full bg-snb-cta px-3.5 py-1.5 text-xs font-semibold text-snb-cta-fg no-underline transition-colors duration-quick ease-snb hover:bg-snb-cta-hover"
           >
             {t('studio.nav.signup')}
           </a>

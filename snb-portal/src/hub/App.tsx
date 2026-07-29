@@ -14,7 +14,7 @@ function ReaderRedirect() {
 /** 路由树独立导出：测试用 MemoryRouter 包它，生产由下方 App 套 BrowserRouter */
 export function AppRoutes() {
   return (
-    <ThemeScope theme="dark" className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
+    <ThemeScope theme="inherit" className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
       {/* 页脚钉底：路由内容撑 flex-1，短页（空态/加载态）页脚也贴底不悬空 */}
       <div className="flex-1">
         <Routes>

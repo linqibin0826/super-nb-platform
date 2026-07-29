@@ -12,11 +12,13 @@ export interface StatCardProps {
   className?: string
 }
 
+// 浅色档实测：-600 压 -100 底一律不到 4.5:1（primary 3.37 / emerald 3.32 / red 3.95），
+// 白天统一降到 -700（4.83 / 4.84 / 5.30 ✓）；深色分支 -400 原样不动
 const iconTones: Record<StatTone, string> = {
-  primary: 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400',
-  success: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-  warning: 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400',
-  danger: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+  primary: 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
+  success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  warning: 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
+  danger: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 }
 
 export function StatCard({ label, value, icon, tone = 'primary', trend, className }: StatCardProps) {
@@ -39,8 +41,10 @@ export function StatCard({ label, value, icon, tone = 'primary', trend, classNam
           <p
             className={cx(
               'mt-1 flex items-center gap-1 text-xs font-medium',
+              // emerald-600 压卡片面只有 3.58:1，白天降一档到 -700（5.22:1）；
+              // red-600 压面 4.59:1 达标，保持不动
               trend.direction === 'up'
-                ? 'text-emerald-600 dark:text-emerald-400'
+                ? 'text-emerald-700 dark:text-emerald-400'
                 : 'text-red-600 dark:text-red-400'
             )}
           >

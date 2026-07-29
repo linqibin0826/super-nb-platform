@@ -1,9 +1,10 @@
 <!doctype html>
-<!-- 🚨 class="dark" 常驻：全站恒暗（港风霓虹改造 2026-07-27）。首帧就是暗的、不闪白。
-     绝不能删——全站大量 dark: 变体依赖它存在。 -->
-<html lang="zh-CN" class="dark">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <!-- 🚨 首帧防闪 boot：内联、在任何 CSS 之前。真源见 src/ui/theme/snbTheme.ts
+         的 THEME_BOOT_SNIPPET（改必四边同步）。cookie 缺席=跟随系统，异常兜底浅色。 -->
+    <script>(function(){try{var m=document.cookie.match(/(?:^|;\s*)snb_theme=(dark|light)(?:;|$)/);var t=m?m[1]:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var e=document.documentElement;e.classList.toggle('dark',t==='dark');e.style.colorScheme=t}catch(_){}})()</script>
     <link rel="icon" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="super-nb 杂志架：Codex / Claude Code 教程、实战分享与电子书" />

@@ -5,7 +5,11 @@ import { queueLabel } from './queueLabel'
 import { t } from '../i18n'
 import { st } from './i18nStudio'
 import { StatusLamp } from './parts'
+import { resolveTheme } from '../themeCookie'
 import type { GenerationQueue } from './useGenerationQueue'
+
+/** 彩纸是 canvas 画的，吃不到 CSS 变量；放的那一刻现问一次当前档即可（不需要订阅） */
+const isDarkNow = () => resolveTheme() === 'dark'
 
 interface Props {
   queue: GenerationQueue
@@ -50,7 +54,12 @@ export function ResultsTray({ queue, onPreview, onClose }: Props) {
           scalar: 0.8,
           ticks: 130,
           disableForReducedMotion: true,
-          colors: ['#FF5C00', '#FFE4D3', '#FFC7A6', '#B04000'],
+          // 🚨 彩纸落在**页面底**上，两档必须各配一套：深色档那三支浅橙（#FFE4D3/#FFC7A6）
+          // 压到白天档的纸上几乎看不见（最浅那支对 #F2EEE6 只有 1.1:1，等于没放）。
+          // 白天档整体压深一档：熔铁橙 + 两支中深橙 + 一支近墨的深棕橙。
+          colors: isDarkNow()
+            ? ['#FF5C00', '#FFE4D3', '#FFC7A6', '#B04000']
+            : ['#BA4400', '#E06A1F', '#8C3200', '#5C2100'],
           origin: { x: 0.5, y: 0.78 },
         })
       )
@@ -80,7 +89,7 @@ export function ResultsTray({ queue, onPreview, onClose }: Props) {
               type="button"
               onClick={onClose}
               title={t('studio.results.close')}
-              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv px-2.5 py-1 text-xs text-snb-t3 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv px-2.5 py-1 text-xs text-snb-t3 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
             >
               {t('studio.results.collapse')}
               <svg

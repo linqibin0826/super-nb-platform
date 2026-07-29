@@ -39,20 +39,20 @@ export function SpecPanel(props: SpecPanelProps) {
   const ratioBtnClass = (active: boolean) =>
     `relative flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-1.5 text-[12.5px] transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60 disabled:cursor-not-allowed disabled:opacity-60 ${
       active
-        ? 'border-transparent font-semibold text-asphalt'
+        ? 'border-transparent font-semibold text-snb-cta-fg'
         : 'border-snb-hairline-strong text-snb-t2 hover:border-[rgba(239,235,228,0.4)] hover:text-snb-t1'
     }`
 
   const ratioInk = (active: boolean) =>
     active &&
     (reduceMotion ? (
-      <span aria-hidden="true" className="absolute inset-0 rounded-xl bg-paper" />
+      <span aria-hidden="true" className="absolute inset-0 rounded-xl bg-snb-cta" />
     ) : (
       <motion.span
         aria-hidden="true"
         layoutId="chip-ink-ratio"
         transition={{ type: 'spring', stiffness: 520, damping: 40 }}
-        className="absolute inset-0 rounded-xl bg-paper"
+        className="absolute inset-0 rounded-xl bg-snb-cta"
       />
     ))
 
@@ -144,7 +144,7 @@ export function SpecPanel(props: SpecPanelProps) {
                     step={64}
                     value={spec.w}
                     onChange={(e) => props.updateSpec({ w: e.target.value })}
-                    className="w-[80px] rounded-lg border border-snb-hairline bg-snb-elv/60 px-2 py-1 font-mono text-[12.5px] text-snb-t1 outline-none transition-colors focus:border-primary-500"
+                    className="w-[80px] rounded-lg border border-snb-hairline bg-snb-elv/60 px-2 py-1 font-mono text-[12.5px] text-snb-t1 outline-none transition-colors focus:border-snb-safety"
                   />
                 </label>
                 <span aria-hidden="true">×</span>
@@ -157,7 +157,7 @@ export function SpecPanel(props: SpecPanelProps) {
                     step={64}
                     value={spec.h}
                     onChange={(e) => props.updateSpec({ h: e.target.value })}
-                    className="w-[80px] rounded-lg border border-snb-hairline bg-snb-elv/60 px-2 py-1 font-mono text-[12.5px] text-snb-t1 outline-none transition-colors focus:border-primary-500"
+                    className="w-[80px] rounded-lg border border-snb-hairline bg-snb-elv/60 px-2 py-1 font-mono text-[12.5px] text-snb-t1 outline-none transition-colors focus:border-snb-safety"
                   />
                 </label>
                 <span>px</span>

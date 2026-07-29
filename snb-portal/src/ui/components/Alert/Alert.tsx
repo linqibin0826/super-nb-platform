@@ -8,11 +8,15 @@ export interface AlertProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'
   title?: ReactNode
 }
 
+// 语义色条走双档槽位：深色取值与旧的 primary-500 / snb-amber / snb-ember / dark-500
+// 逐字相同（#FF5C00 / #FF5C00 / #E5484D / #828B96），浅色自动压深。
+// ⚠️ 旧的固定 hex 在纸上都不达标：#FF5C00 压面 2.94:1、#828B96 压面 3.28:1 卡在线上。
+// v2 色板没有黄：警告就是安全橙，危险就是功能红。
 const tones: Record<AlertTone, string> = {
-  tip: 'border-l-primary-500',
-  warning: 'border-l-snb-amber',
-  danger: 'border-l-snb-ember',
-  info: 'border-l-dark-500',
+  tip: 'border-l-snb-safety',
+  warning: 'border-l-snb-safety',
+  danger: 'border-l-snb-danger',
+  info: 'border-l-snb-lamp-off',
 }
 
 /** 记录卡：左 2px 语义色条 + 发丝线边（learn 警示块母题） */

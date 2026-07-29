@@ -4,7 +4,7 @@
 // 🚨 事实纪律：模型清单绑用户 Key、预估绑用户分组，访客侧根本没有这两份数据 ⇒
 //    一律骨架 + 口径说明，**一个模型名、一个价格数字都不许出现**。
 //    可以写的真数就三样：七种比例档 + 1K/2K/4K 计费归档 / 灵感库 5778 条 / 队列同时 5 个。
-// 骨架用静态 #242A33 色块（snb-elv）：不闪不动，「数据永远不闪」。
+// 骨架用静态 snb-elv 色块（深 #242A33 / 浅 #E5DFD3）：不闪不动，「数据永远不闪」。
 import type { ReactNode } from 'react'
 import { RATIO_OPTIONS } from '../lib/sizes'
 import { RatioIcon } from './composer/RatioIcon'
@@ -16,7 +16,8 @@ import { st } from './i18nStudio'
 function Slot({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-3 rounded-[10px] border border-snb-hairline bg-snb-well px-[18px] py-4">
-      <span className="font-mono text-[11px] tracking-[0.14em] text-snb-t3">{title}</span>
+      {/* 🚨 深井上不许用 t3（4.23:1 不过线，见 tokens.css 的降级纪律），标签也走 t2 */}
+      <span className="font-mono text-[11px] tracking-[0.14em] text-snb-t2">{title}</span>
       {children}
     </div>
   )
@@ -76,7 +77,7 @@ export function GuestSpecBoard() {
             <span className="font-mono text-[22px] font-bold text-snb-t3">$</span>
             <span aria-hidden="true" className="h-5 w-24 rounded-lg bg-snb-elv" />
           </div>
-          <div className="font-mono text-xs leading-[1.9] text-snb-t3">
+          <div className="font-mono text-xs leading-[1.9] text-snb-t2">
             {st('studio.guestBoard.costFormula1')}
             <br />
             {st('studio.guestBoard.costFormula2')}

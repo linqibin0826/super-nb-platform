@@ -250,7 +250,7 @@ export default function App() {
   )
 
   return (
-    <ThemeScope theme="dark" className="min-h-screen">
+    <ThemeScope theme="inherit" className="min-h-screen">
       <AmbientBackground variant="hero" />
       <div className="relative z-[1] flex min-h-screen flex-col">
         <TopBar />

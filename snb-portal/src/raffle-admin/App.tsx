@@ -8,7 +8,7 @@ export function AppRoutes() {
   // 模式),站头/主题开关由宿主提供;主题跟父域 cookie snb_theme,登录靠父域 cookie SSO,
   // 不依赖 sub2api 往 iframe src 上拼的 token= 参数(设计稿 §2)。
   return (
-    <ThemeScope theme="dark" className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
+    <ThemeScope theme="inherit" className="flex min-h-screen flex-col bg-snb-bg text-snb-t1">
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-7">
         <Routes>
           <Route path="/" element={<Navigate to="/admin" replace />} />

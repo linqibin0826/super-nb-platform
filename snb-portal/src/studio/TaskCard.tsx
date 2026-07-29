@@ -59,7 +59,7 @@ function StatusGlyph({ status }: { status: GenTask['status'] }) {
     return (
       <span
         aria-hidden="true"
-        className="h-2 w-2 flex-none animate-pulse rounded-full bg-primary-500 motion-reduce:animate-none"
+        className="h-2 w-2 flex-none animate-pulse rounded-full bg-snb-safety motion-reduce:animate-none"
       />
     )
   }
@@ -78,7 +78,7 @@ function StatusGlyph({ status }: { status: GenTask['status'] }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={`flex-none ${isDone ? 'text-primary-500' : 'text-red-700 dark:text-red-400'}`}
+      className={`flex-none ${isDone ? 'text-snb-safety' : 'text-red-700 dark:text-red-400'}`}
     >
       {isDone ? <path d="M20 6 9 17l-5-5" /> : <path d="M6 18 18 6M6 6l12 12" />}
     </svg>
@@ -92,7 +92,7 @@ function RowAction({ label, onClick, disabled }: { label: string; onClick: () =>
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="shrink-0 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv px-2.5 py-1 text-xs text-snb-t3 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+      className="shrink-0 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv px-2.5 py-1 text-xs text-snb-t3 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-50"
     >
       {label}
     </button>
@@ -131,7 +131,7 @@ export function TaskCard(p: TaskCardProps) {
           onClick={p.onToggle}
           aria-expanded={p.expanded}
           aria-label={task.input.prompt}
-          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1 py-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1 py-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
         >
           <StatusGlyph status={task.status} />
           <span className="min-w-0 flex-1 truncate text-[13.5px] text-snb-t1">{task.input.prompt}</span>
@@ -231,7 +231,7 @@ export function TaskCard(p: TaskCardProps) {
                     {/* reduced-motion 兜底：画布不启动，只留静态状态点 */}
                     <span
                       aria-hidden="true"
-                      className="absolute left-1/2 top-1/2 hidden h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-500 motion-reduce:block"
+                      className="absolute left-1/2 top-1/2 hidden h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-snb-safety motion-reduce:block"
                     />
                   </div>
                 ))}
@@ -249,7 +249,7 @@ export function TaskCard(p: TaskCardProps) {
                 </div>
                 <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-snb-elv">
                   <div
-                    className="h-full rounded-full bg-paper transition-[width] duration-[420ms] ease-[cubic-bezier(0.2,0,0,1)]"
+                    className="h-full rounded-full bg-snb-cta transition-[width] duration-[420ms] ease-[cubic-bezier(0.2,0,0,1)]"
                     style={{ width: `${Math.min(92, Math.round(92 * (1 - Math.exp(-elapsed / 45))))}%` }}
                   />
                 </div>

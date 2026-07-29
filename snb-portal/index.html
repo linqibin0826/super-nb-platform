@@ -1,12 +1,17 @@
 <!doctype html>
-<!-- 🚨 class="dark" 常驻：全站恒暗（港风霓虹改造 2026-07-27）。写在这里而不是靠 JS 挂，
-     是为了首帧就是暗的、不闪白。绝不能删——全站大量 dark: 变体依赖它存在。 -->
-<html lang="zh" class="dark">
+<html lang="zh">
   <head>
     <meta charset="UTF-8" />
+    <!-- 🚨 首帧防闪 boot：内联、在任何 CSS 之前。真源见 src/ui/theme/snbTheme.ts
+         的 THEME_BOOT_SNIPPET（改必四边同步）。cookie 缺席=跟随系统，异常兜底浅色。 -->
+    <script>(function(){try{var m=document.cookie.match(/(?:^|;\s*)snb_theme=(dark|light)(?:;|$)/);var t=m?m[1]:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var e=document.documentElement;e.classList.toggle('dark',t==='dark');e.style.colorScheme=t}catch(_){}})()</script>
     <link rel="icon" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#17110D" />
+    <!-- 移动端浏览器 UI 配色。⚠️ media 只认**系统**偏好，用户显式选了与系统相反的档时
+         这条会差一档——theme-color 没有「跟 cookie 走」的写法，只影响浏览器外壳不影响页面。
+         值 = tokens.css 两档的页面底（浅 #F2EEE6 / 深 #0E1014）。 -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2EEE6" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0E1014" />
     <title>创作工坊 · SUPER NB</title>
     <meta name="description" content="SUPER·NB 创作工坊：描述画面、选好规格，用 gpt-image-2 按官方价生成图片，逛灵感库找参考，生成的每一张都归你。" />
     <meta property="og:type" content="website" />

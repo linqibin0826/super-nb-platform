@@ -19,7 +19,12 @@ export interface LightboxProps {
 const SWIPE_THRESHOLD_PX = 40
 
 /** 全屏图片预览：黑玻璃遮罩，点大图/背景关闭；批次 >1 张时加左右切换（首尾循环）+
- *  底部缩略条 + 键盘 ←→/Esc + 触屏水平滑动；提供 onDownload 才出下载按钮。 */
+ *  底部缩略条 + 键盘 ←→/Esc + 触屏水平滑动；提供 onDownload 才出下载按钮。
+ *
+ *  🚨 **整件在两档下都是深色画布，一个颜色都不许跟着主题翻**：黑 85% 底、纸白下载键、
+ *  白描边圆钮全部保持原值。理由与 MasonryCard 图上信息层同一条——底下是用户的图，
+ *  白天把画布翻浅会让压在图上的控件与任何浅色图糊成一片。
+ *  （下载键刻意仍用 `bg-paper`/`text-asphalt` 这组**深色定值**，不是漏改成 snb-cta。） */
 export function Lightbox({
   images,
   index,
@@ -84,7 +89,8 @@ export function Lightbox({
           {onDownload && (
             <button
               type="button"
-              className="cursor-pointer rounded-[10px] bg-primary-500 px-3 py-1.5 text-xs text-white"
+              // 🚨「橙底白字」整条退役（实测 2.61:1）：下载键改纸白填充沥青字
+              className="cursor-pointer rounded-[8px] bg-paper px-3 py-1.5 text-xs font-semibold text-asphalt transition-colors duration-quick ease-snb hover:bg-paper-hover active:bg-paper-press"
               onClick={() => onDownload(index)}
             >
               {downloadLabel}

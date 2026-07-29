@@ -238,7 +238,7 @@ export function Composer(p: ComposerProps) {
       <div className="relative overflow-hidden rounded-[22px] border border-snb-hairline-strong bg-snb-panel shadow-[0_16px_40px_-10px_rgba(70,50,38,0.30)] dark:shadow-[0_18px_48px_-10px_rgba(0,0,0,0.6)]">
         {/* 拖拽悬停提示：整卡任意位置松手即加参考图 */}
         {dragging && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[22px] border-2 border-dashed border-primary-500 bg-primary-500/10">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[22px] border-2 border-dashed border-snb-safety bg-snb-safety/10">
             <span className="rounded-full bg-snb-panel/90 px-4 py-2 text-sm text-snb-t1 shadow-card">
               {t('studio.composer.dropHint')}
             </span>
@@ -297,7 +297,7 @@ export function Composer(p: ComposerProps) {
                 ? t('studio.composer.refFull', { max: MAX_REFS })
                 : t('studio.composer.pickerTitle')
             }
-            className="flex h-14 w-14 flex-none flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-snb-hairline-strong text-snb-t3 transition-colors duration-200 hover:border-snb-t3 hover:text-snb-t2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-14 w-14 flex-none flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-snb-hairline-strong text-snb-t3 transition-colors duration-200 hover:border-snb-t3 hover:text-snb-t2 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg
               width="14"
@@ -361,7 +361,7 @@ export function Composer(p: ComposerProps) {
             aria-expanded={expanded}
             aria-label={expanded ? t('studio.composer.collapse') : t('studio.composer.expand')}
             title={expanded ? t('studio.composer.collapse') : t('studio.composer.expand')}
-            className="flex min-w-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv/80 px-3 py-1.5 text-xs text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+            className="flex min-w-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv/80 px-3 py-1.5 text-xs text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
           >
             <svg
               width="12"
@@ -402,13 +402,13 @@ export function Composer(p: ComposerProps) {
             <button
               type="button"
               onClick={p.onOpenTray}
-              className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv/80 px-3 py-1.5 text-xs text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+              className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv/80 px-3 py-1.5 text-xs text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
             >
               {/* 生成中收着托盘：余烬呼吸点提示「里面正在生成」 */}
               {p.runningCount > 0 && (
                 <span
                   aria-hidden="true"
-                  className="h-2 w-2 animate-pulse rounded-full bg-primary-500 motion-reduce:animate-none"
+                  className="h-2 w-2 animate-pulse rounded-full bg-snb-safety motion-reduce:animate-none"
                 />
               )}
               {queueLabel(p.runningCount, p.queuedCount, p.finishedCount) || t('studio.queue.title')}

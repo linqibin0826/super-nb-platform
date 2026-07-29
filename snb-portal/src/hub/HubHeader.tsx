@@ -15,8 +15,9 @@ export function HubHeader() {
       site="hub"
       subtitle={t('hub.title')}
       labelFor={(item) => t(`hub.nav.${item.key}`)}
+      // 开灯/关灯：排在场景槽最前（见 AppHeader）。杂志架是长文站，白天档尤其要有
+      themeToggle
     >
-      {/* 主题开关已下线（港风霓虹改造 2026-07-27，全站恒暗、浅色退役） */}
       {user ? (
         <UserMenu
           user={user}
@@ -36,7 +37,7 @@ export function HubHeader() {
           </a>
           <a
             href={`${CONSOLE_ORIGIN}/register`}
-            className="inline-flex items-center whitespace-nowrap rounded-full bg-paper px-3.5 py-1.5 text-xs font-semibold text-asphalt no-underline transition-colors hover:bg-[#E2DDD3]"
+            className="inline-flex items-center whitespace-nowrap rounded-full bg-snb-cta px-3.5 py-1.5 text-xs font-semibold text-snb-cta-fg no-underline transition-colors duration-quick ease-snb hover:bg-snb-cta-hover"
           >
             {t('hub.nav.signup')}
           </a>

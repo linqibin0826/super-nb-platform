@@ -218,7 +218,7 @@ export function AdminPage() {
                         )}
                         {(detail.status === 'INVOICING' || detail.status === 'ISSUED') && (
                           <>
-                            <label className="block cursor-pointer rounded-lg border-[1.5px] border-dashed border-snb-hairline-strong px-4 py-3 text-center text-[13px] text-snb-t2 transition-colors hover:border-primary-500 hover:text-snb-t1">
+                            <label className="block cursor-pointer rounded-lg border-[1.5px] border-dashed border-snb-hairline-strong px-4 py-3 text-center text-[13px] text-snb-t2 transition-colors hover:border-snb-safety hover:text-snb-t1">
                               <input
                                 type="file"
                                 accept="application/pdf"

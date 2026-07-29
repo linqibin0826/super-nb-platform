@@ -2,9 +2,10 @@ import type { ReactNode } from 'react'
 import type { NavCapsuleItem } from '../NavCapsule/NavCapsule'
 
 /**
- * 全站导航的唯一真源（Header 规范 v2，2026-07-12 站长拍板；spec 见 ai-relay
+ * 全站导航的唯一真源（Header 规范 v2 结构 + GlobalParts v3 数值/词汇；spec 见 ai-relay
  * docs/superpowers/specs/2026-07-12-header-nav-v2-design.md）。
- * 四项固定：我的机位 / 画图机位 / 杂志架 / 今日活动（促销描边+呼吸点）；
+ * 四项固定：我的机位 / 画图机位 / 杂志架 / 今日活动（促销描边+呼吸点）——
+ * 文案与 ai-relay deployment/files/check-headers.sh 的断言逐字一致，改必同步；
  * 「使用指南」入口收进杂志架（hub 首页常驻「使用手册」直达位），新站不再进顶栏。
  * 响应式两段：≥1024 胶囊 / <1024 菜单钮+玻璃下拉浮卡（唯一例外：help 站保留 VitePress 三档）。
  * 非 React 消费方（fork Vue / learn VitePress / activity 静态页）按 templates/app-header.html
@@ -80,7 +81,9 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
   },
   {
     key: 'activity',
-    label: '活动',
+    // 2026-07-29 归队网吧词汇：静态页与 check-headers.sh 断言的一直是「今日活动」，
+    // 本常量此前漏改成了「活动」（全站 12 处副本里唯一的漂移点）
+    label: '今日活动',
     // 2026-07-12 起指活动中心(/activity/all/,registry.json 驱动),不再直挂开卡页
     href: 'https://super-nb.me/activity/all/',
     promo: true,

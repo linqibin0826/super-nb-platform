@@ -2,7 +2,9 @@
    抽奖机房场景样式(2026-07-19 静态稿站长过目定稿;2026-07-27 港风霓虹换色板;2026-07-28 零发光网吧 v2 再换装,布局未动)。
    通用视觉(按钮/卡片/输入)仍走 @super-nb/ui;本文件只放机房人格:
    指示灯/读数井/铭牌标签/清单跳线柱——都是既有 --snb-* 语义槽位的再组合,
-   零新配色(安全橙 #FF5C00 = primary-500;🪦 青玉在线灯随霓虹退役,「已开奖/已接线」改纸白;点灯零光晕,活体只有扩散环)。
+   零新配色(强调只有安全橙一支;🪦 青玉在线灯随霓虹退役,「已开奖/已接线」改主字色;点灯零光晕,活体只有扩散环)。
+   2026-07-29 双档补全:本文件原来把安全橙/纸白写成 hex 常量,白天档会错(橙压纸 2.7:1、
+   纸白灯在纸上等于隐形)。现全部改吃 --snb-* 槽位,两档由 tokens.css 翻。
    ============================================================ */
 
 /* ---------- 指示灯:活体信号,仅「进行中」呼吸,其余静止 ---------- */
@@ -16,12 +18,12 @@
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.2), 0 0 0 3px rgb(var(--snb-well));
 }
 .rf-lamp-active {
-  background: #FF5C00;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 3px rgba(255, 92, 0, 0.45);
+  background: rgb(var(--snb-safety));
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 3px rgb(var(--snb-safety) / 0.45);
   animation: rfLampPulse 2.2s ease-in-out infinite;
 }
 .rf-lamp-drawn {
-  background: #EFEBE4;
+  background: rgb(var(--snb-t1));
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well));
 }
 .rf-lamp-cancelled {
@@ -30,10 +32,10 @@
 @keyframes rfLampPulse {
   0%,
   100% {
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 3px rgba(255, 92, 0, 0.45);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 3px rgb(var(--snb-safety) / 0.45);
   }
   50% {
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 8px rgba(255, 92, 0, 0);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 8px rgb(var(--snb-safety) / 0);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -82,7 +84,7 @@
 }
 .rf-jack-lit {
   border-color: transparent;
-  background: #EFEBE4;
+  background: rgb(var(--snb-t1));
 }
 
 /* ---------- 面板行:悬停微亮,呼应机房面板逐行巡检的既视感 ---------- */
@@ -95,8 +97,12 @@
 
 /* ---------- 盒式下拉:与 Input 同皮肤(照 invoice iv-fp-select 先例),
    终结「下划线下拉贴白盒输入框」的控件语言打架 ---------- */
-/* 恒暗单值（🪦 锈色箭头 %23A08876 随霓虹退役，v2 用 dim 灰） */
+/* ⚠️ data URI 里的 stroke 只能是字面 hex，吃不了 CSS 变量 ⇒ 两档各写一份。
+   值 = 各档的 t2（深 #A0A7B0 / 浅 #5A5750）。🪦 锈色箭头 %23A08876 随霓虹退役。 */
 :root {
+  --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A5750' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.dark {
   --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A0A7B0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 .rf-select {
@@ -117,8 +123,8 @@
 }
 .rf-select:focus {
   outline: none;
-  border-color: #FF5C00;
-  box-shadow: 0 0 0 2px rgb(255 92 0 / 0.3);
+  border-color: rgb(var(--snb-safety));
+  box-shadow: 0 0 0 2px rgb(var(--snb-safety) / 0.3);
 }
 .rf-select:disabled {
   opacity: 0.6;
@@ -153,7 +159,7 @@
   transition: color 0.15s ease;
 }
 .rf-del:hover {
-  color: #E5484D;
+  color: rgb(var(--snb-danger));
 }
 .rf-del:disabled {
   opacity: 0.5;

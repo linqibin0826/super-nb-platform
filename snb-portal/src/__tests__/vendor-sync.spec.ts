@@ -25,6 +25,17 @@ const tokens = read('src/ui/tokens/tokens.css')
 const styles = read('src/ui/styles.css')
 const uiIndex = read('src/ui/index.ts')
 
+// 双档后按块取值：全文匹配会拿到**先出现的浅色档**，深色断言会静默测错对象。
+// 2026-07-29 实测踩过：t2 的「不许是锈色」断言拿到白天档的暖墨 #5A5750 直接红。
+const sliceBlock = (start: RegExp) => {
+  const i = tokens.search(start)
+  if (i < 0) throw new Error(`tokens.css 里找不到 ${start}`)
+  const from = tokens.indexOf('{', i)
+  return tokens.slice(from, tokens.indexOf('\n}', from))
+}
+const lightBlock = sliceBlock(/^:root,\s*\n\.snb-light\s*\{/m)
+const darkBlock = sliceBlock(/^\.dark\s*\{/m)
+
 const extend = (preset as Record<string, any>).theme.extend
 const colors = extend.colors
 const shadow = extend.boxShadow
@@ -73,26 +84,47 @@ describe('vendor 同步：设计系统已是零发光网吧 v2', () => {
     expect(styles).not.toMatch(/text-shadow:/)
   })
 
-  it('恒暗：tokens 的 :root 与 .dark 合并声明，浅色块退役', () => {
-    expect(tokens).toMatch(/:root,\s*\n?\s*\.dark\s*\{/)
-    // 合并声明后同一个变量只该出现一次；出现两次说明浅色块还在
-    expect((tokens.match(/--snb-bg:/g) ?? []).length).toBe(1)
+  it('双档：浅色进 :root/.snb-light、深色进 .dark，且 .dark 必须写在后面', () => {
+    // 2026-07-29 双档补全。恒暗期是 `:root, .dark` 合并声明（分期上线第一步的形态），
+    // 现在必须是两个独立块。
+    expect(tokens).toMatch(/:root,\s*\n?\s*\.snb-light\s*\{/)
+    expect(tokens).toMatch(/\n\.dark\s*\{/)
+    // 每个槽位两档各一份；只剩一份说明某一档漏了
+    expect((tokens.match(/--snb-bg:/g) ?? []).length).toBe(2)
+    // 🚨 顺序铁律：两个选择器特异度同为 (0,1,0)，谁在后谁赢。
+    //    浅色块被挪到 .dark 之后 = 深色档整片失效（且不报错）。
+    expect(tokens.indexOf('\n.dark {')).toBeGreaterThan(tokens.indexOf('.snb-light {'))
+  })
+
+  it('🚨 浅色档三条不可选结论就位（照抄定稿，不许自己调）', () => {
+    // ① 主按钮浅色是**墨块**不是纸白：浅色里最响的一块只能是最黑的一块
+    expect(lightBlock).toContain('--snb-cta-bg: 28 26 22')
+    // ② 安全橙压深到 #BA4400：原 #FF5C00 压纸仅 2.7:1，连大字 3:1 都够不着
+    expect(lightBlock).toContain('--snb-safety: 186 68 0')
+    // ③ 键帽黑底边换实色暖灰侧壁（读作侧壁，不是影子）
+    expect(lightBlock).toContain('--snb-key-side: #C9C2B4')
+    // 遮罩两档都是暗的——变白会让底下页面看着像没关掉
+    expect(lightBlock).toMatch(/--snb-mask:\s*rgba\(28, 26, 22/)
   })
 
   it('v2 槽位就位：沥青 #0E1014、双强调 safety/danger、灯管槽位清零', () => {
-    expect(tokens).toContain('--snb-bg: 14 16 20')
-    expect(tokens).toContain('--snb-safety: 255 92 0')
-    expect(tokens).toContain('--snb-danger: 229 72 77')
+    expect(darkBlock).toContain('--snb-bg: 14 16 20')
+    expect(darkBlock).toContain('--snb-safety: 255 92 0')
+    expect(darkBlock).toContain('--snb-danger: 229 72 77')
     expect(tokens).not.toMatch(/--snb-(tangerine|jade|fuchsia|core)/)
   })
 
-  it('中性回归灰阶：t2 不再是锈色（红分量不得明显高于蓝）', () => {
-    const v = tokens.match(/--snb-t2:\s*(\d+) (\d+) (\d+);/)
+  it('中性回归灰阶：深色 t2 不再是锈色（红分量不得明显高于蓝）', () => {
+    // ⚠️ 必须在**深色块内**取值：双档后 tokens 里有两个 --snb-t2，
+    // 直接全文匹配拿到的是浅色档的 #5A5750（暖墨，红本来就高于蓝，属白天档定稿）。
+    const v = darkBlock.match(/--snb-t2:\s*(\d+) (\d+) (\d+);/)
     expect(v).not.toBeNull()
     expect(Number(v![3])).toBeGreaterThanOrEqual(Number(v![1]))
   })
 
-  it('ThemeSwitch 已从 vendor 出口移除（恒暗，留任何入口都可能切回浅色）', () => {
-    expect(uiIndex).not.toMatch(/ThemeSwitch/)
+  it('主题开关件与契约都在 vendor 出口里（双档补全后，缺任一样下游就切不了档）', () => {
+    expect(uiIndex).toMatch(/ThemeToggle/)
+    expect(uiIndex).toMatch(/THEME_BOOT_SNIPPET/)
+    expect(uiIndex).toMatch(/initTheme/)
   })
 })
