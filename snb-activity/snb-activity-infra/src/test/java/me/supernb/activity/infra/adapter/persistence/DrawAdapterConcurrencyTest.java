@@ -118,13 +118,14 @@ class DrawAdapterConcurrencyTest {
 
     @Test
     void poolSmallerThanEarnedRejectsBeyondPool() throws Exception {
-        Campaign campaign = seed(2); // 只 2 槽,应得 3 → 2 奖 + 1 池空拒抽(次数保留)
+        Campaign campaign = seed(2); // 只 2 槽,应得 3
         Map<String, Long> tally = raceDraw(campaign, 10);
 
+        // 池空拒抽不落行 → used 停在 2、剩余次数恒 ≥1,后续线程全走「领槽→池空」,
+        // NO_DRAWS 永不触发——这正是「次数保留」语义:第 3 次机会留到补货后。
         assertThat(tally.getOrDefault("PRIZE", 0L)).isEqualTo(2);
-        assertThat(tally.getOrDefault("POOL_EMPTY", 0L)).isEqualTo(1);
-        assertThat(tally.getOrDefault("NO_DRAWS", 0L)).isEqualTo(7);
-        // 池空那次事务回滚不落行:draw 表只有 2 条真奖
+        assertThat(tally.getOrDefault("POOL_EMPTY", 0L)).isEqualTo(8);
+        assertThat(tally.getOrDefault("NO_DRAWS", 0L)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM activity.draw WHERE user_id = ?", Integer.class, USER))
                 .isEqualTo(2);
     }
