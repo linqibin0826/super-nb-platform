@@ -29,6 +29,7 @@ import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
 import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
+import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
 import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.checkin.CheckInResult;
 import me.supernb.activity.domain.model.checkin.CheckinMilestoneView;
@@ -73,7 +74,8 @@ class CheckinEndpointTest {
                 mock(ReferralLeaderboardQueryService.class), mock(UsageLeaderboardQueryService.class),
                 mock(RaffleQueryService.class), mock(RegistryStatusQueryService.class),
                 statusQuery, rewardQuery, mock(AchievementWallQueryService.class),
-                new AchievementProperties(false, true));
+                new AchievementProperties(false, true),
+                mock(ThursdayBucketQueryService.class));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();
@@ -148,7 +150,8 @@ class CheckinEndpointTest {
                 mock(ReferralLeaderboardQueryService.class), mock(UsageLeaderboardQueryService.class),
                 mock(RaffleQueryService.class), mock(RegistryStatusQueryService.class),
                 statusQuery, rewardQuery, mock(AchievementWallQueryService.class),
-                new AchievementProperties(false, false));
+                new AchievementProperties(false, false),
+                mock(ThursdayBucketQueryService.class));
         MockMvc off = MockMvcBuilders.standaloneSetup(disabled)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();

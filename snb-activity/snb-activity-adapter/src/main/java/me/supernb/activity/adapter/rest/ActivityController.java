@@ -19,6 +19,7 @@ import me.supernb.activity.adapter.rest.response.GateDrawResponse;
 import me.supernb.activity.adapter.rest.response.CheckinRewardsResponse;
 import me.supernb.activity.adapter.rest.response.CheckinStatusResponse;
 import me.supernb.activity.adapter.rest.response.RegistryStatusResponse;
+import me.supernb.activity.adapter.rest.response.ThursdayBucketResponse;
 import me.supernb.activity.app.usecase.achievement.command.MarkAchievementsSeenCommand;
 import me.supernb.activity.app.usecase.achievement.config.AchievementProperties;
 import me.supernb.activity.app.usecase.achievement.query.AchievementWallQueryService;
@@ -38,6 +39,8 @@ import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.raffle.command.RegisterRaffleCommand;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
+import me.supernb.activity.app.usecase.thursday.command.ClaimThursdayBucketCommand;
+import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
 import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.raffle.RaffleEntryTicket;
@@ -90,9 +93,10 @@ public class ActivityController {
     private final CheckinRewardQueryService checkinRewardQuery;
     private final AchievementWallQueryService achievementWallQuery;
     private final AchievementProperties achievementProps;
+    private final ThursdayBucketQueryService thursdayBucketQuery;
 
-    /// 构造:注入 CommandBus 与十二个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、
-    /// 拉新榜、用量榜、发布会、注册表状态、签到状态、我的补给发放记录)与成就系统开关。
+    /// 构造:注入 CommandBus 与十三个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、
+    /// 拉新榜、用量榜、发布会、注册表状态、签到状态、我的补给发放记录、疯四桶)与成就系统开关。
     public ActivityController(
             CommandBus commandBus,
             DrawStatusQueryService drawStatusQuery,
@@ -108,7 +112,8 @@ public class ActivityController {
             CheckinStatusQueryService checkinStatusQuery,
             CheckinRewardQueryService checkinRewardQuery,
             AchievementWallQueryService achievementWallQuery,
-            AchievementProperties achievementProps) {
+            AchievementProperties achievementProps,
+            ThursdayBucketQueryService thursdayBucketQuery) {
         this.commandBus = commandBus;
         this.drawStatusQuery = drawStatusQuery;
         this.leaderboardQuery = leaderboardQuery;
@@ -124,6 +129,7 @@ public class ActivityController {
         this.checkinRewardQuery = checkinRewardQuery;
         this.achievementWallQuery = achievementWallQuery;
         this.achievementProps = achievementProps;
+        this.thursdayBucketQuery = thursdayBucketQuery;
     }
 
     /// 活动期充值榜 Top10(公开)。无进行中活动 → 空列表,不是异常。
@@ -212,6 +218,20 @@ public class ActivityController {
     @PostMapping("/gate/draw")
     public GateDrawResponse gateDraw(@CurrentUser UserProfile user) {
         return GateDrawResponse.of(commandBus.handle(new PerformGateDrawCommand(user.id())));
+    }
+
+    /// 疯四桶状态(需登录):今天是不是场次、我达标没、桶序第几、领了没、全场已出几桶。
+    /// 只读,不发卡——页面加载/轮询走这个,绝不能用 claim 探状态(那会静默把卡发出去)。
+    @GetMapping("/thursday/status")
+    public ThursdayBucketResponse thursdayStatus(@CurrentUser UserProfile user) {
+        return ThursdayBucketResponse.of(thursdayBucketQuery.view(user.id()));
+    }
+
+    /// 领疯四桶(需登录):资格与桶序服务端重算,达标才发卡,重复点幂等。写操作经 CommandBus 派发。
+    /// 桶序按**充值到账顺序**定,不是领取顺序——早充的人不会被后来者挤掉(spec §3,公示后不改判)。
+    @PostMapping("/thursday/claim")
+    public ThursdayBucketResponse thursdayClaim(@CurrentUser UserProfile user) {
+        return ThursdayBucketResponse.of(commandBus.handle(new ClaimThursdayBucketCommand(user.id())));
     }
 
     /// 用量排行榜(Token/金额双榜,需登录)。period=day|week|month|all,metric=tokens|amount;

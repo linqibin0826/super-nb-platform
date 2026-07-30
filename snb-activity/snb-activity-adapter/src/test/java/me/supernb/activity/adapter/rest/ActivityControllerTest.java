@@ -36,6 +36,7 @@ import me.supernb.activity.app.usecase.gate.command.PerformGateDrawCommand;
 import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
+import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
 import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.read.DrawStatus;
@@ -79,7 +80,8 @@ class ActivityControllerTest {
                 mock(RaffleQueryService.class), registryStatusQuery,
                 mock(CheckinStatusQueryService.class), mock(CheckinRewardQueryService.class),
                 achievementWallQuery,
-                new AchievementProperties(false, true));
+                new AchievementProperties(false, true),
+                mock(ThursdayBucketQueryService.class));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();

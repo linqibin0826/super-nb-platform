@@ -64,6 +64,15 @@ activity:
     # 金票闸机(spec 2026-07-12-gate-golden-ticket):win-rate ≤0 = 闸机休眠
     threshold-cny: ${GATE_THRESHOLD_CNY:30}
     win-rate: ${GATE_WIN_RATE:0.02}
+  thursday:
+    # 疯四桶自助领取(spec 2026-07-28-grand-opening §3)。sessions 空 = 功能休眠。
+    # 格式 `yyyy-MM-dd=groupId`,逗号分隔。🚨 一场一个分组——三场共用会让第二场的
+    # 回头客被 sub2api 的 (user_id,group_id) 幂等静默判成"已领过"(详见 ThursdayProperties)。
+    sessions: ${THURSDAY_SESSIONS:}
+    min-amount-cny: ${THURSDAY_MIN_AMOUNT_CNY:50}
+    bucket-limit: ${THURSDAY_BUCKET_LIMIT:50}
+    validity-days: ${THURSDAY_VALIDITY_DAYS:1}
+    notes: ${THURSDAY_NOTES:opening-fk}
   checkin:
     launch-date: ${CHECKIN_LAUNCH_DATE:2026-07-13}
     daily-nb-points: ${CHECKIN_DAILY_NB_POINTS:3}

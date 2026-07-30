@@ -24,6 +24,7 @@ import me.supernb.activity.app.usecase.draw.query.RecentDrawsQueryService;
 import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
+import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
 import me.supernb.activity.app.usecase.usageboard.BoardAssembler;
 import me.supernb.activity.app.usecase.usageboard.BoardDataset;
 import me.supernb.activity.app.usecase.usageboard.UsageBoardCache;
@@ -61,7 +62,8 @@ class UsageLeaderboardEndpointTest {
                 mock(RegistryStatusQueryService.class),
                 mock(CheckinStatusQueryService.class), mock(CheckinRewardQueryService.class),
                 mock(AchievementWallQueryService.class),
-                new AchievementProperties(false, true));
+                new AchievementProperties(false, true),
+                mock(ThursdayBucketQueryService.class));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver(introspect))
                 .build();

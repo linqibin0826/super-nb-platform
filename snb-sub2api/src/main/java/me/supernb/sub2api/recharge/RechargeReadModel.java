@@ -52,4 +52,18 @@ public interface RechargeReadModel {
     /// 窗口 [since,until) 内有新增 COMPLETED 余额充值的用户 id(去重;补给记录成就候选
     /// 发现用,不做全表扫描)。
     java.util.List<Long> usersWithNewRechargeSince(java.time.Instant since, java.time.Instant until);
+
+    /// 疯四桶资格名单:窗口内**单笔** ≥ minAmount 的 COMPLETED 余额单,一人只算首笔,
+    /// 按首笔到账时刻升序,最多 limit 个。返回列表的下标 +1 即「桶序」。
+    ///
+    /// 口径与运营脚本 `thursday_scan.py` 逐字一致(spec §3「按到账顺序」,规则公示后不改判):
+    /// 单笔门槛而非累计、一人一桶、排序键是到账时刻不是领取时刻——所以充得早的人
+    /// 桶序在前,晚点才来领也不会被后来者挤掉。
+    List<Long> qualifiedUserIdsInOrder(Instant start, Instant end, BigDecimal minAmount, int limit);
+
+    /// 该用户在指定分组下是否已有带此 notes 的订阅(判「这一场领过没」)。
+    ///
+    /// 必须带 group_id:三场疯四共用固定 notes `opening-fk`、靠**分组**区分场次,
+    /// 只按 notes 判会让第二场的回头客被误判成「已领」。
+    boolean hasSubscription(long userId, long groupId, String notes);
 }

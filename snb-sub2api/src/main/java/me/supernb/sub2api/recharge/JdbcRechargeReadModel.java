@@ -124,6 +124,40 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
                 p, (rs, i) -> rs.getLong("user_id"));
     }
 
+    /// 疯四桶资格名单:先按 user_id 聚合出「窗口内单笔达标的首笔到账时刻」,再按该时刻升序取前 limit。
+    /// 并列时以 user_id 兜底排序,保证同一窗口反复查桶序恒定(否则用户刷新一次桶序就变了)。
+    @Override
+    public List<Long> qualifiedUserIdsInOrder(Instant start, Instant end, BigDecimal minAmount, int limit) {
+        MapSqlParameterSource p = new MapSqlParameterSource()
+                .addValue("start", Timestamp.from(start))
+                .addValue("end", Timestamp.from(end))
+                .addValue("min", minAmount)
+                .addValue("limit", limit);
+        return jdbc.query(
+                "SELECT q.user_id FROM ("
+                        + "  SELECT user_id, MIN(completed_at) AS first_at FROM payment_orders"
+                        + "  WHERE order_type = 'balance' AND status = 'COMPLETED' AND amount >= :min"
+                        + "    AND completed_at >= :start AND completed_at < :end"
+                        + "  GROUP BY user_id"
+                        + ") q ORDER BY q.first_at, q.user_id LIMIT :limit",
+                p, (rs, i) -> rs.getLong("user_id"));
+    }
+
+    /// 该用户在该分组下有没有带此 notes 的订阅(含已过期——过期记录仍在表里,
+    /// 这正是「这一场领过没」要的语义:领过就是领过,卡过期了也不能再领一张)。
+    @Override
+    public boolean hasSubscription(long userId, long groupId, String notes) {
+        MapSqlParameterSource p = new MapSqlParameterSource()
+                .addValue("uid", userId)
+                .addValue("gid", groupId)
+                .addValue("notes", notes);
+        Boolean found = jdbc.queryForObject(
+                "SELECT EXISTS(SELECT 1 FROM user_subscriptions "
+                        + "WHERE user_id = :uid AND group_id = :gid AND notes = :notes)",
+                p, Boolean.class);
+        return Boolean.TRUE.equals(found);
+    }
+
     /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask]。恒 ≥2 位被遮(短本地名不再回显完整本地部分)。
     /// 未脱敏的完整邮箱只在本方法作用域内出现过,不向外传播。
     static String mask(String email) {
