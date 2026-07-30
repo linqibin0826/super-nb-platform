@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class ThursdayPropertiesTest {
 
     private ThursdayProperties props(String sessions) {
-        return new ThursdayProperties(sessions, new BigDecimal("50"), 50, 1, "opening-fk");
+        return new ThursdayProperties(sessions, new BigDecimal("50"), 50, 1, "opening-fk", 3, "salt", "22:00");
     }
 
     @Test

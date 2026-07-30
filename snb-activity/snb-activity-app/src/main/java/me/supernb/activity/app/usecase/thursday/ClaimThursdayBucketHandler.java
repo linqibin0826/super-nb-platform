@@ -79,6 +79,6 @@ public class ClaimThursdayBucketHandler implements CommandHandler<ClaimThursdayB
             throw new IllegalStateException("疯四桶发卡失败:" + status);
         }
         log.info("疯四桶已发:userId={} groupId={} 桶序={} status={}", userId, groupId, view.bucketNo(), status);
-        return new ThursdayBucketView(true, true, true, view.bucketNo(), view.issued(), view.bucketLimit());
+        return view.asClaimed();
     }
 }

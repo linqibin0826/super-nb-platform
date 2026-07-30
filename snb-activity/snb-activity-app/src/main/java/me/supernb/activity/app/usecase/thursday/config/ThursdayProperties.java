@@ -2,6 +2,7 @@ package me.supernb.activity.app.usecase.thursday.config;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,18 +27,27 @@ public class ThursdayProperties {
     private final int bucketLimit;
     private final int validityDays;
     private final String notes;
+    private final int hiddenCount;
+    private final String hiddenSalt;
+    private final LocalTime revealAt;
 
     public ThursdayProperties(
             @Value("${activity.thursday.sessions:}") String sessions,
             @Value("${activity.thursday.min-amount-cny:50}") BigDecimal minAmountCny,
             @Value("${activity.thursday.bucket-limit:50}") int bucketLimit,
             @Value("${activity.thursday.validity-days:1}") int validityDays,
-            @Value("${activity.thursday.notes:opening-fk}") String notes) {
+            @Value("${activity.thursday.notes:opening-fk}") String notes,
+            @Value("${activity.thursday.hidden-count:3}") int hiddenCount,
+            @Value("${activity.thursday.hidden-salt:}") String hiddenSalt,
+            @Value("${activity.thursday.reveal-at:22:00}") String revealAt) {
         this.sessions = parseSessions(sessions);
         this.minAmountCny = minAmountCny;
         this.bucketLimit = bucketLimit;
         this.validityDays = validityDays;
         this.notes = notes;
+        this.hiddenCount = hiddenCount;
+        this.hiddenSalt = hiddenSalt;
+        this.revealAt = LocalTime.parse(revealAt);
     }
 
     /// 解析 `2026-07-30=123,2026-08-06=124` 形式;空串/空白项跳过,格式错直接抛——
@@ -81,5 +91,20 @@ public class ThursdayProperties {
 
     public String notes() {
         return notes;
+    }
+
+    /// 每场隐藏款(瑞幸)个数。
+    public int hiddenCount() {
+        return hiddenCount;
+    }
+
+    /// 摇号用的服务端盐。不配也能跑(退化成公开可复算),配了则外人无法提前枚举。
+    public String hiddenSalt() {
+        return hiddenSalt;
+    }
+
+    /// 开奖时刻(当地时区);此刻之前一律不揭晓,此刻之后名单冻结。
+    public LocalTime revealAt() {
+        return revealAt;
     }
 }

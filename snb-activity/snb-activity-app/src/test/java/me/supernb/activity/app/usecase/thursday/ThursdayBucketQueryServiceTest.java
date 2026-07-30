@@ -32,7 +32,7 @@ class ThursdayBucketQueryServiceTest {
 
     private ThursdayBucketQueryService service(String sessions) {
         return new ThursdayBucketQueryService(
-                new ThursdayProperties(sessions, new BigDecimal("50"), 50, 1, "opening-fk"), readPort);
+                new ThursdayProperties(sessions, new BigDecimal("50"), 50, 1, "opening-fk", 3, "salt", "22:00"), readPort);
     }
 
     @Test
@@ -71,20 +71,44 @@ class ThursdayBucketQueryServiceTest {
                 .alreadyClaimed(anyLong(), anyLong(), any());
     }
 
-    /// 窗口必须是当天 00:00(+08) 到次日 00:00(+08) —— spec §3 写的是「当天 00:00~24:00」。
+    /// 资格窗口必须是当天 00:00(+08) 到次日 00:00(+08) —— spec §3 写的是「当天 00:00~24:00」。
     /// 早于/晚于这个窗口的充值不算数,窗口算错就是整场资格判错。
+    /// 用 atLeastOnce + 取第一次调用:开奖后 view() 会再查一次(冻结窗口),不能写死只调一次。
     @Test
-    void windowIsTheWholeLocalDay() {
+    void eligibilityWindowIsTheWholeLocalDay() {
         when(readPort.qualifiedInOrder(any(), any(), any(), anyInt())).thenReturn(List.of());
         serviceOpenToday().view(7);
 
         org.mockito.ArgumentCaptor<Instant> from = org.mockito.ArgumentCaptor.forClass(Instant.class);
         org.mockito.ArgumentCaptor<Instant> to = org.mockito.ArgumentCaptor.forClass(Instant.class);
-        org.mockito.Mockito.verify(readPort)
+        org.mockito.Mockito.verify(readPort, org.mockito.Mockito.atLeastOnce())
                 .qualifiedInOrder(from.capture(), to.capture(), any(), anyInt());
 
         LocalDate today = LocalDate.now(ZONE);
-        assertThat(from.getValue()).isEqualTo(today.atStartOfDay(ZONE).toInstant());
-        assertThat(to.getValue()).isEqualTo(today.plusDays(1).atStartOfDay(ZONE).toInstant());
+        assertThat(from.getAllValues().get(0)).isEqualTo(today.atStartOfDay(ZONE).toInstant());
+        assertThat(to.getAllValues().get(0)).isEqualTo(today.plusDays(1).atStartOfDay(ZONE).toInstant());
+    }
+
+    /// 🚨 开奖前一律不揭晓,而且**连查都不查**——提前泄露就等于让先充的人挑桶。
+    @Test
+    void beforeRevealNothingIsDisclosed() {
+        LocalDate day = LocalDate.of(2026, 7, 30);
+        Instant justBefore = day.atTime(21, 59, 59).atZone(ZONE).toInstant();
+        assertThat(service(day + "=123").hiddenBuckets(day, justBefore)).isNull();
+        verifyNoInteractions(readPort);
+    }
+
+    /// 开奖后:名单出得来,且窗口冻结在开奖时刻(不是整天)——开奖后才充的人不参与本场隐藏款。
+    @Test
+    void afterRevealDrawsFromTheFrozenBucketCount() {
+        LocalDate day = LocalDate.of(2026, 7, 30);
+        Instant justAfter = day.atTime(22, 0, 1).atZone(ZONE).toInstant();
+        when(readPort.qualifiedInOrder(any(), any(), any(), anyInt())).thenReturn(List.of(1L, 2L, 3L, 4L, 5L));
+
+        assertThat(service(day + "=123").hiddenBuckets(day, justAfter)).hasSize(3).allMatch(n -> n >= 1 && n <= 5);
+
+        org.mockito.ArgumentCaptor<Instant> to = org.mockito.ArgumentCaptor.forClass(Instant.class);
+        org.mockito.Mockito.verify(readPort).qualifiedInOrder(any(), to.capture(), any(), anyInt());
+        assertThat(to.getValue()).isEqualTo(day.atTime(22, 0).atZone(ZONE).toInstant());
     }
 }
