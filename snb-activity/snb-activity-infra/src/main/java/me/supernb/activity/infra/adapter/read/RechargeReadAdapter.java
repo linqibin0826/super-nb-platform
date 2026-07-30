@@ -47,10 +47,10 @@ public class RechargeReadAdapter implements RechargeReadPort {
                 .toList();
     }
 
-    /// 委托 starter 读模型批量取脱敏邮箱,原样透传;找不到的 id 不在返回 map 中。
+    /// 委托 starter 读模型批量取公开展示名(用户名优先、回退脱敏邮箱),原样透传;找不到的 id 不在返回 map 中。
     @Override
-    public Map<Long, String> maskedEmailsByIds(Collection<Long> ids) {
-        return readModel.maskedEmailsByIds(ids);
+    public Map<Long, String> displayNamesByIds(Collection<Long> ids) {
+        return readModel.displayNamesByIds(ids);
     }
 
     /// 委托 starter 读模型批量取兑换码状态,映射为 [CodeStatus];找不到的 code 不在返回 map 中。

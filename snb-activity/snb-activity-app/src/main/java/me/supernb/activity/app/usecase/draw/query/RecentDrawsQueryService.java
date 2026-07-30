@@ -12,8 +12,9 @@ import me.supernb.activity.domain.port.draw.DrawPort;
 import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
 
-/// 最近真实中奖信息流(排除安慰奖),服务端用脱敏邮箱做展示名。无进行中活动 → 空列表(前端优雅降级)。
-/// 查无邮箱的行(如账号已注销)直接跳过,不拼出半条数据。
+/// 最近真实中奖信息流(排除安慰奖),服务端算好展示名:**设过用户名的显示用户名,没设的才回退脱敏邮箱**
+/// (2026-07-30 站长要求——一屏全是 `li***in@weityz.com` 既难看又没辨识度)。
+/// 无进行中活动 → 空列表(前端优雅降级)。查无用户的行(如账号已注销)直接跳过,不拼出半条数据。
 @Service
 public class RecentDrawsQueryService {
 
@@ -30,7 +31,7 @@ public class RecentDrawsQueryService {
         this.rechargePort = rechargePort;
     }
 
-    /// 取活动内最近真实中奖(至多 500 条),按 userId 批量查脱敏邮箱后关联;查无邮箱的行在这一步被过滤掉。
+    /// 取活动内最近真实中奖(至多 500 条),按 userId 批量查展示名后关联;查无展示名的行在这一步被过滤掉。
     /// 无进行中活动 → 空列表。
     public List<PublicDraw> recentDraws() {
         Campaign c = campaignPort.activeCampaign().orElse(null);
@@ -42,10 +43,10 @@ public class RecentDrawsQueryService {
             return List.of();
         }
         Set<Long> ids = winners.stream().map(RawWinner::userId).collect(Collectors.toSet());
-        Map<Long, String> emails = rechargePort.maskedEmailsByIds(ids);
+        Map<Long, String> names = rechargePort.displayNamesByIds(ids);
         return winners.stream()
-                .filter(w -> emails.containsKey(w.userId()))
-                .map(w -> new PublicDraw(emails.get(w.userId()), w.amount()))
+                .filter(w -> names.containsKey(w.userId()))
+                .map(w -> new PublicDraw(names.get(w.userId()), w.amount()))
                 .toList();
     }
 }

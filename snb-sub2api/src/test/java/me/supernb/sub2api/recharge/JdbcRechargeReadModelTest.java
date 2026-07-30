@@ -31,12 +31,14 @@ class JdbcRechargeReadModelTest {
         DriverManagerDataSource ds =
                 new DriverManagerDataSource(PG.getJdbcUrl(), PG.getUsername(), PG.getPassword());
         JdbcTemplate jdbc = new JdbcTemplate(ds);
-        jdbc.execute("CREATE TABLE users (id BIGINT PRIMARY KEY, email TEXT, role TEXT)");
+        jdbc.execute("CREATE TABLE users (id BIGINT PRIMARY KEY, email TEXT, username TEXT, role TEXT)");
         jdbc.execute("CREATE TABLE payment_orders (id BIGSERIAL PRIMARY KEY, user_id BIGINT, "
                 + "amount NUMERIC(20,2), order_type TEXT, status TEXT, completed_at TIMESTAMPTZ)");
         jdbc.execute("CREATE TABLE redeem_codes (code TEXT PRIMARY KEY, status TEXT, expires_at TIMESTAMPTZ)");
 
-        jdbc.update("INSERT INTO users VALUES (1,'alice@qq.com','user'),(2,'bob@gmail.com','user'),(3,'admin@x.com','admin')");
+        // 4/5 专供展示名用例(不下单,不影响其它断言):4 设了用户名,5 的用户名是纯空格
+        jdbc.update("INSERT INTO users VALUES (1,'alice@qq.com',NULL,'user'),(2,'bob@gmail.com',NULL,'user'),"
+                + "(3,'admin@x.com',NULL,'admin'),(4,'carol@qq.com','网吧大魔王','user'),(5,'dave@qq.com','   ','user')");
 
         // user1 窗口内 balance/COMPLETED:100 + 60 + 5(<10)= 165
         insertOrder(jdbc, 1, "100", "balance", "COMPLETED", "2026-07-10T00:00:00Z");
@@ -89,10 +91,13 @@ class JdbcRechargeReadModelTest {
     }
 
     @Test
-    void maskedEmailsExcludesAdmin() {
-        Map<Long, String> emails = readModel.maskedEmailsByIds(List.of(1L, 2L, 3L));
-        assertThat(emails).containsOnlyKeys(1L, 2L);
-        assertThat(emails.get(1L)).isEqualTo("a***e@qq.com");
+    void displayNamePrefersUsernameAndExcludesAdmin() {
+        Map<Long, String> names = readModel.displayNamesByIds(List.of(1L, 2L, 3L, 4L, 5L));
+        assertThat(names).containsOnlyKeys(1L, 2L, 4L, 5L);     // 3 是 admin,被 role 挡在公开信息流外
+        assertThat(names.get(1L)).isEqualTo("a***e@qq.com");    // 没设用户名 → 回退脱敏邮箱
+        assertThat(names.get(4L)).isEqualTo("网吧大魔王");        // 设了 → 原样用户名,不脱敏
+        // 纯空格用户名必须也回退。只判 null 的话这里会显示成一个空白名字——库里老号确实有这种脏值
+        assertThat(names.get(5L)).isEqualTo("d***e@qq.com");
     }
 
     @Test

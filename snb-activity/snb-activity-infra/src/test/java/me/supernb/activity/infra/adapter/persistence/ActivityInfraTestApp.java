@@ -44,7 +44,7 @@ class ActivityInfraTestApp {
             }
 
             @Override
-            public Map<Long, String> maskedEmailsByIds(Collection<Long> ids) {
+            public Map<Long, String> displayNamesByIds(Collection<Long> ids) {
                 return Map.of();
             }
 

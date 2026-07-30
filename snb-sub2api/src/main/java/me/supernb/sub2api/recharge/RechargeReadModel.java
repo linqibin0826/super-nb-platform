@@ -8,7 +8,7 @@ import java.util.Map;
 
 /// sub2api 充值 / 兑换码只读读模型(防腐层契约)。全部方法只读,时间窗口统一 [start, end)(end 为排他上界)。
 ///
-/// 安全边界:面向公开信息流的方法(leaderboard/recentRecharges/maskedEmailsByIds)在实现内部
+/// 安全边界:面向公开信息流的方法(leaderboard/recentRecharges/displayNamesByIds)在实现内部
 /// 完成邮箱脱敏,未脱敏的完整邮箱绝不跨出本模块。
 public interface RechargeReadModel {
 
@@ -43,8 +43,12 @@ public interface RechargeReadModel {
     /// 活动期最近充值流水(仅 role=user、金额 ≥¥10 滤掉测试单,完成时间倒序,name 已脱敏)。
     List<RechargeRow> recentRecharges(Instant start, Instant end, int limit);
 
-    /// 批量取用户的脱敏邮箱(仅 role=user);查无对应记录的 id 不出现在返回 map 中。
-    Map<Long, String> maskedEmailsByIds(Collection<Long> ids);
+    /// 批量取用户的**公开展示名**(仅 role=user):设过用户名就用用户名,没设才回退脱敏邮箱。
+    /// 查无对应记录的 id 不出现在返回 map 中。
+    ///
+    /// 用户名原样返回、不脱敏——它是用户自己填的对外昵称,不是身份凭据(2026-07-30 实查生产:
+    /// 6245 个号里 633 个设了用户名,含 `@` 的 0 个、像手机号的 0 个)。而邮箱恒脱敏,口径见 [EmailMask]。
+    Map<Long, String> displayNamesByIds(Collection<Long> ids);
 
     /// 批量取兑换码状态;查无对应记录的 code 不出现在返回 map 中。
     Map<String, RedeemCodeStatus> codeStatuses(Collection<String> codes);

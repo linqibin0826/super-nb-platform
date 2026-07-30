@@ -22,8 +22,8 @@ public interface RechargeReadPort {
     /// 活动期最近充值流水(仅 role=user、金额 ≥¥10 滤测试单,完成时间倒序,name 已脱敏)。
     List<RechargeEntry> recentRecharges(Instant start, Instant end, int limit);
 
-    /// 批量取脱敏邮箱(role=user);找不到的 id 不在返回 map。
-    Map<Long, String> maskedEmailsByIds(Collection<Long> ids);
+    /// 批量取公开展示名(role=user):有用户名用用户名,没有才回退脱敏邮箱;找不到的 id 不在返回 map。
+    Map<Long, String> displayNamesByIds(Collection<Long> ids);
 
     /// 批量取兑换码状态;找不到的 code 不在返回 map。
     Map<String, CodeStatus> codeStatuses(Collection<String> codes);

@@ -32,13 +32,13 @@ class DrawEnrichmentTest {
             "active", new BigDecimal("5"));
 
     @Test
-    void recentDrawsSkipsWinnersWithoutEmail() {
+    void recentDrawsSkipsWinnersWithoutDisplayName() {
         RecentDrawsQueryService useCase = new RecentDrawsQueryService(campaignPort, drawPort, rechargePort);
         when(campaignPort.activeCampaign()).thenReturn(Optional.of(campaign));
         when(drawPort.recentRealWinners(1, 500)).thenReturn(List.of(
                 new RawWinner(10, new BigDecimal("20")),
-                new RawWinner(11, new BigDecimal("50")))); // 11 无邮箱 → 跳过
-        when(rechargePort.maskedEmailsByIds(java.util.Set.of(10L, 11L)))
+                new RawWinner(11, new BigDecimal("50")))); // 11 查不到展示名(如已注销) → 跳过
+        when(rechargePort.displayNamesByIds(java.util.Set.of(10L, 11L)))
                 .thenReturn(Map.of(10L, "ab***@qq.com"));
 
         List<PublicDraw> draws = useCase.recentDraws();
@@ -46,6 +46,19 @@ class DrawEnrichmentTest {
         assertThat(draws).hasSize(1);
         assertThat(draws.get(0).name()).isEqualTo("ab***@qq.com");
         assertThat(draws.get(0).amount()).isEqualByComparingTo("20");
+    }
+
+    /// 展示名由 port 算好、本层原样透传:用户名不该在这一层被再脱敏一次。
+    @Test
+    void recentDrawsPassesUsernameThroughUnmasked() {
+        RecentDrawsQueryService useCase = new RecentDrawsQueryService(campaignPort, drawPort, rechargePort);
+        when(campaignPort.activeCampaign()).thenReturn(Optional.of(campaign));
+        when(drawPort.recentRealWinners(1, 500))
+                .thenReturn(List.of(new RawWinner(10, new BigDecimal("30"))));
+        when(rechargePort.displayNamesByIds(java.util.Set.of(10L)))
+                .thenReturn(Map.of(10L, "我不是头肯神"));
+
+        assertThat(useCase.recentDraws().get(0).name()).isEqualTo("我不是头肯神");
     }
 
     @Test

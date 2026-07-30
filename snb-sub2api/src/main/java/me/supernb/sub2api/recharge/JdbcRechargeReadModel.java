@@ -78,18 +78,26 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
                         rs.getTimestamp("completed_at").toInstant()));
     }
 
-    /// 空 ids 直接短路空 map(不发 SQL);否则按 id 查 role=user 的用户,email 经 `mask` 脱敏。
+    /// 空 ids 直接短路空 map(不发 SQL);否则按 id 查 role=user 的用户,取展示名:
+    /// 用户名非空白就用用户名,否则回退 `mask(email)`。
+    ///
+    /// 判空必须是 `isBlank` 不是 `!= null`:库里 username 既可能是 NULL 也可能是空串/纯空格
+    /// (老号迁移留下的),只判 null 会让这些人在公开信息流里显示成一个空白名字。
     @Override
-    public Map<Long, String> maskedEmailsByIds(Collection<Long> ids) {
+    public Map<Long, String> displayNamesByIds(Collection<Long> ids) {
         if (ids.isEmpty()) {
             return Map.of();
         }
         Map<Long, String> result = new HashMap<>();
         jdbc.query(
-                "SELECT id, email FROM users WHERE id IN (:ids) AND role = 'user'",
+                "SELECT id, username, email FROM users WHERE id IN (:ids) AND role = 'user'",
                 new MapSqlParameterSource("ids", ids),
                 rs -> {
-                    result.put(rs.getLong("id"), mask(rs.getString("email")));
+                    String username = rs.getString("username");
+                    result.put(rs.getLong("id"),
+                            username == null || username.isBlank()
+                                    ? mask(rs.getString("email"))
+                                    : username.trim());
                 });
         return result;
     }
