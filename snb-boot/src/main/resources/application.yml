@@ -73,6 +73,13 @@ activity:
     bucket-limit: ${THURSDAY_BUCKET_LIMIT:50}
     validity-days: ${THURSDAY_VALIDITY_DAYS:1}
     notes: ${THURSDAY_NOTES:opening-fk}
+    # 隐藏款(瑞幸)确定性摇号:reveal-at 之前不揭晓,之后名单冻结、号也随之定死
+    hidden-count: ${THURSDAY_HIDDEN_COUNT:3}
+    hidden-salt: ${THURSDAY_HIDDEN_SALT:}
+    reveal-at: ${THURSDAY_REVEAL_AT:22:00}
+    # 猜桶竞猜:门槛与金票闸机同口径(累计真实充值),封猜后不再收
+    guess-close-at: ${THURSDAY_GUESS_CLOSE_AT:20:00}
+    guess-threshold-cny: ${THURSDAY_GUESS_THRESHOLD_CNY:30}
   checkin:
     launch-date: ${CHECKIN_LAUNCH_DATE:2026-07-13}
     daily-nb-points: ${CHECKIN_DAILY_NB_POINTS:3}

@@ -30,6 +30,8 @@ public class ThursdayProperties {
     private final int hiddenCount;
     private final String hiddenSalt;
     private final LocalTime revealAt;
+    private final LocalTime guessCloseAt;
+    private final BigDecimal guessThresholdCny;
 
     public ThursdayProperties(
             @Value("${activity.thursday.sessions:}") String sessions,
@@ -39,7 +41,11 @@ public class ThursdayProperties {
             @Value("${activity.thursday.notes:opening-fk}") String notes,
             @Value("${activity.thursday.hidden-count:3}") int hiddenCount,
             @Value("${activity.thursday.hidden-salt:}") String hiddenSalt,
-            @Value("${activity.thursday.reveal-at:22:00}") String revealAt) {
+            @Value("${activity.thursday.reveal-at:22:00}") String revealAt,
+            @Value("${activity.thursday.guess-close-at:20:00}") String guessCloseAt,
+            @Value("${activity.thursday.guess-threshold-cny:30}") BigDecimal guessThresholdCny) {
+        this.guessCloseAt = LocalTime.parse(guessCloseAt);
+        this.guessThresholdCny = guessThresholdCny;
         this.sessions = parseSessions(sessions);
         this.minAmountCny = minAmountCny;
         this.bucketLimit = bucketLimit;
@@ -106,5 +112,15 @@ public class ThursdayProperties {
     /// 开奖时刻(当地时区);此刻之前一律不揭晓,此刻之后名单冻结。
     public LocalTime revealAt() {
         return revealAt;
+    }
+
+    /// 猜桶封猜时刻;此刻之后不再收猜测。
+    public LocalTime guessCloseAt() {
+        return guessCloseAt;
+    }
+
+    /// 猜桶参与门槛(累计真实充值,元)。与金票闸机同口径、同一个读端口。
+    public BigDecimal guessThresholdCny() {
+        return guessThresholdCny;
     }
 }

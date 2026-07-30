@@ -15,7 +15,9 @@ import java.time.ZoneId;
 import java.util.List;
 import me.supernb.activity.app.usecase.thursday.config.ThursdayProperties;
 import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
+import me.supernb.activity.domain.port.read.GateRechargeReadPort;
 import me.supernb.activity.domain.port.read.ThursdayBucketReadPort;
+import me.supernb.activity.domain.port.thursday.ThursdayGuessPort;
 import org.junit.jupiter.api.Test;
 
 /// 资格与桶序判定:非场次休眠 / 桶序按到账顺序 / 未达标不查领取态 / 窗口是当天整日。
@@ -24,6 +26,8 @@ class ThursdayBucketQueryServiceTest {
     private static final ZoneId ZONE = ZoneId.of("Asia/Shanghai");
 
     private final ThursdayBucketReadPort readPort = mock(ThursdayBucketReadPort.class);
+    private final ThursdayGuessPort guessPort = mock(ThursdayGuessPort.class);
+    private final GateRechargeReadPort rechargePort = mock(GateRechargeReadPort.class);
 
     /// 场次配成"今天",让被测的 LocalDate.now(ZONE) 必然命中(不改生产码去接时钟)。
     private ThursdayBucketQueryService serviceOpenToday() {
@@ -32,7 +36,7 @@ class ThursdayBucketQueryServiceTest {
 
     private ThursdayBucketQueryService service(String sessions) {
         return new ThursdayBucketQueryService(
-                new ThursdayProperties(sessions, new BigDecimal("50"), 50, 1, "opening-fk", 3, "salt", "22:00"), readPort);
+                new ThursdayProperties(sessions, new BigDecimal("50"), 50, 1, "opening-fk", 3, "salt", "22:00", "20:00", new BigDecimal("30")), readPort, guessPort, rechargePort);
     }
 
     @Test

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import me.supernb.activity.adapter.rest.request.MarkAchievementsSeenRequest;
 import me.supernb.activity.adapter.rest.request.RaffleEnterRequest;
+import me.supernb.activity.adapter.rest.request.ThursdayGuessRequest;
 import me.supernb.activity.adapter.rest.response.AchievementWallResponse;
 import me.supernb.activity.adapter.rest.response.MarkAchievementsSeenResponse;
 import me.supernb.activity.adapter.rest.response.DrawResponse;
@@ -20,6 +21,7 @@ import me.supernb.activity.adapter.rest.response.CheckinRewardsResponse;
 import me.supernb.activity.adapter.rest.response.CheckinStatusResponse;
 import me.supernb.activity.adapter.rest.response.RegistryStatusResponse;
 import me.supernb.activity.adapter.rest.response.ThursdayBucketResponse;
+import me.supernb.activity.adapter.rest.response.ThursdayGuessResponse;
 import me.supernb.activity.app.usecase.achievement.command.MarkAchievementsSeenCommand;
 import me.supernb.activity.app.usecase.achievement.config.AchievementProperties;
 import me.supernb.activity.app.usecase.achievement.query.AchievementWallQueryService;
@@ -40,6 +42,7 @@ import me.supernb.activity.app.usecase.raffle.command.RegisterRaffleCommand;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
 import me.supernb.activity.app.usecase.thursday.command.ClaimThursdayBucketCommand;
+import me.supernb.activity.app.usecase.thursday.command.SubmitThursdayGuessCommand;
 import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
 import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
@@ -232,6 +235,21 @@ public class ActivityController {
     @PostMapping("/thursday/claim")
     public ThursdayBucketResponse thursdayClaim(@CurrentUser UserProfile user) {
         return ThursdayBucketResponse.of(commandBus.handle(new ClaimThursdayBucketCommand(user.id())));
+    }
+
+    /// 猜桶竞猜状态(需登录):够不够门槛、还能不能猜、我猜了几、多少人猜了、结算后的答案与赢家猜的数。
+    @GetMapping("/thursday/guess")
+    public ThursdayGuessResponse thursdayGuess(@CurrentUser UserProfile user) {
+        return ThursdayGuessResponse.of(thursdayBucketQuery.guessView(user.id()));
+    }
+
+    /// 提交猜桶(需登录):门槛/封猜/范围全在服务端重算,一人一场一猜、猜完不改。
+    /// 不合法不报错,直接回当前视图(玩票环节不该给红色错误);写操作经 CommandBus 派发。
+    @PostMapping("/thursday/guess")
+    public ThursdayGuessResponse thursdayGuessSubmit(@RequestBody ThursdayGuessRequest body,
+            @CurrentUser UserProfile user) {
+        int guess = body == null || body.guess() == null ? -1 : body.guess();
+        return ThursdayGuessResponse.of(commandBus.handle(new SubmitThursdayGuessCommand(user.id(), guess)));
     }
 
     /// 用量排行榜(Token/金额双榜,需登录)。period=day|week|month|all,metric=tokens|amount;

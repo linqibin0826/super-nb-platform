@@ -4,10 +4,15 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import me.supernb.activity.app.usecase.thursday.GuessSettlement;
 import me.supernb.activity.app.usecase.thursday.HiddenBucketDraw;
 import me.supernb.activity.app.usecase.thursday.ThursdayBucketView;
+import me.supernb.activity.app.usecase.thursday.ThursdayGuessView;
 import me.supernb.activity.app.usecase.thursday.config.ThursdayProperties;
+import me.supernb.activity.domain.port.read.GateRechargeReadPort;
 import me.supernb.activity.domain.port.read.ThursdayBucketReadPort;
+import me.supernb.activity.domain.port.thursday.ThursdayGuessPort;
+import me.supernb.activity.domain.port.thursday.ThursdayGuessPort.GuessRecord;
 import org.springframework.stereotype.Service;
 
 /// 疯四桶状态查询(spec §3)。资格与桶序全在服务端算,时区显式 Asia/Shanghai——
@@ -22,11 +27,59 @@ public class ThursdayBucketQueryService {
 
     private final ThursdayProperties props;
     private final ThursdayBucketReadPort readPort;
+    private final ThursdayGuessPort guessPort;
+    private final GateRechargeReadPort rechargePort;
 
-    /// 构造:注入疯四场次配置与只读端口。
-    public ThursdayBucketQueryService(ThursdayProperties props, ThursdayBucketReadPort readPort) {
+    /// 构造:注入疯四场次配置、只读端口、竞猜存取端口,以及累计充值读端口
+    /// (猜桶门槛与金票闸机同口径,复用同一个端口,别再造第二套「够不够 ¥30」的判定)。
+    public ThursdayBucketQueryService(ThursdayProperties props, ThursdayBucketReadPort readPort,
+            ThursdayGuessPort guessPort, GateRechargeReadPort rechargePort) {
         this.props = props;
         this.readPort = readPort;
+        this.guessPort = guessPort;
+        this.rechargePort = rechargePort;
+    }
+
+    /// 本人在今天这一场的猜桶视图;非场次日返回休眠态。
+    public ThursdayGuessView guessView(long userId) {
+        return guessView(userId, Instant.now());
+    }
+
+    /// 同上,`now` 显式传入以便单测钉住「封猜前/封猜后/结算后」三条分支。
+    public ThursdayGuessView guessView(long userId, Instant now) {
+        LocalDate today = LocalDate.now(ZONE);
+        if (props.groupIdFor(today) == null) {
+            return ThursdayGuessView.closed(props.guessThresholdCny());
+        }
+        Instant closeAt = today.atTime(props.guessCloseAt()).atZone(ZONE).toInstant();
+        boolean eligible = rechargePort.totalRecharged(userId)
+                .compareTo(props.guessThresholdCny()) >= 0;
+        Integer mine = guessPort.myGuess(today, userId).orElse(null);
+        long count = guessPort.count(today);
+
+        List<Integer> hidden = hiddenBuckets(today, now);
+        if (hidden == null) {
+            // 还没到开奖时刻:不结算,也不泄露答案。
+            return new ThursdayGuessView(eligible, now.isBefore(closeAt), mine, count, closeAt,
+                    props.guessThresholdCny(), null, null, false);
+        }
+        int answer = frozenBucketCount(today);
+        var winner = GuessSettlement.winner(guessPort.all(today), answer);
+        return new ThursdayGuessView(eligible, false, mine, count, closeAt, props.guessThresholdCny(),
+                answer, winner.map(GuessRecord::guess).orElse(null),
+                winner.filter(w -> w.userId() == userId).isPresent());
+    }
+
+    /// 能不能收这一笔猜测(场次内 + 够门槛 + 未封猜);提交命令用。
+    public boolean guessAcceptable(long userId, Instant now) {
+        LocalDate today = LocalDate.now(ZONE);
+        if (props.groupIdFor(today) == null) {
+            return false;
+        }
+        if (!now.isBefore(today.atTime(props.guessCloseAt()).atZone(ZONE).toInstant())) {
+            return false;
+        }
+        return rechargePort.totalRecharged(userId).compareTo(props.guessThresholdCny()) >= 0;
     }
 
     /// 本人在今天这一场的视图;今天不是场次(或未配分组)返回休眠态。
@@ -63,9 +116,15 @@ public class ThursdayBucketQueryService {
         if (now.isBefore(reveal)) {
             return null;
         }
+        return HiddenBucketDraw.draw(props.hiddenSalt(), day, frozenBucketCount(day), props.hiddenCount());
+    }
+
+    /// 开奖时刻冻结下来的出桶数 —— 隐藏款摇号的范围,也是猜桶竞猜的标准答案。
+    /// 两处必须用同一个数,否则页面会出现「隐藏款按 8 桶摇、竞猜按 9 桶判」这种自相矛盾。
+    public int frozenBucketCount(LocalDate day) {
         Instant start = day.atStartOfDay(ZONE).toInstant();
-        int frozen = readPort.qualifiedInOrder(start, reveal, props.minAmountCny(), props.bucketLimit()).size();
-        return HiddenBucketDraw.draw(props.hiddenSalt(), day, frozen, props.hiddenCount());
+        Instant reveal = day.atTime(props.revealAt()).atZone(ZONE).toInstant();
+        return readPort.qualifiedInOrder(start, reveal, props.minAmountCny(), props.bucketLimit()).size();
     }
 
     /// 今天这一场的资格名单(到账顺序,已封顶)。

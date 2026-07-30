@@ -30,7 +30,7 @@ class ClaimThursdayBucketHandlerTest {
 
     private ClaimThursdayBucketHandler handler(SubscriptionGrantPort port) {
         return new ClaimThursdayBucketHandler(
-                new ThursdayProperties("", new BigDecimal("50"), 50, 1, "opening-fk", 3, "salt", "22:00"), query, port);
+                new ThursdayProperties("", new BigDecimal("50"), 50, 1, "opening-fk", 3, "salt", "22:00", "20:00", new BigDecimal("30")), query, port);
     }
 
     private void viewIs(ThursdayBucketView v) {
