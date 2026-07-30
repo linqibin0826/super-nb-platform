@@ -287,7 +287,7 @@ export function GalleryTab({ onApply }: Props) {
         {/* 搜索框按定稿本地实现（高 44 / 面板底 / hairline-strong 边 / r8 / mono 斜杠提示位）。
             🚨 不用 vendor Input：那需要 [&>input] 去够它的内部结构，
             上游公用件 v3 一改结构这类覆盖必失配（Chip 两层化就是先例） */}
-        <label className="flex h-11 w-full min-w-[220px] flex-1 items-center gap-2.5 rounded-[8px] border border-snb-hairline-strong bg-snb-panel px-3.5 transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] focus-within:border-[rgba(239,235,228,0.3)] sm:max-w-[360px]">
+        <label className="flex h-11 w-full min-w-[220px] flex-1 items-center gap-2.5 rounded-[8px] border border-snb-hairline-strong bg-snb-panel px-3.5 transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] focus-within:border-snb-hairline-heavy sm:max-w-[360px]">
           <span aria-hidden="true" className="flex-none font-mono text-[13px] text-snb-t3">
             /
           </span>

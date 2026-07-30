@@ -38,7 +38,7 @@ function SubNav({ onOpenGuide }: { onOpenGuide: () => void }) {
                 className={`flex h-full w-full items-center justify-center rounded-full px-4 text-[13.5px] transition-colors sm:h-8 sm:w-auto ${
                   isActive
                     ? 'bg-snb-cta font-semibold text-snb-cta-fg'
-                    : 'border border-snb-hairline-strong text-snb-t2 hover:border-[rgba(239,235,228,0.3)] hover:text-snb-t1'
+                    : 'border border-snb-hairline-strong text-snb-t2 hover:border-snb-hairline-heavy hover:text-snb-t1'
                 }`}
               >
                 {tab.label}
@@ -50,7 +50,7 @@ function SubNav({ onOpenGuide }: { onOpenGuide: () => void }) {
       {pathname === '/' && (
         <button
           type="button"
-          className="flex h-11 items-center rounded-lg border border-snb-hairline-strong px-4 text-[13.5px] text-snb-t1 transition-colors hover:border-[rgba(239,235,228,0.3)] hover:bg-snb-panel"
+          className="flex h-11 items-center rounded-lg border border-snb-hairline-strong px-4 text-[13.5px] text-snb-t1 transition-colors hover:border-snb-hairline-heavy hover:bg-snb-panel"
           onClick={onOpenGuide}
         >
           {ti('invoice.guide.reopen')}

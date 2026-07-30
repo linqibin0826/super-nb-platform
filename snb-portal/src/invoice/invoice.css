@@ -200,7 +200,7 @@
   font-size: 13px;
   transition: color 0.12s cubic-bezier(0.2, 0, 0, 1), border-color 0.12s cubic-bezier(0.2, 0, 0, 1);
 }
-.iv-chip:hover { color: rgb(var(--snb-t1)); border-color: rgba(239, 235, 228, 0.3); }
+.iv-chip:hover { color: rgb(var(--snb-t1)); border-color: var(--snb-hairline-heavy); }
 .iv-chip.on {
   background: rgb(var(--snb-t1));
   border-color: rgb(var(--snb-t1));

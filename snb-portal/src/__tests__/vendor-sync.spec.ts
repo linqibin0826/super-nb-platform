@@ -62,7 +62,7 @@ describe('vendor 同步：设计系统已是零发光网吧 v2', () => {
   it('既有消费方依赖的键不得删除（Tailwind 删键只静默不生成类、不报错）', () => {
     expect(colors.dark['900']).toBeDefined()
     expect(colors.paper.DEFAULT).toBeDefined()
-    expect(colors.snb.ember).toBe('#E5484D') // CardStat/HistoryTab 在用；v2 功能红
+    expect(colors.snb.ember).toBe('#EA494F') // CardStat/HistoryTab 在用；v2 功能红
     expect(colors.snb.amber).toBe('#FF5C00') // v2 色板没有黄：警告=安全橙
     expect(shadow.glass).toBeDefined()
     expect(shadow['glass-sm']).toBeDefined()
@@ -110,7 +110,7 @@ describe('vendor 同步：设计系统已是零发光网吧 v2', () => {
   it('v2 槽位就位：沥青 #0E1014、双强调 safety/danger、灯管槽位清零', () => {
     expect(darkBlock).toContain('--snb-bg: 14 16 20')
     expect(darkBlock).toContain('--snb-safety: 255 92 0')
-    expect(darkBlock).toContain('--snb-danger: 229 72 77')
+    expect(darkBlock).toContain('--snb-danger: 234 73 79')
     expect(tokens).not.toMatch(/--snb-(tangerine|jade|fuchsia|core)/)
   })
 

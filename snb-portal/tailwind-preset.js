@@ -91,7 +91,7 @@ export default {
           // 🪦 Alert 旧语义色键：值是**深色定值**，两档不翻。保名防消费方静默失效，
           // 本仓库组件已全部改走 snb-safety / snb-danger（浅色档 #FF5C00 压纸 2.94:1 不达标）
           amber: '#FF5C00',
-          ember: '#E5484D'
+          ember: '#EA494F'
         }
       },
       fontFamily: {

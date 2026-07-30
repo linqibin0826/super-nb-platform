@@ -45,7 +45,7 @@ function PanelToggle(props: { label: string; on: boolean; glyph: string; count: 
       className={`inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border px-4 text-[13.5px] transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60 ${
         props.on
           ? 'border-transparent bg-snb-cta font-semibold text-snb-cta-fg'
-          : 'border-snb-hairline-strong text-snb-t1 hover:border-[rgba(239,235,228,0.3)] hover:bg-snb-panel'
+          : 'border-snb-hairline-strong text-snb-t1 hover:border-snb-hairline-heavy hover:bg-snb-panel'
       }`}
     >
       <span aria-hidden="true">{props.glyph}</span>
@@ -103,7 +103,7 @@ export function WallLightbox(p: WallLightboxProps) {
             type="button"
             aria-label={st('studio.big.prev')}
             onClick={p.onPrev}
-            className="grid h-11 w-11 place-items-center rounded-[8px] border border-snb-hairline-strong text-snb-t1 transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] hover:border-[rgba(239,235,228,0.3)] hover:bg-snb-panel focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60"
+            className="grid h-11 w-11 place-items-center rounded-[8px] border border-snb-hairline-strong text-snb-t1 transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] hover:border-snb-hairline-heavy hover:bg-snb-panel focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60"
           >
             ←
           </button>
@@ -111,7 +111,7 @@ export function WallLightbox(p: WallLightboxProps) {
             type="button"
             aria-label={st('studio.big.next')}
             onClick={p.onNext}
-            className="grid h-11 w-11 place-items-center rounded-[8px] border border-snb-hairline-strong text-snb-t1 transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] hover:border-[rgba(239,235,228,0.3)] hover:bg-snb-panel focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60"
+            className="grid h-11 w-11 place-items-center rounded-[8px] border border-snb-hairline-strong text-snb-t1 transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] hover:border-snb-hairline-heavy hover:bg-snb-panel focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60"
           >
             →
           </button>
