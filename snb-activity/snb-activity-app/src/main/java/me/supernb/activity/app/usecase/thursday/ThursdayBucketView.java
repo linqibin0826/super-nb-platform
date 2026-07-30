@@ -16,17 +16,19 @@ import java.util.List;
 /// @param bucketLimit   本场桶上限
 /// @param hiddenBuckets 隐藏款(瑞幸)中奖桶序;**未到开奖时刻为 null**(前端据此显示"待开奖")
 /// @param hiddenWin     本人是否中隐藏款;未开奖或不达标恒 false
+/// @param revealAtLabel 开奖时刻的成品文案(如 "20:30")——前端照抄进句子,不做时区换算
 public record ThursdayBucketView(boolean open, boolean eligible, boolean claimed, Integer bucketNo,
-        int issued, int bucketLimit, List<Integer> hiddenBuckets, boolean hiddenWin) {
+        int issued, int bucketLimit, List<Integer> hiddenBuckets, boolean hiddenWin,
+        String revealAtLabel) {
 
     /// 非场次日(或未配分组)的休眠态:前端据此整块不渲染。
     public static ThursdayBucketView closed(int bucketLimit) {
-        return new ThursdayBucketView(false, false, false, null, 0, bucketLimit, null, false);
+        return new ThursdayBucketView(false, false, false, null, 0, bucketLimit, null, false, null);
     }
 
     /// 保留领取前的全部判定,只把"已领"翻成 true(领取成功后回给前端)。
     public ThursdayBucketView asClaimed() {
         return new ThursdayBucketView(open, eligible, true, bucketNo, issued, bucketLimit,
-                hiddenBuckets, hiddenWin);
+                hiddenBuckets, hiddenWin, revealAtLabel);
     }
 }

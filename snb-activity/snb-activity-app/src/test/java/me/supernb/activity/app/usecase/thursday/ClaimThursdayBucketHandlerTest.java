@@ -40,7 +40,7 @@ class ClaimThursdayBucketHandlerTest {
 
     @Test
     void ineligibleUserGetsNoCard() {
-        viewIs(new ThursdayBucketView(true, false, false, null, 3, 50, null, false));
+        viewIs(new ThursdayBucketView(true, false, false, null, 3, 50, null, false, "22:00"));
         ThursdayBucketView r = handler(grantPort).handle(new ClaimThursdayBucketCommand(7));
         assertThat(r.claimed()).isFalse();
         verifyNoInteractions(grantPort);
@@ -56,7 +56,7 @@ class ClaimThursdayBucketHandlerTest {
     /// 已领过的人再点,不再打一发 admin API(bulk-assign 虽幂等,但白白的抖动面)。
     @Test
     void alreadyClaimedDoesNotCallAdminApiAgain() {
-        viewIs(new ThursdayBucketView(true, true, true, 2, 3, 50, null, false));
+        viewIs(new ThursdayBucketView(true, true, true, 2, 3, 50, null, false, "22:00"));
         ThursdayBucketView r = handler(grantPort).handle(new ClaimThursdayBucketCommand(7));
         assertThat(r.claimed()).isTrue();
         assertThat(r.bucketNo()).isEqualTo(2);
@@ -65,7 +65,7 @@ class ClaimThursdayBucketHandlerTest {
 
     @Test
     void eligibleUserGetsCardWithFixedNotesAndSessionGroup() {
-        viewIs(new ThursdayBucketView(true, true, false, 2, 3, 50, null, false));
+        viewIs(new ThursdayBucketView(true, true, false, 2, 3, 50, null, false, "22:00"));
         when(grantPort.bulkGrant(any(), anyLong(), anyInt(), any()))
                 .thenReturn(new SubscriptionGrantOutcome(Map.of(7L, "created"), List.of()));
 
@@ -79,7 +79,7 @@ class ClaimThursdayBucketHandlerTest {
     /// 并发双击的另一半:sub2api 回 reused 也算领到了,不能当失败炸给用户。
     @Test
     void reusedCountsAsClaimed() {
-        viewIs(new ThursdayBucketView(true, true, false, 1, 3, 50, null, false));
+        viewIs(new ThursdayBucketView(true, true, false, 1, 3, 50, null, false, "22:00"));
         when(grantPort.bulkGrant(any(), anyLong(), anyInt(), any()))
                 .thenReturn(new SubscriptionGrantOutcome(Map.of(7L, "reused"), List.of()));
         assertThat(handler(grantPort).handle(new ClaimThursdayBucketCommand(7)).claimed()).isTrue();
@@ -88,7 +88,7 @@ class ClaimThursdayBucketHandlerTest {
     /// 🚨 admin-key 没配 → 必须炸。反面教材:签到发放曾因此静默断(runbook 33)。
     @Test
     void missingGrantPortThrowsInsteadOfSilentlySucceeding() {
-        viewIs(new ThursdayBucketView(true, true, false, 1, 3, 50, null, false));
+        viewIs(new ThursdayBucketView(true, true, false, 1, 3, 50, null, false, "22:00"));
         assertThatThrownBy(() -> handler(null).handle(new ClaimThursdayBucketCommand(7)))
                 .isInstanceOf(IllegalStateException.class);
     }
@@ -96,7 +96,7 @@ class ClaimThursdayBucketHandlerTest {
     /// 🚨 发卡回 failed（或压根没回这个 uid）→ 必须炸,绝不能回一个 claimed=true 的假成功。
     @Test
     void failedGrantThrows() {
-        viewIs(new ThursdayBucketView(true, true, false, 1, 3, 50, null, false));
+        viewIs(new ThursdayBucketView(true, true, false, 1, 3, 50, null, false, "22:00"));
         when(grantPort.bulkGrant(any(), anyLong(), anyInt(), any()))
                 .thenReturn(new SubscriptionGrantOutcome(Map.of(7L, "failed"), List.of("409 conflict")));
         assertThatThrownBy(() -> handler(grantPort).handle(new ClaimThursdayBucketCommand(7)))
@@ -105,7 +105,7 @@ class ClaimThursdayBucketHandlerTest {
 
     @Test
     void missingStatusForUserThrows() {
-        viewIs(new ThursdayBucketView(true, true, false, 1, 3, 50, null, false));
+        viewIs(new ThursdayBucketView(true, true, false, 1, 3, 50, null, false, "22:00"));
         when(grantPort.bulkGrant(any(), anyLong(), anyInt(), any()))
                 .thenReturn(new SubscriptionGrantOutcome(Map.of(), List.of()));
         assertThatThrownBy(() -> handler(grantPort).handle(new ClaimThursdayBucketCommand(7)))
@@ -115,7 +115,7 @@ class ClaimThursdayBucketHandlerTest {
     /// 判定与发卡之间跨了零点(场次翻篇):宁可这次领取落空重来,也不拿 null 分组去发卡。
     @Test
     void sessionRollingOverBetweenCheckAndGrantAborts() {
-        when(query.view(7L)).thenReturn(new ThursdayBucketView(true, true, false, 1, 3, 50, null, false));
+        when(query.view(7L)).thenReturn(new ThursdayBucketView(true, true, false, 1, 3, 50, null, false, "22:00"));
         when(query.groupIdToday()).thenReturn(null);
         ThursdayBucketView r = handler(grantPort).handle(new ClaimThursdayBucketCommand(7));
         assertThat(r.open()).isFalse();

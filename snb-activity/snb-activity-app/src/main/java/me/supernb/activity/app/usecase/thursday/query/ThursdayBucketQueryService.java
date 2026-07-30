@@ -61,13 +61,15 @@ public class ThursdayBucketQueryService {
         if (hidden == null) {
             // 还没到开奖时刻:不结算,也不泄露答案。
             return new ThursdayGuessView(eligible, now.isBefore(closeAt), mine, count, closeAt,
-                    props.guessThresholdCny(), null, null, false);
+                    props.guessThresholdCny(), null, null, false,
+                    label(props.guessCloseAt()), label(props.revealAt()));
         }
         int answer = frozenBucketCount(today);
         var winner = GuessSettlement.winner(guessPort.all(today), answer);
         return new ThursdayGuessView(eligible, false, mine, count, closeAt, props.guessThresholdCny(),
                 answer, winner.map(GuessRecord::guess).orElse(null),
-                winner.filter(w -> w.userId() == userId).isPresent());
+                winner.filter(w -> w.userId() == userId).isPresent(),
+                label(props.guessCloseAt()), label(props.revealAt()));
     }
 
     /// 能不能收这一笔猜测(场次内 + 够门槛 + 未封猜);提交命令用。
@@ -97,7 +99,12 @@ public class ThursdayBucketQueryService {
         List<Integer> hidden = hiddenBuckets(today);
         boolean hiddenWin = hidden != null && bucketNo != null && hidden.contains(bucketNo);
         return new ThursdayBucketView(true, eligible, claimed, bucketNo,
-                qualified.size(), props.bucketLimit(), hidden, hiddenWin);
+                qualified.size(), props.bucketLimit(), hidden, hiddenWin, label(props.revealAt()));
+    }
+
+    /// 时刻的成品文案(HH:mm)。前端照抄进句子——它不该知道时区,更不该写死时刻。
+    private static String label(java.time.LocalTime t) {
+        return t.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
     }
 
     /// 隐藏款(瑞幸)中奖桶序;**未到开奖时刻返回 null**(前端据此显示"待开奖")。

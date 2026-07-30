@@ -15,11 +15,20 @@ import java.time.Instant;
 /// @param answer      结算后的实际出桶数;未结算为 null
 /// @param winnerGuess 结算后赢家猜的数字;无人参与为 null
 /// @param iWon        本人是否就是赢家
+/// @param closeAtLabel  封猜时刻的成品文案(如 "20:00")
+/// @param revealAtLabel 结算时刻的成品文案(如 "20:30")
+///
+/// 🚨 两个 label 必须由服务端给,前端**绝不许写死时刻**:这两个值是配置项
+/// (THURSDAY_GUESS_CLOSE_AT / THURSDAY_REVEAL_AT),一改就会出现「页面写 22:00、
+/// 实际按 20:30 判」——用户按看到的题面下注、系统按另一个时刻结算,那是真的改判。
+/// 2026-07-30 把开奖从 22:00 提到 20:30 时就差点踩这个。
 public record ThursdayGuessView(boolean eligible, boolean open, Integer myGuess, long count,
-        Instant closeAt, BigDecimal thresholdCny, Integer answer, Integer winnerGuess, boolean iWon) {
+        Instant closeAt, BigDecimal thresholdCny, Integer answer, Integer winnerGuess, boolean iWon,
+        String closeAtLabel, String revealAtLabel) {
 
     /// 非场次日:整块不渲染。
     public static ThursdayGuessView closed(BigDecimal thresholdCny) {
-        return new ThursdayGuessView(false, false, null, 0, null, thresholdCny, null, null, false);
+        return new ThursdayGuessView(false, false, null, 0, null, thresholdCny, null, null, false,
+                null, null);
     }
 }

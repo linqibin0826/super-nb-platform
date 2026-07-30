@@ -8,10 +8,11 @@ import me.supernb.activity.app.usecase.thursday.ThursdayBucketView;
 /// hiddenBuckets 是**桶号**不是人,公开它不暴露身份;未到开奖时刻为 null。
 /// open=false(非场次日)时其余字段全为空态,前端整块不渲染。
 public record ThursdayBucketResponse(boolean open, boolean eligible, boolean claimed, Integer bucketNo,
-        int issued, int bucketLimit, List<Integer> hiddenBuckets, boolean hiddenWin) {
+        int issued, int bucketLimit, List<Integer> hiddenBuckets, boolean hiddenWin,
+        String revealAtLabel) {
 
     public static ThursdayBucketResponse of(ThursdayBucketView v) {
         return new ThursdayBucketResponse(v.open(), v.eligible(), v.claimed(), v.bucketNo(),
-                v.issued(), v.bucketLimit(), v.hiddenBuckets(), v.hiddenWin());
+                v.issued(), v.bucketLimit(), v.hiddenBuckets(), v.hiddenWin(), v.revealAtLabel());
     }
 }
