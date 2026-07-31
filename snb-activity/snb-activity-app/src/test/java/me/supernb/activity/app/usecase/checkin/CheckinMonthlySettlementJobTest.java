@@ -43,29 +43,42 @@ class CheckinMonthlySettlementJobTest {
             27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"));
 
     private CheckinMonthlySettlementJob job(boolean scanEnabled, boolean tierRewardEnabled, BigDecimal monthlyCap) {
-        CheckinSettlementProperties settlementProps =
-                new CheckinSettlementProperties(monthlyCap, new BigDecimal("10"), scanEnabled, tierRewardEnabled);
+        CheckinSettlementProperties settlementProps = new CheckinSettlementProperties(
+                monthlyCap, new BigDecimal("10"), scanEnabled, tierRewardEnabled, 20);
         return new CheckinMonthlySettlementJob(checkinPort, rechargePort, rewardPort, grantPort,
                 props, tierProps, settlementProps);
+    }
+
+    /// 2026-07-31 放宽:候选口径从「一天不落」换成「当月累计签满 N 天」,
+    /// N 由配置下发(默认 20),不再是「区间天数」。
+    @Test
+    void candidateScanUsesConfiguredCumulativeThresholdNotWindowLength() {
+        when(rewardPort.byStatus("pending")).thenReturn(List.of());
+        when(rewardPort.byStatus("failed")).thenReturn(List.of());
+        when(checkinPort.usersWithAtLeastDays(any(), any(), eq(20L))).thenReturn(List.of());
+
+        job(true, true, new BigDecimal("250")).settlePreviousMonth();
+
+        verify(checkinPort).usersWithAtLeastDays(any(), any(), eq(20L));
     }
 
     @Test
     void skipsEntirelyWhenScanDisabled() {
         job(false, true, new BigDecimal("250")).settlePreviousMonth();
-        verify(checkinPort, never()).fullAttendanceUserIds(any(), any(), anyLong());
+        verify(checkinPort, never()).usersWithAtLeastDays(any(), any(), anyLong());
     }
 
     @Test
     void skipsEntirelyWhenTierRewardDisabled() {
         job(true, false, new BigDecimal("250")).settlePreviousMonth();
-        verify(checkinPort, never()).fullAttendanceUserIds(any(), any(), anyLong());
+        verify(checkinPort, never()).usersWithAtLeastDays(any(), any(), anyLong());
     }
 
     @Test
     void fullAttendanceAndQualifyingRechargeClaimsAndSendsSuccessfully() {
         when(rewardPort.byStatus("pending")).thenReturn(List.of());
         when(rewardPort.byStatus("failed")).thenReturn(List.of());
-        when(checkinPort.fullAttendanceUserIds(any(), any(), anyLong())).thenReturn(List.of(42L));
+        when(checkinPort.usersWithAtLeastDays(any(), any(), anyLong())).thenReturn(List.of(42L));
         when(rechargePort.monthlyRecharges(eq(List.of(42L)), any(), any()))
                 .thenReturn(Map.of(42L, new BigDecimal("55")));
         when(rewardPort.claim(eq(42L), any(), eq("B"), eq(65L), any())).thenReturn(Optional.of(9001L));
@@ -81,7 +94,7 @@ class CheckinMonthlySettlementJobTest {
     void overBudgetCandidateIsDeferredNotSent() {
         when(rewardPort.byStatus("pending")).thenReturn(List.of());
         when(rewardPort.byStatus("failed")).thenReturn(List.of());
-        when(checkinPort.fullAttendanceUserIds(any(), any(), anyLong())).thenReturn(List.of(1L, 2L));
+        when(checkinPort.usersWithAtLeastDays(any(), any(), anyLong())).thenReturn(List.of(1L, 2L));
         when(rechargePort.monthlyRecharges(eq(List.of(1L, 2L)), any(), any()))
                 .thenReturn(Map.of(1L, new BigDecimal("500"), 2L, new BigDecimal("500"))); // 均命中 C 档,¥4.4/人
         when(rewardPort.claim(eq(1L), any(), eq("C"), eq(71L), any())).thenReturn(Optional.of(1001L));
@@ -102,7 +115,7 @@ class CheckinMonthlySettlementJobTest {
                 "checkin-reward-2026-06", 1);
         when(rewardPort.byStatus("pending")).thenReturn(List.of());
         when(rewardPort.byStatus("failed")).thenReturn(List.of(leftover));
-        when(checkinPort.fullAttendanceUserIds(any(), any(), anyLong())).thenReturn(List.of());
+        when(checkinPort.usersWithAtLeastDays(any(), any(), anyLong())).thenReturn(List.of());
         when(grantPort.bulkGrant(eq(List.of(7L)), eq(27L), eq(3), eq("checkin-reward-2026-06")))
                 .thenReturn(new SubscriptionGrantOutcome(Map.of(7L, "created"), List.of()));
 
@@ -117,7 +130,7 @@ class CheckinMonthlySettlementJobTest {
                 "checkin-reward-2026-06", 3);
         when(rewardPort.byStatus("pending")).thenReturn(List.of());
         when(rewardPort.byStatus("failed")).thenReturn(List.of(exhausted));
-        when(checkinPort.fullAttendanceUserIds(any(), any(), anyLong())).thenReturn(List.of());
+        when(checkinPort.usersWithAtLeastDays(any(), any(), anyLong())).thenReturn(List.of());
 
         job(true, true, new BigDecimal("250")).settlePreviousMonth();
 
@@ -128,7 +141,7 @@ class CheckinMonthlySettlementJobTest {
     void transportFailureAfterThreeRetriesMarksFailedAndDoesNotThrow() {
         when(rewardPort.byStatus("pending")).thenReturn(List.of());
         when(rewardPort.byStatus("failed")).thenReturn(List.of());
-        when(checkinPort.fullAttendanceUserIds(any(), any(), anyLong())).thenReturn(List.of(9L));
+        when(checkinPort.usersWithAtLeastDays(any(), any(), anyLong())).thenReturn(List.of(9L));
         when(rechargePort.monthlyRecharges(eq(List.of(9L)), any(), any()))
                 .thenReturn(Map.of(9L, new BigDecimal("30")));
         when(rewardPort.claim(eq(9L), any(), eq("A"), eq(27L), any())).thenReturn(Optional.of(3001L));
@@ -148,14 +161,14 @@ class CheckinMonthlySettlementJobTest {
     @Test
     void skipsEntirelyWhenGrantPortUnavailable() {
         CheckinSettlementProperties settlementProps =
-                new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, true);
+                new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, true, 20);
         CheckinMonthlySettlementJob jobWithoutGrantPort = new CheckinMonthlySettlementJob(
                 checkinPort, rechargePort, rewardPort, (SubscriptionGrantPort) null, props, tierProps,
                 settlementProps);
 
         jobWithoutGrantPort.settlePreviousMonth();
 
-        verify(checkinPort, never()).fullAttendanceUserIds(any(), any(), anyLong());
+        verify(checkinPort, never()).usersWithAtLeastDays(any(), any(), anyLong());
         verify(rechargePort, never()).monthlyRecharges(any(), any(), any());
         verify(rewardPort, never()).byStatus(any());
         verify(grantPort, never()).bulkGrant(any(), anyLong(), anyInt(), any());

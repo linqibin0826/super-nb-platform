@@ -6,10 +6,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
+import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinTierProperties;
 import me.supernb.activity.domain.model.checkin.CheckinMilestoneView;
 import me.supernb.activity.domain.model.checkin.CheckinStatusView;
@@ -23,9 +23,9 @@ import me.supernb.activity.domain.port.read.CheckinRechargeReadPort;
 import org.springframework.stereotype.Service;
 
 /// 签到状态查询(spec §7.3;字段形状按前端接线计划契约总览钉死)。业务文案(statusText/
-/// gaugeNote/state)一律服务端算好给成品字符串,自然日/时区/满勤判定全在服务端(Asia/Shanghai
-/// 显式),前端不得用 `new Date()` 重新推导"今天是几号"。满勤分母显式限定"仅计上线日之后"
-/// (红一④/红二9),历史记录不计入分母。
+/// gaugeNote/state)一律服务端算好给成品字符串,自然日/时区/资格判定全在服务端(Asia/Shanghai
+/// 显式),前端不得用 `new Date()` 重新推导"今天是几号"。
+/// 加时资格 2026-07-31 起改为「当月累计签满 N 天」,不再有"上线日分母"这回事。
 @Service
 public class CheckinStatusQueryService {
 
@@ -40,17 +40,20 @@ public class CheckinStatusQueryService {
     private final NbLedgerPort nbLedger;
     private final CheckinProperties props;
     private final CheckinTierProperties tierProps;
+    private final CheckinSettlementProperties settlementProps;
 
-    /// 构造:注入签到端口、补给充值读端口、账龄读端口、NB 账本读端口与两个配置类。
+    /// 构造:注入签到端口、补给充值读端口、账龄读端口、NB 账本读端口与三个配置类
+    /// (settlementProps 提供加时资格的当月累计出勤门槛,与月度结算 job 同一真源)。
     public CheckinStatusQueryService(CheckinPort checkinPort, CheckinRechargeReadPort rechargePort,
             AccountRegistrationReadPort registrationPort, NbLedgerPort nbLedger, CheckinProperties props,
-            CheckinTierProperties tierProps) {
+            CheckinTierProperties tierProps, CheckinSettlementProperties settlementProps) {
         this.checkinPort = checkinPort;
         this.rechargePort = rechargePort;
         this.registrationPort = registrationPort;
         this.nbLedger = nbLedger;
         this.props = props;
         this.tierProps = tierProps;
+        this.settlementProps = settlementProps;
     }
 
     /// 组装某用户的签到状态视图。
@@ -74,18 +77,10 @@ public class CheckinStatusQueryService {
         var recentDates = checkinPort.datesInRange(userId, today.minusDays(STREAK_LOOKBACK_DAYS), today);
         int streakCurrent = CheckinStreak.current(recentDates, today);
 
-        // 满勤在轨:自"月初与上线日两者取晚"起到今天为止一天不落——月中动态展示"目前在线全勤",
-        // 月末(今天是本月最后一天 且在轨)即成为最终"已打穿"判定,判定细节见 buildMilestones。
-        LocalDate fullMonthWindowStart = monthStart.isAfter(props.launchDate()) ? monthStart : props.launchDate();
-        boolean onTrackFullMonth;
-        if (fullMonthWindowStart.isAfter(today)) {
-            onTrackFullMonth = false;
-        } else {
-            long expectedDays = ChronoUnit.DAYS.between(fullMonthWindowStart, today) + 1;
-            int countSinceWindowStart = checkinPort.countInRange(userId, fullMonthWindowStart, today);
-            onTrackFullMonth = countSinceWindowStart >= expectedDays;
-        }
-        List<CheckinMilestoneView> milestones = buildMilestones(monthCount, onTrackFullMonth, today);
+        // 加时资格在轨 = 本月**累计**签到已达门槛(2026-07-31 起不再要求一天不落)。
+        // 旧口径「自上线日起逐日回溯判在轨」已随满勤退役——它命中率仅 1%,且一断签就整月无望。
+        boolean onTrackFullMonth = monthCount >= settlementProps.fullMonthDays();
+        List<CheckinMilestoneView> milestones = buildMilestones(monthCount, settlementProps.fullMonthDays());
 
         Instant monthStartInstant = monthStart.atStartOfDay(ZONE).toInstant();
         Instant nextMonthStartInstant = monthStart.plusMonths(1).atStartOfDay(ZONE).toInstant();
@@ -98,23 +93,21 @@ public class CheckinStatusQueryService {
                 milestones, supply, nbTotal);
     }
 
-    /// 组装四档里程碑(5/10/20/满勤),固定顺序、成品状态文案。
+    /// 组装四档里程碑(5/10/20/加时资格),固定顺序、成品状态文案。
     ///
-    /// 满勤达成 = 在轨 **且** 今天已是本月最后一天;不能再用 monthCount(整月签到数)与
-    /// monthDays(全月天数)的大小比较——上线日若落在被测月中旬,monthCount 物理上不可能追上
-    /// monthDays(如 7/13 上线、7/31 共 19 天签到 vs 31 天分母),会导致满勤永远判定不通过
-    /// (2026-07-14 复审修复,呼应 spec 红一④"满勤仅计上线日之后"的分母调整不能反被终判抵消)。
-    /// 包私有(非 private)以便脱离 `LocalDate.now()`/端口 mock,直接用固定 `today` 单测这一纯计算
-    /// (仿 `BoardPeriods` 先例:依赖"今天"的计算抽成显式接收 today/now 的纯函数)。
-    static List<CheckinMilestoneView> buildMilestones(int monthCount, boolean onTrackFullMonth, LocalDate today) {
-        int monthDays = today.lengthOfMonth();
+    /// 2026-07-31 起第四档由「满勤(一天不落且今天已是月末)」改为「当月累计签满 fullMonthDays 天」
+    /// ——不再依赖"今天是不是月末",月中达标即亮,断签的人追赶累计天数仍有奔头。旧口径命中率
+    /// 仅 1%(7 月 212 位打卡者中 2 人),等于 99% 的人看着一个永远达不成的格子。
+    /// 包私有(非 private)以便脱离端口 mock 直接单测这一纯计算(仿 `BoardPeriods` 先例)。
+    static List<CheckinMilestoneView> buildMilestones(int monthCount, int fullMonthDays) {
         List<CheckinMilestoneView> list = new ArrayList<>();
         list.add(milestoneOf("days_5", "出勤 5 天", 5, monthCount));
         list.add(milestoneOf("days_10", "出勤 10 天", 10, monthCount));
         list.add(milestoneOf("days_20", "出勤 20 天", 20, monthCount));
-        boolean fullMonthAchieved = onTrackFullMonth && today.getDayOfMonth() == monthDays;
-        String fullMonthText = fullMonthAchieved ? "已打穿" : (onTrackFullMonth ? "在轨 · 一格没漏" : "本月已错过");
-        list.add(new CheckinMilestoneView("full_month", "满勤", monthDays, fullMonthAchieved, fullMonthText));
+        boolean fullMonthAchieved = monthCount >= fullMonthDays;
+        String fullMonthText = fullMonthAchieved ? "已打穿" : (monthCount + " / " + fullMonthDays);
+        list.add(new CheckinMilestoneView("full_month", "加时资格", fullMonthDays, fullMonthAchieved,
+                fullMonthText));
         return list;
     }
 
@@ -141,7 +134,7 @@ public class CheckinStatusQueryService {
             String statusText;
             if (armed) {
                 state = "armed";
-                statusText = onTrackFullMonth ? "充值已达标 · 满勤在轨" : "充值已达标 · 满勤未达标";
+                statusText = onTrackFullMonth ? "充值已达标 · 出勤在轨" : "充值已达标 · 出勤未达标";
             } else if (nextUnmet != null && nextUnmet.tier().equals(t.tier())) {
                 state = "progress";
                 BigDecimal gap = t.threshold().subtract(monthlyRecharge).stripTrailingZeros();

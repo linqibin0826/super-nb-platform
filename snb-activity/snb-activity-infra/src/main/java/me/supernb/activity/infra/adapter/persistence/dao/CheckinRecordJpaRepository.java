@@ -20,10 +20,11 @@ public interface CheckinRecordJpaRepository extends JpaRepository<CheckinRecordE
     List<CheckinRecordEntity> findByUserIdAndCheckinDateBetweenOrderByCheckinDateDesc(
             long userId, LocalDate from, LocalDate to);
 
+    /// 区间内累计签到 ≥ minDays 天的用户 id(加时资格判定;2026-07-31 由 `= expectedDays` 放宽而来)。
     @Query("SELECT c.userId FROM CheckinRecordEntity c WHERE c.checkinDate BETWEEN :from AND :to "
-            + "GROUP BY c.userId HAVING COUNT(c) = :expectedDays")
-    List<Long> findFullAttendanceUserIds(@Param("from") LocalDate from, @Param("to") LocalDate to,
-            @Param("expectedDays") long expectedDays);
+            + "GROUP BY c.userId HAVING COUNT(c) >= :minDays")
+    List<Long> findUserIdsWithAtLeastDays(@Param("from") LocalDate from, @Param("to") LocalDate to,
+            @Param("minDays") long minDays);
 
     /// 某天打卡了的全部用户 id(返网费补偿 job 补录当日缺失台账用)。
     @Query("SELECT c.userId FROM CheckinRecordEntity c WHERE c.checkinDate = :day")

@@ -26,9 +26,12 @@ public interface CheckinPort {
     /// [fromInclusive, toInclusive] 闭区间内的签到日期,按日期降序。
     List<LocalDate> datesInRange(long userId, LocalDate fromInclusive, LocalDate toInclusive);
 
-    /// [fromInclusive, toInclusive] 闭区间内每天都签到的用户 id 列表(满勤判定用,
-    /// expectedDays = 该区间天数,调用方负责按上线日与自然月边界算好)。
-    List<Long> fullAttendanceUserIds(LocalDate fromInclusive, LocalDate toInclusive, long expectedDays);
+    /// [fromInclusive, toInclusive] 闭区间内累计签到 ≥ minDays 天的用户 id 列表(加时资格判定用)。
+    ///
+    /// 2026-07-31 由「一天不落的满勤」放宽为「累计达标」:满勤命中率仅 1%(7 月 212 位打卡者中
+    /// 只有 2 人),99% 的人拿不到任何实物奖,且一旦断签就整月摆烂。累计口径让断签的人仍有奔头,
+    /// 与「连签递增返网费」形成日常/兜底两条互补线。
+    List<Long> usersWithAtLeastDays(LocalDate fromInclusive, LocalDate toInclusive, long minDays);
 
     /// 某天打卡了的全部用户 id(返网费补偿 job 补录当日缺失台账用)。
     List<Long> userIdsCheckedInOn(LocalDate day);

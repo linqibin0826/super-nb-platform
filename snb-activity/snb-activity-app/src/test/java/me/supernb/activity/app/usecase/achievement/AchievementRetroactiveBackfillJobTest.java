@@ -32,7 +32,7 @@ class AchievementRetroactiveBackfillJobTest {
     private final ScanWatermarkPort watermarkPort = mock(ScanWatermarkPort.class);
     private final AchievementJudgeEngine judgeEngine = new AchievementJudgeEngine(
             metricPort, watermarkPort, catalogPort, unlockPort,
-            new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, false));
+            new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, false, 20));
 
     private AchievementRetroactiveBackfillJob job(boolean enabled) {
         // 第二参=成就系统总闸:单测里直接 new job,不经 Spring 装配,@ConditionalOnProperty 不生效,

@@ -28,7 +28,7 @@ class CheckinMetricSyncJobTest {
 
     private CheckinMetricSyncJob job(boolean scanEnabled) {
         CheckinSettlementProperties settlementProperties = new CheckinSettlementProperties(
-                new BigDecimal("250"), new BigDecimal("10"), scanEnabled, false);
+                new BigDecimal("250"), new BigDecimal("10"), scanEnabled, false, 20);
         return new CheckinMetricSyncJob(checkinPort, signalPort, metricPort, checkinProperties, settlementProperties);
     }
 
@@ -57,16 +57,16 @@ class CheckinMetricSyncJobTest {
         java.time.YearMonth lastMonth = java.time.YearMonth.of(2026, 7);
         LocalDate monthStart = lastMonth.atDay(1);
         LocalDate monthEnd = lastMonth.atEndOfMonth();
-        when(checkinPort.fullAttendanceUserIds(monthStart, monthEnd, 31)).thenReturn(List.of(42L));
+        when(checkinPort.usersWithAtLeastDays(monthStart, monthEnd, 31)).thenReturn(List.of(42L));
         when(metricPort.value(42, "checkin_fullmonth_count")).thenReturn(Optional.of(2.0));
         CheckinProperties launchInJuly = new CheckinProperties("2026-07-01", 3);
         when(signalPort.usersCheckedInBetween(eq(LocalDate.of(2026, 7, 1)), eq(monthEnd)))
                 .thenReturn(List.of(42L));
-        when(checkinPort.fullAttendanceUserIds(LocalDate.of(2026, 7, 1), monthEnd, 31))
+        when(checkinPort.usersWithAtLeastDays(LocalDate.of(2026, 7, 1), monthEnd, 31))
                 .thenReturn(List.of(42L));
 
         CheckinSettlementProperties settlementProperties =
-                new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, false);
+                new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, false, 20);
         new CheckinMetricSyncJob(checkinPort, signalPort, metricPort, launchInJuly, settlementProperties)
                 .syncMonthlyFor(lastMonth);
 

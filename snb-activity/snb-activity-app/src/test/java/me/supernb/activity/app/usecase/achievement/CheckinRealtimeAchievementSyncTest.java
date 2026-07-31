@@ -23,7 +23,7 @@ class CheckinRealtimeAchievementSyncTest {
 
     private CheckinRealtimeAchievementSync sync(boolean scanEnabled) {
         CheckinSettlementProperties props = new CheckinSettlementProperties(
-                new BigDecimal("250"), new BigDecimal("10"), scanEnabled, false);
+                new BigDecimal("250"), new BigDecimal("10"), scanEnabled, false, 20);
         return new CheckinRealtimeAchievementSync(metricSyncJob, judgeEngine, props);
     }
 

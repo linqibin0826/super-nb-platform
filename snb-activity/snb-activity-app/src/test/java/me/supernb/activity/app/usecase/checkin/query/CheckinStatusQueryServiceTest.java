@@ -13,6 +13,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
+import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinTierProperties;
 import me.supernb.activity.domain.model.checkin.CheckinMilestoneView;
 import me.supernb.activity.domain.model.checkin.CheckinStatusView;
@@ -42,7 +43,8 @@ class CheckinStatusQueryServiceTest {
             new BigDecimal("30"), new BigDecimal("50"), new BigDecimal("500"),
             27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"));
     private final CheckinStatusQueryService service =
-            new CheckinStatusQueryService(checkinPort, rechargePort, registrationPort, nbLedger, props, tierProps);
+            new CheckinStatusQueryService(checkinPort, rechargePort, registrationPort, nbLedger, props, tierProps,
+                    new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, true, 20));
 
     @Test
     void eligibleUserSeesFullStatusWithProgressTierB() {
@@ -93,30 +95,28 @@ class CheckinStatusQueryServiceTest {
     }
 
     @Test
-    void fullMonthAchievedOnlyOnLastDayOfMonthEvenWhenLaunchDateFallsMidMonth() {
-        // 上线月结构性可达性修复(2026-07-14 复审裁决):launchDate 落在被测月中旬时,
-        // monthCount(整月签到数)天然小于 monthDays(全月天数),不能再用两者比较判定满勤。
-        // 7/13 上线,用户从上线日起一天不落到月末(7/13~7/31 共 19 天)——今天已是月末,应判定满勤。
-        List<CheckinMilestoneView> milestones =
-                CheckinStatusQueryService.buildMilestones(19, true, LocalDate.of(2026, 7, 31));
+    void tierEligibilityAchievedOnceCumulativeDaysReachThreshold() {
+        // 2026-07-31 放宽:加时资格 = 当月累计签满 N 天,**不再要求一天不落、也不再等月末**。
+        // 累计 20 天即达标,哪怕中间断过好几次。
+        List<CheckinMilestoneView> milestones = CheckinStatusQueryService.buildMilestones(20, 20);
 
         CheckinMilestoneView fullMonth = milestones.get(3);
         assertThat(fullMonth.code()).isEqualTo("full_month");
-        assertThat(fullMonth.target()).isEqualTo(31);
+        assertThat(fullMonth.label()).isEqualTo("加时资格");
+        assertThat(fullMonth.target()).isEqualTo(20);
         assertThat(fullMonth.achieved()).isTrue();
         assertThat(fullMonth.statusText()).isEqualTo("已打穿");
     }
 
     @Test
-    void fullMonthNotYetAchievedMidMonthEvenWhenOnTrackSinceLaunch() {
-        // 同样从上线日(7/13)起一天不落,但今天只是 7/20(月中,非月末,7/13~7/20 共 8 天)——
-        // 不该提前判定满勤,应保持"在轨"展示态,等到月末那天才翻转成"已打穿"。
-        List<CheckinMilestoneView> milestones =
-                CheckinStatusQueryService.buildMilestones(8, true, LocalDate.of(2026, 7, 20));
+    void tierEligibilityShowsProgressWhenCumulativeDaysStillShort() {
+        // 月中累计 8 天:未达标,展示 "8 / 20" 的追赶进度——不再是旧口径那种
+        // 「断一次就整月无望」的"本月已错过"死局。
+        List<CheckinMilestoneView> milestones = CheckinStatusQueryService.buildMilestones(8, 20);
 
         CheckinMilestoneView fullMonth = milestones.get(3);
         assertThat(fullMonth.achieved()).isFalse();
-        assertThat(fullMonth.statusText()).isEqualTo("在轨 · 一格没漏");
+        assertThat(fullMonth.statusText()).isEqualTo("8 / 20");
     }
 
     @Test
