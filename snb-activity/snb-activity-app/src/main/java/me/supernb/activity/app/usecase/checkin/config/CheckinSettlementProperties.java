@@ -23,7 +23,7 @@ public class CheckinSettlementProperties {
             @Value("${activity.checkin.per-user-monthly-cap:10}") BigDecimal perUserMonthlyCap,
             @Value("${activity.checkin.scan-enabled:false}") boolean scanEnabled,
             @Value("${activity.checkin.tier-reward-enabled:false}") boolean tierRewardEnabled,
-            @Value("${activity.checkin.full-month-days:20}") int fullMonthDays) {
+            @Value("${activity.checkin.full-month-days:15}") int fullMonthDays) {
         this.monthlyBudgetCap = monthlyBudgetCap;
         this.perUserMonthlyCap = perUserMonthlyCap;
         this.scanEnabled = scanEnabled;

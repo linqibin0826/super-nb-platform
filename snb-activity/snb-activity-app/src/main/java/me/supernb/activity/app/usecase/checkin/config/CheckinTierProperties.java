@@ -33,12 +33,12 @@ public class CheckinTierProperties {
             @Value("${activity.checkin.tier.a.cost-cny:0.9}") BigDecimal costA,
             @Value("${activity.checkin.tier.b.cost-cny:1.9}") BigDecimal costB,
             @Value("${activity.checkin.tier.c.cost-cny:4.4}") BigDecimal costC,
-            @Value("${activity.checkin.full-month-days:20}") int fullMonthDays) {
+            @Value("${activity.checkin.full-month-days:15}") int fullMonthDays) {
         // 展示词随零发光网吧 v2 词汇表叫「加时」(2026-07-28;机制内部代号仍是"补给",
         // 结算 notes `checkin-reward-*` 是 sub2api 对账凭据更不能动)——label 经
         // GET /checkin/rewards 的 grants[].label 原样上台账,是签到页唯一上屏的档位名。
         // 🚨 conditionText 的出勤口径必须与 CheckinSettlementProperties.fullMonthDays 同一个
-        // 配置键(2026-07-31 满勤→当月累计 N 天):两处各读各的会让页面「判定 20 天、文案写满勤」。
+        // 配置键(2026-07-31 满勤→当月累计 N 天):两处各读各的会让页面「按新门槛判定、文案还写旧口径」。
         String attendance = "当月签满 " + fullMonthDays + " 天 + 当月新增充值 ¥";
         this.tiers = List.of(
                 new TierInfo("A", "GPT-Plus 加时 · 3 天",

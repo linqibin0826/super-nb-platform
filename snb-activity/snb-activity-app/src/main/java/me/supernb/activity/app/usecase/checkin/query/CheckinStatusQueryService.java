@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import me.supernb.activity.app.usecase.checkin.config.CheckinBalanceProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
@@ -147,11 +148,16 @@ public class CheckinStatusQueryService {
                 dailyRewardPort.myMonthlyBalanceTotal(userId, monthStart, monthEnd));
     }
 
-    /// 组装四档里程碑(5/10/20/加时资格),固定顺序、成品状态文案。
+    /// 组装四档里程碑(出勤 5/10/20 三枚徽章 + 加时资格),**按 target 升序**、成品状态文案。
     ///
-    /// 2026-07-31 起第四档由「满勤(一天不落且今天已是月末)」改为「当月累计签满 fullMonthDays 天」
-    /// ——不再依赖"今天是不是月末",月中达标即亮,断签的人追赶累计天数仍有奔头。旧口径命中率
-    /// 仅 1%(7 月 212 位打卡者中 2 人),等于 99% 的人看着一个永远达不成的格子。
+    /// 2026-07-31 起「加时资格」由「满勤(一天不落且今天已是月末)」改为「当月累计签满
+    /// fullMonthDays 天」——不再依赖"今天是不是月末",月中达标即亮,断签的人追赶累计天数
+    /// 仍有奔头。旧口径命中率仅 1%(7 月 212 位打卡者中 2 人),等于 99% 的人看着一个永远
+    /// 达不成的格子。
+    ///
+    /// 🚨 顺序必须按 target 排而不能写死:门槛是 env 可调的(同日已从 20 调到 15),一旦它
+    /// 落到 5/10/20 三枚徽章**中间**,固定排第四就会让 rail 读成「20 天:15/20 未达」紧挨着
+    /// 「加时资格:已打穿」——后面那格先亮、前面那格还没到。稳定排序保证同值时徽章在前。
     /// 包私有(非 private)以便脱离端口 mock 直接单测这一纯计算(仿 `BoardPeriods` 先例)。
     static List<CheckinMilestoneView> buildMilestones(int monthCount, int fullMonthDays) {
         List<CheckinMilestoneView> list = new ArrayList<>();
@@ -162,6 +168,7 @@ public class CheckinStatusQueryService {
         String fullMonthText = fullMonthAchieved ? "已打穿" : (monthCount + " / " + fullMonthDays);
         list.add(new CheckinMilestoneView("full_month", "加时资格", fullMonthDays, fullMonthAchieved,
                 fullMonthText));
+        list.sort(Comparator.comparingInt(CheckinMilestoneView::target)); // List.sort 稳定
         return list;
     }
 

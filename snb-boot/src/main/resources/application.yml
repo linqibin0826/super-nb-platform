@@ -103,8 +103,9 @@ activity:
         threshold: ${CHECKIN_TIER_C_THRESHOLD:500}
         group-id: ${CHECKIN_TIER_C_GROUP_ID:0}
         cost-cny: ${CHECKIN_TIER_C_COST_CNY:4.4}
-    # 加时资格的当月**累计**出勤门槛(原「满勤」,2026-07-31 放宽——满勤命中率仅 1%)
-    full-month-days: ${CHECKIN_FULL_MONTH_DAYS:20}
+    # 加时资格的当月**累计**出勤门槛(原「满勤」,2026-07-31 放宽——满勤命中率仅 1%;
+    # 同日站长二次拍板 20→15)
+    full-month-days: ${CHECKIN_FULL_MONTH_DAYS:15}
     # 每日返网费(spec 2026-07-31-checkin-daily-reward §6):连签第 N 天返 per-day-cny × N。
     # enabled 默认 false fail-closed——不配 env 就只发 NB 不发钱。
     # ⚠️ compose 不加 environment 映射 = 这里的默认值静默生效(GATE_ 老教训)。

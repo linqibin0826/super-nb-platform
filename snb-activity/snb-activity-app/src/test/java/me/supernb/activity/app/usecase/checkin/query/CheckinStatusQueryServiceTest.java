@@ -228,6 +228,32 @@ class CheckinStatusQueryServiceTest {
         assertThat(fullMonth.statusText()).isEqualTo("8 / 20");
     }
 
+    /// 门槛 2026-07-31 二次拍板 20→15 后,「加时资格」的 target 落在 5/10/20 三枚出勤徽章
+    /// **中间**。若仍固定排第四,rail 上会读成 5 ✓ / 10 ✓ / 20「15 / 20」/ 加时资格「已打穿」
+    /// ——后面那格先亮、前面那格还没到,自相矛盾。故按 target 升序排(稳定排序:同值时
+    /// 出勤徽章在前),门槛怎么调都保持单调。
+    @Test
+    void milestonesStayInAscendingTargetOrderWhenThresholdFallsBetweenBadges() {
+        List<CheckinMilestoneView> milestones = CheckinStatusQueryService.buildMilestones(16, 15);
+
+        assertThat(milestones).extracting(CheckinMilestoneView::target)
+                .containsExactly(5, 10, 15, 20);
+        assertThat(milestones).extracting(CheckinMilestoneView::code)
+                .containsExactly("days_5", "days_10", "full_month", "days_20");
+        // 单调性的实质:达成态不能出现「后面亮着、前面没亮」
+        assertThat(milestones).extracting(CheckinMilestoneView::achieved)
+                .containsExactly(true, true, true, false);
+    }
+
+    /// 门槛与某枚徽章同值时,徽章排前(稳定排序)——避免顺序在等值边界上抖动。
+    @Test
+    void milestonesKeepBadgeBeforeQualificationOnTie() {
+        List<CheckinMilestoneView> milestones = CheckinStatusQueryService.buildMilestones(3, 20);
+
+        assertThat(milestones).extracting(CheckinMilestoneView::code)
+                .containsExactly("days_5", "days_10", "days_20", "full_month");
+    }
+
     @Test
     void gaugePctFollowsSegmentedScaleAcrossTierBoundaries() {
         // 分段刻度公式(2026-07-14 控制器裁决,替换 spec 草稿"朝下一档线性"公式):
