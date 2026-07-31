@@ -107,7 +107,11 @@ public class CheckinMetricSyncJob {
         LocalDate monthEnd = lastMonth.atEndOfMonth();
         long expectedDays = ChronoUnit.DAYS.between(monthStart, monthEnd) + 1;
 
-        for (long userId : checkinPort.fullAttendanceUserIds(monthStart, monthEnd, expectedDays)) {
+        // ⚠️ 成就侧要的是**真·满勤**(一天不落),与 2026-07-31 放宽后的加时资格门槛无关。
+        // 这里传「区间天数」当 minDays:checkin_record 有 (user_id, checkin_date) 唯一键,
+        // 区间 N 天内最多 N 条记录,故 COUNT >= N 恒等于 COUNT = N——语义与旧的
+        // fullAttendanceUserIds 逐字等价,不受加时门槛调参影响。
+        for (long userId : checkinPort.usersWithAtLeastDays(monthStart, monthEnd, expectedDays)) {
             double current = metricPort.value(userId, "checkin_fullmonth_count").orElse(0.0);
             metricPort.upsert(userId, "checkin_fullmonth_count", current + 1);
         }
@@ -121,7 +125,8 @@ public class CheckinMetricSyncJob {
             metricPort.upsert(userId, "checkin_founding_month_flag", 1);
         }
         long expectedFoundingDays = ChronoUnit.DAYS.between(launchDate, monthEnd) + 1;
-        for (long userId : checkinPort.fullAttendanceUserIds(launchDate, monthEnd, expectedFoundingDays)) {
+        // 同上:传区间天数 = 真·满勤语义,与加时门槛解耦。
+        for (long userId : checkinPort.usersWithAtLeastDays(launchDate, monthEnd, expectedFoundingDays)) {
             metricPort.upsert(userId, "checkin_founding_fullmonth_flag", 1);
         }
     }

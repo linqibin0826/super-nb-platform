@@ -2,6 +2,7 @@ package me.supernb.activity.app.usecase.checkin.query;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -12,14 +13,18 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import me.supernb.activity.app.usecase.checkin.config.CheckinBalanceProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
+import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinTierProperties;
 import me.supernb.activity.domain.model.checkin.CheckinMilestoneView;
 import me.supernb.activity.domain.model.checkin.CheckinStatusView;
+import me.supernb.activity.domain.port.checkin.CheckinDailyRewardPort;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
 import me.supernb.activity.domain.port.nb.NbLedgerPort;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
 import me.supernb.activity.domain.port.read.CheckinRechargeReadPort;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /// 状态查询装配:字段形状按前端接线计划契约核对——eligible/ineligibleReason、
@@ -40,9 +45,14 @@ class CheckinStatusQueryServiceTest {
     private final CheckinProperties props = new CheckinProperties("2020-01-01", 3);
     private final CheckinTierProperties tierProps = new CheckinTierProperties(
             new BigDecimal("30"), new BigDecimal("50"), new BigDecimal("500"),
-            27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"));
+            27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"), 20);
+    private final CheckinDailyRewardPort dailyRewardPort = mock(CheckinDailyRewardPort.class);
+    private final CheckinBalanceProperties balanceProps =
+            new CheckinBalanceProperties(true, "0.1", "30", "3000");
     private final CheckinStatusQueryService service =
-            new CheckinStatusQueryService(checkinPort, rechargePort, registrationPort, nbLedger, props, tierProps);
+            new CheckinStatusQueryService(checkinPort, rechargePort, registrationPort, nbLedger, props, tierProps,
+                    new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, true, 20),
+                    dailyRewardPort, balanceProps);
 
     @Test
     void eligibleUserSeesFullStatusWithProgressTierB() {
@@ -92,31 +102,156 @@ class CheckinStatusQueryServiceTest {
         assertThat(view.supply().gaugePct()).isZero();
     }
 
+    /// 连签阶梯用到的两个新端口给中性默认值,免得每个既有用例都得重复 stub
+    /// (未 stub 的 BigDecimal 返回 null,会在 compareTo 处 NPE)。需要具体值的用例自行覆盖。
+    @BeforeEach
+    void stubDailyRewardDefaults() {
+        when(rechargePort.lifetimeRecharge(anyLong(), any())).thenReturn(BigDecimal.ZERO);
+        when(dailyRewardPort.myMonthlyBalanceTotal(anyLong(), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(dailyRewardPort.findByUserAndDay(anyLong(), any())).thenReturn(Optional.empty());
+    }
+
     @Test
-    void fullMonthAchievedOnlyOnLastDayOfMonthEvenWhenLaunchDateFallsMidMonth() {
-        // 上线月结构性可达性修复(2026-07-14 复审裁决):launchDate 落在被测月中旬时,
-        // monthCount(整月签到数)天然小于 monthDays(全月天数),不能再用两者比较判定满勤。
-        // 7/13 上线,用户从上线日起一天不落到月末(7/13~7/31 共 19 天)——今天已是月末,应判定满勤。
-        List<CheckinMilestoneView> milestones =
-                CheckinStatusQueryService.buildMilestones(19, true, LocalDate.of(2026, 7, 31));
+    void dailyRewardShowsTodayAndTomorrowLadder() {
+        // 本月连签到昨天 6 天、今天已签 → 今天第 7 天 ¥0.70/21NB,明天第 8 天 ¥0.80/24NB
+        LocalDate day = LocalDate.of(2026, 8, 10);
+        stubEligibleUserOnDate(day, 7, true);
+        when(rechargePort.lifetimeRecharge(eq(42L), any())).thenReturn(new BigDecimal("100"));
+        when(rechargePort.monthlyRecharge(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(dailyRewardPort.myMonthlyBalanceTotal(eq(42L), any(), any())).thenReturn(new BigDecimal("2.10"));
+        when(dailyRewardPort.findByUserAndDay(eq(42L), any())).thenReturn(Optional.empty());
+
+        CheckinStatusView v = service.statusAt(42L, day, Instant.parse("2026-08-10T04:00:00Z"));
+
+        assertThat(v.dailyReward().streakDay()).isEqualTo(7);
+        assertThat(v.dailyReward().todayBalanceCny()).isEqualByComparingTo("0.70");
+        assertThat(v.dailyReward().todayNbPoints()).isEqualTo(21);
+        assertThat(v.dailyReward().tomorrowStreakDay()).isEqualTo(8);
+        assertThat(v.dailyReward().tomorrowBalanceCny()).isEqualByComparingTo("0.80");
+        assertThat(v.dailyReward().tomorrowNbPoints()).isEqualTo(24);
+        assertThat(v.dailyReward().balanceEligible()).isTrue();
+        assertThat(v.dailyReward().balanceUnlockText()).isNull();
+        assertThat(v.dailyReward().todayBalanceStatus()).isEqualTo("not_punched");
+        assertThat(v.dailyReward().monthBalanceTotalCny()).isEqualByComparingTo("2.10");
+    }
+
+    @Test
+    void ineligibleUserSeesLockedBalanceButStillGetsNb() {
+        LocalDate day = LocalDate.of(2026, 8, 3);
+        stubEligibleUserOnDate(day, 0, false);
+        when(rechargePort.lifetimeRecharge(eq(42L), any())).thenReturn(new BigDecimal("29.99"));
+        when(rechargePort.monthlyRecharge(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(dailyRewardPort.myMonthlyBalanceTotal(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(dailyRewardPort.findByUserAndDay(eq(42L), any())).thenReturn(Optional.empty());
+
+        CheckinStatusView v = service.statusAt(42L, day, Instant.parse("2026-08-03T04:00:00Z"));
+
+        assertThat(v.dailyReward().balanceEligible()).isFalse();
+        assertThat(v.dailyReward().todayBalanceCny()).isEqualByComparingTo("0");
+        assertThat(v.dailyReward().balanceUnlockText()).isEqualTo("累计充值满 ¥30 解锁返网费");
+        assertThat(v.dailyReward().todayNbPoints()).isEqualTo(3);   // NB 无门槛,照给
+    }
+
+    @Test
+    void tomorrowResetsToOneOnLastDayOfMonth() {
+        // 8/31 已签、8/1~8/31 连签 31 天;明天是 9/1,自然月清零 → 第 1 天 ¥0.10
+        LocalDate lastDay = LocalDate.of(2026, 8, 31);
+        stubEligibleUserOnDate(lastDay, 31, true);
+        when(rechargePort.lifetimeRecharge(eq(42L), any())).thenReturn(new BigDecimal("100"));
+        when(rechargePort.monthlyRecharge(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(dailyRewardPort.myMonthlyBalanceTotal(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(dailyRewardPort.findByUserAndDay(eq(42L), any())).thenReturn(Optional.empty());
+
+        CheckinStatusView v = service.statusAt(42L, lastDay, Instant.parse("2026-08-31T04:00:00Z"));
+
+        assertThat(v.dailyReward().streakDay()).isEqualTo(31);
+        assertThat(v.dailyReward().todayBalanceCny()).isEqualByComparingTo("3.10");
+        assertThat(v.dailyReward().tomorrowStreakDay()).isEqualTo(1);
+        assertThat(v.dailyReward().tomorrowBalanceCny()).isEqualByComparingTo("0.10");
+    }
+
+    @Test
+    void tomorrowIsAlsoOneWhenTodayNotPunchedYet() {
+        // 今天还没签 → 今天这条连签已经断了,明天签只能是本月第 1 天,
+        // 绝不能画成 streakDay+1(那是用户拿不到的档位)。
+        LocalDate day = LocalDate.of(2026, 8, 10);
+        stubEligibleUserOnDate(day, 3, false);   // 8/7~8/9 签过,8/10 未签
+        when(rechargePort.lifetimeRecharge(eq(42L), any())).thenReturn(new BigDecimal("100"));
+        when(rechargePort.monthlyRecharge(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(dailyRewardPort.myMonthlyBalanceTotal(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(dailyRewardPort.findByUserAndDay(eq(42L), any())).thenReturn(Optional.empty());
+
+        CheckinStatusView v = service.statusAt(42L, day, Instant.parse("2026-08-10T04:00:00Z"));
+
+        assertThat(v.dailyReward().streakDay()).isEqualTo(4);         // 今天签的话是第 4 天
+        assertThat(v.dailyReward().tomorrowStreakDay()).isEqualTo(1); // 但今天不签,明天从 1 起
+    }
+
+    /// stub 一个账龄合格的用户在指定基准日的当月签到史。
+    ///
+    /// @param includeToday true = 今天也已签(连签含今天);false = 今天还没签
+    private void stubEligibleUserOnDate(LocalDate baseDate, int consecutiveDays, boolean includeToday) {
+        when(registrationPort.registeredAt(42L))
+                .thenReturn(Optional.of(Instant.parse("2020-01-01T00:00:00Z")));
+        List<LocalDate> dates = new java.util.ArrayList<>();
+        LocalDate cursor = includeToday ? baseDate : baseDate.minusDays(1);
+        for (int i = 0; i < consecutiveDays; i++) {
+            dates.add(cursor.minusDays(i));
+        }
+        when(checkinPort.datesInRange(eq(42L), any(), any())).thenReturn(dates);
+        when(checkinPort.checkedInOn(42L, baseDate)).thenReturn(includeToday);
+        when(checkinPort.totalCheckins(42L)).thenReturn(consecutiveDays);
+    }
+
+    @Test
+    void tierEligibilityAchievedOnceCumulativeDaysReachThreshold() {
+        // 2026-07-31 放宽:加时资格 = 当月累计签满 N 天,**不再要求一天不落、也不再等月末**。
+        // 累计 20 天即达标,哪怕中间断过好几次。
+        List<CheckinMilestoneView> milestones = CheckinStatusQueryService.buildMilestones(20, 20);
 
         CheckinMilestoneView fullMonth = milestones.get(3);
         assertThat(fullMonth.code()).isEqualTo("full_month");
-        assertThat(fullMonth.target()).isEqualTo(31);
+        assertThat(fullMonth.label()).isEqualTo("加时资格");
+        assertThat(fullMonth.target()).isEqualTo(20);
         assertThat(fullMonth.achieved()).isTrue();
         assertThat(fullMonth.statusText()).isEqualTo("已打穿");
     }
 
     @Test
-    void fullMonthNotYetAchievedMidMonthEvenWhenOnTrackSinceLaunch() {
-        // 同样从上线日(7/13)起一天不落,但今天只是 7/20(月中,非月末,7/13~7/20 共 8 天)——
-        // 不该提前判定满勤,应保持"在轨"展示态,等到月末那天才翻转成"已打穿"。
-        List<CheckinMilestoneView> milestones =
-                CheckinStatusQueryService.buildMilestones(8, true, LocalDate.of(2026, 7, 20));
+    void tierEligibilityShowsProgressWhenCumulativeDaysStillShort() {
+        // 月中累计 8 天:未达标,展示 "8 / 20" 的追赶进度——不再是旧口径那种
+        // 「断一次就整月无望」的"本月已错过"死局。
+        List<CheckinMilestoneView> milestones = CheckinStatusQueryService.buildMilestones(8, 20);
 
         CheckinMilestoneView fullMonth = milestones.get(3);
         assertThat(fullMonth.achieved()).isFalse();
-        assertThat(fullMonth.statusText()).isEqualTo("在轨 · 一格没漏");
+        assertThat(fullMonth.statusText()).isEqualTo("8 / 20");
+    }
+
+    /// 门槛 2026-07-31 二次拍板 20→15 后,「加时资格」的 target 落在 5/10/20 三枚出勤徽章
+    /// **中间**。若仍固定排第四,rail 上会读成 5 ✓ / 10 ✓ / 20「15 / 20」/ 加时资格「已打穿」
+    /// ——后面那格先亮、前面那格还没到,自相矛盾。故按 target 升序排(稳定排序:同值时
+    /// 出勤徽章在前),门槛怎么调都保持单调。
+    @Test
+    void milestonesStayInAscendingTargetOrderWhenThresholdFallsBetweenBadges() {
+        List<CheckinMilestoneView> milestones = CheckinStatusQueryService.buildMilestones(16, 15);
+
+        assertThat(milestones).extracting(CheckinMilestoneView::target)
+                .containsExactly(5, 10, 15, 20);
+        assertThat(milestones).extracting(CheckinMilestoneView::code)
+                .containsExactly("days_5", "days_10", "full_month", "days_20");
+        // 单调性的实质:达成态不能出现「后面亮着、前面没亮」
+        assertThat(milestones).extracting(CheckinMilestoneView::achieved)
+                .containsExactly(true, true, true, false);
+    }
+
+    /// 门槛与某枚徽章同值时,徽章排前(稳定排序)——避免顺序在等值边界上抖动。
+    @Test
+    void milestonesKeepBadgeBeforeQualificationOnTie() {
+        List<CheckinMilestoneView> milestones = CheckinStatusQueryService.buildMilestones(3, 20);
+
+        assertThat(milestones).extracting(CheckinMilestoneView::code)
+                .containsExactly("days_5", "days_10", "days_20", "full_month");
     }
 
     @Test

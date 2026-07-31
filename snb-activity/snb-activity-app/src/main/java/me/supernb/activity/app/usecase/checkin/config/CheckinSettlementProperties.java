@@ -15,17 +15,20 @@ public class CheckinSettlementProperties {
     private final BigDecimal perUserMonthlyCap;
     private final boolean scanEnabled;
     private final boolean tierRewardEnabled;
+    private final int fullMonthDays;
 
-    /// 构造:预算硬顶/保险丝/两个开关经配置注入。
+    /// 构造:预算硬顶/保险丝/两个开关/加时出勤门槛经配置注入。
     public CheckinSettlementProperties(
             @Value("${activity.checkin.monthly-budget-cap:250}") BigDecimal monthlyBudgetCap,
             @Value("${activity.checkin.per-user-monthly-cap:10}") BigDecimal perUserMonthlyCap,
             @Value("${activity.checkin.scan-enabled:false}") boolean scanEnabled,
-            @Value("${activity.checkin.tier-reward-enabled:false}") boolean tierRewardEnabled) {
+            @Value("${activity.checkin.tier-reward-enabled:false}") boolean tierRewardEnabled,
+            @Value("${activity.checkin.full-month-days:15}") int fullMonthDays) {
         this.monthlyBudgetCap = monthlyBudgetCap;
         this.perUserMonthlyCap = perUserMonthlyCap;
         this.scanEnabled = scanEnabled;
         this.tierRewardEnabled = tierRewardEnabled;
+        this.fullMonthDays = fullMonthDays;
     }
 
     /// 系统硬顶(元/月),不因估算下修而调低(spec §5.3)。
@@ -46,5 +49,11 @@ public class CheckinSettlementProperties {
     /// 补给资格独立开关:关闭时签到/里程碑/成就主线正常运行,只是不触发发放。
     public boolean tierRewardEnabled() {
         return tierRewardEnabled;
+    }
+
+    /// 加时资格的当月**累计**出勤门槛(天)。2026-07-31 由「满勤(一天不落)」放宽而来
+    /// ——满勤命中率仅 1%,99% 的人拿不到任何实物奖。
+    public int fullMonthDays() {
+        return fullMonthDays;
     }
 }

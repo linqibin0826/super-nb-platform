@@ -33,7 +33,7 @@ class AchievementJudgeEngineTest {
 
     private AchievementJudgeEngine engine(boolean scanEnabled) {
         CheckinSettlementProperties settlementProperties = new CheckinSettlementProperties(
-                new BigDecimal("250"), new BigDecimal("10"), scanEnabled, false);
+                new BigDecimal("250"), new BigDecimal("10"), scanEnabled, false, 20);
         return new AchievementJudgeEngine(metricPort, watermarkPort, catalogPort, unlockPort, settlementProperties);
     }
 

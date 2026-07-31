@@ -2,6 +2,7 @@ package me.supernb.activity.adapter.rest.response;
 
 import java.math.BigDecimal;
 import java.util.List;
+import me.supernb.activity.domain.model.checkin.CheckinDailyRewardView;
 import me.supernb.activity.domain.model.checkin.CheckinMilestoneView;
 import me.supernb.activity.domain.model.checkin.CheckinStatusView;
 import me.supernb.activity.domain.model.checkin.CheckinSupplyTierView;
@@ -22,12 +23,28 @@ public record CheckinStatusResponse(
         int streakCurrent,
         List<MilestoneLine> milestones,
         SupplyLine supply,
-        int nbTotal) {
+        int nbTotal,
+        DailyRewardLine dailyReward) {
 
     public static CheckinStatusResponse of(CheckinStatusView v) {
         return new CheckinStatusResponse(v.eligible(), v.ineligibleReason(), v.punchedToday(), v.todayDay(),
                 v.monthLabel(), v.monthDays(), v.checkedDays(), v.cumulativeDays(), v.streakCurrent(),
-                v.milestones().stream().map(MilestoneLine::of).toList(), SupplyLine.of(v.supply()), v.nbTotal());
+                v.milestones().stream().map(MilestoneLine::of).toList(), SupplyLine.of(v.supply()), v.nbTotal(),
+                DailyRewardLine.of(v.dailyReward()));
+    }
+
+    /// 连签阶梯:今天/明天档位、门槛态、本月已返累计。同一形状也出现在 POST /checkin 响应里
+    /// ——打卡瞬间的双飘字数据由此而来,前端零二次请求。
+    public record DailyRewardLine(int streakDay, BigDecimal todayBalanceCny, int todayNbPoints,
+            String todayBalanceStatus, int tomorrowStreakDay, BigDecimal tomorrowBalanceCny,
+            int tomorrowNbPoints, boolean balanceEligible, String balanceUnlockText,
+            BigDecimal monthBalanceTotalCny) {
+        static DailyRewardLine of(CheckinDailyRewardView d) {
+            return new DailyRewardLine(d.streakDay(), d.todayBalanceCny(), d.todayNbPoints(),
+                    d.todayBalanceStatus(), d.tomorrowStreakDay(), d.tomorrowBalanceCny(),
+                    d.tomorrowNbPoints(), d.balanceEligible(), d.balanceUnlockText(),
+                    d.monthBalanceTotalCny());
+        }
     }
 
     /// 单条里程碑。

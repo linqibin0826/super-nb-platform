@@ -109,14 +109,30 @@ class CheckinAdapterTest {
     }
 
     @Test
-    void fullAttendanceUserIdsReturnsOnlyUsersMatchingExactCount() {
+    void usersWithAtLeastDaysFiltersByCumulativeThreshold() {
         LocalDate d1 = LocalDate.of(2026, 6, 1);
         LocalDate d2 = LocalDate.of(2026, 6, 2);
         LocalDate d3 = LocalDate.of(2026, 6, 3);
         adapter.checkIn(1, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3);
         adapter.checkIn(1, d2, d2.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3);
         adapter.checkIn(1, d3, d3.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3);
-        adapter.checkIn(2, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3); // 只签 1 天,不满勤
-        assertThat(adapter.fullAttendanceUserIds(d1, d3, 3)).containsExactly(1L);
+        adapter.checkIn(2, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3);
+        adapter.checkIn(2, d2, d2.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3); // 只签 2 天
+
+        // 门槛 2:两人都够;门槛 3:只有 user 1 够
+        assertThat(adapter.usersWithAtLeastDays(d1, d3, 2)).containsExactlyInAnyOrder(1L, 2L);
+        assertThat(adapter.usersWithAtLeastDays(d1, d3, 3)).containsExactly(1L);
+    }
+
+    @Test
+    void userIdsCheckedInOnReturnsThatDaysPunchers() {
+        LocalDate d1 = LocalDate.of(2026, 6, 1);
+        LocalDate d2 = LocalDate.of(2026, 6, 2);
+        adapter.checkIn(1, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3);
+        adapter.checkIn(2, d1, d1.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3);
+        adapter.checkIn(3, d2, d2.atStartOfDay(java.time.ZoneOffset.UTC).toInstant(), 3);
+
+        assertThat(adapter.userIdsCheckedInOn(d1)).containsExactlyInAnyOrder(1L, 2L);
+        assertThat(adapter.userIdsCheckedInOn(d2)).containsExactly(3L);
     }
 }

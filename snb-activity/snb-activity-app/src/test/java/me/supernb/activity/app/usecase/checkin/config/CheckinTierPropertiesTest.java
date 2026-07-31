@@ -10,7 +10,7 @@ class CheckinTierPropertiesTest {
 
     private final CheckinTierProperties props = new CheckinTierProperties(
             new BigDecimal("30"), new BigDecimal("50"), new BigDecimal("500"),
-            27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"));
+            27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"), 20);
 
     @Test
     void tierInfoCarriesGroupIdValidityDaysAndCost() {
@@ -24,6 +24,15 @@ class CheckinTierPropertiesTest {
         assertThat(c.groupId()).isEqualTo(71L);
         assertThat(c.validityDays()).isEqualTo(7); // C 档 7 天,唯一不同档
         assertThat(c.costCny()).isEqualByComparingTo("4.4");
+    }
+
+    /// 2026-07-31 加时门槛由「满勤」放宽为「当月累计签满 N 天」,conditionText 是签到页
+    /// 唯一上屏的档位条件文案,必须跟着改口径——否则页面判定按 20 天、说明还写「满勤」。
+    @Test
+    void conditionTextSpeaksCumulativeDaysNotFullMonth() {
+        assertThat(props.tiers()).allSatisfy(t -> assertThat(t.conditionText()).doesNotContain("满勤"));
+        assertThat(props.tiers().get(0).conditionText()).isEqualTo("当月签满 20 天 + 当月新增充值 ¥30 起");
+        assertThat(props.tiers().get(2).conditionText()).isEqualTo("当月签满 20 天 + 当月新增充值 ¥500 起");
     }
 
     @Test

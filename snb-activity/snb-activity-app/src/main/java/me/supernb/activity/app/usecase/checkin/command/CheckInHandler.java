@@ -8,9 +8,11 @@ import java.time.ZoneId;
 import me.supernb.activity.domain.exception.CheckinAlreadyDoneException;
 import me.supernb.activity.domain.exception.CheckinTooYoungException;
 import me.supernb.activity.domain.model.checkin.CheckInResult;
+import me.supernb.activity.domain.model.checkin.CheckinDailyRewardCalc;
 import me.supernb.activity.domain.model.checkin.CheckinOutcome;
 import me.supernb.activity.domain.model.checkin.CheckinStreak;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
+import me.supernb.activity.app.usecase.checkin.CheckinBalanceGrantService;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
 import org.springframework.context.ApplicationEventPublisher;
@@ -31,14 +33,17 @@ public class CheckInHandler implements CommandHandler<CheckInCommand, CheckInRes
     private final CheckinPort checkinPort;
     private final CheckinProperties props;
     private final ApplicationEventPublisher events;
+    private final CheckinBalanceGrantService balanceGrant;
 
-    /// 构造:注入账龄读端口、签到端口与签到配置(每日进账单价)。
+    /// 构造:注入账龄读端口、签到端口、签到配置(NB 单价)、事件发布器与返网费结算服务。
     public CheckInHandler(AccountRegistrationReadPort registration, CheckinPort checkinPort,
-            CheckinProperties props, ApplicationEventPublisher events) {
+            CheckinProperties props, ApplicationEventPublisher events,
+            CheckinBalanceGrantService balanceGrant) {
         this.registration = registration;
         this.checkinPort = checkinPort;
         this.props = props;
         this.events = events;
+        this.balanceGrant = balanceGrant;
     }
 
     @Override
@@ -50,13 +55,24 @@ public class CheckInHandler implements CommandHandler<CheckInCommand, CheckInRes
             throw new CheckinTooYoungException();
         }
         LocalDate today = LocalDate.now(ZONE);
-        CheckinOutcome outcome = checkinPort.checkIn(command.userId(), today, now, props.dailyNbPoints());
+        // 连签第 N 天(2026-07-31 起 NB 随 N 递增):只取本月日期喂给纯计算,
+        // 「月初清零」由集合里天然没有上月日期保证,无需额外边界判断。
+        LocalDate monthStart = today.withDayOfMonth(1);
+        int streakDay = CheckinDailyRewardCalc.streakDay(
+                checkinPort.datesInRange(command.userId(), monthStart, today), today);
+        int nbPoints = CheckinDailyRewardCalc.nbPoints(streakDay, props.dailyNbPoints());
+
+        CheckinOutcome outcome = checkinPort.checkIn(command.userId(), today, now, nbPoints);
         if (!outcome.firstCheckinToday()) {
             throw new CheckinAlreadyDoneException();
         }
         // 首次打卡成功(事务已在 CheckinAdapter 提交)→ 发布事实事件,成就侧同步监听即时补写指标
         // 并判定解锁(开机自检等打卡当场亮);checkin 不依赖成就侧,成就同步失败也不影响本次打卡。
         events.publishEvent(new UserCheckedInEvent(command.userId(), today));
+        // 🚨 返网费必须在打卡事务提交之后:它要发外部 HTTP,同事务会让上游一抖就回滚掉
+        // 用户的打卡。settle 内部吞掉一切异常,失败只落台账 failed 交补偿 job 重试。
+        balanceGrant.settle(command.userId(), today, streakDay, now);
+
         int cumulativeDays = checkinPort.totalCheckins(command.userId());
         var recentDates = checkinPort.datesInRange(command.userId(),
                 today.minusDays(STREAK_LOOKBACK_DAYS), today);

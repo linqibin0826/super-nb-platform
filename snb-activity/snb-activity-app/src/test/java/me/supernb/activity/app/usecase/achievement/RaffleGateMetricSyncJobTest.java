@@ -23,7 +23,7 @@ class RaffleGateMetricSyncJobTest {
 
     private RaffleGateMetricSyncJob job(boolean scanEnabled) {
         CheckinSettlementProperties settlementProperties = new CheckinSettlementProperties(
-                new BigDecimal("250"), new BigDecimal("10"), scanEnabled, false);
+                new BigDecimal("250"), new BigDecimal("10"), scanEnabled, false, 20);
         return new RaffleGateMetricSyncJob(signalPort, metricPort, settlementProperties);
     }
 

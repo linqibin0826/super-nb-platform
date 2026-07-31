@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -126,9 +125,11 @@ public class CheckinMonthlySettlementJob {
         if (windowStart.isAfter(monthEnd)) {
             return; // 上线日晚于上月月末:上月尚未有签到功能,无候选
         }
-        long expectedDays = ChronoUnit.DAYS.between(windowStart, monthEnd) + 1;
-
-        List<Long> fullAttendance = checkinPort.fullAttendanceUserIds(windowStart, monthEnd, expectedDays);
+        // 2026-07-31 放宽:满勤(一天不落)→ 当月累计签满 N 天(配置下发,默认 20)。
+        // 满勤命中率仅 1%、断签者整月摆烂;累计口径让断签的人仍有奔头,与「连签递增返网费」
+        // 形成日常/兜底两条互补线。注意门槛不再是「区间天数」,而是独立配置值。
+        List<Long> fullAttendance =
+                checkinPort.usersWithAtLeastDays(windowStart, monthEnd, settlementProps.fullMonthDays());
         if (fullAttendance.isEmpty()) {
             return;
         }

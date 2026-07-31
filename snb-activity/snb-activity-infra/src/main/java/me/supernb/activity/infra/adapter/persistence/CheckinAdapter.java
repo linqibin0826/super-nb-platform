@@ -82,7 +82,12 @@ public class CheckinAdapter implements CheckinPort {
     }
 
     @Override
-    public List<Long> fullAttendanceUserIds(LocalDate fromInclusive, LocalDate toInclusive, long expectedDays) {
-        return records.findFullAttendanceUserIds(fromInclusive, toInclusive, expectedDays);
+    public List<Long> usersWithAtLeastDays(LocalDate fromInclusive, LocalDate toInclusive, long minDays) {
+        return records.findUserIdsWithAtLeastDays(fromInclusive, toInclusive, minDays);
+    }
+
+    @Override
+    public List<Long> userIdsCheckedInOn(LocalDate day) {
+        return records.findUserIdsByCheckinDate(day);
     }
 }
