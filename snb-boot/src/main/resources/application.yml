@@ -103,6 +103,16 @@ activity:
         threshold: ${CHECKIN_TIER_C_THRESHOLD:500}
         group-id: ${CHECKIN_TIER_C_GROUP_ID:0}
         cost-cny: ${CHECKIN_TIER_C_COST_CNY:4.4}
+    # 加时资格的当月**累计**出勤门槛(原「满勤」,2026-07-31 放宽——满勤命中率仅 1%)
+    full-month-days: ${CHECKIN_FULL_MONTH_DAYS:20}
+    # 每日返网费(spec 2026-07-31-checkin-daily-reward §6):连签第 N 天返 per-day-cny × N。
+    # enabled 默认 false fail-closed——不配 env 就只发 NB 不发钱。
+    # ⚠️ compose 不加 environment 映射 = 这里的默认值静默生效(GATE_ 老教训)。
+    balance:
+      enabled: ${CHECKIN_BALANCE_ENABLED:false}
+      per-day-cny: ${CHECKIN_BALANCE_PER_DAY_CNY:0.1}
+      threshold-cny: ${CHECKIN_BALANCE_THRESHOLD_CNY:30}
+      monthly-cap-cny: ${CHECKIN_BALANCE_MONTHLY_CAP_CNY:3000}
   achievement:
     retroactive-backfill-enabled: ${CHECKIN_RETROACTIVE_BACKFILL_ENABLED:false}
 

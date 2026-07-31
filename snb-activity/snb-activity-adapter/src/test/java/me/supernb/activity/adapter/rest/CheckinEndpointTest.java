@@ -32,6 +32,7 @@ import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService
 import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
 import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.checkin.CheckInResult;
+import me.supernb.activity.domain.model.checkin.CheckinDailyRewardView;
 import me.supernb.activity.domain.model.checkin.CheckinMilestoneView;
 import me.supernb.activity.domain.model.checkin.CheckinRewardSummary;
 import me.supernb.activity.domain.model.checkin.CheckinStatusView;
@@ -96,9 +97,12 @@ class CheckinEndpointTest {
                 new CheckinMilestoneView("days_5", "出勤 5 天", 5, true, "已打穿"),
                 new CheckinMilestoneView("days_10", "出勤 10 天", 10, true, "已打穿"),
                 new CheckinMilestoneView("days_20", "出勤 20 天", 20, false, "12 / 20"),
-                new CheckinMilestoneView("full_month", "满勤", 31, false, "在轨 · 一格没漏"));
+                new CheckinMilestoneView("full_month", "加时资格", 20, false, "12 / 20"));
+        var dailyReward = new CheckinDailyRewardView(7, new BigDecimal("0.70"), 21, "success",
+                8, new BigDecimal("0.80"), 24, true, null, new BigDecimal("2.80"));
         return new CheckinStatusView(
-                true, null, punchedToday, 13, "2026.07", 31, List.of(1, 2, 3), 12, 12, milestones, supply, 235);
+                true, null, punchedToday, 13, "2026.07", 31, List.of(1, 2, 3), 12, 12, milestones, supply, 235,
+                dailyReward);
     }
 
     @Test
@@ -116,7 +120,12 @@ class CheckinEndpointTest {
                 .andExpect(jsonPath("$.milestones[0].code").value("days_5"))
                 .andExpect(jsonPath("$.milestones[0].statusText").value("已打穿"))
                 .andExpect(jsonPath("$.supply.tiers[1].state").value("progress"))
-                .andExpect(jsonPath("$.supply.gaugeNote").value("距 B 档还差 ¥14"));
+                .andExpect(jsonPath("$.supply.gaugeNote").value("距 B 档还差 ¥14"))
+                // 打卡瞬间的双飘字数据:POST 响应里就带连签阶梯,前端零二次请求
+                .andExpect(jsonPath("$.dailyReward.streakDay").value(7))
+                .andExpect(jsonPath("$.dailyReward.todayBalanceCny").value(0.70))
+                .andExpect(jsonPath("$.dailyReward.todayNbPoints").value(21))
+                .andExpect(jsonPath("$.dailyReward.todayBalanceStatus").value("success"));
         verify(commandBus).handle(new CheckInCommand(42));
     }
 
