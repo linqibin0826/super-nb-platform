@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import me.supernb.sub2api.EmailMask;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -42,6 +43,17 @@ public class JdbcRaffleGateReadModel implements RaffleGateReadModel {
                     + "AND rc.used_at >= :from AND rc.used_at < :to "
                     + REDEEM_NOT_ZPAY_MIRROR
                     + " GROUP BY rc.used_by) t GROUP BY user_id";
+    /// ⚠️ 判定条件与 RECHARGE_SINGLE 逐字同源(status/order_type/type/窗口列/镜像剔除),改必同步。
+    private static final String RECHARGE_EVENTS =
+            "SELECT completed_at AS at, amount AS value FROM payment_orders "
+                    + "WHERE user_id = :uid AND order_type = 'balance' AND status = 'COMPLETED' "
+                    + "AND completed_at >= :from AND completed_at < :to "
+                    + "UNION ALL "
+                    + "SELECT rc.used_at AS at, rc.value AS value FROM redeem_codes rc "
+                    + "WHERE rc.used_by = :uid AND rc.type = 'balance' AND rc.status = 'used' "
+                    + "AND rc.used_at >= :from AND rc.used_at < :to "
+                    + REDEEM_NOT_ZPAY_MIRROR
+                    + " ORDER BY at";
     private static final String SPEND_SINGLE =
             "SELECT COALESCE(SUM(actual_cost), 0) FROM usage_logs "
                     + "WHERE user_id = :uid AND billing_type = 0 "
@@ -66,6 +78,16 @@ public class JdbcRaffleGateReadModel implements RaffleGateReadModel {
                 .addValue("to", Timestamp.from(to));
         BigDecimal v = jdbc.queryForObject(singleSql(gateType), p, BigDecimal.class);
         return v == null ? BigDecimal.ZERO : v;
+    }
+
+    @Override
+    public List<RechargeEvent> rechargeEvents(long userId, Instant from, Instant to) {
+        MapSqlParameterSource p = new MapSqlParameterSource()
+                .addValue("uid", userId)
+                .addValue("from", Timestamp.from(from))
+                .addValue("to", Timestamp.from(to));
+        return jdbc.query(RECHARGE_EVENTS, p,
+                (rs, i) -> new RechargeEvent(rs.getTimestamp("at").toInstant(), rs.getBigDecimal("value")));
     }
 
     @Override

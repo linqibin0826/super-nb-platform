@@ -106,7 +106,9 @@ activity:
     # 加时资格的当月**累计**出勤门槛(原「满勤」,2026-07-31 放宽——满勤命中率仅 1%;
     # 同日站长二次拍板 20→15)
     full-month-days: ${CHECKIN_FULL_MONTH_DAYS:15}
-    # 每日返网费(spec 2026-07-31-checkin-daily-reward §6):连签第 N 天返 per-day-cny × N。
+    # 每日返网费(spec 2026-07-31-checkin-daily-reward §6):连签第 N 天返
+    # per-day-cny × ⌈N/step-days⌉(§12 两天一档:step-days=2 → 0.1/0.1/0.2/0.2…,
+    # 满月上限 ¥25.6;step-days=1 即原线性)。
     # enabled 默认 false fail-closed——不配 env 就只发 NB 不发钱。
     # ⚠️ compose 不加 environment 映射 = 这里的默认值静默生效(GATE_ 老教训)。
     balance:
@@ -114,6 +116,14 @@ activity:
       per-day-cny: ${CHECKIN_BALANCE_PER_DAY_CNY:0.1}
       threshold-cny: ${CHECKIN_BALANCE_THRESHOLD_CNY:30}
       monthly-cap-cny: ${CHECKIN_BALANCE_MONTHLY_CAP_CNY:3000}
+      step-days: ${CHECKIN_BALANCE_STEP_DAYS:1}
+    # 准入闸(spec §12,2026-07-31 站长拍板):近 window-days 天真实充值 ≥ min-cny 才能签到,
+    # 状态接口报 recharge_required、打卡 403。enabled 默认 false = 人人可签(旧行为)。
+    # ⚠️ 前缀刻意用 CHECKIN_ENTRY_,别与金票闸机 GATE_ 混淆。
+    entry-gate:
+      enabled: ${CHECKIN_ENTRY_GATE_ENABLED:false}
+      window-days: ${CHECKIN_ENTRY_GATE_WINDOW_DAYS:30}
+      min-cny: ${CHECKIN_ENTRY_GATE_MIN_CNY:30}
   achievement:
     retroactive-backfill-enabled: ${CHECKIN_RETROACTIVE_BACKFILL_ENABLED:false}
 

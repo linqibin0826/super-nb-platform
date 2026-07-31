@@ -9,10 +9,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import me.supernb.activity.app.usecase.checkin.CheckinEntryGateChecker;
 import me.supernb.activity.app.usecase.checkin.config.CheckinBalanceProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinTierProperties;
+import me.supernb.activity.domain.model.checkin.CheckinEntryGate;
+import me.supernb.activity.domain.model.checkin.CheckinEntryGateView;
 import me.supernb.activity.domain.model.checkin.CheckinMilestoneView;
 import me.supernb.activity.domain.model.checkin.CheckinStatusView;
 import me.supernb.activity.domain.model.checkin.CheckinStreak;
@@ -49,14 +52,16 @@ public class CheckinStatusQueryService {
     private final CheckinSettlementProperties settlementProps;
     private final CheckinDailyRewardPort dailyRewardPort;
     private final CheckinBalanceProperties balanceProps;
+    private final CheckinEntryGateChecker entryGate;
 
-    /// 构造:注入签到端口、补给充值读端口、账龄读端口、NB 账本读端口、日返网费台账端口
-    /// 与四个配置类(settlementProps 提供加时资格的当月累计出勤门槛,与月度结算 job 同一真源;
-    /// balanceProps 提供返网费单价/门槛/总闸)。
+    /// 构造:注入签到端口、补给充值读端口、账龄读端口、NB 账本读端口、日返网费台账端口、
+    /// 四个配置类(settlementProps 提供加时资格的当月累计出勤门槛,与月度结算 job 同一真源;
+    /// balanceProps 提供返网费单价/门槛/总闸)与准入闸判定器(与打卡命令共用同一真源)。
     public CheckinStatusQueryService(CheckinPort checkinPort, CheckinRechargeReadPort rechargePort,
             AccountRegistrationReadPort registrationPort, NbLedgerPort nbLedger, CheckinProperties props,
             CheckinTierProperties tierProps, CheckinSettlementProperties settlementProps,
-            CheckinDailyRewardPort dailyRewardPort, CheckinBalanceProperties balanceProps) {
+            CheckinDailyRewardPort dailyRewardPort, CheckinBalanceProperties balanceProps,
+            CheckinEntryGateChecker entryGate) {
         this.checkinPort = checkinPort;
         this.rechargePort = rechargePort;
         this.registrationPort = registrationPort;
@@ -66,6 +71,7 @@ public class CheckinStatusQueryService {
         this.settlementProps = settlementProps;
         this.dailyRewardPort = dailyRewardPort;
         this.balanceProps = balanceProps;
+        this.entryGate = entryGate;
     }
 
     /// 组装某用户的签到状态视图(生产入口:今天 = Asia/Shanghai 当前自然日)。
@@ -84,6 +90,19 @@ public class CheckinStatusQueryService {
                 .map(at -> at.isBefore(now.minus(MIN_ACCOUNT_AGE)))
                 .orElse(false);
         String ineligibleReason = eligible ? null : "account_too_new";
+
+        // 准入闸(spec §12):账龄过了才轮到查充值(太新的号连闸都不用开)。闸门未启用时
+        // entryGateView 恒 null,前端据此走旧行为。锁态下页面照常渲染(计价梯当橱窗),
+        // 只是 eligible=false 让打卡不可用。
+        CheckinEntryGateView entryGateView = null;
+        if (eligible && entryGate.enabled()) {
+            CheckinEntryGate.Result gate = entryGate.check(userId, today);
+            entryGateView = buildEntryGateView(gate);
+            if (!gate.eligible()) {
+                eligible = false;
+                ineligibleReason = "recharge_required";
+            }
+        }
 
         boolean punchedToday = checkinPort.checkedInOn(userId, today);
         var monthDates = checkinPort.datesInRange(userId, monthStart, monthEnd);
@@ -109,7 +128,26 @@ public class CheckinStatusQueryService {
                 buildDailyReward(userId, today, now, monthStart, monthEnd, monthDates, punchedToday);
         return new CheckinStatusView(eligible, ineligibleReason, punchedToday, today.getDayOfMonth(),
                 today.format(MONTH_LABEL), today.lengthOfMonth(), checkedDays, cumulativeDays, streakCurrent,
-                milestones, supply, nbTotal, dailyReward);
+                milestones, supply, nbTotal, dailyReward, entryGateView);
+    }
+
+    /// 组装准入闸视图,成品文案在此定稿(前端不得自行拼日期算术):
+    /// 锁态「近 30 天已充 ¥X / 还差 ¥Y」给足下一步动作;开启态「网费还够 N 天」把滚动窗口
+    /// 的暗坑变成明牌——旧充值滑出窗口连签会无预警断掉,提前亮出来跟网吧包时卡一个逻辑。
+    private CheckinEntryGateView buildEntryGateView(CheckinEntryGate.Result gate) {
+        String noteText;
+        if (gate.eligible()) {
+            noteText = gate.remainingDays() == 1
+                    ? "网费今天到期,记得续"
+                    : "网费还够 " + gate.remainingDays() + " 天";
+        } else {
+            BigDecimal shortfall = entryGate.minCny().subtract(gate.rechargedCny());
+            noteText = "近 " + entryGate.windowDays() + " 天已充 ¥"
+                    + CheckinEntryGateChecker.plain(gate.rechargedCny())
+                    + " / 还差 ¥" + CheckinEntryGateChecker.plain(shortfall);
+        }
+        return new CheckinEntryGateView(gate.eligible(), entryGate.minCny(), entryGate.windowDays(),
+                gate.rechargedCny(), gate.remainingDays(), noteText);
     }
 
     /// 组装连签阶梯:今天档位 / 明天档位 / 门槛态 / 本月已返累计。
@@ -134,18 +172,25 @@ public class CheckinStatusQueryService {
 
         return new CheckinDailyRewardView(
                 streakDay,
-                payable ? CheckinDailyRewardCalc.balanceCny(streakDay, balanceProps.perDayCny()) : BigDecimal.ZERO,
+                payable
+                        ? CheckinDailyRewardCalc.balanceCny(streakDay, balanceProps.perDayCny(),
+                                balanceProps.stepDays())
+                        : BigDecimal.ZERO,
                 CheckinDailyRewardCalc.nbPoints(streakDay, props.dailyNbPoints()),
                 todayBalanceStatus,
                 tomorrowStreakDay,
-                payable ? CheckinDailyRewardCalc.balanceCny(tomorrowStreakDay, balanceProps.perDayCny())
+                payable
+                        ? CheckinDailyRewardCalc.balanceCny(tomorrowStreakDay, balanceProps.perDayCny(),
+                                balanceProps.stepDays())
                         : BigDecimal.ZERO,
                 CheckinDailyRewardCalc.nbPoints(tomorrowStreakDay, props.dailyNbPoints()),
                 balanceEligible,
                 balanceEligible ? null
                         : "累计充值满 ¥" + balanceProps.thresholdCny().stripTrailingZeros().toPlainString()
                                 + " 解锁返网费",
-                dailyRewardPort.myMonthlyBalanceTotal(userId, monthStart, monthEnd));
+                dailyRewardPort.myMonthlyBalanceTotal(userId, monthStart, monthEnd),
+                balanceProps.perDayCny(),
+                balanceProps.stepDays());
     }
 
     /// 组装四档里程碑(出勤 5/10/20 三枚徽章 + 加时资格),**按 target 升序**、成品状态文案。

@@ -33,7 +33,7 @@ class CheckinBalanceRetryJobTest {
     private final CheckinPort checkinPort = mock(CheckinPort.class);
     private final BalanceGrantPort grantPort = mock(BalanceGrantPort.class);
     private final CheckinBalanceGrantService settleService = mock(CheckinBalanceGrantService.class);
-    private final CheckinBalanceProperties props = new CheckinBalanceProperties(true, "0.1", "30", "3000");
+    private final CheckinBalanceProperties props = new CheckinBalanceProperties(true, "0.1", "30", "3000", 1);
 
     private CheckinBalanceRetryJob job() {
         return new CheckinBalanceRetryJob(ledger, checkinPort, grantPort, settleService, props);
@@ -95,7 +95,7 @@ class CheckinBalanceRetryJobTest {
 
     @Test
     void disabledSwitchSkipsEverything() {
-        CheckinBalanceProperties off = new CheckinBalanceProperties(false, "0.1", "30", "3000");
+        CheckinBalanceProperties off = new CheckinBalanceProperties(false, "0.1", "30", "3000", 1);
         new CheckinBalanceRetryJob(ledger, checkinPort, grantPort, settleService, off).run();
         verify(ledger, never()).retryable(anyInt());
     }

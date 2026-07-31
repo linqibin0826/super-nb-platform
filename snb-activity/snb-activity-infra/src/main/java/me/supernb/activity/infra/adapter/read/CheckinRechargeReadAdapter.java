@@ -3,6 +3,7 @@ package me.supernb.activity.infra.adapter.read;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import me.supernb.activity.domain.port.read.CheckinRechargeReadPort;
 import me.supernb.sub2api.raffle.RaffleGateReadModel;
@@ -38,5 +39,12 @@ public class CheckinRechargeReadAdapter implements CheckinRechargeReadPort {
     @Override
     public BigDecimal lifetimeRecharge(long userId, Instant asOf) {
         return readModel.gateValue(userId, RECHARGE, Instant.EPOCH, asOf);
+    }
+
+    @Override
+    public List<RechargeEvent> rechargeEvents(long userId, Instant from, Instant toExclusive) {
+        return readModel.rechargeEvents(userId, from, toExclusive).stream()
+                .map(e -> new RechargeEvent(e.at(), e.amount()))
+                .toList();
     }
 }

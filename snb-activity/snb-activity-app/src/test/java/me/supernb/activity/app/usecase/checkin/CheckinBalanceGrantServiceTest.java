@@ -35,7 +35,7 @@ class CheckinBalanceGrantServiceTest {
     private final CheckinRechargeReadPort recharge = mock(CheckinRechargeReadPort.class);
     private final BalanceGrantPort grantPort = mock(BalanceGrantPort.class);
     private final CheckinBalanceProperties balanceProps =
-            new CheckinBalanceProperties(true, "0.1", "30", "3000");
+            new CheckinBalanceProperties(true, "0.1", "30", "3000", 1);
     private final CheckinProperties props = new CheckinProperties("2026-07-15", 3);
 
     private CheckinBalanceGrantService service() {
@@ -109,7 +109,7 @@ class CheckinBalanceGrantServiceTest {
 
     @Test
     void disabledTotalSwitchWritesNoneRowAndSkipsEverything() {
-        CheckinBalanceProperties off = new CheckinBalanceProperties(false, "0.1", "30", "3000");
+        CheckinBalanceProperties off = new CheckinBalanceProperties(false, "0.1", "30", "3000", 1);
         when(ledger.claim(eq(42L), eq(DAY), eq(7), eq(21), eq(BigDecimal.ZERO), eq("none"), anyString()))
                 .thenReturn(Optional.of(904L));
 

@@ -17,6 +17,7 @@ import java.util.List;
 /// @param supply           补给资格进度总视图
 /// @param nbTotal          用户当前 NB 总值(账本 SUM 唯一真源,打卡响应当场可用,前端零二次请求)
 /// @param dailyReward      连签阶梯(今天/明天档位、门槛态、本月已返累计)
+/// @param entryGate        准入闸(spec §12);闸门未启用或账龄未过(还轮不到查充值)时为 null
 public record CheckinStatusView(
         boolean eligible,
         String ineligibleReason,
@@ -30,5 +31,6 @@ public record CheckinStatusView(
         List<CheckinMilestoneView> milestones,
         CheckinSupplyView supply,
         int nbTotal,
-        CheckinDailyRewardView dailyReward) {
+        CheckinDailyRewardView dailyReward,
+        CheckinEntryGateView entryGate) {
 }

@@ -105,6 +105,6 @@ public class CheckinBalanceGrantService {
                     monthStart, spent, balanceProps.monthlyCapCny());
             return BigDecimal.ZERO;
         }
-        return CheckinDailyRewardCalc.balanceCny(streakDay, balanceProps.perDayCny());
+        return CheckinDailyRewardCalc.balanceCny(streakDay, balanceProps.perDayCny(), balanceProps.stepDays());
     }
 }

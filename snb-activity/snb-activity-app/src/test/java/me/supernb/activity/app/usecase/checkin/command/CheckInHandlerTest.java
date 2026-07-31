@@ -18,26 +18,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import me.supernb.activity.app.usecase.checkin.CheckinBalanceGrantService;
+import me.supernb.activity.app.usecase.checkin.CheckinEntryGateChecker;
+import me.supernb.activity.app.usecase.checkin.config.CheckinEntryGateProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.domain.exception.CheckinAlreadyDoneException;
+import me.supernb.activity.domain.exception.CheckinRechargeRequiredException;
 import me.supernb.activity.domain.exception.CheckinTooYoungException;
 import me.supernb.activity.domain.model.checkin.CheckInResult;
 import me.supernb.activity.domain.model.checkin.CheckinOutcome;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
+import me.supernb.activity.domain.port.read.CheckinRechargeReadPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 
 /// 签到 Handler:账龄门槛过了才委托 CheckinPort;查无注册记录/不足 24 小时一律 403;
-/// 今日已打过卡(幂等回放)一律 409;首次成功则回填累计天数与连续天数。
+/// 准入闸(spec §12)未过一律 403 且绝不落打卡;今日已打过卡(幂等回放)一律 409;
+/// 首次成功则回填累计天数与连续天数。
 class CheckInHandlerTest {
 
     private final AccountRegistrationReadPort registration = mock(AccountRegistrationReadPort.class);
     private final CheckinPort checkinPort = mock(CheckinPort.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final CheckinBalanceGrantService balanceGrant = mock(CheckinBalanceGrantService.class);
-    private final CheckInHandler handler = new CheckInHandler(registration, checkinPort,
-            new CheckinProperties("2020-01-01", 3), events, balanceGrant);
+    private final CheckinRechargeReadPort rechargePort = mock(CheckinRechargeReadPort.class);
+    private final CheckInHandler handler = handlerWithGate(new CheckinEntryGateProperties(false, 30, "30"));
+
+    /// 组装被测 Handler(准入闸判定器用真实现+mock 充值端口;默认闸关,既有用例旧行为不变)。
+    private CheckInHandler handlerWithGate(CheckinEntryGateProperties gateProps) {
+        return new CheckInHandler(registration, checkinPort, new CheckinProperties("2020-01-01", 3), events,
+                balanceGrant, new CheckinEntryGateChecker(rechargePort, gateProps));
+    }
 
     @Test
     void unknownRegistrationRejectedWith403() {
@@ -51,6 +62,37 @@ class CheckInHandlerTest {
         when(registration.registeredAt(42)).thenReturn(Optional.of(Instant.now().minusSeconds(3600)));
         assertThatThrownBy(() -> handler.handle(new CheckInCommand(42)))
                 .isInstanceOf(CheckinTooYoungException.class);
+    }
+
+    @Test
+    void entryGateShortfallRejectedWith403BeforeAnyWrite() {
+        // 近 30 天没充够 ¥30:403,一笔都不写——状态接口只是展示,这里才是真拦截
+        when(registration.registeredAt(42)).thenReturn(Optional.of(Instant.now().minusSeconds(3600 * 48)));
+        CheckInHandler gated = handlerWithGate(new CheckinEntryGateProperties(true, 30, "30"));
+        // rechargeEvents 未 stub → Mockito 默认空列表 = 窗口内零充值
+
+        assertThatThrownBy(() -> gated.handle(new CheckInCommand(42)))
+                .isInstanceOf(CheckinRechargeRequiredException.class)
+                .hasMessage("近 30 天充值满 ¥30 才能上机签到");
+        verify(checkinPort, never()).checkIn(anyLong(), any(), any(), anyInt());
+        verify(balanceGrant, never()).settle(anyLong(), any(), anyInt(), any());
+    }
+
+    @Test
+    void entryGatePassedProceedsToCheckIn() {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Shanghai"));
+        when(registration.registeredAt(42)).thenReturn(Optional.of(Instant.now().minusSeconds(3600 * 48)));
+        when(rechargePort.rechargeEvents(eq(42L), any(), any())).thenReturn(List.of(
+                new CheckinRechargeReadPort.RechargeEvent(Instant.now().minusSeconds(3600), new java.math.BigDecimal("30"))));
+        when(checkinPort.checkIn(eq(42L), any(), any(), anyInt()))
+                .thenReturn(new CheckinOutcome(true, today, Instant.now()));
+        when(checkinPort.totalCheckins(42)).thenReturn(1);
+        when(checkinPort.datesInRange(eq(42L), any(), any())).thenReturn(List.of(today));
+
+        CheckInHandler gated = handlerWithGate(new CheckinEntryGateProperties(true, 30, "30"));
+        CheckInResult result = gated.handle(new CheckInCommand(42));
+
+        assertThat(result.checkinDate()).isEqualTo(today);
     }
 
     @Test

@@ -3,6 +3,7 @@ package me.supernb.sub2api.raffle;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /// 发布会门槛只读读模型:按用户聚合真金口径的充值/消费。窗口一律 [from, to)。
@@ -11,6 +12,14 @@ public interface RaffleGateReadModel {
 
     /// 单人门槛指标值;无流水返回 0。
     BigDecimal gateValue(long userId, String gateType, Instant from, Instant to);
+
+    /// RECHARGE 口径的逐笔到账明细,按到账时刻升序(签到准入闸滑窗算「网费余 N 天」用,
+    /// 聚合值给不出逐笔滑出时点)。判定条件与 gateValue 的 RECHARGE 完全同源。
+    List<RechargeEvent> rechargeEvents(long userId, Instant from, Instant to);
+
+    /// 一笔真实充值到账事件(在线支付按 completed_at,购码按 used_at)。
+    record RechargeEvent(Instant at, BigDecimal amount) {
+    }
 
     /// 批量门槛指标值(一条 SQL);窗口内无流水的 user 缺席于返回 map;空入参返回空 map。
     Map<Long, BigDecimal> gateValues(Collection<Long> userIds, String gateType, Instant from, Instant to);

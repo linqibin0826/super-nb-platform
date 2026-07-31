@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import me.supernb.activity.domain.exception.CheckinAlreadyDoneException;
+import me.supernb.activity.domain.exception.CheckinRechargeRequiredException;
 import me.supernb.activity.domain.exception.CheckinTooYoungException;
 import me.supernb.activity.domain.model.checkin.CheckInResult;
 import me.supernb.activity.domain.model.checkin.CheckinDailyRewardCalc;
@@ -13,12 +14,14 @@ import me.supernb.activity.domain.model.checkin.CheckinOutcome;
 import me.supernb.activity.domain.model.checkin.CheckinStreak;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
 import me.supernb.activity.app.usecase.checkin.CheckinBalanceGrantService;
+import me.supernb.activity.app.usecase.checkin.CheckinEntryGateChecker;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 /// 签到编排:账龄 ≥24 小时才放行(spec §3.1,呼应 07-10 注册即送事故教训,403)→
+/// 准入闸(spec §12:近 30 天真实充值 ≥¥30,403——状态接口只是展示,这里才是真拦截)→
 /// 委托 CheckinPort 完成幂等写入;今日已打过卡则 409(前端契约,不是静默成功)→
 /// 首次成功则回填累计天数/连续天数供响应体使用。自然日显式用 Asia/Shanghai(红二1 红线),
 /// 不依赖容器/DB 默认时区。事务边界在 infra(CheckinAdapter),本层无事务注解(家族约定)。
@@ -34,16 +37,19 @@ public class CheckInHandler implements CommandHandler<CheckInCommand, CheckInRes
     private final CheckinProperties props;
     private final ApplicationEventPublisher events;
     private final CheckinBalanceGrantService balanceGrant;
+    private final CheckinEntryGateChecker entryGate;
 
-    /// 构造:注入账龄读端口、签到端口、签到配置(NB 单价)、事件发布器与返网费结算服务。
+    /// 构造:注入账龄读端口、签到端口、签到配置(NB 单价)、事件发布器、返网费结算服务
+    /// 与准入闸判定器(与状态查询共用同一真源)。
     public CheckInHandler(AccountRegistrationReadPort registration, CheckinPort checkinPort,
             CheckinProperties props, ApplicationEventPublisher events,
-            CheckinBalanceGrantService balanceGrant) {
+            CheckinBalanceGrantService balanceGrant, CheckinEntryGateChecker entryGate) {
         this.registration = registration;
         this.checkinPort = checkinPort;
         this.props = props;
         this.events = events;
         this.balanceGrant = balanceGrant;
+        this.entryGate = entryGate;
     }
 
     @Override
@@ -55,6 +61,9 @@ public class CheckInHandler implements CommandHandler<CheckInCommand, CheckInRes
             throw new CheckinTooYoungException();
         }
         LocalDate today = LocalDate.now(ZONE);
+        if (entryGate.enabled() && !entryGate.check(command.userId(), today).eligible()) {
+            throw new CheckinRechargeRequiredException(entryGate.lockedMessage());
+        }
         // 连签第 N 天(2026-07-31 起 NB 随 N 递增):只取本月日期喂给纯计算,
         // 「月初清零」由集合里天然没有上月日期保证,无需额外边界判断。
         LocalDate monthStart = today.withDayOfMonth(1);

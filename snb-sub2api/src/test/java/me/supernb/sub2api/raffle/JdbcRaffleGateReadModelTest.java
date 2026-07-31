@@ -128,6 +128,24 @@ class JdbcRaffleGateReadModelTest {
     }
 
     @Test
+    void rechargeEventsListPerEventInAscendingOrderExcludingMirrors() {
+        // 逐笔明细与 gateValue 的 RECHARGE 判定同口径:镜像码剔除、订阅码/未核销/窗口外不出现,
+        // 按到账时刻升序——签到准入闸靠逐笔滑窗算「网费余 N 天」,聚合值给不出这个
+        var events10 = model.rechargeEvents(10, FROM, TO);
+        assertThat(events10).hasSize(2);
+        assertThat(events10.get(0).at()).isEqualTo(Instant.parse("2026-07-02T00:00:00Z"));
+        assertThat(events10.get(0).amount()).isEqualByComparingTo("60");
+        assertThat(events10.get(1).amount()).isEqualByComparingTo("40");
+
+        var events30 = model.rechargeEvents(30, FROM, TO);
+        assertThat(events30).hasSize(2); // 在线支付 60 + 购码 25;镜像码若未剔会多出第三笔
+        assertThat(events30.get(0).amount()).isEqualByComparingTo("60");
+        assertThat(events30.get(1).amount()).isEqualByComparingTo("25");
+
+        assertThat(model.rechargeEvents(20, FROM, TO)).isEmpty();
+    }
+
+    @Test
     void unknownGateTypeRejected() {
         assertThatThrownBy(() -> model.gateValue(10, "MAGIC", FROM, TO))
                 .isInstanceOf(IllegalArgumentException.class);

@@ -52,9 +52,24 @@ class CheckinDailyRewardCalcTest {
 
     @Test
     void balanceAndNbScaleWithStreakDay() {
+        // stepDays=1 即原线性费率,老口径一分不变
         assertThat(CheckinDailyRewardCalc.nbPoints(7, 3)).isEqualTo(21);
-        assertThat(CheckinDailyRewardCalc.balanceCny(7, new BigDecimal("0.1"))).isEqualByComparingTo("0.70");
-        assertThat(CheckinDailyRewardCalc.balanceCny(30, new BigDecimal("0.1"))).isEqualByComparingTo("3.00");
-        assertThat(CheckinDailyRewardCalc.balanceCny(31, new BigDecimal("0.1"))).isEqualByComparingTo("3.10");
+        assertThat(CheckinDailyRewardCalc.balanceCny(7, new BigDecimal("0.1"), 1)).isEqualByComparingTo("0.70");
+        assertThat(CheckinDailyRewardCalc.balanceCny(30, new BigDecimal("0.1"), 1)).isEqualByComparingTo("3.00");
+        assertThat(CheckinDailyRewardCalc.balanceCny(31, new BigDecimal("0.1"), 1)).isEqualByComparingTo("3.10");
+    }
+
+    @Test
+    void balanceStepsUpEveryTwoDays() {
+        // 两天一档(2026-07-31 站长拍板):第 N 天返 perDay × ⌈N/2⌉——0.1/0.1/0.2/0.2/0.3…
+        // 满月上限从 ¥49.6 压到 ¥25.6,低于准入闸的 ¥30 月充下限,铁杆用户不再倒挂
+        BigDecimal perDay = new BigDecimal("0.1");
+        assertThat(CheckinDailyRewardCalc.balanceCny(1, perDay, 2)).isEqualByComparingTo("0.10");
+        assertThat(CheckinDailyRewardCalc.balanceCny(2, perDay, 2)).isEqualByComparingTo("0.10");
+        assertThat(CheckinDailyRewardCalc.balanceCny(3, perDay, 2)).isEqualByComparingTo("0.20");
+        assertThat(CheckinDailyRewardCalc.balanceCny(4, perDay, 2)).isEqualByComparingTo("0.20");
+        assertThat(CheckinDailyRewardCalc.balanceCny(15, perDay, 2)).isEqualByComparingTo("0.80");
+        assertThat(CheckinDailyRewardCalc.balanceCny(30, perDay, 2)).isEqualByComparingTo("1.50");
+        assertThat(CheckinDailyRewardCalc.balanceCny(31, perDay, 2)).isEqualByComparingTo("1.60");
     }
 }

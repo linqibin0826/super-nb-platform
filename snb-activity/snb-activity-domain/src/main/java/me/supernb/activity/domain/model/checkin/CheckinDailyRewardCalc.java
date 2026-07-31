@@ -35,8 +35,12 @@ public final class CheckinDailyRewardCalc {
         return perDay * streakDay;
     }
 
-    /// 第 N 天的返网费 = perDayCny × N,scale=2。
-    public static BigDecimal balanceCny(int streakDay, BigDecimal perDayCny) {
-        return perDayCny.multiply(BigDecimal.valueOf(streakDay)).setScale(BALANCE_SCALE, RoundingMode.HALF_UP);
+    /// 第 N 天的返网费 = perDayCny × ⌈N/stepDays⌉,scale=2。
+    ///
+    /// stepDays=1 即原线性费率;stepDays=2 为「两天一档」(2026-07-31 站长拍板,spec §12):
+    /// 0.1/0.1/0.2/0.2/0.3…,满月上限 ¥25.6 压到准入闸的 ¥30 月充下限之下,铁杆用户不再倒挂。
+    public static BigDecimal balanceCny(int streakDay, BigDecimal perDayCny, int stepDays) {
+        int tier = (streakDay + stepDays - 1) / stepDays;
+        return perDayCny.multiply(BigDecimal.valueOf(tier)).setScale(BALANCE_SCALE, RoundingMode.HALF_UP);
     }
 }

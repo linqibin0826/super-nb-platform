@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -13,12 +15,15 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import me.supernb.activity.app.usecase.checkin.CheckinEntryGateChecker;
 import me.supernb.activity.app.usecase.checkin.config.CheckinBalanceProperties;
+import me.supernb.activity.app.usecase.checkin.config.CheckinEntryGateProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinTierProperties;
 import me.supernb.activity.domain.model.checkin.CheckinMilestoneView;
 import me.supernb.activity.domain.model.checkin.CheckinStatusView;
+import me.supernb.activity.domain.port.read.CheckinRechargeReadPort.RechargeEvent;
 import me.supernb.activity.domain.port.checkin.CheckinDailyRewardPort;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
 import me.supernb.activity.domain.port.nb.NbLedgerPort;
@@ -48,11 +53,18 @@ class CheckinStatusQueryServiceTest {
             27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"), 20);
     private final CheckinDailyRewardPort dailyRewardPort = mock(CheckinDailyRewardPort.class);
     private final CheckinBalanceProperties balanceProps =
-            new CheckinBalanceProperties(true, "0.1", "30", "3000");
-    private final CheckinStatusQueryService service =
-            new CheckinStatusQueryService(checkinPort, rechargePort, registrationPort, nbLedger, props, tierProps,
-                    new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, true, 20),
-                    dailyRewardPort, balanceProps);
+            new CheckinBalanceProperties(true, "0.1", "30", "3000", 1);
+    private final CheckinStatusQueryService service = serviceWith(balanceProps,
+            new CheckinEntryGateProperties(false, 30, "30"));
+
+    /// 组装被测服务(准入闸判定器用真实现+mock 端口,默认闸关保住全部既有用例的旧行为)。
+    private CheckinStatusQueryService serviceWith(CheckinBalanceProperties bal,
+            CheckinEntryGateProperties gateProps) {
+        return new CheckinStatusQueryService(checkinPort, rechargePort, registrationPort, nbLedger, props,
+                tierProps,
+                new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, true, 20),
+                dailyRewardPort, bal, new CheckinEntryGateChecker(rechargePort, gateProps));
+    }
 
     @Test
     void eligibleUserSeesFullStatusWithProgressTierB() {
@@ -278,5 +290,99 @@ class CheckinStatusQueryServiceTest {
         when(checkinPort.countInRange(eq(userId), any(), any())).thenReturn(0);
         when(rechargePort.monthlyRecharge(eq(userId), any(), any())).thenReturn(new BigDecimal(monthlyRechargeCny));
         return service.status(userId).supply().gaugePct();
+    }
+
+    // ---- 准入闸(spec §12,2026-07-31):近 30 天真实充值 ≥¥30 才能上机 ----
+
+    @Test
+    void entryGateLockedWhenWindowRechargeShort() {
+        LocalDate day = LocalDate.of(2026, 8, 10);
+        stubEligibleUserOnDate(day, 0, false);
+        when(rechargePort.monthlyRecharge(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(rechargePort.rechargeEvents(eq(42L), any(), any()))
+                .thenReturn(List.of(new RechargeEvent(Instant.parse("2026-08-01T04:00:00Z"),
+                        new BigDecimal("12"))));
+
+        CheckinStatusView v = serviceWith(balanceProps, new CheckinEntryGateProperties(true, 30, "30"))
+                .statusAt(42L, day, Instant.parse("2026-08-10T04:00:00Z"));
+
+        assertThat(v.eligible()).isFalse();
+        assertThat(v.ineligibleReason()).isEqualTo("recharge_required");
+        assertThat(v.entryGate().eligible()).isFalse();
+        assertThat(v.entryGate().minCny()).isEqualByComparingTo("30");
+        assertThat(v.entryGate().windowDays()).isEqualTo(30);
+        assertThat(v.entryGate().rechargedCny()).isEqualByComparingTo("12");
+        assertThat(v.entryGate().remainingDays()).isZero();
+        assertThat(v.entryGate().noteText()).isEqualTo("近 30 天已充 ¥12 / 还差 ¥18");
+    }
+
+    @Test
+    void entryGateOpenExposesRemainingDaysAsFinishedCopy() {
+        // ¥30 充在 10 天前:窗口还罩得住 20 天——滚动窗口的「无预警断签」暗坑要变成明牌
+        LocalDate day = LocalDate.of(2026, 8, 10);
+        stubEligibleUserOnDate(day, 0, false);
+        when(rechargePort.monthlyRecharge(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(rechargePort.rechargeEvents(eq(42L), any(), any()))
+                .thenReturn(List.of(new RechargeEvent(Instant.parse("2026-07-31T04:00:00Z"),
+                        new BigDecimal("30"))));
+
+        CheckinStatusView v = serviceWith(balanceProps, new CheckinEntryGateProperties(true, 30, "30"))
+                .statusAt(42L, day, Instant.parse("2026-08-10T04:00:00Z"));
+
+        assertThat(v.eligible()).isTrue();
+        assertThat(v.ineligibleReason()).isNull();
+        assertThat(v.entryGate().eligible()).isTrue();
+        assertThat(v.entryGate().remainingDays()).isEqualTo(20);
+        assertThat(v.entryGate().noteText()).isEqualTo("网费还够 20 天");
+    }
+
+    @Test
+    void entryGateDisabledKeepsLegacyShape() {
+        LocalDate day = LocalDate.of(2026, 8, 10);
+        stubEligibleUserOnDate(day, 0, false);
+        when(rechargePort.monthlyRecharge(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+
+        CheckinStatusView v = service.statusAt(42L, day, Instant.parse("2026-08-10T04:00:00Z"));
+
+        assertThat(v.eligible()).isTrue();
+        assertThat(v.entryGate()).isNull();
+        verify(rechargePort, never()).rechargeEvents(anyLong(), any(), any());
+    }
+
+    @Test
+    void accountTooNewShortCircuitsEntryGate() {
+        // 账龄不够连闸都不开:reason 保持 account_too_new,不发逐笔充值 SQL
+        when(registrationPort.registeredAt(7L)).thenReturn(Optional.empty());
+        when(checkinPort.checkedInOn(eq(7L), any())).thenReturn(false);
+        when(checkinPort.datesInRange(eq(7L), any(), any())).thenReturn(List.of());
+        when(checkinPort.totalCheckins(7L)).thenReturn(0);
+        when(rechargePort.monthlyRecharge(eq(7L), any(), any())).thenReturn(BigDecimal.ZERO);
+
+        CheckinStatusView v = serviceWith(balanceProps, new CheckinEntryGateProperties(true, 30, "30"))
+                .statusAt(7L, LocalDate.of(2026, 8, 10), Instant.parse("2026-08-10T04:00:00Z"));
+
+        assertThat(v.ineligibleReason()).isEqualTo("account_too_new");
+        assertThat(v.entryGate()).isNull();
+        verify(rechargePort, never()).rechargeEvents(anyLong(), any(), any());
+    }
+
+    @Test
+    void steppedLadderPricesPairsAndExposesRateParams() {
+        // 两天一档:连签第 3 天 ¥0.20,明天第 4 天还是 ¥0.20;费率参数随视图下发,
+        // 前端画任意档位用 perDayCny × ⌈k/stepDays⌉,不得再用 today÷N 反推
+        LocalDate day = LocalDate.of(2026, 8, 10);
+        stubEligibleUserOnDate(day, 3, true);
+        when(rechargePort.lifetimeRecharge(eq(42L), any())).thenReturn(new BigDecimal("100"));
+        when(rechargePort.monthlyRecharge(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+
+        CheckinStatusView v = serviceWith(new CheckinBalanceProperties(true, "0.1", "30", "3000", 2),
+                new CheckinEntryGateProperties(false, 30, "30"))
+                .statusAt(42L, day, Instant.parse("2026-08-10T04:00:00Z"));
+
+        assertThat(v.dailyReward().streakDay()).isEqualTo(3);
+        assertThat(v.dailyReward().todayBalanceCny()).isEqualByComparingTo("0.20");
+        assertThat(v.dailyReward().tomorrowBalanceCny()).isEqualByComparingTo("0.20");
+        assertThat(v.dailyReward().perDayCny()).isEqualByComparingTo("0.1");
+        assertThat(v.dailyReward().stepDays()).isEqualTo(2);
     }
 }

@@ -99,10 +99,11 @@ class CheckinEndpointTest {
                 new CheckinMilestoneView("days_20", "出勤 20 天", 20, false, "12 / 20"),
                 new CheckinMilestoneView("full_month", "加时资格", 20, false, "12 / 20"));
         var dailyReward = new CheckinDailyRewardView(7, new BigDecimal("0.70"), 21, "success",
-                8, new BigDecimal("0.80"), 24, true, null, new BigDecimal("2.80"));
+                8, new BigDecimal("0.80"), 24, true, null, new BigDecimal("2.80"),
+                new BigDecimal("0.1"), 1);
         return new CheckinStatusView(
                 true, null, punchedToday, 13, "2026.07", 31, List.of(1, 2, 3), 12, 12, milestones, supply, 235,
-                dailyReward);
+                dailyReward, null);
     }
 
     @Test
@@ -175,6 +176,34 @@ class CheckinEndpointTest {
         when(statusQuery.status(42)).thenReturn(statusView(false));
         off.perform(get("/activity/v1/checkin/status").header("Authorization", "Bearer T"))
                 .andExpect(status().isOk());
+    }
+
+    /// 准入闸锁态契约(spec §12):eligible=false + recharge_required + entryGate 整块下发,
+    /// 页面靠 noteText 成品文案画「已充/还差」,靠 minCny/rechargedCny 数字兜底。
+    /// 闸门未启用时 entryGate 为 null(statusView 共用构造已钉住该形状)。
+    @Test
+    void statusCarriesEntryGateBlockWhenLocked() throws Exception {
+        var locked = new CheckinStatusView(
+                false, "recharge_required", false, 13, "2026.08", 31, List.of(), 0, 0, List.of(),
+                new CheckinSupplyView(BigDecimal.ZERO, 0, "距 A 档还差 ¥30", List.of()), 0,
+                new CheckinDailyRewardView(1, BigDecimal.ZERO, 3, "not_punched", 1, BigDecimal.ZERO, 3,
+                        false, "累计充值满 ¥30 解锁返网费", BigDecimal.ZERO, new BigDecimal("0.1"), 2),
+                new me.supernb.activity.domain.model.checkin.CheckinEntryGateView(
+                        false, new BigDecimal("30"), 30, new BigDecimal("12"), 0, "近 30 天已充 ¥12 / 还差 ¥18"));
+        when(statusQuery.status(42)).thenReturn(locked);
+
+        mvc.perform(get("/activity/v1/checkin/status").header("Authorization", "Bearer T"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.eligible").value(false))
+                .andExpect(jsonPath("$.ineligibleReason").value("recharge_required"))
+                .andExpect(jsonPath("$.entryGate.eligible").value(false))
+                .andExpect(jsonPath("$.entryGate.minCny").value(30))
+                .andExpect(jsonPath("$.entryGate.windowDays").value(30))
+                .andExpect(jsonPath("$.entryGate.rechargedCny").value(12))
+                .andExpect(jsonPath("$.entryGate.remainingDays").value(0))
+                .andExpect(jsonPath("$.entryGate.noteText").value("近 30 天已充 ¥12 / 还差 ¥18"))
+                .andExpect(jsonPath("$.dailyReward.perDayCny").value(0.1))
+                .andExpect(jsonPath("$.dailyReward.stepDays").value(2));
     }
 
     @Test

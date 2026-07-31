@@ -16,8 +16,11 @@ import java.math.BigDecimal;
 /// @param balanceEligible      是否已过历史累计充值门槛
 /// @param balanceUnlockText    未达标时的成品解锁文案;已达标为 null
 /// @param monthBalanceTotalCny 本月已返网费累计
+/// @param perDayCny            费率单价(元);计价梯画任意档位用 perDayCny × ⌈k/stepDays⌉,
+///                             不得再用 todayBalanceCny÷N 反推(台阶费率下那是错的)
+/// @param stepDays             几天升一档;1 = 线性
 public record CheckinDailyRewardView(int streakDay, BigDecimal todayBalanceCny, int todayNbPoints,
         String todayBalanceStatus, int tomorrowStreakDay, BigDecimal tomorrowBalanceCny,
         int tomorrowNbPoints, boolean balanceEligible, String balanceUnlockText,
-        BigDecimal monthBalanceTotalCny) {
+        BigDecimal monthBalanceTotalCny, BigDecimal perDayCny, int stepDays) {
 }
