@@ -8,6 +8,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import me.supernb.activity.app.usecase.checkin.config.CheckinBalanceProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinSettlementProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinTierProperties;
@@ -16,6 +17,10 @@ import me.supernb.activity.domain.model.checkin.CheckinStatusView;
 import me.supernb.activity.domain.model.checkin.CheckinStreak;
 import me.supernb.activity.domain.model.checkin.CheckinSupplyTierView;
 import me.supernb.activity.domain.model.checkin.CheckinSupplyView;
+import me.supernb.activity.domain.model.checkin.CheckinDailyRewardCalc;
+import me.supernb.activity.domain.model.checkin.CheckinDailyRewardRecord;
+import me.supernb.activity.domain.model.checkin.CheckinDailyRewardView;
+import me.supernb.activity.domain.port.checkin.CheckinDailyRewardPort;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
 import me.supernb.activity.domain.port.nb.NbLedgerPort;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
@@ -41,12 +46,16 @@ public class CheckinStatusQueryService {
     private final CheckinProperties props;
     private final CheckinTierProperties tierProps;
     private final CheckinSettlementProperties settlementProps;
+    private final CheckinDailyRewardPort dailyRewardPort;
+    private final CheckinBalanceProperties balanceProps;
 
-    /// 构造:注入签到端口、补给充值读端口、账龄读端口、NB 账本读端口与三个配置类
-    /// (settlementProps 提供加时资格的当月累计出勤门槛,与月度结算 job 同一真源)。
+    /// 构造:注入签到端口、补给充值读端口、账龄读端口、NB 账本读端口、日返网费台账端口
+    /// 与四个配置类(settlementProps 提供加时资格的当月累计出勤门槛,与月度结算 job 同一真源;
+    /// balanceProps 提供返网费单价/门槛/总闸)。
     public CheckinStatusQueryService(CheckinPort checkinPort, CheckinRechargeReadPort rechargePort,
             AccountRegistrationReadPort registrationPort, NbLedgerPort nbLedger, CheckinProperties props,
-            CheckinTierProperties tierProps, CheckinSettlementProperties settlementProps) {
+            CheckinTierProperties tierProps, CheckinSettlementProperties settlementProps,
+            CheckinDailyRewardPort dailyRewardPort, CheckinBalanceProperties balanceProps) {
         this.checkinPort = checkinPort;
         this.rechargePort = rechargePort;
         this.registrationPort = registrationPort;
@@ -54,14 +63,21 @@ public class CheckinStatusQueryService {
         this.props = props;
         this.tierProps = tierProps;
         this.settlementProps = settlementProps;
+        this.dailyRewardPort = dailyRewardPort;
+        this.balanceProps = balanceProps;
     }
 
-    /// 组装某用户的签到状态视图。
+    /// 组装某用户的签到状态视图(生产入口:今天 = Asia/Shanghai 当前自然日)。
     public CheckinStatusView status(long userId) {
-        LocalDate today = LocalDate.now(ZONE);
+        return statusAt(userId, LocalDate.now(ZONE), Instant.now());
+    }
+
+    /// 显式基准时间的重载,供单测锁定「今天是几号」(跨月/月末等分支靠它才测得到)。
+    /// 包私有,不对外暴露——照本类 buildMilestones「依赖今天的计算抽成显式接收 today 的
+    /// 纯函数」同款先例。
+    CheckinStatusView statusAt(long userId, LocalDate today, Instant now) {
         LocalDate monthStart = today.withDayOfMonth(1);
         LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
-        Instant now = Instant.now();
 
         boolean eligible = registrationPort.registeredAt(userId)
                 .map(at -> at.isBefore(now.minus(MIN_ACCOUNT_AGE)))
@@ -88,9 +104,47 @@ public class CheckinStatusQueryService {
         CheckinSupplyView supply = buildSupply(monthlyRecharge, onTrackFullMonth);
 
         int nbTotal = nbLedger.totalPoints(userId);
+        CheckinDailyRewardView dailyReward =
+                buildDailyReward(userId, today, now, monthStart, monthEnd, monthDates, punchedToday);
         return new CheckinStatusView(eligible, ineligibleReason, punchedToday, today.getDayOfMonth(),
                 today.format(MONTH_LABEL), today.lengthOfMonth(), checkedDays, cumulativeDays, streakCurrent,
-                milestones, supply, nbTotal);
+                milestones, supply, nbTotal, dailyReward);
+    }
+
+    /// 组装连签阶梯:今天档位 / 明天档位 / 门槛态 / 本月已返累计。
+    ///
+    /// ⚠️ **明天档位的口径最易写错**:今天**未签**时,今天这条连签已经断了——明天签到只能是
+    /// 本月第 1 天,绝不能恒写成 `streakDay + 1`,那会给未签用户画一个他根本拿不到的高档位。
+    /// 明天跨月同理归 1(自然月清零)。
+    private CheckinDailyRewardView buildDailyReward(long userId, LocalDate today, Instant now,
+            LocalDate monthStart, LocalDate monthEnd, List<LocalDate> monthDates, boolean punchedToday) {
+        int streakDay = CheckinDailyRewardCalc.streakDay(monthDates, today);
+        boolean balanceEligible = rechargePort.lifetimeRecharge(userId, now)
+                .compareTo(balanceProps.thresholdCny()) >= 0;
+        boolean payable = balanceEligible && balanceProps.enabled();
+
+        LocalDate tomorrow = today.plusDays(1);
+        int tomorrowStreakDay =
+                (tomorrow.getMonthValue() == today.getMonthValue() && punchedToday) ? streakDay + 1 : 1;
+
+        String todayBalanceStatus = dailyRewardPort.findByUserAndDay(userId, today)
+                .map(CheckinDailyRewardRecord::balanceStatus)
+                .orElse("not_punched");
+
+        return new CheckinDailyRewardView(
+                streakDay,
+                payable ? CheckinDailyRewardCalc.balanceCny(streakDay, balanceProps.perDayCny()) : BigDecimal.ZERO,
+                CheckinDailyRewardCalc.nbPoints(streakDay, props.dailyNbPoints()),
+                todayBalanceStatus,
+                tomorrowStreakDay,
+                payable ? CheckinDailyRewardCalc.balanceCny(tomorrowStreakDay, balanceProps.perDayCny())
+                        : BigDecimal.ZERO,
+                CheckinDailyRewardCalc.nbPoints(tomorrowStreakDay, props.dailyNbPoints()),
+                balanceEligible,
+                balanceEligible ? null
+                        : "累计充值满 ¥" + balanceProps.thresholdCny().stripTrailingZeros().toPlainString()
+                                + " 解锁返网费",
+                dailyRewardPort.myMonthlyBalanceTotal(userId, monthStart, monthEnd));
     }
 
     /// 组装四档里程碑(5/10/20/加时资格),固定顺序、成品状态文案。
