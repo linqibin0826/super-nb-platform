@@ -29,4 +29,7 @@ public interface CheckinPort {
     /// [fromInclusive, toInclusive] 闭区间内每天都签到的用户 id 列表(满勤判定用,
     /// expectedDays = 该区间天数,调用方负责按上线日与自然月边界算好)。
     List<Long> fullAttendanceUserIds(LocalDate fromInclusive, LocalDate toInclusive, long expectedDays);
+
+    /// 某天打卡了的全部用户 id(返网费补偿 job 补录当日缺失台账用)。
+    List<Long> userIdsCheckedInOn(LocalDate day);
 }

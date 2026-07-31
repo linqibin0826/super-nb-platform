@@ -24,4 +24,8 @@ public interface CheckinRecordJpaRepository extends JpaRepository<CheckinRecordE
             + "GROUP BY c.userId HAVING COUNT(c) = :expectedDays")
     List<Long> findFullAttendanceUserIds(@Param("from") LocalDate from, @Param("to") LocalDate to,
             @Param("expectedDays") long expectedDays);
+
+    /// 某天打卡了的全部用户 id(返网费补偿 job 补录当日缺失台账用)。
+    @Query("SELECT c.userId FROM CheckinRecordEntity c WHERE c.checkinDate = :day")
+    List<Long> findUserIdsByCheckinDate(@Param("day") LocalDate day);
 }
