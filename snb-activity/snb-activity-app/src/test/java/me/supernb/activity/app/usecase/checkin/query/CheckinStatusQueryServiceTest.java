@@ -45,7 +45,7 @@ class CheckinStatusQueryServiceTest {
     private final CheckinProperties props = new CheckinProperties("2020-01-01", 3);
     private final CheckinTierProperties tierProps = new CheckinTierProperties(
             new BigDecimal("30"), new BigDecimal("50"), new BigDecimal("500"),
-            27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"));
+            27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"), 20);
     private final CheckinDailyRewardPort dailyRewardPort = mock(CheckinDailyRewardPort.class);
     private final CheckinBalanceProperties balanceProps =
             new CheckinBalanceProperties(true, "0.1", "30", "3000");

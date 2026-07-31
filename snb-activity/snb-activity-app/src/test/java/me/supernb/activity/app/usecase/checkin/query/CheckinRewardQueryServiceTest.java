@@ -19,7 +19,7 @@ class CheckinRewardQueryServiceTest {
     private final CheckinRewardPort rewardPort = mock(CheckinRewardPort.class);
     private final CheckinTierProperties tierProps = new CheckinTierProperties(
             new BigDecimal("30"), new BigDecimal("50"), new BigDecimal("500"),
-            27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"));
+            27L, 65L, 71L, new BigDecimal("0.9"), new BigDecimal("1.9"), new BigDecimal("4.4"), 20);
     private final CheckinRewardQueryService service = new CheckinRewardQueryService(rewardPort, tierProps);
 
     @Test
