@@ -64,7 +64,11 @@ class JdbcUserMetricAdapterTest {
     void usersUpdatedSinceExcludesUntouchedRows() throws InterruptedException {
         adapter.upsert(1, "checkin_total_count", 1);
         Thread.sleep(50);
-        Instant cutoff = Instant.now();
+        // 🔑 cutoff 必须取自 **DB 时钟**:updated_at 是 PG 用容器时钟写的,而 Instant.now()
+        // 走 JVM 宿主机时钟。两个时钟在 Docker(OrbStack 实测容器快 20~30ms)下本就有偏移,
+        // 机器一有负载偏移就冲破 50ms 余量,断言随机翻车(2026-07-31 实测:高负载 3/3 挂、
+        // 空闲 6/6 过)。同钟取 cutoff 后偏移这个变量彻底消失,不再靠 sleep 赌边界。
+        Instant cutoff = jdbc.queryForObject("SELECT now()", Instant.class);
         Thread.sleep(50);
         adapter.upsert(2, "checkin_total_count", 2);
         assertThat(adapter.usersUpdatedSince(cutoff)).containsExactly(2L);
