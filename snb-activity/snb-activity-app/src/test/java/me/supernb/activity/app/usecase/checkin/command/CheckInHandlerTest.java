@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -12,8 +13,11 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import me.supernb.activity.app.usecase.checkin.CheckinBalanceGrantService;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.domain.exception.CheckinAlreadyDoneException;
 import me.supernb.activity.domain.exception.CheckinTooYoungException;
@@ -31,7 +35,9 @@ class CheckInHandlerTest {
     private final AccountRegistrationReadPort registration = mock(AccountRegistrationReadPort.class);
     private final CheckinPort checkinPort = mock(CheckinPort.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final CheckInHandler handler = new CheckInHandler(registration, checkinPort, new CheckinProperties("2020-01-01", 3), events);
+    private final CheckinBalanceGrantService balanceGrant = mock(CheckinBalanceGrantService.class);
+    private final CheckInHandler handler = new CheckInHandler(registration, checkinPort,
+            new CheckinProperties("2020-01-01", 3), events, balanceGrant);
 
     @Test
     void unknownRegistrationRejectedWith403() {
@@ -72,5 +78,43 @@ class CheckInHandlerTest {
         assertThat(result.cumulativeDays()).isEqualTo(13);
         assertThat(result.streakCurrent()).isEqualTo(2);
         verify(events).publishEvent(new UserCheckedInEvent(42, today)); // 首次打卡发布事实事件(成就侧即时解锁)
+    }
+
+    @Test
+    void nbPointsScaleWithStreakDayAndBalanceSettledAfterCommit() {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Shanghai"));
+        LocalDate monthStart = today.withDayOfMonth(1);
+        when(registration.registeredAt(42)).thenReturn(Optional.of(Instant.now().minusSeconds(3600 * 48)));
+        // 本月连签到昨天为止 6 天 → 今天是第 7 天(月内不越界:只取 today 之后的 6 天)
+        List<LocalDate> month = new ArrayList<>();
+        for (int i = 1; i <= 6; i++) {
+            LocalDate d = today.minusDays(i);
+            if (!d.isBefore(monthStart)) {
+                month.add(d);
+            }
+        }
+        int expectedStreak = month.size() + 1;
+        when(checkinPort.datesInRange(eq(42L), eq(monthStart), eq(today))).thenReturn(month);
+        when(checkinPort.checkIn(eq(42L), any(), any(), anyInt()))
+                .thenReturn(new CheckinOutcome(true, today, Instant.now()));
+        when(checkinPort.totalCheckins(42)).thenReturn(expectedStreak);
+
+        handler.handle(new CheckInCommand(42));
+
+        verify(checkinPort).checkIn(eq(42L), eq(today), any(), eq(3 * expectedStreak));
+        verify(balanceGrant).settle(eq(42L), eq(today), eq(expectedStreak), any());
+    }
+
+    @Test
+    void balanceNotSettledOnIdempotentReplay() {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Shanghai"));
+        when(registration.registeredAt(42)).thenReturn(Optional.of(Instant.now().minusSeconds(3600 * 48)));
+        when(checkinPort.datesInRange(anyLong(), any(), any())).thenReturn(List.of());
+        when(checkinPort.checkIn(eq(42L), any(), any(), anyInt()))
+                .thenReturn(new CheckinOutcome(false, today, Instant.now()));
+
+        assertThatThrownBy(() -> handler.handle(new CheckInCommand(42)))
+                .isInstanceOf(CheckinAlreadyDoneException.class);
+        verify(balanceGrant, never()).settle(anyLong(), any(), anyInt(), any());
     }
 }
