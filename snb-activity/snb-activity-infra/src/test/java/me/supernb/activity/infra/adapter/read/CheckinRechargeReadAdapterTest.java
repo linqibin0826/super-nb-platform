@@ -35,4 +35,14 @@ class CheckinRechargeReadAdapterTest {
         assertThat(adapter.monthlyRecharges(List.of(1L, 2L), START, END))
                 .containsExactly(Map.entry(1L, new BigDecimal("30.00")));
     }
+
+    /// 🚨 返网费 ¥30 门槛必须认闲鱼购码的老客户——窗口拉到全历史,但口径仍是含
+    /// 非镜像 balance 兑换码的 RECHARGE,不是只算 payment_orders 的金票老口径。
+    @Test
+    void lifetimeRechargeQueriesFromEpochWithRechargeGate() {
+        Instant asOf = Instant.parse("2026-08-05T10:00:00Z");
+        when(readModel.gateValue(42L, "RECHARGE", Instant.EPOCH, asOf)).thenReturn(new BigDecimal("30.00"));
+        assertThat(adapter.lifetimeRecharge(42L, asOf)).isEqualByComparingTo("30.00");
+        verify(readModel).gateValue(42L, "RECHARGE", Instant.EPOCH, asOf);
+    }
 }

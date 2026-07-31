@@ -34,4 +34,9 @@ public class CheckinRechargeReadAdapter implements CheckinRechargeReadPort {
             Instant monthEndExclusive) {
         return readModel.gateValues(userIds, RECHARGE, monthStart, monthEndExclusive);
     }
+
+    @Override
+    public BigDecimal lifetimeRecharge(long userId, Instant asOf) {
+        return readModel.gateValue(userId, RECHARGE, Instant.EPOCH, asOf);
+    }
 }
