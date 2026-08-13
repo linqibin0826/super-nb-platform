@@ -1,11 +1,12 @@
 package me.supernb.activity.app.usecase.school;
 
-import java.util.List;
-
-/// 开学季状态视图(端点响应的内舱,adapter 层 Response 从它白名单映射)。
+/// 包机活动状态视图(端点响应的内舱,adapter 层 Response 从它白名单映射)。
 ///
 /// open 区间 = [start, claimDeadline)(宽限期仍可领);但资格事件只认 [start, end)。
-/// status 取值:none(无资格/未解锁) | claimable | pending | claimed | failed(可重试)。
+/// 首充线 status 取值:none(无资格) | claimable | pending | claimed | failed(可重试)。
+///
+/// 邀请线 v2 =「邀请卡养成 + 重置银行」:一人一张卡,tier=已领档位(0=未开卡),
+/// claimableTier=应得档位(>tier 时可开卡/升档,跨档直升);重置获得侧从合格人数推导。
 public record SchoolStatusView(boolean open, String endsAtLabel,
         FirstChargeBlock firstCharge, InviteBlock invite) {
 
@@ -21,18 +22,27 @@ public record SchoolStatusView(boolean open, String endsAtLabel,
             String amountCny, String status) {
     }
 
-    /// 邀请块。count 已按里程碑封顶截断;kfcUnlocked=计满 10 人(人工私聊发放,无 claim 端点)。
-    public record InviteBlock(int count, List<Milestone> milestones, boolean kfcUnlocked) {
+    /// 邀请块。count=合格被邀数(不封顶);kfcUnlocked=计满 20 人(人工私聊发放,无 claim 端点)。
+    public record InviteBlock(int count, CardBlock card, boolean kfcUnlocked) {
     }
 
-    /// 里程碑档(tier=人数档 1/3/6,cardAmount=卡面 50/100/200)。
-    public record Milestone(int tier, int cardAmount, boolean unlocked, String status) {
+    /// 邀请卡块。tier/tierName/cardAmount=已领档(0/""/0=未开卡);
+    /// claimableTier=应得档(> tier 时「领卡/升档」按钮亮);
+    /// resetsAvailable=重置银行可用(earned(count) − used,earned 推导制)。
+    public record CardBlock(int tier, String tierName, int cardAmount,
+            int claimableTier, String claimableName, int claimableCard,
+            int resetsAvailable, int resetsUsed) {
+
+        /// 空卡块(未开卡且无资格)。
+        public static CardBlock empty() {
+            return new CardBlock(0, "", 0, 0, "", 0, 0, 0);
+        }
     }
 
     /// 休眠/窗口外的关闭态。
     public static SchoolStatusView closed() {
         return new SchoolStatusView(false, "",
                 new FirstChargeBlock(false, false, 0, "", STATUS_NONE),
-                new InviteBlock(0, List.of(), false));
+                new InviteBlock(0, CardBlock.empty(), false));
     }
 }

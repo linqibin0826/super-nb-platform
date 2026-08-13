@@ -81,22 +81,24 @@ activity:
     guess-close-at: ${THURSDAY_GUESS_CLOSE_AT:20:00}
     guess-threshold-cny: ${THURSDAY_GUESS_THRESHOLD_CNY:30}
   school:
-    # 开学季·带兄弟来包机(2026-08-13,ai-relay runbook 41):新客首充三档总额卡 +
-    # 带人里程碑 1/3/6 + 拉人榜。start/end 空或六组任一为 0 = 功能休眠(端点回 closed)。
-    # ⚠️ compose 不加 environment 映射 = 这里的默认值(休眠)静默生效——上线必须映射全 8 键。
+    # 带兄弟来包机(2026-08-13,ai-relay runbook 41;玩法 v2=spec §4-v2):新客首充三档总额卡 +
+    # 邀请卡养成 Go/Plus/ProLite/Pro(节点 1/5/10/20)+ 重置银行 + 拉人榜。
+    # start/end 空或七组任一为 0 = 功能休眠(端点回 closed)。
+    # ⚠️ compose 不加 environment 映射 = 这里的默认值(休眠)静默生效——上线必须映射全 9 键。
     # ⚠️ start/end/claim-deadline 是 ISO-8601 Instant,格式错启动直接失败(宁可起不来)。
-    # 🚨 六组分立(首充三档 + 里程碑三档):总额卡靠周/月窗封顶,同组续期只加天数不重置额度
-    # (07-31 日卡事故的反向应用),两线共用组会让叠加领取的第二张卡变空壳。
+    # 🚨 七组分立(首充三档 + 邀请卡四档):总额卡靠周/月窗封顶,同组续期只加天数不重置额度
+    # (07-31 日卡事故的反向应用);升档换新档组=消耗从零(隐形满血);重置走 admin reset-quota。
     start: ${SCHOOL_START:}
     end: ${SCHOOL_END:}
     claim-deadline: ${SCHOOL_CLAIM_DEADLINE:}   # 缺省 = end + 48h(宽限只放领取,资格钉 [start,end))
     fc-group-50: ${SCHOOL_FC_GROUP_50:0}
     fc-group-100: ${SCHOOL_FC_GROUP_100:0}
     fc-group-200: ${SCHOOL_FC_GROUP_200:0}
-    ms-group-1: ${SCHOOL_MS_GROUP_1:0}
-    ms-group-3: ${SCHOOL_MS_GROUP_3:0}
-    ms-group-6: ${SCHOOL_MS_GROUP_6:0}
-    validity-days: ${SCHOOL_VALIDITY_DAYS:3}
+    card-group-go: ${SCHOOL_CARD_GROUP_GO:0}
+    card-group-plus: ${SCHOOL_CARD_GROUP_PLUS:0}
+    card-group-prolite: ${SCHOOL_CARD_GROUP_PROLITE:0}
+    card-group-pro: ${SCHOOL_CARD_GROUP_PRO:0}
+    validity-days: ${SCHOOL_VALIDITY_DAYS:3}    # 首充卡固定 3 天;邀请卡有效期动态=发卡→活动结束
     notes: ${SCHOOL_NOTES:school-season}
     rate-limit:
       capacity: ${SCHOOL_RATE_LIMIT_CAPACITY:30}

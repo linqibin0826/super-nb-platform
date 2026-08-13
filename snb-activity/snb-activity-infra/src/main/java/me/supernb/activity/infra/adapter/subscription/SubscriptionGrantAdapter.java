@@ -29,4 +29,19 @@ public class SubscriptionGrantAdapter implements SubscriptionGrantPort {
         var result = client.bulkAssign(userIds, groupId, validityDays, notes);
         return new SubscriptionGrantOutcome(result.statuses(), result.errors());
     }
+
+    @Override
+    public long assign(long userId, long groupId, int validityDays, String notes) {
+        return client.assign(userId, groupId, validityDays, notes);
+    }
+
+    @Override
+    public void revoke(long subscriptionId) {
+        client.revoke(subscriptionId);
+    }
+
+    @Override
+    public void resetQuota(long subscriptionId) {
+        client.resetQuota(subscriptionId);
+    }
 }

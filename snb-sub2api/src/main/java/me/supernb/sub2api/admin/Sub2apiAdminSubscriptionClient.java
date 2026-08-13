@@ -56,4 +56,47 @@ public class Sub2apiAdminSubscriptionClient {
         }
         return new BulkAssignResult(statuses, errors);
     }
+
+    /// 单发分配订阅(`POST /subscriptions/assign`,同组已有订阅时续期复用),返回订阅 id
+    /// ——包机邀请卡开卡/升档要拿 id 存库供后续 reset-quota 调用。响应体缺 id 视为失败直接抛。
+    public long assign(long userId, long groupId, int validityDays, String notes) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("user_id", userId);
+        body.put("group_id", groupId);
+        body.put("validity_days", validityDays);
+        body.put("notes", notes);
+
+        Map<?, ?> resp = restClient.post()
+                .uri("/subscriptions/assign")
+                .header("x-api-key", adminKey)
+                .body(body)
+                .retrieve()
+                .body(Map.class);
+
+        Object id = (resp != null && resp.get("data") instanceof Map<?, ?> d) ? d.get("id") : null;
+        if (id == null) {
+            throw new IllegalStateException("assign 响应缺订阅 id:userId=" + userId + " groupId=" + groupId);
+        }
+        return Long.parseLong(id.toString().replaceAll("\\.0+$", ""));
+    }
+
+    /// 吊销订阅(`POST /subscriptions/{id}/revoke`)。升档换组后旧卡收走;失败由调用方决定容忍度。
+    public void revoke(long subscriptionId) {
+        restClient.post()
+                .uri("/subscriptions/{id}/revoke", subscriptionId)
+                .header("x-api-key", adminKey)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
+    /// 重置订阅额度(`POST /subscriptions/{id}/reset-quota`,三窗全清)——总额卡=卡面回满,
+    /// Tibo 时刻的物理按钮(fork subscription_handler.go:228 原生端点)。
+    public void resetQuota(long subscriptionId) {
+        restClient.post()
+                .uri("/subscriptions/{id}/reset-quota", subscriptionId)
+                .header("x-api-key", adminKey)
+                .body(Map.of("daily", true, "weekly", true, "monthly", true))
+                .retrieve()
+                .toBodilessEntity();
+    }
 }

@@ -34,7 +34,7 @@ class ClaimSchoolFirstChargeHandlerTest {
     private static SchoolSeasonProperties props() {
         return new SchoolSeasonProperties(
                 "2026-08-13T04:00:00Z", "2026-08-31T16:00:00Z", "",
-                129L, 130L, 131L, 132L, 133L, 134L, 3, "school-season");
+                129L, 130L, 131L, 132L, 133L, 134L, 135L, 3, "school-season");
     }
 
     private ClaimSchoolFirstChargeHandler handler(SubscriptionGrantPort port) {
@@ -45,7 +45,7 @@ class ClaimSchoolFirstChargeHandlerTest {
     private static SchoolStatusView viewWithFirstCharge(int tierCard, String status) {
         return new SchoolStatusView(true, "9月1日 00:00",
                 new SchoolStatusView.FirstChargeBlock(tierCard > 0, tierCard > 0, tierCard, "50.00", status),
-                new SchoolStatusView.InviteBlock(0, List.of(), false));
+                new SchoolStatusView.InviteBlock(0, SchoolStatusView.CardBlock.empty(), false));
     }
 
     private static SchoolClaimRecord pendingRec(long id, int tier, long groupId) {

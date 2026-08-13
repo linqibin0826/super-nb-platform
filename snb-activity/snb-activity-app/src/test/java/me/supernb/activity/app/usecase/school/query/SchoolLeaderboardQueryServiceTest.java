@@ -24,14 +24,14 @@ class SchoolLeaderboardQueryServiceTest {
     private SchoolLeaderboardQueryService svc() {
         SchoolSeasonProperties props = new SchoolSeasonProperties(
                 "2026-08-13T04:00:00Z", "2026-08-31T16:00:00Z", "",
-                129L, 130L, 131L, 132L, 133L, 134L, 3, "school-season");
+                129L, 130L, 131L, 132L, 133L, 134L, 135L, 3, "school-season");
         return new SchoolLeaderboardQueryService(props, read);
     }
 
     @Test
     void dormantReturnsEmptyWithoutTouchingReadPort() {
         SchoolSeasonProperties dormant = new SchoolSeasonProperties(
-                "", "", "", 0, 0, 0, 0, 0, 0, 3, "school-season");
+                "", "", "", 0, 0, 0, 0, 0, 0, 0, 3, "school-season");
         SchoolLeaderboardQueryService svc = new SchoolLeaderboardQueryService(dormant, read);
         assertThat(svc.top(IN_WINDOW)).isEmpty();
         verifyNoInteractions(read);

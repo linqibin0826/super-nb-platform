@@ -25,8 +25,9 @@ import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
 import me.supernb.activity.app.usecase.school.SchoolStatusView;
+import me.supernb.activity.app.usecase.school.command.ClaimSchoolCardCommand;
 import me.supernb.activity.app.usecase.school.command.ClaimSchoolFirstChargeCommand;
-import me.supernb.activity.app.usecase.school.command.ClaimSchoolMilestoneCommand;
+import me.supernb.activity.app.usecase.school.command.ResetSchoolCardCommand;
 import me.supernb.activity.app.usecase.school.query.SchoolLeaderboardQueryService;
 import me.supernb.activity.app.usecase.school.query.SchoolStatusQueryService;
 import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
@@ -40,7 +41,7 @@ import org.mockito.ArgumentMatchers;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-/// 开学季四端点契约(standalone MockMvc,happy path)。401/409 状态码映射不在此断言
+/// 包机五端点契约(standalone MockMvc,happy path)。401/409 状态码映射不在此断言
 /// (standalone 装配无 commons 全局错误处理器,家族惯例),留给 boot 层 wiring 测试。
 class SchoolEndpointTest {
 
@@ -71,10 +72,9 @@ class SchoolEndpointTest {
     private static SchoolStatusView sampleView() {
         return new SchoolStatusView(true, "9月1日 00:00",
                 new SchoolStatusView.FirstChargeBlock(true, true, 100, "50.00", "claimable"),
-                new SchoolStatusView.InviteBlock(4, List.of(
-                        new SchoolStatusView.Milestone(1, 50, true, "claimed"),
-                        new SchoolStatusView.Milestone(3, 100, true, "claimable"),
-                        new SchoolStatusView.Milestone(6, 200, false, "none")), false));
+                new SchoolStatusView.InviteBlock(7,
+                        new SchoolStatusView.CardBlock(2, "Plus", 100, 2, "Plus", 100, 3, 2),
+                        false));
     }
 
     @Test
@@ -87,9 +87,11 @@ class SchoolEndpointTest {
                 .andExpect(jsonPath("$.endsAtLabel").value("9月1日 00:00"))
                 .andExpect(jsonPath("$.firstCharge.tierCard").value(100))
                 .andExpect(jsonPath("$.firstCharge.status").value("claimable"))
-                .andExpect(jsonPath("$.invite.count").value(4))
-                .andExpect(jsonPath("$.invite.milestones[1].tier").value(3))
-                .andExpect(jsonPath("$.invite.milestones[1].cardAmount").value(100))
+                .andExpect(jsonPath("$.invite.count").value(7))
+                .andExpect(jsonPath("$.invite.card.tier").value(2))
+                .andExpect(jsonPath("$.invite.card.tierName").value("Plus"))
+                .andExpect(jsonPath("$.invite.card.cardAmount").value(100))
+                .andExpect(jsonPath("$.invite.card.resetsAvailable").value(3))
                 .andExpect(jsonPath("$.invite.kfcUnlocked").value(false));
     }
 
@@ -104,13 +106,23 @@ class SchoolEndpointTest {
     }
 
     @Test
-    void milestoneClaimPassesTier() throws Exception {
-        when(commandBus.handle(new ClaimSchoolMilestoneCommand(42, 3))).thenReturn(sampleView());
+    void cardClaimDelegatesToCommandBus() throws Exception {
+        when(commandBus.handle(new ClaimSchoolCardCommand(42))).thenReturn(sampleView());
 
-        mvc.perform(post("/activity/v1/school/milestone/claim").header("Authorization", "Bearer T")
-                        .contentType("application/json").content("{\"tier\":3}"))
-                .andExpect(status().isOk());
-        verify(commandBus).handle(new ClaimSchoolMilestoneCommand(42, 3));
+        mvc.perform(post("/activity/v1/school/card/claim").header("Authorization", "Bearer T"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.invite.card.tierName").value("Plus"));
+        verify(commandBus).handle(new ClaimSchoolCardCommand(42));
+    }
+
+    @Test
+    void resetDelegatesToCommandBus() throws Exception {
+        when(commandBus.handle(new ResetSchoolCardCommand(42))).thenReturn(sampleView());
+
+        mvc.perform(post("/activity/v1/school/reset").header("Authorization", "Bearer T"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.invite.card.resetsAvailable").value(3));
+        verify(commandBus).handle(new ResetSchoolCardCommand(42));
     }
 
     @Test

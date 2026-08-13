@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import me.supernb.activity.adapter.rest.request.MarkAchievementsSeenRequest;
 import me.supernb.activity.adapter.rest.request.RaffleEnterRequest;
-import me.supernb.activity.adapter.rest.request.SchoolMilestoneClaimRequest;
 import me.supernb.activity.adapter.rest.request.ThursdayGuessRequest;
 import me.supernb.activity.adapter.rest.response.AchievementWallResponse;
 import me.supernb.activity.adapter.rest.response.MarkAchievementsSeenResponse;
@@ -45,7 +44,8 @@ import me.supernb.activity.app.usecase.raffle.command.RegisterRaffleCommand;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
 import me.supernb.activity.app.usecase.school.command.ClaimSchoolFirstChargeCommand;
-import me.supernb.activity.app.usecase.school.command.ClaimSchoolMilestoneCommand;
+import me.supernb.activity.app.usecase.school.command.ClaimSchoolCardCommand;
+import me.supernb.activity.app.usecase.school.command.ResetSchoolCardCommand;
 import me.supernb.activity.app.usecase.school.query.SchoolLeaderboardQueryService;
 import me.supernb.activity.app.usecase.school.query.SchoolStatusQueryService;
 import me.supernb.activity.app.usecase.thursday.command.ClaimThursdayBucketCommand;
@@ -264,15 +264,21 @@ public class ActivityController {
         return SchoolStatusResponse.of(commandBus.handle(new ClaimSchoolFirstChargeCommand(user.id())));
     }
 
-    /// 领开学季里程碑卡(需登录):tier ∈ {1,3,6},解锁与领取态服务端重算;KFC 档(10)人工私聊无此路。
-    @PostMapping("/school/milestone/claim")
-    public SchoolStatusResponse schoolClaimMilestone(@RequestBody SchoolMilestoneClaimRequest body,
-            @CurrentUser UserProfile user) {
-        int tier = body == null || body.tier() == null ? -1 : body.tier();
-        return SchoolStatusResponse.of(commandBus.handle(new ClaimSchoolMilestoneCommand(user.id(), tier)));
+    /// 领取/升级包机邀请卡(需登录):应得档按合格被邀数服务端重算,跨档直升、重复点幂等;
+    /// KFC 档(20 人)人工私聊无此路。
+    @PostMapping("/school/card/claim")
+    public SchoolStatusResponse schoolClaimCard(@CurrentUser UserProfile user) {
+        return SchoolStatusResponse.of(commandBus.handle(new ClaimSchoolCardCommand(user.id())));
     }
 
-    /// 开学季拉人榜(公开免登录):Top 10,name 已脱敏,计数不封顶;收官/休眠回空数组。
+    /// 重置银行按下去(需登录):消耗一次重置给邀请卡回满额度,次数服务端推导校验,
+    /// 下游失败次数退回(Tibo 时刻,fork reset-quota 原生端点)。
+    @PostMapping("/school/reset")
+    public SchoolStatusResponse schoolResetCard(@CurrentUser UserProfile user) {
+        return SchoolStatusResponse.of(commandBus.handle(new ResetSchoolCardCommand(user.id())));
+    }
+
+    /// 包机拉人榜(公开免登录):Top 20,name 已脱敏,计数不封顶;收官/休眠回空数组。
     @GetMapping("/school/leaderboard")
     public SchoolLeaderboardResponse schoolLeaderboard() {
         return SchoolLeaderboardResponse.of(schoolLeaderboardQuery.top(Instant.now()));

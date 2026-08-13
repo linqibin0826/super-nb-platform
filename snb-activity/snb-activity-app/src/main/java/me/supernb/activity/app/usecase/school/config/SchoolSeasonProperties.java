@@ -6,27 +6,31 @@ import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/// 开学季·带兄弟来包机配置(设计稿 ai-relay specs/2026-08-13-school-season-referral-design.md)。
+/// 带兄弟来包机配置(设计稿 ai-relay specs/2026-08-13-school-season-referral-design.md §4-v2)。
 /// 值来自 `activity.school.*`(application.yml / env)。app 模块只依赖 spring-context,
 /// 照 ThursdayProperties 用 @Value 构造注入。
 ///
-/// **start/end 任一为空或六个组 id 任一 ≤0 = 功能休眠**(端点回 closed,连资格都不查),
+/// **start/end 任一为空或七个组 id 任一 ≤0 = 功能休眠**(端点回 closed,连资格都不查),
 /// 照 thursday sessions 为空的惯例;日期格式错直接抛——宁可启动失败也不要带错窗口上线。
 ///
-/// 🚨 六个组必须分立(首充三档 + 里程碑三档):总额卡靠周/月窗封顶,同组续期只加天数
-/// 不重置额度(07-31 事故语义),两线共用组会让叠加领取的第二张卡变空壳。
+/// 老客线 v2 =「邀请卡养成 + 重置银行」(Tibo 梗,站长 2026-08-13 晚拍板取代 1/3/6 阶梯):
+/// 1 人开卡 Go $50 → 5 人升 Plus $100 → 10 人升 ProLite $150 → 20 人升 Pro $200+疯四;
+/// 非节点合格人头每人 +1 次重置,攒着自助按、不封顶。
+///
+/// 🚨 七个组必须分立(首充三档 + 邀请卡四档):总额卡靠周/月窗封顶,同组续期只加天数
+/// 不重置额度(07-31 事故语义);升档换新档组=消耗从零起算(隐形满血,官方升级体感)。
 @Component
 public class SchoolSeasonProperties {
 
     /// 首充定档门槛(元,降序判档)与对应卡面。
     public static final int[] FIRST_CHARGE_TIERS_CNY = {100, 50, 30};
     public static final int[] FIRST_CHARGE_CARDS = {200, 100, 50};
-    /// 里程碑人数档与对应卡面(1→50、3→100、6→200)。
-    public static final int[] MILESTONE_TIERS = {1, 3, 6};
-    public static final int[] MILESTONE_CARDS = {50, 100, 200};
-    /// KFC 档(人工私聊发放,无 claim 端点)与里程碑计数封顶。
-    public static final int KFC_TIER = 10;
-    public static final int INVITE_CAP = 10;
+    /// 邀请卡升档节点(合格人数,升序)与对应卡面/档名(下标 = 档位序 tier-1)。
+    public static final int[] CARD_TIER_THRESHOLDS = {1, 5, 10, 20};
+    public static final int[] CARD_AMOUNTS = {50, 100, 150, 200};
+    public static final String[] CARD_NAMES = {"Go", "Plus", "ProLite", "Pro"};
+    /// KFC 档(人工私聊发放,无 claim 端点;随 Pro 档同点)。
+    public static final int KFC_TIER = 20;
     /// 被邀人首充门槛(元)。
     public static final BigDecimal INVITEE_MIN_CNY = new BigDecimal("30");
 
@@ -36,9 +40,10 @@ public class SchoolSeasonProperties {
     private final long fcGroup50;
     private final long fcGroup100;
     private final long fcGroup200;
-    private final long msGroup1;
-    private final long msGroup3;
-    private final long msGroup6;
+    private final long cardGroupGo;
+    private final long cardGroupPlus;
+    private final long cardGroupProlite;
+    private final long cardGroupPro;
     private final int validityDays;
     private final String notes;
 
@@ -49,9 +54,10 @@ public class SchoolSeasonProperties {
             @Value("${activity.school.fc-group-50:0}") long fcGroup50,
             @Value("${activity.school.fc-group-100:0}") long fcGroup100,
             @Value("${activity.school.fc-group-200:0}") long fcGroup200,
-            @Value("${activity.school.ms-group-1:0}") long msGroup1,
-            @Value("${activity.school.ms-group-3:0}") long msGroup3,
-            @Value("${activity.school.ms-group-6:0}") long msGroup6,
+            @Value("${activity.school.card-group-go:0}") long cardGroupGo,
+            @Value("${activity.school.card-group-plus:0}") long cardGroupPlus,
+            @Value("${activity.school.card-group-prolite:0}") long cardGroupProlite,
+            @Value("${activity.school.card-group-pro:0}") long cardGroupPro,
             @Value("${activity.school.validity-days:3}") int validityDays,
             @Value("${activity.school.notes:school-season}") String notes) {
         this.start = parseInstant(start, "activity.school.start");
@@ -62,9 +68,10 @@ public class SchoolSeasonProperties {
         this.fcGroup50 = fcGroup50;
         this.fcGroup100 = fcGroup100;
         this.fcGroup200 = fcGroup200;
-        this.msGroup1 = msGroup1;
-        this.msGroup3 = msGroup3;
-        this.msGroup6 = msGroup6;
+        this.cardGroupGo = cardGroupGo;
+        this.cardGroupPlus = cardGroupPlus;
+        this.cardGroupProlite = cardGroupProlite;
+        this.cardGroupPro = cardGroupPro;
         this.validityDays = validityDays;
         this.notes = notes;
     }
@@ -81,11 +88,34 @@ public class SchoolSeasonProperties {
         }
     }
 
-    /// 窗口与六组是否配齐;false = 功能休眠。
+    /// 应得档位(1..4;count<1 → 0):满足的最高节点序号。开卡/升档都取这一个口径,跨档直升。
+    public static int deservedTier(int count) {
+        int tier = 0;
+        for (int i = 0; i < CARD_TIER_THRESHOLDS.length; i++) {
+            if (count >= CARD_TIER_THRESHOLDS[i]) {
+                tier = i + 1;
+            }
+        }
+        return tier;
+    }
+
+    /// 重置银行获得侧(推导制,防事件丢失):非节点合格人头每人 +1,不封顶。
+    /// earned(n) = n − |{节点 ≤ n}|;可用重置 = earned − used(used 落库)。
+    public static int resetsEarned(int count) {
+        int nodes = 0;
+        for (int t : CARD_TIER_THRESHOLDS) {
+            if (count >= t) {
+                nodes++;
+            }
+        }
+        return Math.max(0, count - nodes);
+    }
+
+    /// 窗口与七组是否配齐;false = 功能休眠。
     public boolean configured() {
         return start != null && end != null
                 && fcGroup50 > 0 && fcGroup100 > 0 && fcGroup200 > 0
-                && msGroup1 > 0 && msGroup3 > 0 && msGroup6 > 0;
+                && cardGroupGo > 0 && cardGroupPlus > 0 && cardGroupProlite > 0 && cardGroupPro > 0;
     }
 
     public Instant start() {
@@ -111,16 +141,28 @@ public class SchoolSeasonProperties {
         };
     }
 
-    /// 里程碑人数档(1/3/6)→分组 id。KFC 档(10)人工发放,不在此表。
-    public long milestoneGroup(int tierPeople) {
-        return switch (tierPeople) {
-            case 1 -> msGroup1;
-            case 3 -> msGroup3;
-            case 6 -> msGroup6;
-            default -> throw new IllegalArgumentException("未知里程碑人数档:" + tierPeople);
+    /// 邀请卡档位(1..4 = Go/Plus/ProLite/Pro)→分组 id。
+    public long cardGroup(int tier) {
+        return switch (tier) {
+            case 1 -> cardGroupGo;
+            case 2 -> cardGroupPlus;
+            case 3 -> cardGroupProlite;
+            case 4 -> cardGroupPro;
+            default -> throw new IllegalArgumentException("未知邀请卡档位:" + tier);
         };
     }
 
+    /// 邀请卡有效期(天):发卡/升档时刻 → 活动结束,向上取整、至少 1 天
+    /// (「卡陪你到月底」语义;首充卡仍走固定 validityDays=3)。
+    public int cardValidityDays(Instant now) {
+        if (end == null || !now.isBefore(end)) {
+            return 1;
+        }
+        long seconds = Duration.between(now, end).getSeconds();
+        return (int) Math.max(1, (seconds + 86399) / 86400);
+    }
+
+    /// 首充卡固定窗口天数。
     public int validityDays() {
         return validityDays;
     }
