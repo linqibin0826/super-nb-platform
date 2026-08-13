@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 /// 照 thursday sessions 为空的惯例;日期格式错直接抛——宁可启动失败也不要带错窗口上线。
 ///
 /// 老客线 v2 =「邀请卡养成 + 重置银行」(Tibo 梗,站长 2026-08-13 晚拍板取代 1/3/6 阶梯):
-/// 1 人开卡 Go $50 → 5 人升 Plus $100 → 10 人升 ProLite $150 → 20 人升 Pro $200+疯四;
+/// 1 人开卡 Go $30 → 5 人升 Plus $50 → 10 人升 ProLite $100 → 20 人升 Pro $150+疯四;
 /// 非节点合格人头每人 +1 次重置,攒着自助按、不封顶。
 ///
 /// 🚨 七个组必须分立(首充三档 + 邀请卡四档):总额卡靠周/月窗封顶,同组续期只加天数
@@ -22,17 +22,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class SchoolSeasonProperties {
 
-    /// 首充定档门槛(元,降序判档)与对应卡面。
-    public static final int[] FIRST_CHARGE_TIERS_CNY = {100, 50, 30};
+    /// 首充定档门槛(元,降序判档)与对应卡面(2026-08-13 晚站长调参:门槛 50/100/200 起送)。
+    public static final int[] FIRST_CHARGE_TIERS_CNY = {200, 100, 50};
     public static final int[] FIRST_CHARGE_CARDS = {200, 100, 50};
     /// 邀请卡升档节点(合格人数,升序)与对应卡面/档名(下标 = 档位序 tier-1)。
     public static final int[] CARD_TIER_THRESHOLDS = {1, 5, 10, 20};
-    public static final int[] CARD_AMOUNTS = {50, 100, 150, 200};
+    public static final int[] CARD_AMOUNTS = {30, 50, 100, 150};
     public static final String[] CARD_NAMES = {"Go", "Plus", "ProLite", "Pro"};
     /// KFC 档(人工私聊发放,无 claim 端点;随 Pro 档同点)。
     public static final int KFC_TIER = 20;
-    /// 被邀人首充门槛(元)。
-    public static final BigDecimal INVITEE_MIN_CNY = new BigDecimal("30");
+    /// 被邀人首充门槛(元;2026-08-13 晚站长调参 30→50)。
+    public static final BigDecimal INVITEE_MIN_CNY = new BigDecimal("50");
 
     private final Instant start;
     private final Instant end;

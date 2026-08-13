@@ -73,7 +73,7 @@ class SchoolEndpointTest {
         return new SchoolStatusView(true, "9月1日 00:00",
                 new SchoolStatusView.FirstChargeBlock(true, true, 100, "50.00", "claimable"),
                 new SchoolStatusView.InviteBlock(7,
-                        new SchoolStatusView.CardBlock(2, "Plus", 100, 2, "Plus", 100, 3, 2, 777L),
+                        new SchoolStatusView.CardBlock(2, "Plus", 50, 2, "Plus", 50, 3, 2, 777L),
                         false));
     }
 
@@ -90,7 +90,7 @@ class SchoolEndpointTest {
                 .andExpect(jsonPath("$.invite.count").value(7))
                 .andExpect(jsonPath("$.invite.card.tier").value(2))
                 .andExpect(jsonPath("$.invite.card.tierName").value("Plus"))
-                .andExpect(jsonPath("$.invite.card.cardAmount").value(100))
+                .andExpect(jsonPath("$.invite.card.cardAmount").value(50))
                 .andExpect(jsonPath("$.invite.card.resetsAvailable").value(3))
                 .andExpect(jsonPath("$.invite.kfcUnlocked").value(false));
     }

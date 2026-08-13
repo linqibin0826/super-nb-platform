@@ -62,20 +62,20 @@ class SchoolStatusQueryServiceTest {
     void graceWindowStillOpenButEligibilityBoundToEnd() {
         when(read.firstCharge(1L)).thenReturn(Optional.of(
                 new SchoolReadPort.FirstCharge(new BigDecimal("50.00"), IN_WINDOW)));
-        when(read.qualifiedInviteeCount(1L, START, END, new BigDecimal("30"))).thenReturn(0);
+        when(read.qualifiedInviteeCount(1L, START, END, new BigDecimal("50"))).thenReturn(0);
         when(claims.find(anyLong(), anyString(), anyInt())).thenReturn(Optional.empty());
         when(cards.find(anyLong())).thenReturn(Optional.empty());
         SchoolStatusView v = svc().view(1L, Instant.parse("2026-09-01T16:00:00Z"));
         assertThat(v.open()).isTrue();
         assertThat(v.firstCharge().status()).isEqualTo("claimable");
         // 资格查询边界钉死 end,不随 now 后移
-        verify(read).qualifiedInviteeCount(1L, START, END, new BigDecimal("30"));
+        verify(read).qualifiedInviteeCount(1L, START, END, new BigDecimal("50"));
     }
 
     @Test
     void firstChargeTierPicksHighest() {
         when(read.firstCharge(1L)).thenReturn(Optional.of(
-                new SchoolReadPort.FirstCharge(new BigDecimal("100.00"), IN_WINDOW)));
+                new SchoolReadPort.FirstCharge(new BigDecimal("200.00"), IN_WINDOW)));
         when(read.qualifiedInviteeCount(anyLong(), any(), any(), any())).thenReturn(0);
         when(claims.find(anyLong(), anyString(), anyInt())).thenReturn(Optional.empty());
         when(cards.find(anyLong())).thenReturn(Optional.empty());
@@ -98,7 +98,7 @@ class SchoolStatusQueryServiceTest {
     @Test
     void firstChargeClaimStatusFollowsClaimTable() {
         when(read.firstCharge(1L)).thenReturn(Optional.of(
-                new SchoolReadPort.FirstCharge(new BigDecimal("30.00"), IN_WINDOW)));
+                new SchoolReadPort.FirstCharge(new BigDecimal("50.00"), IN_WINDOW)));
         when(read.qualifiedInviteeCount(anyLong(), any(), any(), any())).thenReturn(0);
         when(cards.find(anyLong())).thenReturn(Optional.empty());
         when(claims.find(1L, SchoolClaimRecord.KIND_FIRST_CHARGE, 50)).thenReturn(Optional.of(
@@ -116,7 +116,7 @@ class SchoolStatusQueryServiceTest {
         assertThat(c.tier()).isZero();
         assertThat(c.claimableTier()).isEqualTo(1);
         assertThat(c.claimableName()).isEqualTo("Go");
-        assertThat(c.claimableCard()).isEqualTo(50);
+        assertThat(c.claimableCard()).isEqualTo(30);
         assertThat(c.resetsAvailable()).isZero();   // 第 1 人是开卡节点,无重置
     }
 
@@ -131,7 +131,7 @@ class SchoolStatusQueryServiceTest {
         SchoolStatusView.CardBlock c = inv.card();
         assertThat(c.tier()).isEqualTo(2);
         assertThat(c.tierName()).isEqualTo("Plus");
-        assertThat(c.cardAmount()).isEqualTo(100);
+        assertThat(c.cardAmount()).isEqualTo(50);
         assertThat(c.claimableTier()).isEqualTo(2);  // = tier:无升档
         assertThat(c.resetsAvailable()).isEqualTo(3);
         assertThat(c.resetsUsed()).isEqualTo(2);
@@ -148,7 +148,7 @@ class SchoolStatusQueryServiceTest {
         assertThat(c.tier()).isEqualTo(1);
         assertThat(c.claimableTier()).isEqualTo(3);
         assertThat(c.claimableName()).isEqualTo("ProLite");
-        assertThat(c.claimableCard()).isEqualTo(150);
+        assertThat(c.claimableCard()).isEqualTo(100);
         assertThat(c.resetsAvailable()).isEqualTo(9); // earned(12)=12-3=9,used=0
     }
 
