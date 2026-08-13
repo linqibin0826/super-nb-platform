@@ -28,14 +28,16 @@ public record SchoolStatusView(boolean open, String endsAtLabel,
 
     /// 邀请卡块。tier/tierName/cardAmount=已领档(0/""/0=未开卡);
     /// claimableTier=应得档(> tier 时「领卡/升档」按钮亮);
-    /// resetsAvailable=重置银行可用(earned(count) − used,earned 推导制)。
+    /// resetsAvailable=重置银行可用(earned(count) − used,earned 推导制);
+    /// subscriptionId=本人邀请卡的 sub2api 订阅 id(0=未开卡)——页面拿它去用户侧
+    /// `GET /api/v1/subscriptions/progress` 精确匹配额度进度(只回本人自己的 id,无隐私外溢)。
     public record CardBlock(int tier, String tierName, int cardAmount,
             int claimableTier, String claimableName, int claimableCard,
-            int resetsAvailable, int resetsUsed) {
+            int resetsAvailable, int resetsUsed, long subscriptionId) {
 
         /// 空卡块(未开卡且无资格)。
         public static CardBlock empty() {
-            return new CardBlock(0, "", 0, 0, "", 0, 0, 0);
+            return new CardBlock(0, "", 0, 0, "", 0, 0, 0, 0);
         }
     }
 

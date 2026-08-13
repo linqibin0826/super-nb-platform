@@ -73,7 +73,7 @@ class SchoolEndpointTest {
         return new SchoolStatusView(true, "9月1日 00:00",
                 new SchoolStatusView.FirstChargeBlock(true, true, 100, "50.00", "claimable"),
                 new SchoolStatusView.InviteBlock(7,
-                        new SchoolStatusView.CardBlock(2, "Plus", 100, 2, "Plus", 100, 3, 2),
+                        new SchoolStatusView.CardBlock(2, "Plus", 100, 2, "Plus", 100, 3, 2, 777L),
                         false));
     }
 

@@ -18,10 +18,11 @@ public record SchoolStatusResponse(boolean open, String endsAtLabel,
     }
 
     /// 邀请卡。tier/tierName/cardAmount=已领档(0=未开卡);claimableTier>tier 时可领/可升;
-    /// resetsAvailable=重置银行可用次数。
+    /// resetsAvailable=重置银行可用次数;subscriptionId=本人卡的订阅 id(页面拿它去用户侧
+    /// subscriptions/progress 匹配额度进度,只回本人自己的,无隐私外溢)。
     public record Card(int tier, String tierName, int cardAmount,
             int claimableTier, String claimableName, int claimableCard,
-            int resetsAvailable, int resetsUsed) {
+            int resetsAvailable, int resetsUsed, long subscriptionId) {
     }
 
     public static SchoolStatusResponse of(SchoolStatusView v) {
@@ -32,7 +33,7 @@ public record SchoolStatusResponse(boolean open, String endsAtLabel,
                 new Invite(v.invite().count(),
                         new Card(c.tier(), c.tierName(), c.cardAmount(),
                                 c.claimableTier(), c.claimableName(), c.claimableCard(),
-                                c.resetsAvailable(), c.resetsUsed()),
+                                c.resetsAvailable(), c.resetsUsed(), c.subscriptionId()),
                         v.invite().kfcUnlocked()));
     }
 }

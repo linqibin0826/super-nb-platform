@@ -48,7 +48,7 @@ class ClaimSchoolCardHandlerTest {
                 new SchoolStatusView.FirstChargeBlock(false, false, 0, "", "none"),
                 new SchoolStatusView.InviteBlock(count,
                         new SchoolStatusView.CardBlock(ownedTier, name, amount,
-                                deserved, "", 0, 0, 0),
+                                deserved, "", 0, 0, 0, 0),
                         count >= 20));
     }
 

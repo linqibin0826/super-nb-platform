@@ -93,7 +93,7 @@ public class SchoolStatusQueryService {
         int available = Math.max(0, SchoolSeasonProperties.resetsEarned(count) - used);
         CardBlock cb = new CardBlock(tier, tierName(tier), tierAmount(tier),
                 deserved, tierName(deserved), tierAmount(deserved),
-                available, used);
+                available, used, card.map(SchoolCardRecord::subscriptionId).orElse(0L));
         return new InviteBlock(count, cb, count >= SchoolSeasonProperties.KFC_TIER);
     }
 
