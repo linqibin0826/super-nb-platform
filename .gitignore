@@ -9,3 +9,4 @@ local-prod/
 .claude/settings.local.json
 .claude/hooks/.java-files-modified
 .claude/worktrees/
+**/.DS_Store
