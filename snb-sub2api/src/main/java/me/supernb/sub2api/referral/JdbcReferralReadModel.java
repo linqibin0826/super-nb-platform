@@ -102,6 +102,57 @@ public class JdbcReferralReadModel implements ReferralReadModel {
         return result;
     }
 
+    /// 合格被邀子查询(开学季共用):被邀人窗口内注册未软删,人生首笔 COMPLETED 付款单
+    /// (balance/subscription 均算)≥min 且落窗口内。`(ARRAY_AGG(...))[1]` 取首笔金额——
+    /// 聚合先按人生全量订单算出"第一笔",再用窗口过滤,保证"首充"是终身语义不是窗口语义。
+    private static final String SCHOOL_QUALIFIED_SUBQUERY =
+            "SELECT ua.inviter_id, po.user_id, "
+                    + "MIN(po.completed_at) AS first_at, "
+                    + "(ARRAY_AGG(po.amount ORDER BY po.completed_at, po.id))[1] AS first_amount "
+                    + "FROM payment_orders po "
+                    + "JOIN user_affiliates ua ON ua.user_id = po.user_id AND ua.inviter_id IS NOT NULL "
+                    + "JOIN users u ON u.id = po.user_id "
+                    + "AND u.created_at >= :start AND u.created_at < :end AND u.deleted_at IS NULL "
+                    + "WHERE po.status = 'COMPLETED' AND po.order_type IN ('balance','subscription') "
+                    + "GROUP BY ua.inviter_id, po.user_id";
+
+    /// 开学季带人里程碑计数:合格被邀人口径见 [ReferralReadModel#qualifiedInviteeCount]。
+    @Override
+    public int qualifiedInviteeCount(long inviterId, Instant start, Instant end, BigDecimal minAmountCny) {
+        MapSqlParameterSource p = new MapSqlParameterSource()
+                .addValue("inviter", inviterId)
+                .addValue("start", Timestamp.from(start))
+                .addValue("end", Timestamp.from(end))
+                .addValue("min", minAmountCny);
+        Integer n = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM (" + SCHOOL_QUALIFIED_SUBQUERY + ") q "
+                        + "WHERE q.inviter_id = :inviter "
+                        + "AND q.first_amount >= :min AND q.first_at >= :start AND q.first_at < :end",
+                p, Integer.class);
+        return n == null ? 0 : n;
+    }
+
+    /// 开学季拉人榜:人数降序 → 先达到者优先(MAX(first_at) ASC) → inviter_id;
+    /// 排除站长自号/admin/软删邀请人,name 经 `mask` 脱敏出场。
+    @Override
+    public List<InviterRank> topInviters(Instant start, Instant end, BigDecimal minAmountCny, int limit) {
+        MapSqlParameterSource p = new MapSqlParameterSource()
+                .addValue("start", Timestamp.from(start))
+                .addValue("end", Timestamp.from(end))
+                .addValue("min", minAmountCny)
+                .addValue("limit", limit);
+        return jdbc.query(
+                "SELECT iu.email AS inviter_email, COUNT(*) AS cnt, MAX(q.first_at) AS reached_at "
+                        + "FROM (" + SCHOOL_QUALIFIED_SUBQUERY + ") q "
+                        + "JOIN users iu ON iu.id = q.inviter_id AND iu.role = 'user' AND iu.deleted_at IS NULL "
+                        + "WHERE q.inviter_id <> 1 "
+                        + "AND q.first_amount >= :min AND q.first_at >= :start AND q.first_at < :end "
+                        + "GROUP BY q.inviter_id, iu.email "
+                        + "ORDER BY cnt DESC, reached_at ASC, q.inviter_id LIMIT :limit",
+                p,
+                (rs, i) -> new InviterRank(mask(rs.getString("inviter_email")), rs.getInt("cnt")));
+    }
+
     /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask](恒 ≥2 位被遮,短本地名不再回显完整本地部分)。
     /// null 原样返回;未脱敏邮箱只在本方法作用域内出现。
     static String mask(String email) {

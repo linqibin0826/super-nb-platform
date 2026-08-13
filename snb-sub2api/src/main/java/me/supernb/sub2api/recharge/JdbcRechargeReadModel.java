@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import me.supernb.sub2api.EmailMask;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -164,6 +165,22 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
                         + "WHERE user_id = :uid AND group_id = :gid AND notes = :notes)",
                 p, Boolean.class);
         return Boolean.TRUE.equals(found);
+    }
+
+    /// 人生第一笔 COMPLETED 付款单:balance/subscription 均算,completed_at 最早取一
+    /// (并列按 id,稳定序);金额取 amount(订单面额,定档口径)。
+    @Override
+    public Optional<FirstOrder> firstCompletedOrder(long userId) {
+        MapSqlParameterSource p = new MapSqlParameterSource().addValue("uid", userId);
+        List<FirstOrder> rows = jdbc.query(
+                "SELECT amount, completed_at FROM payment_orders "
+                        + "WHERE user_id = :uid AND status = 'COMPLETED' "
+                        + "AND order_type IN ('balance','subscription') "
+                        + "ORDER BY completed_at, id LIMIT 1",
+                p,
+                (rs, i) -> new FirstOrder(rs.getBigDecimal("amount"),
+                        rs.getTimestamp("completed_at").toInstant()));
+        return rows.stream().findFirst();
     }
 
     /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask]。恒 ≥2 位被遮(短本地名不再回显完整本地部分)。

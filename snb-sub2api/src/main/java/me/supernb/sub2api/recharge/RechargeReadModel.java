@@ -70,4 +70,15 @@ public interface RechargeReadModel {
     /// 必须带 group_id:三场疯四共用固定 notes `opening-fk`、靠**分组**区分场次,
     /// 只按 notes 判会让第二场的回头客被误判成「已领」。
     boolean hasSubscription(long userId, long groupId, String notes);
+
+    /// 首笔付款单(开学季首充礼定档用)。
+    ///
+    /// @param amountCny   订单面额(元,payment_orders.amount——返利/定档口径,非实付 pay_amount)
+    /// @param completedAt 完成时刻
+    record FirstOrder(BigDecimal amountCny, Instant completedAt) {
+    }
+
+    /// 该用户**人生第一笔** COMPLETED 付款订单(order_type ∈ {balance, subscription} 均算,
+    /// 按 completed_at 最早取一;从未成功付过款返回 empty)。开学季「只认人生第一笔」的判定真源。
+    java.util.Optional<FirstOrder> firstCompletedOrder(long userId);
 }

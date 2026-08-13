@@ -40,4 +40,21 @@ public interface ReferralReadModel {
     /// 与软删用户。referral_valid_count 成就用——"是否有效"(被邀者有首次成功调用)由调用方
     /// 交叉 user_metric 判断,本方法只给"谁邀请了谁"这个事实。
     java.util.Map<Long, java.util.List<Long>> allInviteeIdsByInviter();
+
+    /// 拉人榜条目(name 已脱敏)。
+    ///
+    /// @param name  邀请人脱敏标识
+    /// @param count 合格被邀人数(不封顶)
+    record InviterRank(String name, int count) {
+    }
+
+    /// 开学季合格被邀人数(带人里程碑计数):被邀人窗口内注册([start,end))且未软删,
+    /// 且其**人生首笔** COMPLETED 付款单(balance/subscription 均算)金额 ≥minAmountCny、
+    /// 完成时刻落窗口内。首笔金额不够,后面充再多也不算(首充语义)。
+    int qualifiedInviteeCount(long inviterId, Instant start, Instant end, BigDecimal minAmountCny);
+
+    /// 开学季拉人榜 Top limit:合格被邀人口径同 [#qualifiedInviteeCount];排序=人数降序 →
+    /// **先达到者优先**(第 N 个合格被邀人首充时刻早者在前,即 MAX(first_at) ASC) → inviter_id 升序。
+    /// 排除站长自号(inviter_id=1)、admin(role<>'user')、软删邀请人;name 已脱敏。
+    List<InviterRank> topInviters(Instant start, Instant end, BigDecimal minAmountCny, int limit);
 }
