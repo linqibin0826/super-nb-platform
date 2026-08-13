@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SchoolLeaderboardQueryService {
 
-    private static final int BOARD_SIZE = 10;
+    private static final int BOARD_SIZE = 20;
 
     private final SchoolSeasonProperties props;
     private final SchoolReadPort readPort;
@@ -23,7 +23,7 @@ public class SchoolLeaderboardQueryService {
         this.readPort = readPort;
     }
 
-    /// Top 10 拉人榜;休眠/未开始/领取截止后返回空列表。
+    /// Top 20 拉人榜(收官榜奖仍只发前 10,11~20 是候补席);休眠/未开始/领取截止后返回空列表。
     public List<Entry> top(Instant now) {
         if (!props.configured() || now.isBefore(props.start()) || !now.isBefore(props.claimDeadline())) {
             return List.of();

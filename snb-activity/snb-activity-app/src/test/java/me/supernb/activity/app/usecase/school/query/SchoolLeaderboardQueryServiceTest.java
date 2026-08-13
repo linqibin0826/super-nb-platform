@@ -44,7 +44,7 @@ class SchoolLeaderboardQueryServiceTest {
 
     @Test
     void topKeepsOrderAndUncappedCounts() {
-        when(read.topInviters(START, END, new BigDecimal("30"), 10)).thenReturn(List.of(
+        when(read.topInviters(START, END, new BigDecimal("30"), 20)).thenReturn(List.of(
                 new SchoolReadPort.InviterRank("zh***an@qq.com", 23, 40),
                 new SchoolReadPort.InviterRank("***@gmail.com", 3, 5),
                 new SchoolReadPort.InviterRank("d***e@qq.com", 0, 7)));
