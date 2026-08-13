@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import me.supernb.activity.adapter.rest.request.MarkAchievementsSeenRequest;
 import me.supernb.activity.adapter.rest.request.RaffleEnterRequest;
+import me.supernb.activity.adapter.rest.request.SchoolMilestoneClaimRequest;
 import me.supernb.activity.adapter.rest.request.ThursdayGuessRequest;
 import me.supernb.activity.adapter.rest.response.AchievementWallResponse;
 import me.supernb.activity.adapter.rest.response.MarkAchievementsSeenResponse;
@@ -20,6 +21,8 @@ import me.supernb.activity.adapter.rest.response.GateDrawResponse;
 import me.supernb.activity.adapter.rest.response.CheckinRewardsResponse;
 import me.supernb.activity.adapter.rest.response.CheckinStatusResponse;
 import me.supernb.activity.adapter.rest.response.RegistryStatusResponse;
+import me.supernb.activity.adapter.rest.response.SchoolLeaderboardResponse;
+import me.supernb.activity.adapter.rest.response.SchoolStatusResponse;
 import me.supernb.activity.adapter.rest.response.ThursdayBucketResponse;
 import me.supernb.activity.adapter.rest.response.ThursdayGuessResponse;
 import me.supernb.activity.app.usecase.achievement.command.MarkAchievementsSeenCommand;
@@ -41,6 +44,10 @@ import me.supernb.activity.app.usecase.raffle.RaffleQueryService;
 import me.supernb.activity.app.usecase.raffle.command.RegisterRaffleCommand;
 import me.supernb.activity.app.usecase.referral.query.ReferralLeaderboardQueryService;
 import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService;
+import me.supernb.activity.app.usecase.school.command.ClaimSchoolFirstChargeCommand;
+import me.supernb.activity.app.usecase.school.command.ClaimSchoolMilestoneCommand;
+import me.supernb.activity.app.usecase.school.query.SchoolLeaderboardQueryService;
+import me.supernb.activity.app.usecase.school.query.SchoolStatusQueryService;
 import me.supernb.activity.app.usecase.thursday.command.ClaimThursdayBucketCommand;
 import me.supernb.activity.app.usecase.thursday.command.SubmitThursdayGuessCommand;
 import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
@@ -97,9 +104,12 @@ public class ActivityController {
     private final AchievementWallQueryService achievementWallQuery;
     private final AchievementProperties achievementProps;
     private final ThursdayBucketQueryService thursdayBucketQuery;
+    private final SchoolStatusQueryService schoolStatusQuery;
+    private final SchoolLeaderboardQueryService schoolLeaderboardQuery;
 
-    /// 构造:注入 CommandBus 与十三个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、
-    /// 拉新榜、用量榜、发布会、注册表状态、签到状态、我的补给发放记录、疯四桶)与成就系统开关。
+    /// 构造:注入 CommandBus 与十五个查询用例(抽奖状态、充值榜、充值流水、奖池、近期中奖、我的中奖记录、
+    /// 拉新榜、用量榜、发布会、注册表状态、签到状态、我的补给发放记录、疯四桶、开学季状态、开学季拉人榜)
+    /// 与成就系统开关。
     public ActivityController(
             CommandBus commandBus,
             DrawStatusQueryService drawStatusQuery,
@@ -116,7 +126,9 @@ public class ActivityController {
             CheckinRewardQueryService checkinRewardQuery,
             AchievementWallQueryService achievementWallQuery,
             AchievementProperties achievementProps,
-            ThursdayBucketQueryService thursdayBucketQuery) {
+            ThursdayBucketQueryService thursdayBucketQuery,
+            SchoolStatusQueryService schoolStatusQuery,
+            SchoolLeaderboardQueryService schoolLeaderboardQuery) {
         this.commandBus = commandBus;
         this.drawStatusQuery = drawStatusQuery;
         this.leaderboardQuery = leaderboardQuery;
@@ -133,6 +145,8 @@ public class ActivityController {
         this.achievementWallQuery = achievementWallQuery;
         this.achievementProps = achievementProps;
         this.thursdayBucketQuery = thursdayBucketQuery;
+        this.schoolStatusQuery = schoolStatusQuery;
+        this.schoolLeaderboardQuery = schoolLeaderboardQuery;
     }
 
     /// 活动期充值榜 Top10(公开)。无进行中活动 → 空列表,不是异常。
@@ -235,6 +249,33 @@ public class ActivityController {
     @PostMapping("/thursday/claim")
     public ThursdayBucketResponse thursdayClaim(@CurrentUser UserProfile user) {
         return ThursdayBucketResponse.of(commandBus.handle(new ClaimThursdayBucketCommand(user.id())));
+    }
+
+    /// 开学季状态(需登录):首充礼档位/领取态 + 我的合格邀请数与里程碑各档领取态。
+    /// 只读不发卡——页面加载/轮询走这个,绝不能用 claim 探状态。
+    @GetMapping("/school/status")
+    public SchoolStatusResponse schoolStatus(@CurrentUser UserProfile user) {
+        return SchoolStatusResponse.of(schoolStatusQuery.view(user.id()));
+    }
+
+    /// 领开学季首充礼(需登录):档位按人生首笔付款单服务端重算,重复点幂等。写操作经 CommandBus 派发。
+    @PostMapping("/school/first-charge/claim")
+    public SchoolStatusResponse schoolClaimFirstCharge(@CurrentUser UserProfile user) {
+        return SchoolStatusResponse.of(commandBus.handle(new ClaimSchoolFirstChargeCommand(user.id())));
+    }
+
+    /// 领开学季里程碑卡(需登录):tier ∈ {1,3,6},解锁与领取态服务端重算;KFC 档(10)人工私聊无此路。
+    @PostMapping("/school/milestone/claim")
+    public SchoolStatusResponse schoolClaimMilestone(@RequestBody SchoolMilestoneClaimRequest body,
+            @CurrentUser UserProfile user) {
+        int tier = body == null || body.tier() == null ? -1 : body.tier();
+        return SchoolStatusResponse.of(commandBus.handle(new ClaimSchoolMilestoneCommand(user.id(), tier)));
+    }
+
+    /// 开学季拉人榜(公开免登录):Top 10,name 已脱敏,计数不封顶;收官/休眠回空数组。
+    @GetMapping("/school/leaderboard")
+    public SchoolLeaderboardResponse schoolLeaderboard() {
+        return SchoolLeaderboardResponse.of(schoolLeaderboardQuery.top(Instant.now()));
     }
 
     /// 猜桶竞猜状态(需登录):够不够门槛、还能不能猜、我猜了几、多少人猜了、结算后的答案与赢家猜的数。
