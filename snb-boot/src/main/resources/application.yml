@@ -80,6 +80,27 @@ activity:
     # 猜桶竞猜:门槛与金票闸机同口径(累计真实充值),封猜后不再收
     guess-close-at: ${THURSDAY_GUESS_CLOSE_AT:20:00}
     guess-threshold-cny: ${THURSDAY_GUESS_THRESHOLD_CNY:30}
+  school:
+    # 开学季·带兄弟来包机(2026-08-13,ai-relay runbook 41):新客首充三档总额卡 +
+    # 带人里程碑 1/3/6 + 拉人榜。start/end 空或六组任一为 0 = 功能休眠(端点回 closed)。
+    # ⚠️ compose 不加 environment 映射 = 这里的默认值(休眠)静默生效——上线必须映射全 8 键。
+    # ⚠️ start/end/claim-deadline 是 ISO-8601 Instant,格式错启动直接失败(宁可起不来)。
+    # 🚨 六组分立(首充三档 + 里程碑三档):总额卡靠周/月窗封顶,同组续期只加天数不重置额度
+    # (07-31 日卡事故的反向应用),两线共用组会让叠加领取的第二张卡变空壳。
+    start: ${SCHOOL_START:}
+    end: ${SCHOOL_END:}
+    claim-deadline: ${SCHOOL_CLAIM_DEADLINE:}   # 缺省 = end + 48h(宽限只放领取,资格钉 [start,end))
+    fc-group-50: ${SCHOOL_FC_GROUP_50:0}
+    fc-group-100: ${SCHOOL_FC_GROUP_100:0}
+    fc-group-200: ${SCHOOL_FC_GROUP_200:0}
+    ms-group-1: ${SCHOOL_MS_GROUP_1:0}
+    ms-group-3: ${SCHOOL_MS_GROUP_3:0}
+    ms-group-6: ${SCHOOL_MS_GROUP_6:0}
+    validity-days: ${SCHOOL_VALIDITY_DAYS:3}
+    notes: ${SCHOOL_NOTES:school-season}
+    rate-limit:
+      capacity: ${SCHOOL_RATE_LIMIT_CAPACITY:30}
+      refill-per-sec: ${SCHOOL_RATE_LIMIT_REFILL:5}
   checkin:
     launch-date: ${CHECKIN_LAUNCH_DATE:2026-07-13}
     daily-nb-points: ${CHECKIN_DAILY_NB_POINTS:3}
