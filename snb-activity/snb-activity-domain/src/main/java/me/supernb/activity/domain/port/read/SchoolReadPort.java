@@ -22,7 +22,8 @@ public interface SchoolReadPort {
     record FirstCharge(BigDecimal amountCny, Instant completedAt) {
     }
 
-    /// 拉人榜条目(name 已脱敏)。
-    record InviterRank(String name, int count) {
+    /// 拉人榜条目(name 已脱敏)。count=首充合格数(排名与榜奖只认它);
+    /// invited=窗口内注册总数(含未充值,展示用)。
+    record InviterRank(String name, int count, int invited) {
     }
 }

@@ -45,12 +45,16 @@ class SchoolLeaderboardQueryServiceTest {
     @Test
     void topKeepsOrderAndUncappedCounts() {
         when(read.topInviters(START, END, new BigDecimal("30"), 10)).thenReturn(List.of(
-                new SchoolReadPort.InviterRank("zh***an@qq.com", 23),
-                new SchoolReadPort.InviterRank("***@gmail.com", 3)));
+                new SchoolReadPort.InviterRank("zh***an@qq.com", 23, 40),
+                new SchoolReadPort.InviterRank("***@gmail.com", 3, 5),
+                new SchoolReadPort.InviterRank("d***e@qq.com", 0, 7)));
         List<SchoolLeaderboardQueryService.Entry> top = svc().top(IN_WINDOW);
-        assertThat(top).hasSize(2);
+        assertThat(top).hasSize(3);
         assertThat(top.get(0).name()).isEqualTo("zh***an@qq.com");
         assertThat(top.get(0).count()).isEqualTo(23);   // 榜单不封顶(里程碑封 10 是奖励口径)
+        assertThat(top.get(0).invited()).isEqualTo(40); // 注册总数透传(展示列)
         assertThat(top.get(1).count()).isEqualTo(3);
+        assertThat(top.get(2).count()).isZero();        // 只注册没充值的也上榜(垫底)
+        assertThat(top.get(2).invited()).isEqualTo(7);
     }
 }

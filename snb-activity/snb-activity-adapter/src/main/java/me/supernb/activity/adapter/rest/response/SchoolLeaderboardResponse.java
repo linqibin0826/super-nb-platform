@@ -7,14 +7,14 @@ import me.supernb.activity.app.usecase.school.query.SchoolLeaderboardQueryServic
 /// 收官/休眠时 entries 为空数组。
 public record SchoolLeaderboardResponse(List<Entry> entries) {
 
-    /// 榜单条目。
-    public record Entry(int rank, String name, int count) {
+    /// 榜单条目。count=首充合格数(排名与榜奖口径);invited=窗口内注册总数(含未充值,展示)。
+    public record Entry(int rank, String name, int count, int invited) {
     }
 
     public static SchoolLeaderboardResponse of(List<SchoolLeaderboardQueryService.Entry> top) {
         List<Entry> entries = new java.util.ArrayList<>();
         for (int i = 0; i < top.size(); i++) {
-            entries.add(new Entry(i + 1, top.get(i).name(), top.get(i).count()));
+            entries.add(new Entry(i + 1, top.get(i).name(), top.get(i).count(), top.get(i).invited()));
         }
         return new SchoolLeaderboardResponse(List.copyOf(entries));
     }

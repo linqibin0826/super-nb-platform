@@ -31,11 +31,11 @@ public class SchoolLeaderboardQueryService {
         return readPort.topInviters(props.start(), props.end(),
                         SchoolSeasonProperties.INVITEE_MIN_CNY, BOARD_SIZE)
                 .stream()
-                .map(r -> new Entry(r.name(), r.count()))
+                .map(r -> new Entry(r.name(), r.count(), r.invited()))
                 .toList();
     }
 
-    /// 榜单条目(name 已脱敏)。
-    public record Entry(String name, int count) {
+    /// 榜单条目(name 已脱敏)。count=首充合格数(排名口径);invited=注册总数(展示)。
+    public record Entry(String name, int count, int invited) {
     }
 }

@@ -132,7 +132,8 @@ public class JdbcReferralReadModel implements ReferralReadModel {
         return n == null ? 0 : n;
     }
 
-    /// 开学季拉人榜:人数降序 → 先达到者优先(MAX(first_at) ASC) → inviter_id;
+    /// 开学季拉人榜:底座=窗口内注册数(含未充值,拉人动作即时可见),LEFT JOIN 合格数;
+    /// 排序=合格数降序 → 先达到者优先(MAX(first_at) ASC,NULLS LAST) → 注册数降序 → inviter_id;
     /// 排除站长自号/admin/软删邀请人,name 经 `mask` 脱敏出场。
     @Override
     public List<InviterRank> topInviters(Instant start, Instant end, BigDecimal minAmountCny, int limit) {
@@ -142,15 +143,27 @@ public class JdbcReferralReadModel implements ReferralReadModel {
                 .addValue("min", minAmountCny)
                 .addValue("limit", limit);
         return jdbc.query(
-                "SELECT iu.email AS inviter_email, COUNT(*) AS cnt, MAX(q.first_at) AS reached_at "
-                        + "FROM (" + SCHOOL_QUALIFIED_SUBQUERY + ") q "
-                        + "JOIN users iu ON iu.id = q.inviter_id AND iu.role = 'user' AND iu.deleted_at IS NULL "
-                        + "WHERE q.inviter_id <> 1 "
-                        + "AND q.first_amount >= :min AND q.first_at >= :start AND q.first_at < :end "
-                        + "GROUP BY q.inviter_id, iu.email "
-                        + "ORDER BY cnt DESC, reached_at ASC, q.inviter_id LIMIT :limit",
+                "SELECT iu.email AS inviter_email, COALESCE(q.cnt, 0) AS cnt, inv.invited AS invited "
+                        + "FROM ("
+                        + "  SELECT ua.inviter_id, COUNT(*) AS invited "
+                        + "  FROM user_affiliates ua "
+                        + "  JOIN users u ON u.id = ua.user_id "
+                        + "    AND u.created_at >= :start AND u.created_at < :end AND u.deleted_at IS NULL "
+                        + "  WHERE ua.inviter_id IS NOT NULL AND ua.inviter_id <> 1 "
+                        + "  GROUP BY ua.inviter_id"
+                        + ") inv "
+                        + "LEFT JOIN ("
+                        + "  SELECT s.inviter_id, COUNT(*) AS cnt, MAX(s.first_at) AS reached_at "
+                        + "  FROM (" + SCHOOL_QUALIFIED_SUBQUERY + ") s "
+                        + "  WHERE s.first_amount >= :min AND s.first_at >= :start AND s.first_at < :end "
+                        + "  GROUP BY s.inviter_id"
+                        + ") q ON q.inviter_id = inv.inviter_id "
+                        + "JOIN users iu ON iu.id = inv.inviter_id AND iu.role = 'user' AND iu.deleted_at IS NULL "
+                        + "ORDER BY cnt DESC, q.reached_at ASC NULLS LAST, invited DESC, inv.inviter_id "
+                        + "LIMIT :limit",
                 p,
-                (rs, i) -> new InviterRank(mask(rs.getString("inviter_email")), rs.getInt("cnt")));
+                (rs, i) -> new InviterRank(mask(rs.getString("inviter_email")),
+                        rs.getInt("cnt"), rs.getInt("invited")));
     }
 
     /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask](恒 ≥2 位被遮,短本地名不再回显完整本地部分)。

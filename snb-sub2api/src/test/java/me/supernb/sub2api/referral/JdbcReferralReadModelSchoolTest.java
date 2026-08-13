@@ -119,12 +119,35 @@ class JdbcReferralReadModelSchoolTest {
     @Test
     void topInvitersOrdersByCountThenEarliestReachAndMasks() {
         List<ReferralReadModel.InviterRank> top = readModel.topInviters(START, END, MIN, 10);
-        // bob 与 alice 同 2 人,bob 08-15 先凑齐 → 排前;carol(admin)/站长自号不出榜
-        assertThat(top).hasSize(2);
+        // bob 与 alice 同 2 个合格,bob 08-15 先凑齐 → 排前;carol(admin)/站长自号不出榜;
+        // dave 0 合格但有注册 → 垫底也上榜(见 zeroQualified 用例)
+        assertThat(top.size()).isGreaterThanOrEqualTo(2);
         assertThat(top.get(0).name()).isEqualTo("***@gmail.com");
         assertThat(top.get(0).count()).isEqualTo(2);
         assertThat(top.get(1).name()).isEqualTo("a***e@qq.com");
         assertThat(top.get(1).count()).isEqualTo(2);
+        // alice 窗口内注册的被邀:11/12/13/15(14 窗口前注册、16 软删不计) → invited=4
+        assertThat(top.get(1).invited()).isEqualTo(4);
+        assertThat(top.get(0).invited()).isEqualTo(2);
+    }
+
+    @Test
+    void zeroQualifiedButInvitedStillOnBoardAtBottom() {
+        // dave(40):拉了 1 个窗口内注册、没充值的 → 合格 0 也上榜,排在所有合格>0 之后
+        jdbc.update("INSERT INTO users VALUES (?,?,?,?,?)", 40L, "dave@qq.com", "user",
+                Timestamp.from(Instant.parse("2026-01-01T00:00:00Z")), null);
+        user(41, "41@qq.com", "user", "2026-08-14T00:00:00Z", null);
+        aff(41, 40);
+        try {
+            List<ReferralReadModel.InviterRank> top = readModel.topInviters(START, END, MIN, 10);
+            ReferralReadModel.InviterRank last = top.get(top.size() - 1);
+            assertThat(last.name()).isEqualTo("d***e@qq.com");
+            assertThat(last.count()).isZero();
+            assertThat(last.invited()).isEqualTo(1);
+        } finally {
+            jdbc.update("DELETE FROM user_affiliates WHERE user_id = 41");
+            jdbc.update("DELETE FROM users WHERE id IN (40, 41)");
+        }
     }
 
     @Test

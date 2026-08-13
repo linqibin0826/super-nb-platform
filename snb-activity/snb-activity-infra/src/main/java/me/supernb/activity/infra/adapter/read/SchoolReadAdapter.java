@@ -38,7 +38,7 @@ public class SchoolReadAdapter implements SchoolReadPort {
     @Override
     public List<InviterRank> topInviters(Instant start, Instant end, BigDecimal minAmountCny, int limit) {
         return referral.topInviters(start, end, minAmountCny, limit).stream()
-                .map(r -> new InviterRank(r.name(), r.count()))
+                .map(r -> new InviterRank(r.name(), r.count(), r.invited()))
                 .toList();
     }
 }

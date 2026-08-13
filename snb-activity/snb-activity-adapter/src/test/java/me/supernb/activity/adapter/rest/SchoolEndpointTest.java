@@ -116,14 +116,15 @@ class SchoolEndpointTest {
     @Test
     void leaderboardIsPublicAndRanked() throws Exception {
         when(boardQuery.top(ArgumentMatchers.any())).thenReturn(List.of(
-                new SchoolLeaderboardQueryService.Entry("zh***an@qq.com", 12),
-                new SchoolLeaderboardQueryService.Entry("***@gmail.com", 3)));
+                new SchoolLeaderboardQueryService.Entry("zh***an@qq.com", 12, 20),
+                new SchoolLeaderboardQueryService.Entry("***@gmail.com", 3, 3)));
 
         mvc.perform(get("/activity/v1/school/leaderboard"))   // 不带 Authorization:公开端点
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.entries[0].rank").value(1))
                 .andExpect(jsonPath("$.entries[0].name").value("zh***an@qq.com"))
                 .andExpect(jsonPath("$.entries[0].count").value(12))
+                .andExpect(jsonPath("$.entries[0].invited").value(20))
                 .andExpect(jsonPath("$.entries[1].rank").value(2));
     }
 }

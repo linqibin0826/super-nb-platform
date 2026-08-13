@@ -43,9 +43,11 @@ public interface ReferralReadModel {
 
     /// 拉人榜条目(name 已脱敏)。
     ///
-    /// @param name  邀请人脱敏标识
-    /// @param count 合格被邀人数(不封顶)
-    record InviterRank(String name, int count) {
+    /// @param name    邀请人脱敏标识
+    /// @param count   合格被邀人数(首充 ≥min 落窗口;不封顶;**排名与榜奖只认它**——
+    ///                注册免费可刷,绝不能计入奖励口径,07-10 注册即送事件红线)
+    /// @param invited 窗口内经其链接注册的总人数(含未充值;展示用,让「谁在拉人」可见)
+    record InviterRank(String name, int count, int invited) {
     }
 
     /// 开学季合格被邀人数(带人里程碑计数):被邀人窗口内注册([start,end))且未软删,
@@ -53,8 +55,9 @@ public interface ReferralReadModel {
     /// 完成时刻落窗口内。首笔金额不够,后面充再多也不算(首充语义)。
     int qualifiedInviteeCount(long inviterId, Instant start, Instant end, BigDecimal minAmountCny);
 
-    /// 开学季拉人榜 Top limit:合格被邀人口径同 [#qualifiedInviteeCount];排序=人数降序 →
-    /// **先达到者优先**(第 N 个合格被邀人首充时刻早者在前,即 MAX(first_at) ASC) → inviter_id 升序。
-    /// 排除站长自号(inviter_id=1)、admin(role<>'user')、软删邀请人;name 已脱敏。
+    /// 开学季拉人榜 Top limit:合格被邀人口径同 [#qualifiedInviteeCount];排序=合格数降序 →
+    /// **先达到者优先**(第 N 个合格被邀人首充时刻早者在前,即 MAX(first_at) ASC) →
+    /// 注册数降序 → inviter_id 升序。**只有注册没充值的邀请人也上榜**(合格 0 垫底,
+    /// 让拉人动作即时可见);排除站长自号(inviter_id=1)、admin、软删邀请人;name 已脱敏。
     List<InviterRank> topInviters(Instant start, Instant end, BigDecimal minAmountCny, int limit);
 }
