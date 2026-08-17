@@ -100,7 +100,7 @@ export function AccountListPage() {
         columns={[
           { key: 'email', title: '邮箱' },
           { key: 'provider', title: '服务商' },
-          { key: 'status', title: '状态' },
+          { key: 'status', title: '邮箱状态' },
           { key: 'owner', title: '负责人' },
           { key: 'subs', title: '订阅' },
           { key: 'ops', title: '' },

@@ -306,17 +306,22 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
               <label className="mb-1.5 block text-sm font-medium text-snb-t2">负责人</label>
               <Input value={form.owner} onChange={(e) => set({ owner: e.target.value })} />
             </div>
-            <FieldSelect
-              label="状态"
-              value={form.status}
-              onChange={(e) => set({ status: e.target.value as AccountStatus })}
-            >
-              {STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </FieldSelect>
+            <div>
+              <FieldSelect
+                label="邮箱状态"
+                value={form.status}
+                onChange={(e) => set({ status: e.target.value as AccountStatus })}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </FieldSelect>
+              <p className="mt-1 text-xs text-snb-t3">
+                指邮箱账号本身的死活;ChatGPT/Claude 服务被封记在下方订阅行,不改这里。
+              </p>
+            </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-snb-t2">货源</label>
               <Input value={form.source} onChange={(e) => set({ source: e.target.value })} placeholder="松哥店铺…" />
