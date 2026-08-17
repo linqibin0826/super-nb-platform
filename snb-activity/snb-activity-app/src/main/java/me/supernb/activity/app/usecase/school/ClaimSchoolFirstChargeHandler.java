@@ -65,7 +65,7 @@ public class ClaimSchoolFirstChargeHandler
         long groupId = props.firstChargeGroup(fc.tierCard());
         SchoolGrantFlow.grant(grantPort, claimPort, log, "开学季首充礼",
                 userId, SchoolClaimRecord.KIND_FIRST_CHARGE, fc.tierCard(), groupId,
-                props.validityDays(), props.notes());
+                SchoolSeasonProperties.firstChargeValidityDays(fc.tierCard()), props.notes());
         return query.view(userId);
     }
 }

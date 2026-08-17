@@ -34,7 +34,7 @@ class ClaimSchoolFirstChargeHandlerTest {
     private static SchoolSeasonProperties props() {
         return new SchoolSeasonProperties(
                 "2026-08-13T04:00:00Z", "2026-08-31T16:00:00Z", "",
-                129L, 130L, 131L, 132L, 133L, 134L, 135L, 3, "school-season");
+                129L, 130L, 131L, 132L, 133L, 134L, 135L, "school-season");
     }
 
     private ClaimSchoolFirstChargeHandler handler(SubscriptionGrantPort port) {
@@ -84,13 +84,13 @@ class ClaimSchoolFirstChargeHandlerTest {
         when(claims.find(1L, SchoolClaimRecord.KIND_FIRST_CHARGE, 100)).thenReturn(Optional.empty());
         when(claims.insertPending(1L, SchoolClaimRecord.KIND_FIRST_CHARGE, 100, 130L))
                 .thenReturn(Optional.of(pendingRec(9L, 100, 130L)));
-        when(grantPort.bulkGrant(List.of(1L), 130L, 3, "school-season"))
+        when(grantPort.bulkGrant(List.of(1L), 130L, 7, "school-season"))
                 .thenReturn(new SubscriptionGrantOutcome(Map.of(1L, "created"), List.of()));
 
         handler(grantPort).handle(new ClaimSchoolFirstChargeCommand(1L));
 
         verify(claims).insertPending(1L, SchoolClaimRecord.KIND_FIRST_CHARGE, 100, 130L);
-        verify(grantPort).bulkGrant(List.of(1L), 130L, 3, "school-season");
+        verify(grantPort).bulkGrant(List.of(1L), 130L, 7, "school-season");
         verify(claims).markSuccess(9L);
     }
 
@@ -113,7 +113,7 @@ class ClaimSchoolFirstChargeHandlerTest {
         when(claims.find(1L, SchoolClaimRecord.KIND_FIRST_CHARGE, 100)).thenReturn(Optional.empty());
         when(claims.insertPending(1L, SchoolClaimRecord.KIND_FIRST_CHARGE, 100, 130L))
                 .thenReturn(Optional.of(pendingRec(9L, 100, 130L)));
-        when(grantPort.bulkGrant(List.of(1L), 130L, 3, "school-season"))
+        when(grantPort.bulkGrant(List.of(1L), 130L, 7, "school-season"))
                 .thenReturn(new SubscriptionGrantOutcome(Map.of(1L, "failed"), List.of("boom")));
 
         assertThatThrownBy(() -> handler(grantPort).handle(new ClaimSchoolFirstChargeCommand(1L)))
@@ -128,7 +128,7 @@ class ClaimSchoolFirstChargeHandlerTest {
         when(claims.find(1L, SchoolClaimRecord.KIND_FIRST_CHARGE, 100)).thenReturn(Optional.of(
                 new SchoolClaimRecord(9L, 1L, SchoolClaimRecord.KIND_FIRST_CHARGE, 100, 130L,
                         SchoolClaimRecord.STATUS_FAILED, 1, "boom")));
-        when(grantPort.bulkGrant(List.of(1L), 130L, 3, "school-season"))
+        when(grantPort.bulkGrant(List.of(1L), 130L, 7, "school-season"))
                 .thenReturn(new SubscriptionGrantOutcome(Map.of(1L, "created"), List.of()));
 
         handler(grantPort).handle(new ClaimSchoolFirstChargeCommand(1L));

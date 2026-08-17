@@ -12,7 +12,7 @@ class SchoolSeasonPropertiesTest {
 
     private SchoolSeasonProperties props(String start, String end, String deadline) {
         return new SchoolSeasonProperties(start, end, deadline,
-                129L, 130L, 131L, 132L, 133L, 134L, 135L, 3, "school-season");
+                129L, 130L, 131L, 132L, 133L, 134L, 135L, "school-season");
     }
 
     @Test
@@ -24,11 +24,11 @@ class SchoolSeasonPropertiesTest {
     void zeroGroupIdMeansDormant() {
         SchoolSeasonProperties p = new SchoolSeasonProperties(
                 "2026-08-13T04:00:00Z", "2026-08-31T16:00:00Z", "",
-                0L, 130L, 131L, 132L, 133L, 134L, 135L, 3, "school-season");
+                0L, 130L, 131L, 132L, 133L, 134L, 135L, "school-season");
         assertThat(p.configured()).isFalse();
         SchoolSeasonProperties p2 = new SchoolSeasonProperties(
                 "2026-08-13T04:00:00Z", "2026-08-31T16:00:00Z", "",
-                129L, 130L, 131L, 132L, 133L, 134L, 0L, 3, "school-season");
+                129L, 130L, 131L, 132L, 133L, 134L, 0L, "school-season");
         assertThat(p2.configured()).isFalse();
     }
 
@@ -90,6 +90,16 @@ class SchoolSeasonPropertiesTest {
         assertThat(SchoolSeasonProperties.resetsEarned(10)).isEqualTo(7);  // 第 10 人=升 ProLite
         assertThat(SchoolSeasonProperties.resetsEarned(20)).isEqualTo(16); // 第 20 人=升 Pro
         assertThat(SchoolSeasonProperties.resetsEarned(25)).isEqualTo(21); // 20 后每人继续 +1 不封顶
+    }
+
+    @Test
+    void firstChargeValidityDaysPerTier() {
+        // 2026-08-17 站长调参:50→3 天 / 100→7 天 / 200→14 天(原三档同 3 天)
+        assertThat(SchoolSeasonProperties.firstChargeValidityDays(50)).isEqualTo(3);
+        assertThat(SchoolSeasonProperties.firstChargeValidityDays(100)).isEqualTo(7);
+        assertThat(SchoolSeasonProperties.firstChargeValidityDays(200)).isEqualTo(14);
+        assertThatThrownBy(() -> SchoolSeasonProperties.firstChargeValidityDays(70))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

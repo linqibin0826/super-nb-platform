@@ -98,7 +98,6 @@ activity:
     card-group-plus: ${SCHOOL_CARD_GROUP_PLUS:0}
     card-group-prolite: ${SCHOOL_CARD_GROUP_PROLITE:0}
     card-group-pro: ${SCHOOL_CARD_GROUP_PRO:0}
-    validity-days: ${SCHOOL_VALIDITY_DAYS:3}    # 首充卡固定 3 天;邀请卡有效期动态=发卡→活动结束
     notes: ${SCHOOL_NOTES:school-season}
     rate-limit:
       capacity: ${SCHOOL_RATE_LIMIT_CAPACITY:30}

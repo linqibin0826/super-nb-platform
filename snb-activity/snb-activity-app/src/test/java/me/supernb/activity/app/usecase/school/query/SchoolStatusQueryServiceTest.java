@@ -36,14 +36,14 @@ class SchoolStatusQueryServiceTest {
     private SchoolStatusQueryService svc() {
         SchoolSeasonProperties props = new SchoolSeasonProperties(
                 "2026-08-13T04:00:00Z", "2026-08-31T16:00:00Z", "",
-                129L, 130L, 131L, 132L, 133L, 134L, 135L, 3, "school-season");
+                129L, 130L, 131L, 132L, 133L, 134L, 135L, "school-season");
         return new SchoolStatusQueryService(props, read, claims, cards);
     }
 
     @Test
     void dormantConfigIsClosed() {
         SchoolSeasonProperties dormant = new SchoolSeasonProperties(
-                "", "", "", 0, 0, 0, 0, 0, 0, 0, 3, "school-season");
+                "", "", "", 0, 0, 0, 0, 0, 0, 0, "school-season");
         SchoolStatusQueryService svc = new SchoolStatusQueryService(dormant, read, claims, cards);
         assertThat(svc.view(1L, IN_WINDOW).open()).isFalse();
     }

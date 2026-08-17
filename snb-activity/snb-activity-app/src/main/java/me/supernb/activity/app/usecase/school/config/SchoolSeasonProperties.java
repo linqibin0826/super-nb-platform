@@ -44,7 +44,6 @@ public class SchoolSeasonProperties {
     private final long cardGroupPlus;
     private final long cardGroupProlite;
     private final long cardGroupPro;
-    private final int validityDays;
     private final String notes;
 
     public SchoolSeasonProperties(
@@ -58,7 +57,6 @@ public class SchoolSeasonProperties {
             @Value("${activity.school.card-group-plus:0}") long cardGroupPlus,
             @Value("${activity.school.card-group-prolite:0}") long cardGroupProlite,
             @Value("${activity.school.card-group-pro:0}") long cardGroupPro,
-            @Value("${activity.school.validity-days:3}") int validityDays,
             @Value("${activity.school.notes:school-season}") String notes) {
         this.start = parseInstant(start, "activity.school.start");
         this.end = parseInstant(end, "activity.school.end");
@@ -72,7 +70,6 @@ public class SchoolSeasonProperties {
         this.cardGroupPlus = cardGroupPlus;
         this.cardGroupProlite = cardGroupProlite;
         this.cardGroupPro = cardGroupPro;
-        this.validityDays = validityDays;
         this.notes = notes;
     }
 
@@ -153,7 +150,7 @@ public class SchoolSeasonProperties {
     }
 
     /// 邀请卡有效期(天):发卡/升档时刻 → 活动结束,向上取整、至少 1 天
-    /// (「卡陪你到月底」语义;首充卡仍走固定 validityDays=3)。
+    /// (「卡陪你到月底」语义;首充卡走 firstChargeValidityDays 分档固定窗口)。
     public int cardValidityDays(Instant now) {
         if (end == null || !now.isBefore(end)) {
             return 1;
@@ -162,9 +159,14 @@ public class SchoolSeasonProperties {
         return (int) Math.max(1, (seconds + 86399) / 86400);
     }
 
-    /// 首充卡固定窗口天数。
-    public int validityDays() {
-        return validityDays;
+    /// 首充卡分档窗口天数(2026-08-17 站长调参:原三档同 3 天改为按卡面分档)。
+    public static int firstChargeValidityDays(int tierCard) {
+        return switch (tierCard) {
+            case 50 -> 3;
+            case 100 -> 7;
+            case 200 -> 14;
+            default -> throw new IllegalArgumentException("未知首充卡面:" + tierCard);
+        };
     }
 
     public String notes() {
