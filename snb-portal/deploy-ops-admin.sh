@@ -8,4 +8,4 @@ set -euo pipefail
 cd "$(dirname "$0")"
 pnpm build:ops-admin
 rsync -avz --delete dist-ops-admin/ vultr:/root/sub2api/deploy/caddy_config/web/ops-admin/
-echo "✅ ops-admin 已同步 vultr → https://api.super-nb.me/ops-admin/"
+echo "✅ ops-admin 已同步 vultr → https://ops.super-nb.me/"
