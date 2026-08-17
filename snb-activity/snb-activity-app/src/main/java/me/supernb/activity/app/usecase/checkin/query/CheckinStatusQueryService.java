@@ -29,6 +29,7 @@ import me.supernb.activity.domain.port.checkin.CheckinPort;
 import me.supernb.activity.domain.port.nb.NbLedgerPort;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
 import me.supernb.activity.domain.port.read.CheckinRechargeReadPort;
+import me.supernb.activity.domain.port.read.UserBalanceReadPort;
 import org.springframework.stereotype.Service;
 
 /// 签到状态查询(spec §7.3;字段形状按前端接线计划契约总览钉死)。业务文案(statusText/
@@ -53,15 +54,17 @@ public class CheckinStatusQueryService {
     private final CheckinDailyRewardPort dailyRewardPort;
     private final CheckinBalanceProperties balanceProps;
     private final CheckinEntryGateChecker entryGate;
+    private final UserBalanceReadPort userBalancePort;
 
     /// 构造:注入签到端口、补给充值读端口、账龄读端口、NB 账本读端口、日返网费台账端口、
     /// 四个配置类(settlementProps 提供加时资格的当月累计出勤门槛,与月度结算 job 同一真源;
-    /// balanceProps 提供返网费单价/门槛/总闸)与准入闸判定器(与打卡命令共用同一真源)。
+    /// balanceProps 提供返网费单价/门槛/总闸)、准入闸判定器(与打卡命令共用同一真源)
+    /// 与用户余额读端口(负余额禁签闸门,与打卡命令同一真源)。
     public CheckinStatusQueryService(CheckinPort checkinPort, CheckinRechargeReadPort rechargePort,
             AccountRegistrationReadPort registrationPort, NbLedgerPort nbLedger, CheckinProperties props,
             CheckinTierProperties tierProps, CheckinSettlementProperties settlementProps,
             CheckinDailyRewardPort dailyRewardPort, CheckinBalanceProperties balanceProps,
-            CheckinEntryGateChecker entryGate) {
+            CheckinEntryGateChecker entryGate, UserBalanceReadPort userBalancePort) {
         this.checkinPort = checkinPort;
         this.rechargePort = rechargePort;
         this.registrationPort = registrationPort;
@@ -72,6 +75,7 @@ public class CheckinStatusQueryService {
         this.dailyRewardPort = dailyRewardPort;
         this.balanceProps = balanceProps;
         this.entryGate = entryGate;
+        this.userBalancePort = userBalancePort;
     }
 
     /// 组装某用户的签到状态视图(生产入口:今天 = Asia/Shanghai 当前自然日)。
@@ -102,6 +106,11 @@ public class CheckinStatusQueryService {
                 eligible = false;
                 ineligibleReason = "recharge_required";
             }
+        }
+        // 负余额禁签(2026-08-17):欠网费不能上机,与打卡命令同一道闸。页面照常渲染,只锁打卡。
+        if (eligible && userBalancePort.balance(userId).signum() < 0) {
+            eligible = false;
+            ineligibleReason = "balance_negative";
         }
 
         boolean punchedToday = checkinPort.checkedInOn(userId, today);

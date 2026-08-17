@@ -77,7 +77,8 @@ class ActivityWiringTest {
     /// 本仓管,这里只补三张形状最小的桩表满足既有 SQL 假设,不插入行(COALESCE 对空表归零)。
     @BeforeEach
     void ensureUsersTableStub() {
-        jdbc.execute("CREATE TABLE IF NOT EXISTS users (id BIGINT PRIMARY KEY, created_at TIMESTAMPTZ)");
+        jdbc.execute("CREATE TABLE IF NOT EXISTS users (id BIGINT PRIMARY KEY, created_at TIMESTAMPTZ, "
+                + "balance NUMERIC(20,8) DEFAULT 0, deleted_at TIMESTAMPTZ)");
         jdbc.execute("CREATE TABLE IF NOT EXISTS payment_orders (id BIGSERIAL PRIMARY KEY, user_id BIGINT, "
                 + "order_type TEXT, status TEXT, amount NUMERIC(20,2), completed_at TIMESTAMPTZ, "
                 + "recharge_code TEXT)");

@@ -1,11 +1,13 @@
 package me.supernb.activity.app.usecase.checkin.command;
 
 import dev.linqibin.commons.cqrs.CommandHandler;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import me.supernb.activity.domain.exception.CheckinAlreadyDoneException;
+import me.supernb.activity.domain.exception.CheckinBalanceNegativeException;
 import me.supernb.activity.domain.exception.CheckinRechargeRequiredException;
 import me.supernb.activity.domain.exception.CheckinTooYoungException;
 import me.supernb.activity.domain.model.checkin.CheckInResult;
@@ -17,6 +19,7 @@ import me.supernb.activity.app.usecase.checkin.CheckinBalanceGrantService;
 import me.supernb.activity.app.usecase.checkin.CheckinEntryGateChecker;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
+import me.supernb.activity.domain.port.read.UserBalanceReadPort;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -38,18 +41,21 @@ public class CheckInHandler implements CommandHandler<CheckInCommand, CheckInRes
     private final ApplicationEventPublisher events;
     private final CheckinBalanceGrantService balanceGrant;
     private final CheckinEntryGateChecker entryGate;
+    private final UserBalanceReadPort balancePort;
 
-    /// 构造:注入账龄读端口、签到端口、签到配置(NB 单价)、事件发布器、返网费结算服务
-    /// 与准入闸判定器(与状态查询共用同一真源)。
+    /// 构造:注入账龄读端口、签到端口、签到配置(NB 单价)、事件发布器、返网费结算服务、
+    /// 准入闸判定器(与状态查询共用同一真源)与用户余额读端口(负余额禁签闸门)。
     public CheckInHandler(AccountRegistrationReadPort registration, CheckinPort checkinPort,
             CheckinProperties props, ApplicationEventPublisher events,
-            CheckinBalanceGrantService balanceGrant, CheckinEntryGateChecker entryGate) {
+            CheckinBalanceGrantService balanceGrant, CheckinEntryGateChecker entryGate,
+            UserBalanceReadPort balancePort) {
         this.registration = registration;
         this.checkinPort = checkinPort;
         this.props = props;
         this.events = events;
         this.balanceGrant = balanceGrant;
         this.entryGate = entryGate;
+        this.balancePort = balancePort;
     }
 
     @Override
@@ -63,6 +69,13 @@ public class CheckInHandler implements CommandHandler<CheckInCommand, CheckInRes
         LocalDate today = LocalDate.now(ZONE);
         if (entryGate.enabled() && !entryGate.check(command.userId(), today).eligible()) {
             throw new CheckinRechargeRequiredException(entryGate.lockedMessage());
+        }
+        // 负余额禁签(2026-08-17 站长拍板):计费透支欠着网费就不能上机签到。也从源头避免
+        // 「打卡成功、返网费却被上游负余额保护挡下」的半残台账。
+        BigDecimal balance = balancePort.balance(command.userId());
+        if (balance.signum() < 0) {
+            throw new CheckinBalanceNegativeException(
+                    "网费欠费 ¥" + CheckinEntryGateChecker.plain(balance.abs()) + ",充值回正后恢复打卡");
         }
         // 连签第 N 天(2026-07-31 起 NB 随 N 递增):只取本月日期喂给纯计算,
         // 「月初清零」由集合里天然没有上月日期保证,无需额外边界判断。

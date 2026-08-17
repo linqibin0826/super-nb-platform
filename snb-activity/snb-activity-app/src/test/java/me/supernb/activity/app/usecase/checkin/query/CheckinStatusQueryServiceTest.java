@@ -29,6 +29,7 @@ import me.supernb.activity.domain.port.checkin.CheckinPort;
 import me.supernb.activity.domain.port.nb.NbLedgerPort;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
 import me.supernb.activity.domain.port.read.CheckinRechargeReadPort;
+import me.supernb.activity.domain.port.read.UserBalanceReadPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +55,7 @@ class CheckinStatusQueryServiceTest {
     private final CheckinDailyRewardPort dailyRewardPort = mock(CheckinDailyRewardPort.class);
     private final CheckinBalanceProperties balanceProps =
             new CheckinBalanceProperties(true, "0.1", "30", "3000", 1);
+    private final UserBalanceReadPort userBalancePort = mock(UserBalanceReadPort.class);
     private final CheckinStatusQueryService service = serviceWith(balanceProps,
             new CheckinEntryGateProperties(false, 30, "30"));
 
@@ -63,7 +65,7 @@ class CheckinStatusQueryServiceTest {
         return new CheckinStatusQueryService(checkinPort, rechargePort, registrationPort, nbLedger, props,
                 tierProps,
                 new CheckinSettlementProperties(new BigDecimal("250"), new BigDecimal("10"), true, true, 20),
-                dailyRewardPort, bal, new CheckinEntryGateChecker(rechargePort, gateProps));
+                dailyRewardPort, bal, new CheckinEntryGateChecker(rechargePort, gateProps), userBalancePort);
     }
 
     @Test
@@ -121,6 +123,24 @@ class CheckinStatusQueryServiceTest {
         when(rechargePort.lifetimeRecharge(anyLong(), any())).thenReturn(BigDecimal.ZERO);
         when(dailyRewardPort.myMonthlyBalanceTotal(anyLong(), any(), any())).thenReturn(BigDecimal.ZERO);
         when(dailyRewardPort.findByUserAndDay(anyLong(), any())).thenReturn(Optional.empty());
+        when(userBalancePort.balance(anyLong())).thenReturn(BigDecimal.ZERO);
+    }
+
+    @Test
+    void negativeBalanceLocksEligibility() {
+        // 负余额禁签(2026-08-17):账龄合格但余额欠费 → eligible=false + balance_negative,
+        // 页面照常渲染(计价梯当橱窗),只是打卡不可用。
+        when(registrationPort.registeredAt(42)).thenReturn(Optional.of(Instant.now().minusSeconds(3600 * 48)));
+        when(checkinPort.checkedInOn(eq(42L), any())).thenReturn(false);
+        when(checkinPort.datesInRange(eq(42L), any(), any())).thenReturn(List.of());
+        when(checkinPort.totalCheckins(42)).thenReturn(0);
+        when(rechargePort.monthlyRecharge(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(userBalancePort.balance(42L)).thenReturn(new BigDecimal("-0.34"));
+
+        CheckinStatusView view = service.status(42);
+
+        assertThat(view.eligible()).isFalse();
+        assertThat(view.ineligibleReason()).isEqualTo("balance_negative");
     }
 
     @Test

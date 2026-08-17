@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -22,6 +23,7 @@ import me.supernb.activity.app.usecase.checkin.CheckinEntryGateChecker;
 import me.supernb.activity.app.usecase.checkin.config.CheckinEntryGateProperties;
 import me.supernb.activity.app.usecase.checkin.config.CheckinProperties;
 import me.supernb.activity.domain.exception.CheckinAlreadyDoneException;
+import me.supernb.activity.domain.exception.CheckinBalanceNegativeException;
 import me.supernb.activity.domain.exception.CheckinRechargeRequiredException;
 import me.supernb.activity.domain.exception.CheckinTooYoungException;
 import me.supernb.activity.domain.model.checkin.CheckInResult;
@@ -29,6 +31,8 @@ import me.supernb.activity.domain.model.checkin.CheckinOutcome;
 import me.supernb.activity.domain.port.checkin.CheckinPort;
 import me.supernb.activity.domain.port.read.AccountRegistrationReadPort;
 import me.supernb.activity.domain.port.read.CheckinRechargeReadPort;
+import me.supernb.activity.domain.port.read.UserBalanceReadPort;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -42,12 +46,20 @@ class CheckInHandlerTest {
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final CheckinBalanceGrantService balanceGrant = mock(CheckinBalanceGrantService.class);
     private final CheckinRechargeReadPort rechargePort = mock(CheckinRechargeReadPort.class);
+    private final UserBalanceReadPort balancePort = mock(UserBalanceReadPort.class);
     private final CheckInHandler handler = handlerWithGate(new CheckinEntryGateProperties(false, 30, "30"));
+
+    /// 余额读端口默认给 0(未 stub 的 BigDecimal 返回 null,会在 signum 处 NPE);
+    /// 负余额用例自行覆盖。
+    @BeforeEach
+    void stubBalanceDefault() {
+        when(balancePort.balance(anyLong())).thenReturn(BigDecimal.ZERO);
+    }
 
     /// 组装被测 Handler(准入闸判定器用真实现+mock 充值端口;默认闸关,既有用例旧行为不变)。
     private CheckInHandler handlerWithGate(CheckinEntryGateProperties gateProps) {
         return new CheckInHandler(registration, checkinPort, new CheckinProperties("2020-01-01", 3), events,
-                balanceGrant, new CheckinEntryGateChecker(rechargePort, gateProps));
+                balanceGrant, new CheckinEntryGateChecker(rechargePort, gateProps), balancePort);
     }
 
     @Test
@@ -93,6 +105,19 @@ class CheckInHandlerTest {
         CheckInResult result = gated.handle(new CheckInCommand(42));
 
         assertThat(result.checkinDate()).isEqualTo(today);
+    }
+
+    @Test
+    void negativeBalanceRejectedWith403BeforeAnyWrite() {
+        // 余额欠费(计费透支,2026-08-17 站长拍板):403 拦在打卡之前——不落卡、不发 NB、不结返网费
+        when(registration.registeredAt(42)).thenReturn(Optional.of(Instant.now().minusSeconds(3600 * 48)));
+        when(balancePort.balance(42L)).thenReturn(new BigDecimal("-0.34"));
+
+        assertThatThrownBy(() -> handler.handle(new CheckInCommand(42)))
+                .isInstanceOf(CheckinBalanceNegativeException.class)
+                .hasMessageContaining("0.34");
+        verify(checkinPort, never()).checkIn(anyLong(), any(), any(), anyInt());
+        verify(balanceGrant, never()).settle(anyLong(), any(), anyInt(), any());
     }
 
     @Test

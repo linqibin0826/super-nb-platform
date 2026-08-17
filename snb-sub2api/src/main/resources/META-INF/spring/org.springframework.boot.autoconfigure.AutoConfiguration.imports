@@ -7,5 +7,6 @@ me.supernb.sub2api.autoconfig.Sub2apiGateAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiAdminAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiChatAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiAccountAutoConfiguration
+me.supernb.sub2api.autoconfig.Sub2apiUserBalanceAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiUsageIncrementAutoConfiguration
 me.supernb.sub2api.autoconfig.Sub2apiInvoiceAutoConfiguration
