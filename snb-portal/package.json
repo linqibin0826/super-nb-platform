@@ -17,7 +17,10 @@
     "preview:invoice": "vite preview -c vite.invoice.config.ts",
     "dev:raffle-admin": "vite -c vite.raffle-admin.config.ts",
     "build:raffle-admin": "tsc -b && vite build -c vite.raffle-admin.config.ts",
-    "preview:raffle-admin": "vite preview -c vite.raffle-admin.config.ts"
+    "preview:raffle-admin": "vite preview -c vite.raffle-admin.config.ts",
+    "dev:ops-admin": "vite -c vite.ops-admin.config.ts",
+    "build:ops-admin": "tsc -b && vite build -c vite.ops-admin.config.ts",
+    "preview:ops-admin": "vite preview -c vite.ops-admin.config.ts"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",

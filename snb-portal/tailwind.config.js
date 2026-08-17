@@ -14,6 +14,7 @@ export default {
     './hub/index.html',
     './invoice/index.html',
     './raffle-admin/index.html',
+    './ops-admin/index.html',
     './src/**/*.{ts,tsx}',
   ],
   theme: {

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- 🚨 首帧防闪 boot：内联、在任何 CSS 之前。真源见 src/ui/theme/snbTheme.ts
+         的 THEME_BOOT_SNIPPET（改必四边同步）。cookie 缺席=跟随系统，异常兜底浅色。 -->
+    <script>(function(){try{var m=document.cookie.match(/(?:^|;\s*)snb_theme=(dark|light)(?:;|$)/);var t=m?m[1]:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var e=document.documentElement;e.classList.toggle('dark',t==='dark');e.style.colorScheme=t}catch(_){}})()</script>
+    <link rel="icon" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="super-nb 资产运维台：账号/订阅/封号退款台账" />
+    <title>资产运维台 · super-nb</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>
