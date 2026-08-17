@@ -199,6 +199,21 @@ class CheckinStatusQueryServiceTest {
         assertThat(v.dailyReward().tomorrowStreakDay()).isEqualTo(1); // 但今天不签,明天从 1 起
     }
 
+    @Test
+    void tomorrowKeepsLadderWhenTodayIsUncheckedWeekend() {
+        // 周末豁免(2026-08-17):周四 8/13、周五 8/14 签了,今天周六 8/15 没签 →
+        // 明天(周日)签仍接档第 3 天,不能打回 1(上一用例的"明天归 1"只对工作日缺口成立)。
+        LocalDate day = LocalDate.of(2026, 8, 15);
+        stubEligibleUserOnDate(day, 2, false);   // 8/13、8/14 签过,8/15 未签
+        when(rechargePort.lifetimeRecharge(eq(42L), any())).thenReturn(new BigDecimal("100"));
+        when(rechargePort.monthlyRecharge(eq(42L), any(), any())).thenReturn(BigDecimal.ZERO);
+
+        CheckinStatusView v = service.statusAt(42L, day, Instant.parse("2026-08-15T04:00:00Z"));
+
+        assertThat(v.dailyReward().streakDay()).isEqualTo(3);         // 今天(周六)签的话是第 3 天
+        assertThat(v.dailyReward().tomorrowStreakDay()).isEqualTo(3); // 周六不签,周日签也还是第 3 天
+    }
+
     /// stub 一个账龄合格的用户在指定基准日的当月签到史。
     ///
     /// @param includeToday true = 今天也已签(连签含今天);false = 今天还没签

@@ -51,6 +51,22 @@ class CheckinDailyRewardCalcTest {
     }
 
     @Test
+    void weekendGapKeepsStreakDay() {
+        // 周四 8/6、周五 8/7 签了,周末(8/8、8/9)没签,今天周一 8/10 → 若现在签仍是第 3 天
+        LocalDate today = LocalDate.of(2026, 8, 10);
+        List<LocalDate> month = List.of(LocalDate.of(2026, 8, 7), LocalDate.of(2026, 8, 6));
+        assertThat(CheckinDailyRewardCalc.streakDay(month, today)).isEqualTo(3);
+    }
+
+    @Test
+    void weekendSkipDoesNotCrossMonthBoundary() {
+        // 8/1(周六)、8/2(周日)没签,8/3(周一)首签:回溯跳过周末后撞到 7/31(周五,不在本月集合)即停 → 1,
+        // 「自然月清零」不因周末豁免被打穿
+        LocalDate today = LocalDate.of(2026, 8, 3);
+        assertThat(CheckinDailyRewardCalc.streakDay(List.of(), today)).isEqualTo(1);
+    }
+
+    @Test
     void balanceAndNbScaleWithStreakDay() {
         // stepDays=1 即原线性费率,老口径一分不变
         assertThat(CheckinDailyRewardCalc.nbPoints(7, 3)).isEqualTo(21);

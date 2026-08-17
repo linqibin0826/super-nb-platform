@@ -125,7 +125,7 @@ public class CheckinStatusQueryService {
 
         int nbTotal = nbLedger.totalPoints(userId);
         CheckinDailyRewardView dailyReward =
-                buildDailyReward(userId, today, now, monthStart, monthEnd, monthDates, punchedToday);
+                buildDailyReward(userId, today, now, monthStart, monthEnd, monthDates);
         return new CheckinStatusView(eligible, ineligibleReason, punchedToday, today.getDayOfMonth(),
                 today.format(MONTH_LABEL), today.lengthOfMonth(), checkedDays, cumulativeDays, streakCurrent,
                 milestones, supply, nbTotal, dailyReward, entryGateView);
@@ -152,19 +152,22 @@ public class CheckinStatusQueryService {
 
     /// 组装连签阶梯:今天档位 / 明天档位 / 门槛态 / 本月已返累计。
     ///
-    /// ⚠️ **明天档位的口径最易写错**:今天**未签**时,今天这条连签已经断了——明天签到只能是
-    /// 本月第 1 天,绝不能恒写成 `streakDay + 1`,那会给未签用户画一个他根本拿不到的高档位。
-    /// 明天跨月同理归 1(自然月清零)。
+    /// ⚠️ **明天档位的口径最易写错**:不能恒写成 `streakDay + 1`(那会给未签用户画一个他根本
+    /// 拿不到的高档位),也不能写成「今天未签就恒归 1」——周末豁免(2026-08-17)后,周六没签
+    /// 周日的预告不该打回 1。正解是直接用同源纯计算把基准日推到明天:今天已签则 +1、
+    /// 工作日未签则断、周末未签则冻结,三种分支全由 [CheckinDailyRewardCalc#streakDay] 一处判定。
+    /// 明天跨月仍显式归 1(自然月清零不能交给纯计算——集合里的本月日期对"明天"而言是上月的)。
     private CheckinDailyRewardView buildDailyReward(long userId, LocalDate today, Instant now,
-            LocalDate monthStart, LocalDate monthEnd, List<LocalDate> monthDates, boolean punchedToday) {
+            LocalDate monthStart, LocalDate monthEnd, List<LocalDate> monthDates) {
         int streakDay = CheckinDailyRewardCalc.streakDay(monthDates, today);
         boolean balanceEligible = rechargePort.lifetimeRecharge(userId, now)
                 .compareTo(balanceProps.thresholdCny()) >= 0;
         boolean payable = balanceEligible && balanceProps.enabled();
 
         LocalDate tomorrow = today.plusDays(1);
-        int tomorrowStreakDay =
-                (tomorrow.getMonthValue() == today.getMonthValue() && punchedToday) ? streakDay + 1 : 1;
+        int tomorrowStreakDay = tomorrow.getMonthValue() == today.getMonthValue()
+                ? CheckinDailyRewardCalc.streakDay(monthDates, tomorrow)
+                : 1;
 
         String todayBalanceStatus = dailyRewardPort.findByUserAndDay(userId, today)
                 .map(CheckinDailyRewardRecord::balanceStatus)
