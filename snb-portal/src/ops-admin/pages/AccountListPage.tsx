@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Alert, Badge, Button, Input, Table } from '../../ui'
 import { api, OpsApiError, type AccountRow, type SubscriptionRow } from '../api'
-import { AccountStatusBadge, ErrorBar, Loading, PageHead, SUB_LABELS } from './shared'
+import { AccountStatusBadge, ErrorBar, FieldSelect, Loading, PageHead, SUB_LABELS } from './shared'
 
 /** 该邮箱的订阅摘要徽章串,如 CHATGPT·PRO·生效中 */
 function SubSummary({ subs }: { subs: SubscriptionRow[] }) {
@@ -24,6 +24,7 @@ export function AccountListPage() {
   const [accounts, setAccounts] = useState<AccountRow[] | null>(null)
   const [subs, setSubs] = useState<SubscriptionRow[]>([])
   const [keyword, setKeyword] = useState('')
+  const [owner, setOwner] = useState('')
   const [error, setError] = useState('')
   const [forbidden, setForbidden] = useState(false)
 
@@ -42,13 +43,14 @@ export function AccountListPage() {
   const filtered = useMemo(() => {
     if (!accounts) return []
     const kw = keyword.trim().toLowerCase()
-    if (!kw) return accounts
-    return accounts.filter((a) =>
-      [a.email, a.owner, a.notes, a.source, a.country]
+    return accounts.filter((a) => {
+      if (owner === '__none__' ? a.owner : owner && a.owner !== owner) return false
+      if (!kw) return true
+      return [a.email, a.owner, a.notes, a.source, a.country]
         .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(kw)),
-    )
-  }, [accounts, keyword])
+        .some((v) => String(v).toLowerCase().includes(kw))
+    })
+  }, [accounts, keyword, owner])
 
   const head = (
     <PageHead title="账号台账">
@@ -93,8 +95,21 @@ export function AccountListPage() {
   return (
     <>
       {head}
-      <div className="mb-4 max-w-sm">
-        <Input placeholder="按邮箱/负责人/备注过滤…" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <div className="max-w-sm flex-1">
+          <Input placeholder="按邮箱/负责人/备注过滤…" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
+        </div>
+        <FieldSelect
+          className="w-40"
+          value={owner}
+          onChange={(e) => setOwner(e.target.value)}
+          aria-label="按负责人筛选"
+        >
+          <option value="">全部负责人</option>
+          <option value="林琪斌">林琪斌</option>
+          <option value="张爱博">张爱博</option>
+          <option value="__none__">未分配</option>
+        </FieldSelect>
       </div>
       <Table
         columns={[

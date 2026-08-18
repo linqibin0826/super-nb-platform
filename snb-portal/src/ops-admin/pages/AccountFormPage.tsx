@@ -6,6 +6,8 @@ import { ErrorBar, FieldSelect, Loading, PageHead } from './shared'
 import { SubscriptionSection } from './SubscriptionSection'
 
 const PROVIDERS = ['gmail', 'mail.com', 'outlook', 'icloud', 'qq', 'other']
+/** 负责人只有这两位(站长 2026-08-18 拍板);将来加人在此追加 */
+const OWNERS = ['林琪斌', '张爱博']
 const STATUSES: Array<{ value: AccountStatus; label: string }> = [
   { value: 'ACTIVE', label: '可用' },
   { value: 'BANNED', label: '已封' },
@@ -302,10 +304,16 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
               <label className="mb-1.5 block text-sm font-medium text-snb-t2">国家/地区</label>
               <Input value={form.country} onChange={(e) => set({ country: e.target.value })} />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-snb-t2">负责人</label>
-              <Input value={form.owner} onChange={(e) => set({ owner: e.target.value })} />
-            </div>
+            <FieldSelect label="负责人" value={form.owner} onChange={(e) => set({ owner: e.target.value })}>
+              <option value="">未分配</option>
+              {OWNERS.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+              {/* 库里已有的非标值不至于被下拉悄悄改掉 */}
+              {form.owner && !OWNERS.includes(form.owner) && <option value={form.owner}>{form.owner}</option>}
+            </FieldSelect>
             <div>
               <FieldSelect
                 label="邮箱状态"
