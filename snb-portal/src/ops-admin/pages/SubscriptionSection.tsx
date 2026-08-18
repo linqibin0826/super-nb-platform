@@ -9,7 +9,7 @@ import {
   type SubscriptionInput,
   type SubscriptionRow,
 } from '../api'
-import { ErrorBar, FieldSelect, REFUND_LABELS, SUB_LABELS, SubStatusBadge } from './shared'
+import { ErrorBar, FieldSelect, REFUND_LABELS, REGIONS, SUB_LABELS, SubStatusBadge } from './shared'
 
 const SERVICES: SubService[] = ['CHATGPT', 'CLAUDE']
 const TIERS: SubTier[] = ['FREE', 'PLUS', 'PRO', 'MAX', 'TEAM']
@@ -195,7 +195,15 @@ function SubEditor({
               </option>
             ))}
           </FieldSelect>
-          <TextField label="订阅区域" value={f.region} onChange={(v) => set({ region: v })} placeholder="美区/日区…" />
+          <FieldSelect label="订阅区域" value={f.region} onChange={(e) => set({ region: e.target.value })}>
+            <option value="">—</option>
+            {REGIONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+            {f.region && !REGIONS.includes(f.region) && <option value={f.region}>{f.region}</option>}
+          </FieldSelect>
           <FieldSelect label="状态" value={f.status} onChange={(e) => set({ status: e.target.value as SubStatus })}>
             {SUB_STATUSES.map((s) => (
               <option key={s} value={s}>

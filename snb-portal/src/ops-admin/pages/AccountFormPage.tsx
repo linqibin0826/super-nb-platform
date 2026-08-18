@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Alert, Button, Card, CardBody, CardHeader, Input, Textarea } from '../../ui'
 import { api, type AccountInput, type AccountRow, type AccountStatus } from '../api'
-import { ErrorBar, FieldSelect, Loading, PageHead } from './shared'
+import { ErrorBar, FieldSelect, Loading, PageHead, REGIONS } from './shared'
 import { SubscriptionSection } from './SubscriptionSection'
 
 const PROVIDERS = ['gmail', 'mail.com', 'outlook', 'icloud', 'qq', 'other']
@@ -300,10 +300,17 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
               <label className="mb-1.5 block text-sm font-medium text-snb-t2">注册年份</label>
               <Input value={form.regYear} onChange={(e) => set({ regYear: e.target.value })} placeholder="2024" />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-snb-t2">国家/地区</label>
-              <Input value={form.country} onChange={(e) => set({ country: e.target.value })} />
-            </div>
+            <FieldSelect label="国家/地区" value={form.country} onChange={(e) => set({ country: e.target.value })}>
+              <option value="">—</option>
+              {REGIONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+              {form.country && !REGIONS.includes(form.country) && (
+                <option value={form.country}>{form.country}</option>
+              )}
+            </FieldSelect>
             <FieldSelect label="负责人" value={form.owner} onChange={(e) => set({ owner: e.target.value })}>
               <option value="">未分配</option>
               {OWNERS.map((o) => (

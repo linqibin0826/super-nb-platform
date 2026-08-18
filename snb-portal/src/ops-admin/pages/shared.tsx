@@ -83,6 +83,9 @@ export function SubStatusBadge({ status }: { status: SubStatus }) {
   return <Badge tone={SUB_TONES[status]}>{SUB_LABELS[status]}</Badge>
 }
 
+/** 常开地区(站长 2026-08-18 拍板);非标存量值由表单兜底 option 显示,不会被吞 */
+export const REGIONS = ['美国', '日本', '菲律宾', '马来西亚', '加拿大', '新加坡']
+
 export const REFUND_LABELS: Record<RefundStatus, string> = {
   NONE: '无需退款',
   PENDING: '待申诉',
