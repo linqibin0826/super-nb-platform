@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Alert, Button, Card, CardBody, Input, Textarea, cx } from '../../ui'
 import { api, type AccountInput, type AccountRow, type AccountStatus } from '../api'
-import { ErrorBar, FieldSelect, Loading, MONO, PageHead, REGIONS, SectionLabel } from './shared'
+import { AccountStatusBadge, ErrorBar, FieldSelect, Loading, MONO, PageHead, REGIONS, SectionLabel } from './shared'
 import { SubscriptionSection } from './SubscriptionSection'
 
 const PROVIDERS = ['gmail', 'mail.com', 'outlook', 'icloud', 'qq', 'other']
@@ -92,13 +92,113 @@ function SecretField({
   )
 }
 
-function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
     <div>
       <label className="mb-1.5 block text-sm font-medium text-snb-t2">{label}</label>
       {children}
       {hint && <p className="mt-1 text-xs text-snb-t3">{hint}</p>}
     </div>
+  )
+}
+
+/** 读态档案卡的键值行:标签弱字定宽,值走账本声线 */
+function DossierRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[6.5rem_1fr] items-baseline gap-3 py-[7px]">
+      <dt className="text-xs text-snb-t3">{label}</dt>
+      <dd className="min-w-0 text-sm text-snb-t1">{children}</dd>
+    </div>
+  )
+}
+
+const Empty = () => <span className="text-snb-t3">—</span>
+
+/** 档案读态:查信息不该面对一墙输入框——身份一行读完,凭据/归属是无框键值对 */
+function DossierView({
+  form,
+  hasPassword,
+  hasRecoveryPassword,
+  createdAt,
+  secret,
+  onToggleReveal,
+  onEdit,
+}: {
+  form: FormState
+  hasPassword: boolean
+  hasRecoveryPassword: boolean
+  createdAt: string | null
+  secret: { password: string | null; recoveryPassword: string | null } | null
+  onToggleReveal: () => void
+  onEdit: () => void
+}) {
+  const specLine = [
+    form.provider || null,
+    form.regYear ? `${form.regYear} 年注册` : null,
+    form.country || null,
+    form.owner || '未分配',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+  const secretVal = (has: boolean, plain: string | null) => {
+    if (!has) return <span className="text-snb-t3">未设置</span>
+    if (plain !== null) return <span className={MONO}>{plain}</span>
+    return <span className={cx('text-snb-t2', MONO)}>••••••</span>
+  }
+
+  return (
+    <Card>
+      <CardBody>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <span className={cx('truncate text-lg text-snb-t1', MONO)}>{form.email}</span>
+            <AccountStatusBadge status={form.status} />
+          </div>
+          <Button variant="secondary" size="sm" onClick={onEdit}>
+            编辑档案
+          </Button>
+        </div>
+        <p className="mt-1.5 text-sm text-snb-t2">{specLine}</p>
+
+        <div className="mt-5 grid gap-x-10 lg:grid-cols-2">
+          <dl className="divide-y divide-snb-hairline">
+            <DossierRow label="邮箱密码">
+              <span className="flex items-center gap-3">
+                {secretVal(hasPassword, secret ? secret.password : null)}
+                {(hasPassword || hasRecoveryPassword) && (
+                  <button
+                    type="button"
+                    onClick={onToggleReveal}
+                    className="text-xs text-snb-t2 underline-offset-4 hover:text-snb-t1 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
+                  >
+                    {secret !== null ? '隐藏' : '显示'}
+                  </button>
+                )}
+              </span>
+            </DossierRow>
+            <DossierRow label="辅助邮箱">
+              {form.recoveryEmail ? <span className={MONO}>{form.recoveryEmail}</span> : <Empty />}
+            </DossierRow>
+            <DossierRow label="辅助邮箱密码">
+              {secretVal(hasRecoveryPassword, secret ? secret.recoveryPassword : null)}
+            </DossierRow>
+          </dl>
+          <dl className="divide-y divide-snb-hairline">
+            <DossierRow label="货源">{form.source || <Empty />}</DossierRow>
+            <DossierRow label="建档">
+              {createdAt ? <span className={MONO}>{createdAt.slice(0, 10)}</span> : <Empty />}
+            </DossierRow>
+          </dl>
+        </div>
+
+        {form.notes && (
+          <div className="mt-4 border-l-2 border-snb-hairline-strong pl-3 text-sm leading-relaxed text-snb-t2">
+            {form.notes}
+          </div>
+        )}
+      </CardBody>
+    </Card>
   )
 }
 
@@ -111,6 +211,10 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  // 档案页读优先:编辑是动作不是常态。新建模式恒为表单。
+  const [editing, setEditing] = useState(mode === 'create')
+  // 进编辑时快照,取消时滚回——否则改一半点取消,读态会显示没保存的值
+  const [snapshot, setSnapshot] = useState<FormState | null>(null)
   // 新建模式:两个明文输入;编辑模式:走 SecretField 的显示/修改交互
   const [password, setPassword] = useState('')
   const [recoveryPassword, setRecoveryPassword] = useState('')
@@ -173,9 +277,20 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
       } else if (id) {
         await api.accounts.update(id, buildInput())
         setSaved(true)
+        // 读态展示靠 form + 这两个布尔,保存后就地对齐,不再拉一遍列表
+        setAccount((a) =>
+          a
+            ? {
+                ...a,
+                hasPassword: pwEditing && password.trim() !== '' ? true : a.hasPassword,
+                hasRecoveryPassword: rpwEditing && recoveryPassword.trim() !== '' ? true : a.hasRecoveryPassword,
+              }
+            : a
+        )
         setPwEditing(false)
         setRpwEditing(false)
         setSecret(null)
+        setEditing(false)
       }
     } catch (e) {
       setError(String((e as Error).message))
@@ -240,148 +355,179 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
           <ErrorBar msg={error} />
         </div>
       )}
-      {saved && (
+      {saved && !editing && (
         <div className="mb-4">
           <Alert tone="tip">已保存。</Alert>
         </div>
       )}
-      <Card>
-        <CardBody>
-          <SectionLabel className="mb-4">身份</SectionLabel>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="邮箱 *">
-              <Input
-                className={MONO}
-                value={form.email}
-                onChange={(e) => set({ email: e.target.value })}
-                placeholder="xx@gmail.com"
-              />
-            </Field>
-            <FieldSelect label="邮箱服务商" value={form.provider} onChange={(e) => set({ provider: e.target.value })}>
-              <option value="">—</option>
-              {PROVIDERS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </FieldSelect>
-            <Field label="注册年份">
-              <Input
-                className={MONO}
-                value={form.regYear}
-                onChange={(e) => set({ regYear: e.target.value })}
-                placeholder="2024"
-              />
-            </Field>
-            <FieldSelect label="国家/地区" value={form.country} onChange={(e) => set({ country: e.target.value })}>
-              <option value="">—</option>
-              {REGIONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-              {form.country && !REGIONS.includes(form.country) && <option value={form.country}>{form.country}</option>}
-            </FieldSelect>
-            <FieldSelect label="负责人" value={form.owner} onChange={(e) => set({ owner: e.target.value })}>
-              <option value="">未分配</option>
-              {OWNERS.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-              {/* 库里已有的非标值不至于被下拉悄悄改掉 */}
-              {form.owner && !OWNERS.includes(form.owner) && <option value={form.owner}>{form.owner}</option>}
-            </FieldSelect>
-            <div>
-              <FieldSelect
-                label="邮箱状态"
-                value={form.status}
-                onChange={(e) => set({ status: e.target.value as AccountStatus })}
-              >
-                {STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
+      {!editing && mode === 'edit' ? (
+        <DossierView
+          form={form}
+          hasPassword={account?.hasPassword ?? false}
+          hasRecoveryPassword={account?.hasRecoveryPassword ?? false}
+          createdAt={account?.createdAt ?? null}
+          secret={secret}
+          onToggleReveal={toggleReveal}
+          onEdit={() => {
+            setSaved(false)
+            setSnapshot(form)
+            setEditing(true)
+          }}
+        />
+      ) : (
+        <Card>
+          <CardBody>
+            <SectionLabel className="mb-4">身份</SectionLabel>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="邮箱 *">
+                <Input
+                  className={MONO}
+                  value={form.email}
+                  onChange={(e) => set({ email: e.target.value })}
+                  placeholder="xx@gmail.com"
+                />
+              </Field>
+              <FieldSelect label="邮箱服务商" value={form.provider} onChange={(e) => set({ provider: e.target.value })}>
+                <option value="">—</option>
+                {PROVIDERS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
                   </option>
                 ))}
               </FieldSelect>
-              <p className="mt-1 text-xs text-snb-t3">
-                指邮箱账号本身的死活;ChatGPT/Claude 服务被封记在下方订阅行,不改这里。
-              </p>
-            </div>
-          </div>
-
-          <SectionLabel className="mb-4 mt-7">凭据</SectionLabel>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {mode === 'create' ? (
-              <Field label="邮箱密码">
-                <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="可留空" />
-              </Field>
-            ) : (
-              <SecretField
-                label="邮箱密码"
-                has={account?.hasPassword ?? false}
-                revealed={secret ? secret.password : null}
-                editing={pwEditing}
-                value={password}
-                onToggleReveal={toggleReveal}
-                onToggleEdit={() => {
-                  setPwEditing((v) => !v)
-                  setPassword('')
-                }}
-                onChange={setPassword}
-              />
-            )}
-            <Field label="辅助邮箱">
-              <Input
-                className={MONO}
-                value={form.recoveryEmail}
-                onChange={(e) => set({ recoveryEmail: e.target.value })}
-              />
-            </Field>
-            {mode === 'create' ? (
-              <Field label="辅助邮箱密码">
+              <Field label="注册年份">
                 <Input
-                  value={recoveryPassword}
-                  onChange={(e) => setRecoveryPassword(e.target.value)}
-                  placeholder="可留空"
+                  className={MONO}
+                  value={form.regYear}
+                  onChange={(e) => set({ regYear: e.target.value })}
+                  placeholder="2024"
                 />
               </Field>
-            ) : (
-              <SecretField
-                label="辅助邮箱密码"
-                has={account?.hasRecoveryPassword ?? false}
-                revealed={secret ? secret.recoveryPassword : null}
-                editing={rpwEditing}
-                value={recoveryPassword}
-                onToggleReveal={toggleReveal}
-                onToggleEdit={() => {
-                  setRpwEditing((v) => !v)
-                  setRecoveryPassword('')
-                }}
-                onChange={setRecoveryPassword}
-              />
-            )}
-          </div>
-
-          <SectionLabel className="mb-4 mt-7">归属</SectionLabel>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="货源">
-              <Input value={form.source} onChange={(e) => set({ source: e.target.value })} placeholder="松哥店铺…" />
-            </Field>
-            <div className="sm:col-span-2">
-              <Field label="备注">
-                <Textarea value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} />
-              </Field>
+              <FieldSelect label="国家/地区" value={form.country} onChange={(e) => set({ country: e.target.value })}>
+                <option value="">—</option>
+                {REGIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+                {form.country && !REGIONS.includes(form.country) && (
+                  <option value={form.country}>{form.country}</option>
+                )}
+              </FieldSelect>
+              <FieldSelect label="负责人" value={form.owner} onChange={(e) => set({ owner: e.target.value })}>
+                <option value="">未分配</option>
+                {OWNERS.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+                {/* 库里已有的非标值不至于被下拉悄悄改掉 */}
+                {form.owner && !OWNERS.includes(form.owner) && <option value={form.owner}>{form.owner}</option>}
+              </FieldSelect>
+              <div>
+                <FieldSelect
+                  label="邮箱状态"
+                  value={form.status}
+                  onChange={(e) => set({ status: e.target.value as AccountStatus })}
+                >
+                  {STATUSES.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </FieldSelect>
+                <p className="mt-1 text-xs text-snb-t3">
+                  指邮箱账号本身的死活;ChatGPT/Claude 服务被封记在下方订阅行,不改这里。
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-6">
-            <Button onClick={submit} disabled={saving || !form.email.trim()}>
-              {saving ? '保存中…' : mode === 'create' ? '创建账号' : '保存修改'}
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
+            <SectionLabel className="mb-4 mt-7">凭据</SectionLabel>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {mode === 'create' ? (
+                <Field label="邮箱密码">
+                  <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="可留空" />
+                </Field>
+              ) : (
+                <SecretField
+                  label="邮箱密码"
+                  has={account?.hasPassword ?? false}
+                  revealed={secret ? secret.password : null}
+                  editing={pwEditing}
+                  value={password}
+                  onToggleReveal={toggleReveal}
+                  onToggleEdit={() => {
+                    setPwEditing((v) => !v)
+                    setPassword('')
+                  }}
+                  onChange={setPassword}
+                />
+              )}
+              <Field label="辅助邮箱">
+                <Input
+                  className={MONO}
+                  value={form.recoveryEmail}
+                  onChange={(e) => set({ recoveryEmail: e.target.value })}
+                />
+              </Field>
+              {mode === 'create' ? (
+                <Field label="辅助邮箱密码">
+                  <Input
+                    value={recoveryPassword}
+                    onChange={(e) => setRecoveryPassword(e.target.value)}
+                    placeholder="可留空"
+                  />
+                </Field>
+              ) : (
+                <SecretField
+                  label="辅助邮箱密码"
+                  has={account?.hasRecoveryPassword ?? false}
+                  revealed={secret ? secret.recoveryPassword : null}
+                  editing={rpwEditing}
+                  value={recoveryPassword}
+                  onToggleReveal={toggleReveal}
+                  onToggleEdit={() => {
+                    setRpwEditing((v) => !v)
+                    setRecoveryPassword('')
+                  }}
+                  onChange={setRecoveryPassword}
+                />
+              )}
+            </div>
+
+            <SectionLabel className="mb-4 mt-7">归属</SectionLabel>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="货源">
+                <Input value={form.source} onChange={(e) => set({ source: e.target.value })} placeholder="松哥店铺…" />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field label="备注">
+                  <Textarea value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} />
+                </Field>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-2">
+              <Button onClick={submit} disabled={saving || !form.email.trim()}>
+                {saving ? '保存中…' : mode === 'create' ? '创建账号' : '保存修改'}
+              </Button>
+              {mode === 'edit' && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    if (snapshot) setForm(snapshot)
+                    setEditing(false)
+                    setPwEditing(false)
+                    setRpwEditing(false)
+                  }}
+                >
+                  取消
+                </Button>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      )}
       {mode === 'edit' && id && <SubscriptionSection accountId={id} />}
     </>
   )

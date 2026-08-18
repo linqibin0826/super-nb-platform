@@ -185,6 +185,17 @@ function SubEditor({
   const [f, setF] = useState<SubForm>(initial)
   const set = (patch: Partial<SubForm>) => setF((v) => ({ ...v, ...patch }))
   const bannedMissing = f.status === 'BANNED' && f.bannedAt === ''
+  // 渐进披露:健康订阅不用面对空的封号/退款表格。
+  // 封号段跟着状态走;退款段默认收起,有数据或手动点开才出现(收起只是不显示,值不丢)。
+  const showBan = f.status === 'BANNED' || f.bannedAt !== ''
+  const [refundOpen, setRefundOpen] = useState(
+    initial.refundStatus !== 'NONE' ||
+      initial.refundAmountUsd !== '' ||
+      initial.appealedAt !== '' ||
+      initial.refundResolvedAt !== '' ||
+      initial.refundFollowUpAt !== '' ||
+      initial.refundNotes !== ''
+  )
 
   return (
     <div className="space-y-5 rounded-xl border border-snb-hairline-strong bg-snb-well/40 p-4">
@@ -225,7 +236,7 @@ function SubEditor({
         </div>
       </div>
       <div>
-        <SectionLabel className="mb-3">注册与开通</SectionLabel>
+        <SectionLabel className="mb-3">付款</SectionLabel>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <FieldSelect
             label="开通卡台"
@@ -240,8 +251,18 @@ function SubEditor({
             ))}
           </FieldSelect>
           <TextField label="卡号后四位" value={f.cardLast4} onChange={(v) => set({ cardLast4: v })} />
-          <TextField label="注册IP" value={f.registerIp} onChange={(v) => set({ registerIp: v })} />
-          <TextField label="现用IP" value={f.currentIp} onChange={(v) => set({ currentIp: v })} />
+          <TextField label="月价($)" value={f.priceUsd} onChange={(v) => set({ priceUsd: v })} placeholder="200.00" />
+          <TextField
+            label="下次扣款日"
+            type="date"
+            value={f.nextBillingAt}
+            onChange={(v) => set({ nextBillingAt: v })}
+          />
+        </div>
+      </div>
+      <div>
+        <SectionLabel className="mb-3">注册与环境</SectionLabel>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <TextField
             label="注册时间"
             type="datetime-local"
@@ -249,13 +270,8 @@ function SubEditor({
             onChange={(v) => set({ registeredAt: v })}
           />
           <TextField label="开始日期" type="date" value={f.startedAt} onChange={(v) => set({ startedAt: v })} />
-          <TextField
-            label="下次扣款日"
-            type="date"
-            value={f.nextBillingAt}
-            onChange={(v) => set({ nextBillingAt: v })}
-          />
-          <TextField label="月价($)" value={f.priceUsd} onChange={(v) => set({ priceUsd: v })} placeholder="200.00" />
+          <TextField label="注册IP" value={f.registerIp} onChange={(v) => set({ registerIp: v })} />
+          <TextField label="现用IP" value={f.currentIp} onChange={(v) => set({ currentIp: v })} />
           <TextField
             label="号池账号ID"
             value={f.sub2apiAccountId}
@@ -268,61 +284,73 @@ function SubEditor({
           />
         </div>
       </div>
-      <div>
-        <SectionLabel className="mb-3">封号</SectionLabel>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <TextField
-            label="封号时间"
-            type="datetime-local"
-            value={f.bannedAt}
-            onChange={(v) => set({ bannedAt: v })}
-          />
-          <FieldSelect
-            label="封号时是否付费中"
-            value={f.bannedWhilePaid}
-            onChange={(e) => set({ bannedWhilePaid: e.target.value as SubForm['bannedWhilePaid'] })}
-          >
-            <option value="">未知</option>
-            <option value="true">是</option>
-            <option value="false">否</option>
-          </FieldSelect>
+      {showBan && (
+        <div>
+          <SectionLabel className="mb-3">封号</SectionLabel>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <TextField
+              label="封号时间"
+              type="datetime-local"
+              value={f.bannedAt}
+              onChange={(v) => set({ bannedAt: v })}
+            />
+            <FieldSelect
+              label="封号时是否付费中"
+              value={f.bannedWhilePaid}
+              onChange={(e) => set({ bannedWhilePaid: e.target.value as SubForm['bannedWhilePaid'] })}
+            >
+              <option value="">未知</option>
+              <option value="true">是</option>
+              <option value="false">否</option>
+            </FieldSelect>
+          </div>
+          {bannedMissing && <p className="mt-1 text-sm text-snb-danger">状态为「已封」时封号时间必填。</p>}
         </div>
-        {bannedMissing && <p className="mt-1 text-sm text-snb-danger">状态为「已封」时封号时间必填。</p>}
-      </div>
-      <div>
-        <SectionLabel className="mb-3">退款追踪</SectionLabel>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <FieldSelect
-            label="退款状态"
-            value={f.refundStatus}
-            onChange={(e) => set({ refundStatus: e.target.value as RefundStatus })}
-          >
-            {REFUND_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {REFUND_LABELS[s]}
-              </option>
-            ))}
-          </FieldSelect>
-          <TextField label="退款金额($)" value={f.refundAmountUsd} onChange={(v) => set({ refundAmountUsd: v })} />
-          <TextField label="申诉日期" type="date" value={f.appealedAt} onChange={(v) => set({ appealedAt: v })} />
-          <TextField
-            label="到账/结案日期"
-            type="date"
-            value={f.refundResolvedAt}
-            onChange={(v) => set({ refundResolvedAt: v })}
-          />
-          <TextField
-            label="下次跟进日"
-            type="date"
-            value={f.refundFollowUpAt}
-            onChange={(v) => set({ refundFollowUpAt: v })}
-          />
-          <div className="col-span-2 sm:col-span-3">
-            <label className="mb-1.5 block text-sm font-medium text-snb-t2">退款备注(路由/工单线程)</label>
-            <Input value={f.refundNotes} onChange={(e) => set({ refundNotes: e.target.value })} />
+      )}
+      {refundOpen ? (
+        <div>
+          <SectionLabel className="mb-3">退款追踪</SectionLabel>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <FieldSelect
+              label="退款状态"
+              value={f.refundStatus}
+              onChange={(e) => set({ refundStatus: e.target.value as RefundStatus })}
+            >
+              {REFUND_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {REFUND_LABELS[s]}
+                </option>
+              ))}
+            </FieldSelect>
+            <TextField label="退款金额($)" value={f.refundAmountUsd} onChange={(v) => set({ refundAmountUsd: v })} />
+            <TextField label="申诉日期" type="date" value={f.appealedAt} onChange={(v) => set({ appealedAt: v })} />
+            <TextField
+              label="到账/结案日期"
+              type="date"
+              value={f.refundResolvedAt}
+              onChange={(v) => set({ refundResolvedAt: v })}
+            />
+            <TextField
+              label="下次跟进日"
+              type="date"
+              value={f.refundFollowUpAt}
+              onChange={(v) => set({ refundFollowUpAt: v })}
+            />
+            <div className="col-span-2 sm:col-span-3">
+              <label className="mb-1.5 block text-sm font-medium text-snb-t2">退款备注(路由/工单线程)</label>
+              <Input value={f.refundNotes} onChange={(e) => set({ refundNotes: e.target.value })} />
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setRefundOpen(true)}
+          className="text-xs text-snb-t2 underline-offset-4 hover:text-snb-t1 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
+        >
+          + 记录退款追踪
+        </button>
+      )}
       <div>
         <label className="mb-1.5 block text-sm font-medium text-snb-t2">备注</label>
         <Textarea value={f.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} />
