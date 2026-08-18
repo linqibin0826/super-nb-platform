@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Card, CardBody, CardHeader, Input, Textarea } from '../../ui'
+import { Button, Card, CardBody, CardHeader, Input, Textarea, cx } from '../../ui'
 import {
   api,
   type RefundStatus,
@@ -9,7 +9,18 @@ import {
   type SubscriptionInput,
   type SubscriptionRow,
 } from '../api'
-import { ErrorBar, FieldSelect, REFUND_LABELS, REGIONS, SUB_LABELS, SubStatusBadge } from './shared'
+import {
+  Dday,
+  ErrorBar,
+  FieldSelect,
+  MONO,
+  REFUND_LABELS,
+  REGIONS,
+  SUB_LABELS,
+  SectionLabel,
+  SubStatusBadge,
+  serviceShort,
+} from './shared'
 
 const SERVICES: SubService[] = ['CHATGPT', 'CLAUDE']
 const TIERS: SubTier[] = ['FREE', 'PLUS', 'PRO', 'MAX', 'TEAM']
@@ -176,9 +187,9 @@ function SubEditor({
   const bannedMissing = f.status === 'BANNED' && f.bannedAt === ''
 
   return (
-    <div className="space-y-5 rounded-xl border border-snb-hairline-strong p-4">
+    <div className="space-y-5 rounded-xl border border-snb-hairline-strong bg-snb-well/40 p-4">
       <div>
-        <p className="mb-2 text-sm font-semibold text-snb-t1">基本</p>
+        <SectionLabel className="mb-3">基本</SectionLabel>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <FieldSelect label="服务" value={f.service} onChange={(e) => set({ service: e.target.value as SubService })}>
             {SERVICES.map((s) => (
@@ -214,7 +225,7 @@ function SubEditor({
         </div>
       </div>
       <div>
-        <p className="mb-2 text-sm font-semibold text-snb-t1">注册与开通</p>
+        <SectionLabel className="mb-3">注册与开通</SectionLabel>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <FieldSelect
             label="开通卡台"
@@ -258,7 +269,7 @@ function SubEditor({
         </div>
       </div>
       <div>
-        <p className="mb-2 text-sm font-semibold text-snb-t1">封号</p>
+        <SectionLabel className="mb-3">封号</SectionLabel>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <TextField
             label="封号时间"
@@ -279,7 +290,7 @@ function SubEditor({
         {bannedMissing && <p className="mt-1 text-sm text-snb-danger">状态为「已封」时封号时间必填。</p>}
       </div>
       <div>
-        <p className="mb-2 text-sm font-semibold text-snb-t1">退款追踪</p>
+        <SectionLabel className="mb-3">退款追踪</SectionLabel>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <FieldSelect
             label="退款状态"
@@ -387,7 +398,7 @@ export function SubscriptionSection({ accountId }: { accountId: string }) {
         {rows === null ? (
           <p className="text-sm text-snb-t3">载入中…</p>
         ) : rows.length === 0 && editingId !== 'new' ? (
-          <p className="text-sm text-snb-t3">这个邮箱还没开通任何服务。</p>
+          <p className="text-sm text-snb-t3">这个邮箱还没开通任何服务。点「加一个服务」记录 ChatGPT / Claude 的开通。</p>
         ) : (
           <ul className="space-y-3">
             {rows.map((r) => (
@@ -395,26 +406,44 @@ export function SubscriptionSection({ accountId }: { accountId: string }) {
                 {editingId === r.id ? (
                   <SubEditor initial={rowToForm(r)} onSave={save} onCancel={() => setEditingId(null)} saving={saving} />
                 ) : (
-                  <div className="flex flex-wrap items-center gap-2 rounded-xl border border-snb-hairline px-4 py-3 text-sm">
-                    <span className="font-medium text-snb-t1">{r.service}</span>
-                    {r.tier && <span className="text-snb-t2">{r.tier}</span>}
-                    {r.region && <span className="text-snb-t2">{r.region}</span>}
-                    <SubStatusBadge status={r.status} />
-                    {r.nextBillingAt && <span className="text-snb-t3">扣款 {r.nextBillingAt}</span>}
-                    {r.cardPlatform && (
-                      <span className="text-snb-t3">
-                        {r.cardPlatform}
-                        {r.cardLast4 ? `·${r.cardLast4}` : ''}
-                      </span>
-                    )}
-                    {r.refundStatus !== 'NONE' && (
-                      <span className="text-snb-t3">退款:{REFUND_LABELS[r.refundStatus]}</span>
-                    )}
-                    <span className="ml-auto flex gap-2">
-                      <Button variant="ghost" onClick={() => setEditingId(r.id)}>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-snb-hairline px-4 py-3 text-sm">
+                    {/* 票据头:服务·档位 + 区域 */}
+                    <div className="min-w-[104px]">
+                      <p className={cx('font-semibold text-snb-t1', MONO)}>
+                        {serviceShort(r.service)}
+                        {r.tier ? ` · ${r.tier}` : ''}
+                      </p>
+                      <p className="text-xs text-snb-t3">{r.region ?? '—'}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-snb-t2">
+                      {r.nextBillingAt && (
+                        <span>
+                          扣款 <span className={MONO}>{r.nextBillingAt}</span> <Dday date={r.nextBillingAt} />
+                        </span>
+                      )}
+                      {r.priceUsd && <span className={MONO}>${r.priceUsd}/月</span>}
+                      {r.cardPlatform && (
+                        <span className={MONO}>
+                          {r.cardPlatform}
+                          {r.cardLast4 ? `·${r.cardLast4}` : ''}
+                        </span>
+                      )}
+                      {r.sub2apiAccountName && <span className="text-snb-t3">池·{r.sub2apiAccountName}</span>}
+                      {r.bannedAt && (
+                        <span className="text-snb-danger">
+                          封于 <span className={MONO}>{r.bannedAt.slice(0, 10)}</span>
+                        </span>
+                      )}
+                      {r.refundStatus !== 'NONE' && (
+                        <span className="text-snb-danger">退款·{REFUND_LABELS[r.refundStatus]}</span>
+                      )}
+                    </div>
+                    <span className="ml-auto flex items-center gap-2">
+                      <SubStatusBadge status={r.status} />
+                      <Button size="sm" variant="ghost" onClick={() => setEditingId(r.id)}>
                         编辑
                       </Button>
-                      <Button variant="ghost" onClick={() => remove(r.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => remove(r.id)}>
                         删除
                       </Button>
                     </span>

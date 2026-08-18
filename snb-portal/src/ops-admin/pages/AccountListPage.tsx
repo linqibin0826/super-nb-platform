@@ -1,23 +1,43 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Alert, Badge, Button, Input, Table } from '../../ui'
+import { Alert, Button, Chip, Input, cx } from '../../ui'
 import { api, OpsApiError, type AccountRow, type SubscriptionRow } from '../api'
-import { AccountStatusBadge, ErrorBar, FieldSelect, Loading, PageHead, SUB_LABELS } from './shared'
+import { AccountStatusBadge, Dday, ErrorBar, Loading, MONO, PageHead, SUB_LABELS, serviceShort } from './shared'
 
-/** 该邮箱的订阅摘要徽章串,如 CHATGPT·PRO·生效中 */
+const OWNER_FILTERS = [
+  { value: '', label: '全部' },
+  { value: '林琪斌', label: '林琪斌' },
+  { value: '张爱博', label: '张爱博' },
+  { value: '__none__', label: '未分配' },
+]
+
+/** 订阅摘要:服务·档位·状态,生效中的补扣款倒计时 */
 function SubSummary({ subs }: { subs: SubscriptionRow[] }) {
   if (subs.length === 0) return <span className="text-snb-t3">—</span>
   return (
-    <span className="flex flex-wrap gap-1">
+    <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
       {subs.map((s) => (
-        <Badge key={s.id} tone={s.status === 'BANNED' ? 'danger' : s.status === 'ACTIVE' ? 'success' : 'gray'}>
-          {s.service}
-          {s.tier ? `·${s.tier}` : ''}·{SUB_LABELS[s.status]}
-        </Badge>
+        <span key={s.id} className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs">
+          <span
+            className={cx(
+              'font-medium',
+              s.status === 'BANNED' ? 'text-snb-danger' : s.status === 'ACTIVE' ? 'text-snb-t1' : 'text-snb-t3'
+            )}
+          >
+            {serviceShort(s.service)}
+            {s.tier ? `·${s.tier}` : ''}
+          </span>
+          <span className={cx(s.status === 'BANNED' ? 'text-snb-danger' : 'text-snb-t3')}>{SUB_LABELS[s.status]}</span>
+          {s.status === 'ACTIVE' && s.nextBillingAt && <Dday date={s.nextBillingAt} />}
+        </span>
       ))}
     </span>
   )
 }
+
+const TH = ({ children, className }: { children?: string; className?: string }) => (
+  <th className={cx('px-4 py-3 text-left text-xs font-medium tracking-[0.14em] text-snb-t3', className)}>{children}</th>
+)
 
 export function AccountListPage() {
   const navigate = useNavigate()
@@ -53,10 +73,7 @@ export function AccountListPage() {
   }, [accounts, keyword, owner])
 
   const head = (
-    <PageHead title="账号台账">
-      <Link to="/admin">
-        <Button variant="ghost">← 看板</Button>
-      </Link>
+    <PageHead title="账号台账" sub={accounts ? `在册 ${accounts.length} 个邮箱账号` : undefined}>
       <Link to="/admin/accounts/new">
         <Button>新建账号</Button>
       </Link>
@@ -95,55 +112,70 @@ export function AccountListPage() {
   return (
     <>
       {head}
-      <div className="mb-4 flex flex-wrap items-end gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="max-w-sm flex-1">
           <Input placeholder="按邮箱/负责人/备注过滤…" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
         </div>
-        <FieldSelect
-          className="w-40"
-          value={owner}
-          onChange={(e) => setOwner(e.target.value)}
-          aria-label="按负责人筛选"
-        >
-          <option value="">全部负责人</option>
-          <option value="林琪斌">林琪斌</option>
-          <option value="张爱博">张爱博</option>
-          <option value="__none__">未分配</option>
-        </FieldSelect>
+        <div className="flex items-center" role="group" aria-label="按负责人筛选">
+          {OWNER_FILTERS.map((f) => (
+            <Chip key={f.value} active={owner === f.value} onClick={() => setOwner(f.value)}>
+              {f.label}
+            </Chip>
+          ))}
+        </div>
       </div>
-      <Table
-        columns={[
-          { key: 'email', title: '邮箱' },
-          { key: 'provider', title: '服务商' },
-          { key: 'status', title: '邮箱状态' },
-          { key: 'owner', title: '负责人' },
-          { key: 'subs', title: '订阅' },
-          { key: 'ops', title: '' },
-        ]}
-        rows={filtered.map((a) => ({
-          email: (
-            <button
-              type="button"
-              className="text-snb-terra hover:underline"
-              onClick={() => navigate(`/admin/accounts/${a.id}`)}
-            >
-              {a.email}
-            </button>
-          ),
-          provider: a.provider ?? '—',
-          status: <AccountStatusBadge status={a.status} />,
-          owner: a.owner ?? '—',
-          subs: <SubSummary subs={subsByAccount.get(a.id) ?? []} />,
-          ops: (
-            <Link className="text-sm text-snb-t3 hover:text-snb-t1" to={`/admin/accounts/${a.id}`}>
-              编辑
-            </Link>
-          ),
-        }))}
-        rowKey={(_row, i) => filtered[i].id}
-      />
-      <p className="mt-3 text-sm text-snb-t3">
-        共 {filtered.length} / {accounts.length} 个账号
+      <div className="overflow-x-auto rounded-2xl border border-snb-hairline bg-snb-panel shadow-card">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-snb-hairline-strong">
+              <TH>邮箱</TH>
+              <TH className="hidden md:table-cell">地区</TH>
+              <TH>负责人</TH>
+              <TH>订阅</TH>
+              <TH>状态</TH>
+              <TH className="w-8" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-snb-hairline">
+            {filtered.map((a) => (
+              <tr
+                key={a.id}
+                onClick={() => navigate(`/admin/accounts/${a.id}`)}
+                className="cursor-pointer transition-colors duration-quick ease-snb hover:bg-black/[0.02] dark:hover:bg-white/[0.04]"
+              >
+                <td className="px-4 py-3">
+                  <Link
+                    to={`/admin/accounts/${a.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className={cx(
+                      'text-snb-t1 underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus',
+                      MONO
+                    )}
+                  >
+                    {a.email}
+                  </Link>
+                </td>
+                <td className="hidden px-4 py-3 text-snb-t2 md:table-cell">{a.country ?? '—'}</td>
+                <td className="px-4 py-3 text-snb-t2">{a.owner ?? <span className="text-snb-t3">未分配</span>}</td>
+                <td className="px-4 py-3">
+                  <SubSummary subs={subsByAccount.get(a.id) ?? []} />
+                </td>
+                <td className="px-4 py-3">
+                  <AccountStatusBadge status={a.status} />
+                </td>
+                <td className="px-2 py-3 text-snb-t3" aria-hidden="true">
+                  ›
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {filtered.length === 0 && (
+          <p className="px-4 py-8 text-center text-sm text-snb-t3">没有匹配的账号,换个关键词或筛选试试。</p>
+        )}
+      </div>
+      <p className={cx('mt-3 text-xs text-snb-t3', MONO)}>
+        {filtered.length} / {accounts.length}
       </p>
     </>
   )

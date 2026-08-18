@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Alert, Button, Card, CardBody, CardHeader, Input, Textarea } from '../../ui'
+import { Alert, Button, Card, CardBody, Input, Textarea, cx } from '../../ui'
 import { api, type AccountInput, type AccountRow, type AccountStatus } from '../api'
-import { ErrorBar, FieldSelect, Loading, PageHead, REGIONS } from './shared'
+import { ErrorBar, FieldSelect, Loading, MONO, PageHead, REGIONS, SectionLabel } from './shared'
 import { SubscriptionSection } from './SubscriptionSection'
 
 const PROVIDERS = ['gmail', 'mail.com', 'outlook', 'icloud', 'qq', 'other']
@@ -74,9 +74,9 @@ function SecretField({
       ) : (
         <div className="flex items-center gap-2">
           {revealed !== null ? (
-            <Input readOnly value={revealed} className="font-mono" />
+            <Input readOnly value={revealed} className={MONO} />
           ) : (
-            <span className="text-sm text-snb-t2">{has ? '已设置 ••••••' : '未设置'}</span>
+            <span className={cx('text-sm text-snb-t2', has && MONO)}>{has ? '已设置 ••••••' : '未设置'}</span>
           )}
           {has && (
             <Button variant="ghost" onClick={onToggleReveal}>
@@ -88,6 +88,16 @@ function SecretField({
           </Button>
         </div>
       )}
+    </div>
+  )
+}
+
+function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-snb-t2">{label}</label>
+      {children}
+      {hint && <p className="mt-1 text-xs text-snb-t3">{hint}</p>}
     </div>
   )
 }
@@ -199,12 +209,15 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
   }
 
   const head = (
-    <PageHead title={mode === 'create' ? '新建账号' : `编辑账号 · ${form.email || ''}`}>
+    <PageHead
+      title={mode === 'create' ? '新建账号' : '账号档案'}
+      sub={mode === 'edit' ? form.email || undefined : undefined}
+    >
       <Link to="/admin/accounts">
         <Button variant="ghost">← 返回台账</Button>
       </Link>
       {mode === 'edit' && (
-        <Button variant="ghost" onClick={remove}>
+        <Button variant="ghost" className="text-snb-danger hover:text-snb-danger" onClick={remove}>
           删除账号
         </Button>
       )}
@@ -233,13 +246,17 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
         </div>
       )}
       <Card>
-        <CardHeader>邮箱账号</CardHeader>
         <CardBody>
+          <SectionLabel className="mb-4">身份</SectionLabel>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-snb-t2">邮箱 *</label>
-              <Input value={form.email} onChange={(e) => set({ email: e.target.value })} placeholder="xx@gmail.com" />
-            </div>
+            <Field label="邮箱 *">
+              <Input
+                className={MONO}
+                value={form.email}
+                onChange={(e) => set({ email: e.target.value })}
+                placeholder="xx@gmail.com"
+              />
+            </Field>
             <FieldSelect label="邮箱服务商" value={form.provider} onChange={(e) => set({ provider: e.target.value })}>
               <option value="">—</option>
               {PROVIDERS.map((p) => (
@@ -248,58 +265,14 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
                 </option>
               ))}
             </FieldSelect>
-            {mode === 'create' ? (
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-snb-t2">邮箱密码</label>
-                <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="可留空" />
-              </div>
-            ) : (
-              <SecretField
-                label="邮箱密码"
-                has={account?.hasPassword ?? false}
-                revealed={secret ? secret.password : null}
-                editing={pwEditing}
-                value={password}
-                onToggleReveal={toggleReveal}
-                onToggleEdit={() => {
-                  setPwEditing((v) => !v)
-                  setPassword('')
-                }}
-                onChange={setPassword}
+            <Field label="注册年份">
+              <Input
+                className={MONO}
+                value={form.regYear}
+                onChange={(e) => set({ regYear: e.target.value })}
+                placeholder="2024"
               />
-            )}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-snb-t2">辅助邮箱</label>
-              <Input value={form.recoveryEmail} onChange={(e) => set({ recoveryEmail: e.target.value })} />
-            </div>
-            {mode === 'create' ? (
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-snb-t2">辅助邮箱密码</label>
-                <Input
-                  value={recoveryPassword}
-                  onChange={(e) => setRecoveryPassword(e.target.value)}
-                  placeholder="可留空"
-                />
-              </div>
-            ) : (
-              <SecretField
-                label="辅助邮箱密码"
-                has={account?.hasRecoveryPassword ?? false}
-                revealed={secret ? secret.recoveryPassword : null}
-                editing={rpwEditing}
-                value={recoveryPassword}
-                onToggleReveal={toggleReveal}
-                onToggleEdit={() => {
-                  setRpwEditing((v) => !v)
-                  setRecoveryPassword('')
-                }}
-                onChange={setRecoveryPassword}
-              />
-            )}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-snb-t2">注册年份</label>
-              <Input value={form.regYear} onChange={(e) => set({ regYear: e.target.value })} placeholder="2024" />
-            </div>
+            </Field>
             <FieldSelect label="国家/地区" value={form.country} onChange={(e) => set({ country: e.target.value })}>
               <option value="">—</option>
               {REGIONS.map((r) => (
@@ -307,9 +280,7 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
                   {r}
                 </option>
               ))}
-              {form.country && !REGIONS.includes(form.country) && (
-                <option value={form.country}>{form.country}</option>
-              )}
+              {form.country && !REGIONS.includes(form.country) && <option value={form.country}>{form.country}</option>}
             </FieldSelect>
             <FieldSelect label="负责人" value={form.owner} onChange={(e) => set({ owner: e.target.value })}>
               <option value="">未分配</option>
@@ -337,16 +308,74 @@ export function AccountFormPage({ mode }: { mode: 'create' | 'edit' }) {
                 指邮箱账号本身的死活;ChatGPT/Claude 服务被封记在下方订阅行,不改这里。
               </p>
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-snb-t2">货源</label>
+          </div>
+
+          <SectionLabel className="mb-4 mt-7">凭据</SectionLabel>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {mode === 'create' ? (
+              <Field label="邮箱密码">
+                <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="可留空" />
+              </Field>
+            ) : (
+              <SecretField
+                label="邮箱密码"
+                has={account?.hasPassword ?? false}
+                revealed={secret ? secret.password : null}
+                editing={pwEditing}
+                value={password}
+                onToggleReveal={toggleReveal}
+                onToggleEdit={() => {
+                  setPwEditing((v) => !v)
+                  setPassword('')
+                }}
+                onChange={setPassword}
+              />
+            )}
+            <Field label="辅助邮箱">
+              <Input
+                className={MONO}
+                value={form.recoveryEmail}
+                onChange={(e) => set({ recoveryEmail: e.target.value })}
+              />
+            </Field>
+            {mode === 'create' ? (
+              <Field label="辅助邮箱密码">
+                <Input
+                  value={recoveryPassword}
+                  onChange={(e) => setRecoveryPassword(e.target.value)}
+                  placeholder="可留空"
+                />
+              </Field>
+            ) : (
+              <SecretField
+                label="辅助邮箱密码"
+                has={account?.hasRecoveryPassword ?? false}
+                revealed={secret ? secret.recoveryPassword : null}
+                editing={rpwEditing}
+                value={recoveryPassword}
+                onToggleReveal={toggleReveal}
+                onToggleEdit={() => {
+                  setRpwEditing((v) => !v)
+                  setRecoveryPassword('')
+                }}
+                onChange={setRecoveryPassword}
+              />
+            )}
+          </div>
+
+          <SectionLabel className="mb-4 mt-7">归属</SectionLabel>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="货源">
               <Input value={form.source} onChange={(e) => set({ source: e.target.value })} placeholder="松哥店铺…" />
-            </div>
+            </Field>
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-snb-t2">备注</label>
-              <Textarea value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} />
+              <Field label="备注">
+                <Textarea value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} />
+              </Field>
             </div>
           </div>
-          <div className="mt-5">
+
+          <div className="mt-6">
             <Button onClick={submit} disabled={saving || !form.email.trim()}>
               {saving ? '保存中…' : mode === 'create' ? '创建账号' : '保存修改'}
             </Button>
