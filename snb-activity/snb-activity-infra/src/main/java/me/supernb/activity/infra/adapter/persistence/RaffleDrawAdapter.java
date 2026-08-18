@@ -78,6 +78,9 @@ public class RaffleDrawAdapter implements RaffleDrawPort {
 
     /// 实时复核:门槛值窗口固定 [gate_from, entry_close_at)(对全体一致)+可选账龄;
     /// 复核值同时就是 WEIGHTED 模式的权重。批量缺席(窗口内无流水/查无此人)按 0/不合格处理。
+    /// 余额闸(2026-08-18):复核走**报名时快照** balance_at_entry(「报名时够就行」,报名后正常
+    /// 消耗不失格;充值闸仍走实时值堵退款套利)。余额路合格者在 WEIGHTED 模式下权重取
+    /// max(充值值, minBalance),避免零充值大户权重为 0 被抽样静默排除。
     private List<WinnerSampler.Candidate> eligibleCandidates(RaffleCampaignEntity campaign,
             List<RaffleEntryEntity> entrants) {
         if (entrants.isEmpty()) {
@@ -90,11 +93,21 @@ public class RaffleDrawAdapter implements RaffleDrawPort {
                 ? Map.of() : gatePort.registeredAts(userIds);
         Instant ageCutoff = campaign.getMinAccountAgeDays() == null
                 ? null : Instant.now().minus(Duration.ofDays(campaign.getMinAccountAgeDays()));
+        BigDecimal minBalance = campaign.getMinBalance();
 
         return entrants.stream()
-                .map(e -> new WinnerSampler.Candidate(e.getUserId(),
-                        values.getOrDefault(e.getUserId(), BigDecimal.ZERO)))
-                .filter(c -> c.weight().compareTo(campaign.getGateAmount()) >= 0)
+                .map(e -> {
+                    BigDecimal value = values.getOrDefault(e.getUserId(), BigDecimal.ZERO);
+                    boolean gateOk = value.compareTo(campaign.getGateAmount()) >= 0;
+                    boolean balanceOk = minBalance != null && e.getBalanceAtEntry() != null
+                            && e.getBalanceAtEntry().compareTo(minBalance) >= 0;
+                    if (!gateOk && !balanceOk) {
+                        return null;
+                    }
+                    BigDecimal weight = balanceOk ? value.max(minBalance) : value;
+                    return new WinnerSampler.Candidate(e.getUserId(), weight);
+                })
+                .filter(c -> c != null)
                 .filter(c -> ageCutoff == null || (registeredAts.containsKey(c.userId())
                         && !registeredAts.get(c.userId()).isAfter(ageCutoff)))
                 .toList();

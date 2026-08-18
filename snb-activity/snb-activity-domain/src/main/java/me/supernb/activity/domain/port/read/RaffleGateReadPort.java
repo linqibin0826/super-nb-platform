@@ -21,4 +21,7 @@ public interface RaffleGateReadPort {
 
     /// 展示名(username 优先,否则脱敏邮箱——契约同用量榜:前2+***+后2)。
     Map<Long, String> displayNames(Collection<Long> userIds);
+
+    /// 当前站内余额;查无此人返回 0(余额闸,2026-08-18)。
+    BigDecimal balance(long userId);
 }

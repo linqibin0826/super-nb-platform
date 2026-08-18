@@ -81,7 +81,7 @@ class RaffleEndpointTest {
         return new RaffleCurrentView(1, "第一届发布会",
                 Instant.parse("2026-07-10T00:00:00Z"), Instant.parse("2026-07-13T02:00:00Z"),
                 Instant.parse("2026-07-13T02:30:00Z"), "RECHARGE", new BigDecimal("100"),
-                Instant.parse("2026-07-10T00:00:00Z"), "EQUAL", "active", 128,
+                Instant.parse("2026-07-10T00:00:00Z"), null, "EQUAL", "active", 128,
                 List.of(new RaffleCurrentView.Entrant(37, "12***67@qq.com")),
                 List.of(new RaffleCurrentView.PrizeLine("S", "疯狂星期四专项(V我50)", "ALIPAY_CODE", 1)));
     }

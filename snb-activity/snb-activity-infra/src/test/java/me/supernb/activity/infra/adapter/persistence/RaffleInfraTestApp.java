@@ -26,6 +26,9 @@ class RaffleInfraTestApp {
     /// 可变注册时刻桩:缺席=查无此人。
     static final Map<Long, Instant> REGISTERED_ATS = new HashMap<>();
 
+    /// 可变余额桩(余额闸):缺席=0。
+    static final Map<Long, BigDecimal> BALANCES = new HashMap<>();
+
     @Bean
     RaffleGateReadPort raffleGateReadPort() {
         return new RaffleGateReadPort() {
@@ -52,6 +55,11 @@ class RaffleInfraTestApp {
             @Override
             public Map<Long, String> displayNames(Collection<Long> userIds) {
                 return userIds.stream().collect(Collectors.toMap(u -> u, u -> "用户" + u));
+            }
+
+            @Override
+            public BigDecimal balance(long userId) {
+                return BALANCES.getOrDefault(userId, BigDecimal.ZERO);
             }
         };
     }

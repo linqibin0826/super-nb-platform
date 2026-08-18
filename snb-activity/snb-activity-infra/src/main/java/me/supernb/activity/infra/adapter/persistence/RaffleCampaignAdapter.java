@@ -93,7 +93,7 @@ public class RaffleCampaignAdapter implements RaffleCampaignPort {
     static RaffleCampaign toDomain(RaffleCampaignEntity e) {
         return new RaffleCampaign(e.getId(), e.getName(), e.getEntryOpenAt(), e.getEntryCloseAt(),
                 e.getDrawAt(), GateType.valueOf(e.getGateType()), e.getGateAmount(), e.getGateFrom(),
-                e.getMinAccountAgeDays(), WeightMode.valueOf(e.getWeightMode()), e.getStatus(),
-                e.getDrawnAt(), e.getEntrantCountAtDraw(), e.getDisqualifiedCount());
+                e.getMinBalance(), e.getMinAccountAgeDays(), WeightMode.valueOf(e.getWeightMode()),
+                e.getStatus(), e.getDrawnAt(), e.getEntrantCountAtDraw(), e.getDisqualifiedCount());
     }
 }

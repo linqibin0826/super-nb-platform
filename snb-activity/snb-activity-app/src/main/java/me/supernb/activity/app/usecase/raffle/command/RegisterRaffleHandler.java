@@ -50,12 +50,22 @@ public class RegisterRaffleHandler implements CommandHandler<RegisterRaffleComma
             }
         }
         BigDecimal value = gatePort.gateValue(command.userId(), c.gateType(), c.gateFrom(), now);
-        if (value.compareTo(c.gateAmount()) < 0) {
+        // 余额闸(2026-08-18):非 null 时与充值闸取或;快照落库,开奖复核走快照(「报名时够就行」)。
+        BigDecimal balance = c.minBalance() == null ? null : gatePort.balance(command.userId());
+        boolean gateOk = value.compareTo(c.gateAmount()) >= 0;
+        boolean balanceOk = balance != null && balance.compareTo(c.minBalance()) >= 0;
+        if (!gateOk && !balanceOk) {
             BigDecimal shortfall = c.gateAmount().subtract(value).stripTrailingZeros();
-            throw new RaffleNotEligibleException("列席资质审核未通过:还需"
+            String msg = "列席资质审核未通过:还需"
                     + (c.gateType() == GateType.RECHARGE ? "充值" : "消费")
-                    + " ¥" + shortfall.toPlainString());
+                    + " ¥" + shortfall.toPlainString();
+            if (c.minBalance() != null) {
+                msg += ",或站内余额 ≥ ¥" + c.minBalance().stripTrailingZeros().toPlainString()
+                        + "(当前 ¥" + balance.stripTrailingZeros().toPlainString() + ")";
+            }
+            throw new RaffleNotEligibleException(msg);
         }
-        return entryPort.enter(c.id(), command.userId(), value, command.clientIp(), command.userAgent());
+        return entryPort.enter(c.id(), command.userId(), value, balance,
+                command.clientIp(), command.userAgent());
     }
 }

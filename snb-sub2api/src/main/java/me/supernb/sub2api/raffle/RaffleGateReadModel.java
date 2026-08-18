@@ -29,4 +29,7 @@ public interface RaffleGateReadModel {
 
     /// 展示名:username 非空白用 username,否则脱敏邮箱(前2+***+后2,契约同用量榜);空入参返回空 map。
     Map<Long, String> displayNamesByIds(Collection<Long> userIds);
+
+    /// 当前站内余额(users.balance,不含冻结);查无此人返回 0。余额闸(2026-08-18)用。
+    BigDecimal balance(long userId);
 }

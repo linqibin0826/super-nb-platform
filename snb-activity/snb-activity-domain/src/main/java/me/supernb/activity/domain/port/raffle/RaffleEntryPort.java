@@ -10,7 +10,9 @@ import me.supernb.activity.domain.model.raffle.RaffleEntryTicket;
 public interface RaffleEntryPort {
 
     /// 报名:已报过 → 返回既有参会证(already=true,不新增);否则取号落库。
-    RaffleEntryTicket enter(long campaignId, long userId, BigDecimal gateValue, String clientIp, String userAgent);
+    /// balanceAtEntry=报名时点余额快照,仅余额闸期非 null(开奖复核走它)。
+    RaffleEntryTicket enter(long campaignId, long userId, BigDecimal gateValue, BigDecimal balanceAtEntry,
+            String clientIp, String userAgent);
 
     /// 本人报名记录。
     Optional<RaffleEntrant> find(long campaignId, long userId);

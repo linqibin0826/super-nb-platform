@@ -29,7 +29,7 @@ public class RaffleEntryAdapter implements RaffleEntryPort {
 
     @Override
     public RaffleEntryTicket enter(long campaignId, long userId, BigDecimal gateValue,
-            String clientIp, String userAgent) {
+            BigDecimal balanceAtEntry, String clientIp, String userAgent) {
         return txTemplate.execute(status -> {
             entries.acquireCampaignXactLock(campaignId);
             Optional<RaffleEntryEntity> existing = entries.findByCampaignIdAndUserId(campaignId, userId);
@@ -37,7 +37,8 @@ public class RaffleEntryAdapter implements RaffleEntryPort {
                 return new RaffleEntryTicket(existing.get().getEntryNo(), true);
             }
             int entryNo = entries.countByCampaignId(campaignId) + 1;
-            entries.save(new RaffleEntryEntity(campaignId, userId, entryNo, gateValue, clientIp, userAgent));
+            entries.save(new RaffleEntryEntity(campaignId, userId, entryNo, gateValue, balanceAtEntry,
+                    clientIp, userAgent));
             return new RaffleEntryTicket(entryNo, false);
         });
     }

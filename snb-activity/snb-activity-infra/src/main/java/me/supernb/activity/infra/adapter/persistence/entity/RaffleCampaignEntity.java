@@ -53,6 +53,10 @@ public class RaffleCampaignEntity extends BaseJpaEntity {
     @Column(name = "min_account_age_days")
     private Integer minAccountAgeDays;
 
+    /// 可选余额闸(2026-08-18):NULL=不启用;非 NULL 时与充值闸取或。
+    @Column(name = "min_balance")
+    private BigDecimal minBalance;
+
     /// 权重模式:EQUAL | WEIGHTED。
     @Column(name = "weight_mode")
     private String weightMode;

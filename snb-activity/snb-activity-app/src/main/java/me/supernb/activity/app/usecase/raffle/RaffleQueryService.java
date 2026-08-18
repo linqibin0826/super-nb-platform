@@ -56,8 +56,8 @@ public class RaffleQueryService {
                             names.getOrDefault(e.userId(), "神秘代表")))
                     .toList();
             return new RaffleCurrentView(c.id(), c.name(), c.entryOpenAt(), c.entryCloseAt(), c.drawAt(),
-                    c.gateType().name(), c.gateAmount(), c.gateFrom(), c.weightMode().name(), c.status(),
-                    entryPort.count(c.id()), entrants, prizeBill(c.id()));
+                    c.gateType().name(), c.gateAmount(), c.gateFrom(), c.minBalance(),
+                    c.weightMode().name(), c.status(), entryPort.count(c.id()), entrants, prizeBill(c.id()));
         });
     }
 
@@ -124,7 +124,7 @@ public class RaffleQueryService {
     }
 
     /// 本人视图:资质窗口=[gate_from, min(now, entry_close_at))(截止后进度冻结);
-    /// 奖品只在已开奖后查询。
+    /// 奖品只在已开奖后查询。启用余额闸的期:资格=充值闸 或 实时余额 ≥ minBalance,任一满足。
     public MyRaffleView me(long campaignId, long userId) {
         RaffleCampaign c = campaignPort.byId(campaignId).orElseThrow(RaffleNotFoundException::new);
         Instant now = Instant.now();
@@ -137,7 +137,13 @@ public class RaffleQueryService {
                     .map(p -> new MyRaffleView.MyPrize(p.tier(), p.displayName(), p.kind(), p.payload()))
                     .orElse(null);
         }
+        boolean eligible = value.compareTo(c.gateAmount()) >= 0;
+        BigDecimal balance = null;
+        if (c.minBalance() != null) {
+            balance = gatePort.balance(userId);
+            eligible = eligible || balance.compareTo(c.minBalance()) >= 0;
+        }
         return new MyRaffleView(entry.isPresent(), entry.map(RaffleEntrant::entryNo).orElse(null),
-                value, c.gateAmount(), value.compareTo(c.gateAmount()) >= 0, prize);
+                value, c.gateAmount(), c.minBalance(), balance, eligible, prize);
     }
 }

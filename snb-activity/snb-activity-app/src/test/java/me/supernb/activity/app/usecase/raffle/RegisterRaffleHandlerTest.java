@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +39,13 @@ class RegisterRaffleHandlerTest {
         return new RaffleCampaign(1, "第一届发布会", open, close, close, GateType.RECHARGE,
                 new BigDecimal("100"), Instant.parse("2026-07-01T00:00:00Z"), minAgeDays,
                 WeightMode.EQUAL, "active", null, null, null);
+    }
+
+    /// 余额闸期(min_balance=100):资格=充值闸 或 余额闸取或。
+    private static RaffleCampaign balanceGateCampaign(Instant open, Instant close) {
+        return new RaffleCampaign(1, "第四届发布会", open, close, close, GateType.RECHARGE,
+                new BigDecimal("100"), Instant.parse("2026-07-01T00:00:00Z"), new BigDecimal("100"),
+                null, WeightMode.EQUAL, "active", null, null, null);
     }
 
     @Test
@@ -77,12 +85,40 @@ class RegisterRaffleHandlerTest {
     }
 
     @Test
+    void balanceGateAllowsEntryWhenRechargeShort() {
+        // 充值不够但余额过线:放行,余额快照随报名落库(开奖复核走快照——「报名时够就行」)
+        when(campaignPort.byId(1)).thenReturn(Optional.of(
+                balanceGateCampaign(Instant.now().minusSeconds(60), Instant.now().plusSeconds(3600))));
+        when(gatePort.gateValue(eq(42L), eq(GateType.RECHARGE), any(), any()))
+                .thenReturn(new BigDecimal("10"));
+        when(gatePort.balance(42L)).thenReturn(new BigDecimal("120"));
+        when(entryPort.enter(eq(1L), eq(42L), eq(new BigDecimal("10")), eq(new BigDecimal("120")),
+                eq("1.2.3.4"), eq("UA")))
+                .thenReturn(new RaffleEntryTicket(8, false));
+        RaffleEntryTicket t = handler.handle(new RegisterRaffleCommand(1, 42, "1.2.3.4", "UA"));
+        assertThat(t.entryNo()).isEqualTo(8);
+    }
+
+    @Test
+    void bothGatesFailMentionsBalancePath() {
+        when(campaignPort.byId(1)).thenReturn(Optional.of(
+                balanceGateCampaign(Instant.now().minusSeconds(60), Instant.now().plusSeconds(3600))));
+        when(gatePort.gateValue(eq(42L), eq(GateType.RECHARGE), any(), any()))
+                .thenReturn(new BigDecimal("10"));
+        when(gatePort.balance(42L)).thenReturn(new BigDecimal("40"));
+        assertThatThrownBy(() -> handler.handle(new RegisterRaffleCommand(1, 42, null, null)))
+                .isInstanceOf(RaffleNotEligibleException.class)
+                .hasMessageContaining("或站内余额 ≥ ¥100")
+                .hasMessageContaining("当前 ¥40");
+    }
+
+    @Test
     void eligibleDelegatesToEnterWithComputedValue() {
         when(campaignPort.byId(1)).thenReturn(Optional.of(
                 campaign(Instant.now().minusSeconds(60), Instant.now().plusSeconds(3600), null)));
         when(gatePort.gateValue(eq(42L), eq(GateType.RECHARGE), any(), any()))
                 .thenReturn(new BigDecimal("130"));
-        when(entryPort.enter(eq(1L), eq(42L), eq(new BigDecimal("130")), eq("1.2.3.4"), eq("UA")))
+        when(entryPort.enter(eq(1L), eq(42L), eq(new BigDecimal("130")), isNull(), eq("1.2.3.4"), eq("UA")))
                 .thenReturn(new RaffleEntryTicket(37, false));
         RaffleEntryTicket t = handler.handle(new RegisterRaffleCommand(1, 42, "1.2.3.4", "UA"));
         assertThat(t.entryNo()).isEqualTo(37);

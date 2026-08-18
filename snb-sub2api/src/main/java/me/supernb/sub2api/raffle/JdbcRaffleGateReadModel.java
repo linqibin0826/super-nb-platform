@@ -63,11 +63,21 @@ public class JdbcRaffleGateReadModel implements RaffleGateReadModel {
                     + "WHERE user_id IN (:ids) AND billing_type = 0 "
                     + "AND created_at >= :from AND created_at < :to GROUP BY user_id";
 
+    private static final String BALANCE_SINGLE =
+            "SELECT COALESCE((SELECT balance FROM users WHERE id = :uid), 0)";
+
     private final NamedParameterJdbcTemplate jdbc;
 
     /// 构造:注入指向 sub2api 只读源的 JdbcTemplate(包成 NamedParameterJdbcTemplate)。
     public JdbcRaffleGateReadModel(JdbcTemplate jdbcTemplate) {
         this.jdbc = new NamedParameterJdbcTemplate(jdbcTemplate);
+    }
+
+    @Override
+    public BigDecimal balance(long userId) {
+        BigDecimal v = jdbc.queryForObject(BALANCE_SINGLE,
+                new MapSqlParameterSource().addValue("uid", userId), BigDecimal.class);
+        return v == null ? BigDecimal.ZERO : v;
     }
 
     @Override

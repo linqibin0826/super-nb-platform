@@ -39,4 +39,9 @@ public class RaffleGateReadAdapter implements RaffleGateReadPort {
     public Map<Long, String> displayNames(Collection<Long> userIds) {
         return readModel.displayNamesByIds(userIds);
     }
+
+    @Override
+    public BigDecimal balance(long userId) {
+        return readModel.balance(userId);
+    }
 }

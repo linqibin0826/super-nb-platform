@@ -57,9 +57,24 @@ class RaffleDrawAdapterTest {
         // 三人报名;门槛桩:41/42 复核达标,43 复核跌破(报名后退款情景)
         for (long uid : new long[] {41, 42, 43}) {
             RaffleInfraTestApp.GATE_VALUES.put(uid, new BigDecimal("150"));
-            entryAdapter.enter(1, uid, new BigDecimal("150"), null, null);
+            entryAdapter.enter(1, uid, new BigDecimal("150"), null, null, null);
         }
         RaffleInfraTestApp.GATE_VALUES.put(43L, new BigDecimal("60"));
+    }
+
+    @Test
+    void balanceGateQualifiesByEntrySnapshotOnly() {
+        // 余额闸期(min_balance=100):44 充值 60 不达标,但报名时余额快照 150 → 合格;
+        // 45 同充值、快照 80 → 两闸皆败照旧刷掉。复核只认快照——报名后消耗不追溯(站长拍板)。
+        jdbc.update("UPDATE activity.raffle_campaign SET min_balance = 100 WHERE id = 1");
+        RaffleInfraTestApp.GATE_VALUES.put(44L, new BigDecimal("60"));
+        RaffleInfraTestApp.GATE_VALUES.put(45L, new BigDecimal("60"));
+        entryAdapter.enter(1, 44, new BigDecimal("60"), new BigDecimal("150"), null, null);
+        entryAdapter.enter(1, 45, new BigDecimal("60"), new BigDecimal("80"), null, null);
+        RaffleDrawSummary s = adapter.drawCampaign(1, new Random(7));
+        assertThat(s.executed()).isTrue();
+        assertThat(s.disqualified()).isEqualTo(2);  // 43 复核跌破 + 45 两闸皆败;44 靠快照过线
+        assertThat(winnerIds()).allMatch(uid -> uid == 41L || uid == 42L || uid == 44L);
     }
 
     @Test

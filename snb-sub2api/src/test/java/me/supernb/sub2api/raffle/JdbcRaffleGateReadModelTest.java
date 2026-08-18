@@ -36,7 +36,7 @@ class JdbcRaffleGateReadModelTest {
                 new DriverManagerDataSource(PG.getJdbcUrl(), PG.getUsername(), PG.getPassword());
         JdbcTemplate jdbc = new JdbcTemplate(ds);
         jdbc.execute("CREATE TABLE users (id BIGINT PRIMARY KEY, email TEXT, username TEXT, "
-                + "created_at TIMESTAMPTZ)");
+                + "created_at TIMESTAMPTZ, balance NUMERIC(20,8))");
         jdbc.execute("CREATE TABLE payment_orders (id BIGSERIAL PRIMARY KEY, user_id BIGINT, "
                 + "order_type TEXT, status TEXT, amount NUMERIC(20,2), completed_at TIMESTAMPTZ, "
                 + "recharge_code TEXT)");
@@ -45,9 +45,9 @@ class JdbcRaffleGateReadModelTest {
         jdbc.execute("CREATE TABLE redeem_codes (id BIGSERIAL PRIMARY KEY, code TEXT UNIQUE, "
                 + "type TEXT, value NUMERIC(20,8), status TEXT, used_by BIGINT, used_at TIMESTAMPTZ)");
 
-        jdbc.update("INSERT INTO users(id, email, username, created_at) VALUES "
-                + "(10, 'alice@qq.com', '老王', '2026-06-01T00:00:00Z'), "
-                + "(20, '1234567@qq.com', NULL, '2026-07-10T00:00:00Z')");
+        jdbc.update("INSERT INTO users(id, email, username, created_at, balance) VALUES "
+                + "(10, 'alice@qq.com', '老王', '2026-06-01T00:00:00Z', 123.45), "
+                + "(20, '1234567@qq.com', NULL, '2026-07-10T00:00:00Z', NULL)");
         // uid10 充值:窗口内 60+40(=100);窗口下界前一笔 999(不计);窗口上界恰好 TO 一笔 999(排他不计);
         // 非 COMPLETED 一笔、非 balance 一笔(都不计);60 那笔带 ZPay 镜像码——剔除不双算(否则 160)
         pay(jdbc, 10, "60", "COMPLETED", "balance", "2026-07-02T00:00:00Z", "PAY-10-60");
@@ -149,6 +149,13 @@ class JdbcRaffleGateReadModelTest {
     void unknownGateTypeRejected() {
         assertThatThrownBy(() -> model.gateValue(10, "MAGIC", FROM, TO))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void balanceReadsUsersRowAndDefaultsToZero() {
+        assertThat(model.balance(10)).isEqualByComparingTo("123.45");
+        assertThat(model.balance(20)).isEqualByComparingTo("0"); // balance NULL → 0
+        assertThat(model.balance(999)).isEqualByComparingTo("0"); // 查无此人 → 0
     }
 
     @Test

@@ -43,15 +43,26 @@ public class RaffleEntryEntity extends BaseJpaEntity {
     @Column(name = "user_agent")
     private String userAgent;
 
+    /// 报名时点余额快照(仅余额闸期非 null;开奖复核走它——「报名时够就行」,2026-08-18 站长拍板)。
+    @Column(name = "balance_at_entry")
+    private BigDecimal balanceAtEntry;
+
     /// 构造:新报名记录,雪花 id 在此显式预分配。
     public RaffleEntryEntity(long campaignId, long userId, int entryNo, BigDecimal gateValueAtEntry,
-                             String clientIp, String userAgent) {
+                             BigDecimal balanceAtEntry, String clientIp, String userAgent) {
         setId(SnowflakeIdGenerator.getId());
         this.campaignId = campaignId;
         this.userId = userId;
         this.entryNo = entryNo;
         this.gateValueAtEntry = gateValueAtEntry;
+        this.balanceAtEntry = balanceAtEntry;
         this.clientIp = clientIp;
         this.userAgent = userAgent;
+    }
+
+    /// 兼容构造:无余额闸期(存量测试沿旧签名)。
+    public RaffleEntryEntity(long campaignId, long userId, int entryNo, BigDecimal gateValueAtEntry,
+                             String clientIp, String userAgent) {
+        this(campaignId, userId, entryNo, gateValueAtEntry, null, clientIp, userAgent);
     }
 }

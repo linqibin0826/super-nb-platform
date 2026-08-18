@@ -15,15 +15,16 @@ public record RaffleCurrentResponse(Instant serverNow, CampaignView campaign) {
         return new RaffleCurrentResponse(serverNow, v == null ? null : CampaignView.of(v));
     }
 
-    /// 期视图。
+    /// 期视图。minBalance 非 null = 余额闸启用(与充值闸取或,页面展示第二条资格路径)。
     public record CampaignView(String id, String name, Instant entryOpenAt, Instant entryCloseAt,
-            Instant drawAt, String gateType, BigDecimal gateAmount, Instant gateFrom, String weightMode,
+            Instant drawAt, String gateType, BigDecimal gateAmount, Instant gateFrom,
+            BigDecimal minBalance, String weightMode,
             String status, int entrantCount, List<Entrant> recentEntrants, List<PrizeLine> prizes) {
 
         static CampaignView of(RaffleCurrentView v) {
             return new CampaignView(String.valueOf(v.id()), v.name(), v.entryOpenAt(), v.entryCloseAt(),
                     v.drawAt(), v.gateType().toLowerCase(Locale.ROOT), v.gateAmount(), v.gateFrom(),
-                    v.weightMode().toLowerCase(Locale.ROOT), v.status(), v.entrantCount(),
+                    v.minBalance(), v.weightMode().toLowerCase(Locale.ROOT), v.status(), v.entrantCount(),
                     v.recentEntrants().stream()
                             .map(e -> new Entrant(e.entryNo(), e.displayName())).toList(),
                     v.prizes().stream()

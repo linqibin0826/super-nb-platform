@@ -7,7 +7,8 @@ import me.supernb.activity.domain.model.read.raffle.MyRaffleView;
 /// 本人视图响应(登录端点专用):myPrize.payload 是全系统唯一吐机密的位置,
 /// 仅已开奖且本人中奖时非 null。
 public record RaffleMeResponse(boolean entered, Integer entryNo, BigDecimal gateValue,
-        BigDecimal gateAmount, boolean eligible, MyPrizeView myPrize) {
+        BigDecimal gateAmount, BigDecimal minBalance, BigDecimal balanceValue,
+        boolean eligible, MyPrizeView myPrize) {
 
     /// 组装。
     public static RaffleMeResponse of(MyRaffleView v) {
@@ -15,7 +16,7 @@ public record RaffleMeResponse(boolean entered, Integer entryNo, BigDecimal gate
                 : new MyPrizeView(v.myPrize().tier(), v.myPrize().displayName(),
                         v.myPrize().kind().toLowerCase(Locale.ROOT), v.myPrize().payload());
         return new RaffleMeResponse(v.entered(), v.entryNo(), v.gateValue(), v.gateAmount(),
-                v.eligible(), prize);
+                v.minBalance(), v.balanceValue(), v.eligible(), prize);
     }
 
     /// 我的奖品(含机密 payload)。

@@ -62,8 +62,8 @@ class RaffleEntryAdapterTest {
 
     @Test
     void enterIsIdempotentPerUser() {
-        RaffleEntryTicket first = adapter.enter(1, 42, new BigDecimal("130"), "1.2.3.4", "UA");
-        RaffleEntryTicket again = adapter.enter(1, 42, new BigDecimal("150"), "1.2.3.4", "UA");
+        RaffleEntryTicket first = adapter.enter(1, 42, new BigDecimal("130"), null, "1.2.3.4", "UA");
+        RaffleEntryTicket again = adapter.enter(1, 42, new BigDecimal("150"), null, "1.2.3.4", "UA");
         assertThat(first.already()).isFalse();
         assertThat(again.already()).isTrue();
         assertThat(again.entryNo()).isEqualTo(first.entryNo());
@@ -80,7 +80,7 @@ class RaffleEntryAdapterTest {
             long uid = 100 + i;
             futures.add(pool.submit(() -> {
                 gate.await();
-                return adapter.enter(1, uid, BigDecimal.TEN, null, null);
+                return adapter.enter(1, uid, BigDecimal.TEN, null, null, null);
             }));
         }
         gate.countDown();
@@ -96,7 +96,7 @@ class RaffleEntryAdapterTest {
 
     @Test
     void findRecentEntrantsAndCampaignQueriesMap() {
-        adapter.enter(1, 42, new BigDecimal("130"), null, null);
+        adapter.enter(1, 42, new BigDecimal("130"), null, null, null);
         assertThat(adapter.find(1, 42)).map(RaffleEntrant::entryNo).contains(1);
         assertThat(adapter.recent(1, 12)).extracting(RaffleEntrant::userId).containsExactly(42L);
         assertThat(adapter.entrants(1)).hasSize(1);
