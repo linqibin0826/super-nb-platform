@@ -32,9 +32,14 @@ public class CreateOpsAccountHandler implements CommandHandler<CreateOpsAccountC
                 cmd.source(), cmd.notes())));
     }
 
-    /// 邮箱格式底线校验(账号即邮箱,没有 @ 就不是账号)。
+    /// 邮箱格式校验(账号即邮箱)。只含 @ 不够——2026-08-18 生产真放进过
+    /// 粘贴带尾竖线的「…gmail.com|」造出重复行,故收紧为务实正则:
+    /// local 允许字母数字与 ._%+-,域名须带 TLD。台账真实形状见测试。
+    private static final java.util.regex.Pattern EMAIL = java.util.regex.Pattern
+            .compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
     static String requireEmail(String email) {
-        if (email == null || email.isBlank() || !email.contains("@")) {
+        if (email == null || !EMAIL.matcher(email.trim()).matches()) {
             throw OpsException.invalidInput("邮箱必填且须是邮箱格式");
         }
         return email.trim();

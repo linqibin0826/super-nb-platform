@@ -49,7 +49,23 @@ class CreateOpsAccountHandlerTest {
         assertThatThrownBy(() -> handler.handle(cmd(null, null))).isInstanceOf(OpsException.class);
         assertThatThrownBy(() -> handler.handle(cmd("  ", null))).isInstanceOf(OpsException.class);
         assertThatThrownBy(() -> handler.handle(cmd("no-at-sign", null))).isInstanceOf(OpsException.class);
+        // 2026-08-18 生产真踩过:粘贴带尾竖线的「tautvisbelekas16@gmail.com|」被放进库成重复行
+        assertThatThrownBy(() -> handler.handle(cmd("tautvisbelekas16@gmail.com|", null)))
+                .isInstanceOf(OpsException.class);
+        assertThatThrownBy(() -> handler.handle(cmd("a b@gmail.com", null))).isInstanceOf(OpsException.class);
+        assertThatThrownBy(() -> handler.handle(cmd("a@b", null))).isInstanceOf(OpsException.class);
         verifyNoInteractions(accounts);
+    }
+
+    @Test
+    void acceptsRealLedgerEmailShapes() {
+        when(cipher.encrypt(null)).thenReturn(null);
+        when(accounts.create(any())).thenReturn(9L);
+        // 台账在册的几种真实形状:Apple 中继/local 带点带连字符/自有域名
+        handler.handle(cmd("2rszszkn6y@privaterelay.appleid.com", null));
+        handler.handle(cmd("evamoni.ca1861@gmail.com", null));
+        handler.handle(cmd("ca-john@linqibin.dev", null));
+        handler.handle(cmd("  trimmed@gmail.com  ", null));
     }
 
     @Test
