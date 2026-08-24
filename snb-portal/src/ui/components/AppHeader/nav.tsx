@@ -4,9 +4,9 @@ import type { NavCapsuleItem } from '../NavCapsule/NavCapsule'
 /**
  * 全站导航的唯一真源（Header 规范 v2 结构 + GlobalParts v3 数值/词汇；spec 见 ai-relay
  * docs/superpowers/specs/2026-07-12-header-nav-v2-design.md）。
- * 四项固定：我的机位 / 画图机位 / 杂志架 / 今日活动（促销描边+呼吸点）——
+ * 四项固定：我的机位 / 画图机位 / 新手指南 / 今日活动（促销描边+呼吸点）——
  * 文案与 ai-relay deployment/files/check-headers.sh 的断言逐字一致，改必同步；
- * 「使用指南」入口收进杂志架（hub 首页常驻「使用手册」直达位），新站不再进顶栏。
+ * 「新手指南」直链 help.super-nb.me（2026-08-24 从「杂志架」/hub 改点，新手反馈找不到配置方法）。
  * 响应式两段：≥1024 胶囊 / <1024 菜单钮+玻璃下拉浮卡（唯一例外：help 站保留 VitePress 三档）。
  * 非 React 消费方（fork Vue / learn VitePress / activity 静态页）按 templates/app-header.html
  * 模板抄写——项目/顺序/链接改动必须与本常量同步（契约互指）。
@@ -68,14 +68,13 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
   },
   {
     key: 'hub',
-    label: '杂志架',
-    href: 'https://hub.super-nb.me/',
+    label: '新手指南',
+    href: 'https://help.super-nb.me/',
     icon: (
       <Icon>
-        <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
-        <path d="M18 14h-8" />
-        <path d="M15 18h-5" />
-        <path d="M10 6h8v4h-8V6z" />
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <path d="M12 17h.01" />
       </Icon>
     ),
   },

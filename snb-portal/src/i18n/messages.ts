@@ -8,7 +8,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       nav: {
         console: '我的机位',
         studio: '画图机位',
-        hub: '杂志架',
+        hub: '新手指南',
         activity: '今日活动',
         login: '登录',
         signup: '开卡上机',
@@ -77,7 +77,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       title: '画图机位',
       nav: {
         console: '我的机位',
-        hub: '杂志架',
+        hub: '新手指南',
         activity: '今日活动',
         login: '登录',
         signup: '开卡上机',
@@ -303,7 +303,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
     },
     invoice: {
       title: '发票中心',
-      nav: { console: '我的机位', studio: '画图机位', hub: '杂志架', activity: '今日活动', login: '登录', theme: '切换明暗主题' },
+      nav: { console: '我的机位', studio: '画图机位', hub: '新手指南', activity: '今日活动', login: '登录', theme: '切换明暗主题' },
       tabs: { apply: '申请开票', requests: '我的申请', profiles: '抬头管理' },
       guide: {
         title: '开票须知',
@@ -526,7 +526,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       nav: {
         console: 'My Station',
         studio: 'Art Station',
-        hub: 'Magazine Rack',
+        hub: 'Getting Started',
         activity: "Today's Events",
         login: 'Sign in',
         signup: 'Open a Card',
@@ -596,7 +596,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       title: 'Art Station',
       nav: {
         console: 'My Station',
-        hub: 'Magazine Rack',
+        hub: 'Getting Started',
         activity: "Today's Events",
         login: 'Sign in',
         signup: 'Open a Card',
@@ -825,7 +825,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
     },
     invoice: {
       title: 'Invoice Center',
-      nav: { console: 'My Station', studio: 'Art Station', hub: 'Magazine Rack', activity: "Today's Events", login: 'Log in', theme: 'Toggle theme' },
+      nav: { console: 'My Station', studio: 'Art Station', hub: 'Getting Started', activity: "Today's Events", login: 'Log in', theme: 'Toggle theme' },
       tabs: { apply: 'Apply', requests: 'My Requests', profiles: 'Billing Profiles' },
       guide: {
         title: 'How Invoicing Works',
