@@ -163,7 +163,7 @@ export function HistoryTab({ refreshToken, onApply, onPreview, onGoGallery }: Pr
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-[84px] animate-pulse rounded-[16px] border border-snb-hairline bg-snb-panel"
+            className="h-[84px] rounded-2xl bg-snb-elv"
           />
         ))}
       </div>
@@ -172,7 +172,7 @@ export function HistoryTab({ refreshToken, onApply, onPreview, onGoGallery }: Pr
 
   if (items.length === 0) {
     return (
-      <div className="mt-7 rounded-[20px] border border-dashed border-snb-hairline-strong bg-snb-panel px-8 py-14 text-center">
+      <div className="mt-7 rounded-3xl border border-dashed border-snb-hairline-strong bg-snb-panel px-8 py-14 text-center">
         <p className="font-sans text-lg font-semibold text-snb-t1">
           {t('studio.history.emptyTitle')}
         </p>
@@ -196,7 +196,7 @@ export function HistoryTab({ refreshToken, onApply, onPreview, onGoGallery }: Pr
             key={record.id}
             role="button"
             tabIndex={0}
-            className="flex cursor-pointer items-center gap-4 rounded-[16px] border border-snb-hairline bg-snb-panel p-3.5 pr-[18px] transition hover:border-snb-hairline-strong hover:shadow-card"
+            className="flex cursor-pointer items-center gap-4 rounded-2xl bg-snb-panel p-3.5 pr-[18px] shadow-glass-sm transition-[transform,box-shadow] duration-quick ease-snb-quick hover:-translate-y-0.5 hover:shadow-card-hover"
             onClick={() => void openDetail(record.id)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -209,10 +209,10 @@ export function HistoryTab({ refreshToken, onApply, onPreview, onGoGallery }: Pr
               <img
                 src={record.thumbUrl}
                 alt=""
-                className="h-14 w-14 shrink-0 rounded-[10px] border border-snb-hairline object-cover"
+                className="h-14 w-14 shrink-0 rounded-lg border border-snb-hairline object-cover"
               />
             ) : (
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] border border-snb-hairline bg-snb-elv text-[11px] text-snb-ember">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-snb-hairline bg-snb-elv text-[11px] text-snb-ember">
                 {t('playground.history.failed')}
               </div>
             )}
@@ -291,7 +291,7 @@ export function HistoryTab({ refreshToken, onApply, onPreview, onGoGallery }: Pr
                       role="button"
                       tabIndex={0}
                       aria-label={t('studio.history.viewImage')}
-                      className="aspect-[3/4] cursor-zoom-in rounded-[10px] border border-snb-hairline bg-cover bg-center"
+                      className="aspect-[3/4] cursor-zoom-in rounded-lg border border-snb-hairline bg-cover bg-center"
                       style={{ backgroundImage: `url("${image.url}")` }}
                       onClick={() => onPreview(urls, index)}
                       onKeyDown={(e) => {
@@ -316,13 +316,13 @@ export function HistoryTab({ refreshToken, onApply, onPreview, onGoGallery }: Pr
                       key={index}
                       src={ref.url}
                       alt=""
-                      className="h-16 w-16 rounded-[10px] border border-snb-hairline object-cover"
+                      className="h-16 w-16 rounded-lg border border-snb-hairline object-cover"
                     />
                   ))}
                 </div>
               </div>
             )}
-            <div className="rounded-[12px] border border-snb-hairline bg-snb-panel p-3">
+            <div className="rounded-lg border border-snb-hairline bg-snb-panel p-3">
               <p className="text-[11px] tracking-[0.08em] text-snb-t3">
                 {t('studio.history.detailPrompt')}
               </p>

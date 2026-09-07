@@ -54,12 +54,13 @@ export function ResultsTray({ queue, onPreview, onClose }: Props) {
           scalar: 0.8,
           ticks: 130,
           disableForReducedMotion: true,
-          // 🚨 彩纸落在**页面底**上，两档必须各配一套：深色档那三支浅橙（#FFE4D3/#FFC7A6）
-          // 压到白天档的纸上几乎看不见（最浅那支对 #F2EEE6 只有 1.1:1，等于没放）。
-          // 白天档整体压深一档：熔铁橙 + 两支中深橙 + 一支近墨的深棕橙。
+          // 🚨 彩纸落在**页面底**上，两档必须各配一套：深色档压纯黑、浅色档压 #F5F5F7。
+          // 值取 preset 的赤陶橙阶，不自己发明颜色；深色取浅四档（200–600）、浅色取深四档（600–900）。
+          // ⚠️ 品牌原色 #CC785C（primary-500）这里**不能用**：它是 --snb-brand，
+          //    守卫「赤陶橙只许住在 vendored 定义处」对业务面零命中，写死它会直接把断言打红。
           colors: isDarkNow()
-            ? ['#FF5C00', '#FFE4D3', '#FFC7A6', '#B04000']
-            : ['#BA4400', '#E06A1F', '#8C3200', '#5C2100'],
+            ? ['#E08F72', '#F2C3B0', '#EBA58C', '#A85A3F']
+            : ['#A85A3F', '#4D2A1E', '#874633', '#6B3828'],
           origin: { x: 0.5, y: 0.78 },
         })
       )
@@ -74,7 +75,7 @@ export function ResultsTray({ queue, onPreview, onClose }: Props) {
       animate={{ y: 0, opacity: 1 }}
       exit={reduceMotion ? { opacity: 0 } : { y: 16, opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 360, damping: 34 }}
-      className="pointer-events-auto overflow-hidden rounded-[20px] border border-snb-hairline-strong bg-snb-panel shadow-[0_16px_40px_-10px_rgba(70,50,38,0.30)] dark:shadow-[0_18px_48px_-10px_rgba(0,0,0,0.6)]"
+      className="pointer-events-auto overflow-hidden rounded-3xl bg-snb-panel shadow-glass"
     >
       {/* 60vh 上限配合卡片 40vh 封顶；100dvh-380px 给底下票根留位，矮屏整栈不超视口 */}
       <div className="max-h-[min(60vh,640px,calc(100dvh-380px))] overflow-y-auto p-5">

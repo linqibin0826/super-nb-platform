@@ -221,24 +221,24 @@ export function Composer(p: ComposerProps) {
         <span
           aria-hidden="true"
           onAnimationEnd={() => setPulsing(false)}
-          className="pointer-events-none absolute inset-0 rounded-[22px] animate-[snbComposerPulse_0.9s_ease-out] motion-reduce:animate-none"
+          className="pointer-events-none absolute inset-0 rounded-3xl animate-[snbComposerPulse_0.9s_ease-out] motion-reduce:animate-none"
         />
       )}
       {/* 生成中的呼吸光环：复用品牌 snbDotPulse（2.2s 无限），同样走独立覆盖层 */}
       {p.runningCount > 0 && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-[22px] animate-snb-dot motion-reduce:animate-none"
+          className="pointer-events-none absolute inset-0 rounded-3xl animate-snb-dot motion-reduce:animate-none"
         />
       )}
       <span className="sr-only" aria-live="polite">
         {pulsing ? t('studio.composer.applied') : ''}
       </span>
 
-      <div className="relative overflow-hidden rounded-[22px] border border-snb-hairline-strong bg-snb-panel shadow-[0_16px_40px_-10px_rgba(70,50,38,0.30)] dark:shadow-[0_18px_48px_-10px_rgba(0,0,0,0.6)]">
+      <div className="relative overflow-hidden rounded-3xl bg-snb-panel shadow-glass-sm">
         {/* 拖拽悬停提示：整卡任意位置松手即加参考图 */}
         {dragging && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[22px] border-2 border-dashed border-snb-safety bg-snb-safety/10">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-3xl border-2 border-dashed border-snb-safety bg-snb-safety/10">
             <span className="rounded-full bg-snb-panel/90 px-4 py-2 text-sm text-snb-t1 shadow-card">
               {t('studio.composer.dropHint')}
             </span>
@@ -297,7 +297,7 @@ export function Composer(p: ComposerProps) {
                 ? t('studio.composer.refFull', { max: MAX_REFS })
                 : t('studio.composer.pickerTitle')
             }
-            className="flex h-14 w-14 flex-none flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-snb-hairline-strong text-snb-t3 transition-colors duration-200 hover:border-snb-t3 hover:text-snb-t2 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-14 w-14 flex-none flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-snb-hairline-strong text-snb-t3 transition-colors duration-quick ease-snb-quick hover:border-snb-t3 hover:text-snb-t2 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg
               width="14"
@@ -390,7 +390,7 @@ export function Composer(p: ComposerProps) {
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
-              className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+              className={`transition-transform duration-quick ease-snb-quick ${expanded ? 'rotate-180' : ''}`}
             >
               <path d="m18 15-6-6-6 6" />
             </svg>
@@ -408,7 +408,7 @@ export function Composer(p: ComposerProps) {
               {p.runningCount > 0 && (
                 <span
                   aria-hidden="true"
-                  className="h-2 w-2 animate-pulse rounded-full bg-snb-safety motion-reduce:animate-none"
+                  className="h-2 w-2 animate-snb-dot rounded-full bg-snb-live motion-reduce:animate-none"
                 />
               )}
               {queueLabel(p.runningCount, p.queuedCount, p.finishedCount) || t('studio.queue.title')}

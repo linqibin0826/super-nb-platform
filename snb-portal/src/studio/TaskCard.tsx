@@ -59,7 +59,7 @@ function StatusGlyph({ status }: { status: GenTask['status'] }) {
     return (
       <span
         aria-hidden="true"
-        className="h-2 w-2 flex-none animate-pulse rounded-full bg-snb-safety motion-reduce:animate-none"
+        className="h-2 w-2 flex-none animate-snb-dot rounded-full bg-snb-live motion-reduce:animate-none"
       />
     )
   }
@@ -169,7 +169,7 @@ export function TaskCard(p: TaskCardProps) {
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
-            className={`shrink-0 text-snb-t3 transition-transform duration-200 ${p.expanded ? 'rotate-180' : ''}`}
+            className={`shrink-0 text-snb-t3 transition-transform duration-quick ease-snb-quick ${p.expanded ? 'rotate-180' : ''}`}
           >
             <path d="m6 9 6 6 6-6" />
           </svg>
@@ -249,7 +249,7 @@ export function TaskCard(p: TaskCardProps) {
                 </div>
                 <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-snb-elv">
                   <div
-                    className="h-full rounded-full bg-snb-cta transition-[width] duration-[420ms] ease-[cubic-bezier(0.2,0,0,1)]"
+                    className="h-full rounded-full bg-snb-cta transition-[width] duration-settle ease-snb"
                     style={{ width: `${Math.min(92, Math.round(92 * (1 - Math.exp(-elapsed / 45))))}%` }}
                   />
                 </div>

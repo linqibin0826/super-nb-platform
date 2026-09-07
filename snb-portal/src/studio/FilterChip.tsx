@@ -19,8 +19,8 @@ export function FilterChip({ active = false, count, dashed = false, onClick, chi
   const pill = active
     ? 'bg-snb-cta font-semibold text-snb-cta-fg'
     : dashed
-      ? 'border border-dashed border-[rgba(239,235,228,0.28)] text-snb-t2 group-hover/fc:border-[rgba(239,235,228,0.4)] group-hover/fc:text-snb-t1'
-      : 'border border-snb-hairline-strong text-snb-t2 group-hover/fc:border-[rgba(239,235,228,0.4)] group-hover/fc:text-snb-t1'
+      ? 'border border-dashed border-snb-hairline-strong text-snb-t2 group-hover/fc:border-snb-hairline-heavy group-hover/fc:text-snb-t1'
+      : 'border border-snb-hairline-strong text-snb-t2 group-hover/fc:border-snb-hairline-heavy group-hover/fc:text-snb-t1'
   return (
     <button
       type="button"
@@ -29,7 +29,7 @@ export function FilterChip({ active = false, count, dashed = false, onClick, chi
       className={`group/fc inline-flex items-center px-0.5 py-1.5 focus:outline-none ${className ?? ''}`}
     >
       <span
-        className={`inline-flex h-8 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[13px] transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] group-focus-visible/fc:ring-2 group-focus-visible/fc:ring-paper/60 ${pill}`}
+        className={`inline-flex h-8 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[13px] transition-colors duration-quick ease-snb-quick group-focus-visible/fc:ring-2 group-focus-visible/fc:ring-snb-focus ${pill}`}
       >
         {children}
         {count !== undefined && (

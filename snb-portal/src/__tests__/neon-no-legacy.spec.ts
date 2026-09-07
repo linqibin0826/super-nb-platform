@@ -91,20 +91,10 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
     // ⏳ 苹果式 v3 分期收口：以下文件在批 3 Task 6–9 逐个清干净，清完必须从本表删掉。
     //    这张表**只减不增**；Task 11 的守卫断言它最终是空的。
     const PENDING = new Set<string>([
-      'studio/ResultsTray.tsx',
-      'studio/WallCard.tsx',
-      'studio/GuestSpecBoard.tsx',
-      'studio/parts.tsx',
       'hub/hub.css',
       'hub/SerialSpotlight.tsx',
       'raffle-admin/raffle-admin.css',
       'invoice/GuestGate.tsx', // 🪦 纸米白 rgba(239,235,228,.28) 两处（Task 8 Step 6 清）
-      // ⚠️ 2026-09-07 实测追加（brief 原表未列，Task 2 执行时扫出）：纸米白 rgba(239,235,228,*)
-      // 残留在 studio 四个交互件里，未落在 Task 6-9 任一具名清单——收尾时需分配到位或补任务。
-      'studio/FilterChip.tsx',
-      'studio/PaperTrace.tsx',
-      'studio/composer/OptionChips.tsx',
-      'studio/composer/SpecPanel.tsx',
     ])
     expect(
       offenders(WANGBA_V2, (p) => isVendored(p) || isInvoiceTicket(p) || PENDING.has(p))

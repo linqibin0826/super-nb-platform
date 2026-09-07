@@ -37,10 +37,10 @@ export function SpecPanel(props: SpecPanelProps) {
   // 选中 = 纸白填充 + 沥青字（与 OptionChips 同一条纪律，白字压橙整条退役）；
   // 比例形状小方框走 border-current，选中时自然跟着变沥青
   const ratioBtnClass = (active: boolean) =>
-    `relative flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-1.5 text-[12.5px] transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60 disabled:cursor-not-allowed disabled:opacity-60 ${
+    `relative flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-1.5 text-[12.5px] transition-colors duration-quick ease-snb-quick focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-60 ${
       active
         ? 'border-transparent font-semibold text-snb-cta-fg'
-        : 'border-snb-hairline-strong text-snb-t2 hover:border-[rgba(239,235,228,0.4)] hover:text-snb-t1'
+        : 'border-snb-hairline-strong text-snb-t2 hover:border-snb-hairline-heavy hover:text-snb-t1'
     }`
 
   const ratioInk = (active: boolean) =>

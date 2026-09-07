@@ -16,39 +16,38 @@ import { EmptyState as UiEmptyState, ErrorState as UiErrorState } from '../ui'
 export { ctaAnchorClass, secondaryAnchorClass, ghostAnchorClass } from '../ui'
 
 // 状态灯唯一版：vendor 件签名兼容（<StatusLamp state="pending" />）。
-// 灭态色与呼吸环颜色两档各自翻——深色沿用 #828B96，浅色走 --snb-lamp-off #86837C
-// （深色那支压纸只有 2.98:1，白天档当不住边界）。
+// 苹果式 v3：live = 绿在线点 + 透明归零扩散环（--snb-live），灭态走 --snb-lamp-off，两档各自翻。
 export { StatusLamp } from '../ui'
 export type { StatusLampState as LampState } from '../ui'
 
-// 动效只许四档 + 全站唯一缓动（v3 §00）
-const MOTION = 'transition-all duration-quick ease-snb'
+// 动效四档 + 两把缓动（v3 §00 / 苹果式 v3）：小位移与悬停走 quick + ease-snb-quick
+const MOTION = 'transition-[background-color,color,border-color,transform,box-shadow] duration-quick ease-snb-quick'
 const FOCUS = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus'
 
 /** 主按钮四态（`<button>` 版，与 vendor `Button variant="primary" size="md"` 逐字同源）。
- *  🚨 双档镜像：深夜 = 纸白底沥青字，白天 = 墨块底纸白字；hover 深色提亮、浅色加深。
- *  四态值全在 --snb-cta-* 里翻，本文件一个颜色都不写死。 */
+ *  苹果式 v3：胶囊 / 高 44 / px 22 / 15px semibold / 强调色填充；hover 加深、press 缩 .97。
+ *  🪦 键帽底边（shadow-edge-*）与 1px 抬沉随网吧退役；四态值全在 --snb-cta-* 里翻，本文件一个颜色都不写死。 */
 export const ctaClass =
-  `inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border-0 px-5 text-sm font-semibold ${MOTION} ${FOCUS} ` +
-  'bg-snb-cta text-snb-cta-fg shadow-edge-2 ' +
-  'hover:-translate-y-px hover:bg-snb-cta-hover hover:shadow-edge-3 ' +
-  'active:translate-y-px active:bg-snb-cta-press active:shadow-edge-1 active:duration-press ' +
-  'disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-snb-elv disabled:text-snb-t3 disabled:shadow-none ' +
+  `inline-flex h-11 items-center justify-center gap-2 rounded-full border-0 px-[22px] text-[15px] font-semibold ${MOTION} ${FOCUS} ` +
+  'bg-snb-cta text-snb-cta-fg ' +
+  'hover:bg-snb-cta-hover ' +
+  'active:bg-snb-cta-press active:scale-[0.97] active:duration-press ' +
+  'disabled:cursor-not-allowed disabled:bg-snb-elv disabled:text-snb-t3 disabled:scale-100 ' +
   'motion-reduce:transform-none'
 
-/** 次按钮：透明底 + hairline-strong 描边 + 主字色；hover 底 panel、边提到 heavy 档。 */
+/** 次按钮：白胶囊——panel 底 + hairline-strong 描边 + 卡片投影（apple.com 的 secondary）。 */
 export const secondaryClass =
-  `inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border border-snb-hairline-strong px-5 text-sm ${MOTION} ${FOCUS} ` +
-  'bg-transparent text-snb-t1 hover:border-snb-hairline-heavy hover:bg-snb-panel ' +
-  'active:translate-y-px active:duration-press ' +
-  'disabled:cursor-not-allowed disabled:border-snb-hairline disabled:text-snb-t3 disabled:translate-y-0 ' +
-  'disabled:hover:bg-transparent motion-reduce:transform-none'
+  `inline-flex h-11 items-center justify-center gap-2 rounded-full border border-snb-hairline-strong px-[22px] text-[15px] font-medium ${MOTION} ${FOCUS} ` +
+  'bg-snb-panel text-snb-t1 shadow-card hover:border-snb-hairline-heavy ' +
+  'active:scale-[0.97] active:duration-press ' +
+  'disabled:cursor-not-allowed disabled:border-snb-hairline disabled:bg-transparent disabled:text-snb-t3 disabled:shadow-none disabled:scale-100 ' +
+  'motion-reduce:transform-none'
 
 /** 幽灵：无边 + 次字色；hover 提主字色 + 6% 主字色底。 */
 export const ghostClass =
-  `inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border-0 px-3.5 text-sm ${MOTION} ${FOCUS} ` +
+  `inline-flex h-11 items-center justify-center gap-2 rounded-full border-0 px-3.5 text-[15px] font-medium ${MOTION} ${FOCUS} ` +
   'bg-transparent text-snb-t2 hover:bg-snb-t1/[0.06] hover:text-snb-t1 ' +
-  'active:translate-y-px active:duration-press ' +
+  'active:scale-[0.97] active:duration-press ' +
   'disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transform-none'
 
 interface StateProps {
