@@ -5,6 +5,9 @@
    零新配色(强调只有安全橙一支;🪦 青玉在线灯随霓虹退役,「已开奖/已接线」改主字色;点灯零光晕,活体只有扩散环)。
    2026-07-29 双档补全:本文件原来把安全橙/纸白写成 hex 常量,白天档会错(橙压纸 2.7:1、
    纸白灯在纸上等于隐形)。现全部改吃 --snb-* 槽位,两档由 tokens.css 翻。
+   2026-09-07 苹果式 v3 收口:「进行中」指示灯从安全橙改绿在线点(--snb-live,spec §3.8
+   在线点是唯一允许的绿;橙只留给「有新活动」的 6px 小点);圆角落五档、动效落四档 +
+   --snb-ease-quick;行悬停底走 --snb-ambient-lift-soft。
    ============================================================ */
 
 /* ---------- 指示灯:活体信号,仅「进行中」呼吸,其余静止 ---------- */
@@ -18,8 +21,8 @@
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.2), 0 0 0 3px rgb(var(--snb-well));
 }
 .rf-lamp-active {
-  background: rgb(var(--snb-safety));
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 3px rgb(var(--snb-safety) / 0.45);
+  background: rgb(var(--snb-live));
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 3px rgb(var(--snb-live) / 0.45);
   animation: rfLampPulse 2.2s ease-in-out infinite;
 }
 .rf-lamp-drawn {
@@ -32,10 +35,10 @@
 @keyframes rfLampPulse {
   0%,
   100% {
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 3px rgb(var(--snb-safety) / 0.45);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 3px rgb(var(--snb-live) / 0.45);
   }
   50% {
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 8px rgb(var(--snb-safety) / 0);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 3px rgb(var(--snb-well)), 0 0 0 8px rgb(var(--snb-live) / 0);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -89,28 +92,28 @@
 
 /* ---------- 面板行:悬停微亮,呼应控制面板逐行巡检的既视感 ---------- */
 .rf-row {
-  transition: background-color 0.15s ease;
+  transition: background-color 0.2s var(--snb-ease-quick);
 }
 .rf-row:hover {
-  background: rgb(var(--snb-t1) / 0.04);
+  background: var(--snb-ambient-lift-soft);
 }
 
 /* ---------- 盒式下拉:与 Input 同皮肤(照 invoice iv-fp-select 先例),
    终结「下划线下拉贴白盒输入框」的控件语言打架 ---------- */
 /* ⚠️ data URI 里的 stroke 只能是字面 hex，吃不了 CSS 变量 ⇒ 两档各写一份。
-   值 = 各档的 t2（深 #A0A7B0 / 浅 #5A5750）。🪦 锈色箭头 %23A08876 随霓虹退役。 */
+   值 = 各档的 t2（浅 #424245 / 深 #D1D1D6）。🪦 暖墨与冷灰两支随网吧退役。 */
 :root {
-  --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A5750' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23424245' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 .dark {
-  --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A0A7B0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --rf-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D1D1D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 .rf-select {
   width: 100%;
   appearance: none;
   background-color: rgb(var(--snb-elv));
   border: 1px solid var(--snb-hairline-strong);
-  border-radius: 0.75rem;
+  border-radius: var(--snb-r-sheet);
   padding: 10px 34px 10px 16px;
   font: inherit;
   font-size: 14px;
@@ -119,7 +122,7 @@
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s var(--snb-ease-quick), box-shadow 0.2s var(--snb-ease-quick);
 }
 .rf-select:focus {
   outline: none;
@@ -133,7 +136,7 @@
 .rf-select-sm {
   padding: 5px 26px 5px 10px;
   font-size: 12.5px;
-  border-radius: 8px;
+  border-radius: var(--snb-r-chip);
   background-position: right 8px center;
   background-size: 12px;
 }
@@ -156,7 +159,7 @@
 .rf-del {
   font-size: 12px;
   color: rgb(var(--snb-t3));
-  transition: color 0.15s ease;
+  transition: color 0.2s var(--snb-ease-quick);
 }
 .rf-del:hover {
   color: rgb(var(--snb-danger));

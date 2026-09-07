@@ -86,13 +86,16 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
   // 业务面一律零容忍；vendored 与发票票据本体除外（票据的棕红 #97503C 与黄铜 #d9a35c 是它
   // 自己的票框色系，spec 决策 10 明写不换；发票**外壳**的回归靠批 3 Task 8 的边界表 + diff 核验）。
   it('🪦 网吧 v2 色板清零（vendored 与发票票据本体除外）', () => {
+    // 🚨 2026-09-07 补 `%23`：data URI 里的井号是 URL 编码的（`stroke='%235A5750'`），
+    //    只认字面 `#` 的旧正则看不见它——raffle-admin 的两支箭头因此一直躲在豁免表里假装干净。
     const WANGBA_V2 =
-      /#(BA4400|FF5C00|FFA372|0E1014|171A20|242A33|F2EEE6|FBF9F5|E5DFD3|EAE5DB|CFC8B8|C9C2B4|EFEBE4|1C1A16|D9A35C|141821|1B1F27|2C333D|3A424E|221E18|14120F|100F0D|1B1710|BDB4A9|8F877D|D6CCBE|7E766B|6F6B62|5A5750|3A362E|CACFD5|1a1613|0F0E0C)\b|(?:239[,\s]+235[,\s]+228)|(?:186[,\s]+68[,\s]+0)|(?:255[,\s]+92[,\s]+0)|(?:14[,\s]+16[,\s]+20)|(?:28[,\s]+26[,\s]+22)/i
+      /(?:#|%23)(BA4400|FF5C00|FFA372|0E1014|171A20|242A33|F2EEE6|FBF9F5|E5DFD3|EAE5DB|CFC8B8|C9C2B4|EFEBE4|1C1A16|D9A35C|141821|1B1F27|2C333D|3A424E|221E18|14120F|100F0D|1B1710|BDB4A9|8F877D|D6CCBE|7E766B|6F6B62|5A5750|3A362E|CACFD5|1a1613|0F0E0C)\b|(?:239[,\s]+235[,\s]+228)|(?:186[,\s]+68[,\s]+0)|(?:255[,\s]+92[,\s]+0)|(?:14[,\s]+16[,\s]+20)|(?:28[,\s]+26[,\s]+22)/i
     // ⏳ 苹果式 v3 分期收口：以下文件在批 3 Task 6–9 逐个清干净，清完必须从本表删掉。
     //    这张表**只减不增**；Task 11 的守卫断言它最终是空的。
-    const PENDING = new Set<string>([
-      'raffle-admin/raffle-admin.css',
-    ])
+    // ✅ 2026-09-07 批 3 Task 9 收口完毕：分期清单已空，Task 11 的守卫会二次核实。
+    const PENDING = new Set<string>([])
+    // 「只减不增」的绊线：谁想把文件塞回豁免表，得先动这行，改不动就得真去改文件。
+    expect(PENDING.size).toBe(0)
     expect(
       offenders(WANGBA_V2, (p) => isVendored(p) || isInvoiceTicket(p) || PENDING.has(p))
     ).toEqual([])

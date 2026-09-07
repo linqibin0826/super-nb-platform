@@ -141,7 +141,7 @@ export function AccountListPage() {
               <tr
                 key={a.id}
                 onClick={() => navigate(`/admin/accounts/${a.id}`)}
-                className="cursor-pointer transition-colors duration-quick ease-snb hover:bg-black/[0.02] dark:hover:bg-white/[0.04]"
+                className="cursor-pointer transition-colors duration-quick ease-snb-quick hover:bg-black/[0.02] dark:hover:bg-white/[0.04]"
               >
                 <td className="px-4 py-3">
                   <Link

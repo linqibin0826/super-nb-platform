@@ -72,7 +72,7 @@ export function FieldSelect({
     <div className={className}>
       {label && <label className="mb-1.5 block text-sm font-medium text-snb-t2">{label}</label>}
       <select
-        className="w-full rounded-lg border border-snb-hairline-strong bg-transparent px-3 py-2 text-sm text-snb-t1 transition-colors duration-quick ease-snb hover:border-snb-hairline-heavy focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
+        className="w-full rounded-lg border border-snb-hairline-strong bg-transparent px-3 py-2 text-sm text-snb-t1 transition-colors duration-quick ease-snb-quick hover:border-snb-hairline-heavy focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
         {...rest}
       />
     </div>
