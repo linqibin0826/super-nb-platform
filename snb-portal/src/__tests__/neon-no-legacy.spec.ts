@@ -92,7 +92,6 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
     //    这张表**只减不增**；Task 11 的守卫断言它最终是空的。
     const PENDING = new Set<string>([
       'raffle-admin/raffle-admin.css',
-      'invoice/GuestGate.tsx', // 🪦 纸米白 rgba(239,235,228,.28) 两处（Task 8 Step 6 清）
     ])
     expect(
       offenders(WANGBA_V2, (p) => isVendored(p) || isInvoiceTicket(p) || PENDING.has(p))

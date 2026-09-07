@@ -17,7 +17,7 @@
   --iv-stub-line: rgba(151, 80, 60, 0.14);     /* 存根账页横线 */
   --iv-no-red: #c24a38;                        /* 票号红/眉题红 */
   --iv-brand: #97503c;                         /* 票据工具字色(棕红) */
-  --iv-flash: color-mix(in srgb, #BA4400 16%, transparent); /* 誊写落格闪光(白天档压深橙) */
+  --iv-flash: color-mix(in srgb, #A85A3F 16%, transparent); /* 誊写落格闪光(浅色档强调色压深) */
 }
 .dark {
   --iv-frame: rgba(217, 163, 92, 0.5);         /* 暗色票框 → 黄铜烫金 */
@@ -33,7 +33,7 @@
 }
 
 /* ---------- 回家条(仅独立标签页形态) ----------
-   高 40、底色深井、下边 hairline-strong、**在文档流里**(不 fixed、不遮票面)。
+   高 40、底色深井、下边发丝线、**在文档流里**(不 fixed、不遮票面)。
    它不是顶栏:没有一级导航、没有余额、没有头像——那些是宿主的活。链接热区 44 高。 */
 .iv-homebar {
   flex: none;
@@ -44,7 +44,7 @@
   gap: 16px;
   padding: 0 clamp(16px, 3vw, 32px);
   background: rgb(var(--snb-well));
-  border-bottom: 1px solid var(--snb-hairline-strong);
+  border-bottom: 1px solid var(--snb-hairline);
 }
 .iv-homebar-brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .iv-homebar-brand > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -52,19 +52,20 @@
   display: inline-flex;
   align-items: center;
   height: 44px;
-  padding: 0 12px;
+  padding: 0 14px;
+  border-radius: 999px;
   font-size: 13px;
   color: rgb(var(--snb-t2));
   text-decoration: none;
   white-space: nowrap;
-  transition: color 0.12s cubic-bezier(0.2, 0, 0, 1);
+  transition: color 0.2s var(--snb-ease-quick), background 0.2s var(--snb-ease-quick);
 }
-.iv-homebar-link:hover { color: rgb(var(--snb-t1)); }
+.iv-homebar-link:hover { color: rgb(var(--snb-t1)); background: rgb(var(--snb-t1) / 0.06); }
 .iv-homebar-link.on { color: rgb(var(--snb-t1)); }
 .iv-homebar-link.on:hover { color: rgb(var(--snb-cta-hover)); }
 @media (max-width: 480px) {
   .iv-homebar { padding: 0 12px; gap: 8px; }
-  .iv-homebar-link { padding: 0 10px; font-size: 12.5px; }
+  .iv-homebar-link { padding: 0 12px; font-size: 12.5px; }
 }
 
 /* 票据字体:仿宋(公文/票据脸),英文与缺字回退衬线 */
@@ -198,7 +199,7 @@
   border: 1px solid var(--snb-hairline-strong);
   color: rgb(var(--snb-t2));
   font-size: 13px;
-  transition: color 0.12s cubic-bezier(0.2, 0, 0, 1), border-color 0.12s cubic-bezier(0.2, 0, 0, 1);
+  transition: color 0.2s var(--snb-ease-quick), border-color 0.2s var(--snb-ease-quick);
 }
 .iv-chip:hover { color: rgb(var(--snb-t1)); border-color: var(--snb-hairline-heavy); }
 .iv-chip.on {
@@ -271,7 +272,7 @@
   background: var(--iv-frame-tint);
   font-size: 12.5px;
   cursor: pointer;
-  transition: background 0.12s cubic-bezier(0.2, 0, 0, 1);
+  transition: background 0.2s var(--snb-ease-quick);
 }
 .iv-fp-ord-head:hover { background: rgb(var(--snb-t1) / 0.07); }
 .iv-fp-ord-head .sel {
@@ -979,8 +980,8 @@ textarea.iv-fpin { resize: none; overflow: hidden; display: block; width: 100%; 
   position: fixed;
   inset: 0;
   z-index: 90;
-  /* 零发光 v2:backdrop blur 摘除(review #3,唯一例外=顶栏),遮蔽力靠底色加深 */
-  background: rgba(17, 13, 9, 0.62);
+  /* 遮罩两档都暗,走令牌(🪦 暖黑 rgba(17,13,9,.62) 随网吧退役);玻璃只在顶栏与浮层本体 */
+  background: var(--snb-mask);
   display: grid;
   place-items: center;
   padding: 20px;
@@ -991,7 +992,10 @@ textarea.iv-fpin { resize: none; overflow: hidden; display: block; width: 100%; 
   max-width: 420px;
   max-height: calc(100vh - 40px); /* 矮视口(横屏手机)防卡死:内容超高时卡内滚动,确认按钮永远够得到 */
   overflow-y: auto;
-  animation: iv-guide-in 0.18s ease-out;
+  /* 🚨 这层是**透明包裹**,它的直接子元素就是票面 .iv-fapiao(4px 圆角 + 自带 card 投影)。
+     绝不能在这里加 border-radius / box-shadow:16px 圆角配 overflow:auto 会把票框四角剪掉,
+     那就是改到票面像素了(禁改边界)。浮层材质由票面自己承担,本层只管遮罩与入场。 */
+  animation: iv-guide-in 0.4s var(--snb-ease);
 }
 @keyframes iv-guide-in {
   from { transform: scale(0.96) translateY(8px); opacity: 0; }
@@ -1054,13 +1058,13 @@ textarea.iv-fpin { resize: none; overflow: hidden; display: block; width: 100%; 
   display: grid;
   place-items: center;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   background: transparent;
   color: rgb(var(--snb-t3));
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
-  transition: color 0.12s cubic-bezier(0.2, 0, 0, 1), background 0.12s cubic-bezier(0.2, 0, 0, 1);
+  transition: color 0.2s var(--snb-ease-quick), background 0.2s var(--snb-ease-quick);
 }
 .iv-guide-x:hover { color: rgb(var(--snb-t1)); background: rgb(var(--snb-t1) / 0.06); }
 /* 出口区:手机一列整宽,桌面并排 + 一句把两个出口的语义写清楚 */

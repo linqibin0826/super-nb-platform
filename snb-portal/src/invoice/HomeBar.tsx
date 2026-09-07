@@ -24,10 +24,10 @@ export function HomeBar() {
   return (
     <div className="iv-homebar">
       <div className="iv-homebar-brand">
-        <span className="font-sign text-[14px] font-bold tracking-[0.07em] text-snb-t1">
-          SUPER<span className="text-snb-safety">·</span>NB
+        <span className="text-[14px] font-bold tracking-[-0.02em] text-snb-t1">
+          SUPER<span className="text-snb-brand">·</span>NB
         </span>
-        {/* 🚨 回家条底是深井 well：t3 压它只有 4.23:1，按 tokens.css 的降级纪律走 t2 */}
+        {/* 🚨 回家条底是深井 well：t3 压它只有 4.27:1，按 tokens.css 的降级纪律走 t2 */}
         <span className="font-mono text-[11.5px] tracking-[0.04em] text-snb-t2">
           {ti('invoice.homebar.note')}
         </span>
