@@ -62,7 +62,7 @@ export function Dday({ date }: { date: string }) {
   )
 }
 
-/** 原生下拉(与 Input 大致同皮肤;MVP 不引机房人格件) */
+/** 原生下拉(与 Input 大致同皮肤;MVP 不引仪表盘人格件) */
 export function FieldSelect({
   label,
   className,

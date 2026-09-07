@@ -36,9 +36,9 @@ function codeCount(html: string): number {
 }
 
 /**
- * 杂志架索引：一次拉全站可见条目（pageSize 48 = 后端上限；现存 16 条一页装得下），
+ * 内容中心索引：一次拉全站可见条目（pageSize 48 = 后端上限；现存 16 条一页装得下），
  * 文章页的「下一篇 / 上一篇 / 相关阅读 / 全部 N 篇 / 电子书直达」全从这一份里取——
- * 不加新端点、不改后端契约。拉失败就静默降级（章末导航退成「回杂志架」）。
+ * 不加新端点、不改后端契约。拉失败就静默降级（章末导航退成「回内容中心」）。
  */
 function useRackIndex(enabled: boolean) {
   const [rack, setRack] = useState<{ items: ArticleSummary[]; total: number }>({ items: [], total: 0 })

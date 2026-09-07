@@ -14,7 +14,7 @@ const dict: Record<Locale, LocaleDict> = {
       /** 独立标签页形态的回家条(嵌入控制台 iframe 时整条不渲染) */
       homebar: {
         note: '发票中心 · 独立窗口',
-        back: '← 回我的机位',
+        back: '← 回控制台',
         login: '登录',
       },
       /** 访客态:三个页签同一副壳,只换骨架与末句 */
@@ -22,7 +22,7 @@ const dict: Record<Locale, LocaleDict> = {
         badge: '访客视图 · {tab} · 数据未接通',
         cta: '登录后开票',
         apply:
-          '登录后这里排的是你真实付款的充网费订单：勾上要开的，票面会当场算出合计、大写金额和手续费。',
+          '登录后这里排的是你真实付款的充值订单：勾上要开的，票面会当场算出合计、大写金额和手续费。',
         requests:
           '登录后这里是你每一张申请：待受理 / 开票中 / 已开票 / 已驳回 / 已撤回，盖着章，开出来的 PDF 在这儿下载。',
         profiles:
@@ -46,7 +46,7 @@ const dict: Record<Locale, LocaleDict> = {
     invoice: {
       homebar: {
         note: 'Invoice desk · standalone window',
-        back: '← Back to My Station',
+        back: '← Back to Console',
         login: 'Sign in',
       },
       guest: {

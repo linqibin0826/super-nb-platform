@@ -5,9 +5,9 @@ import { UserMenu } from '../auth/UserMenu'
 import { CONSOLE_ORIGIN } from '../config'
 import { t } from '../i18n'
 
-/** hub 顶栏：统一 AppHeader（规范 v1）+ 场景槽（登录态）。照 studio TopBar 裁剪。
- *  用户区契约（2026-07-28 全站统一）：已登录 = 头像一枚 + 账户下拉（用户头/我的机位/
- *  退出→fork /logout 登出单点）；未登录 = 登录幽灵 + 开卡上机纸白实心。 */
+/** hub 顶栏：统一 AppHeader（Header 规范 v2）+ 场景槽（登录态）。照 studio TopBar 裁剪。
+ *  用户区契约（2026-07-28 全站统一）：已登录 = 头像一枚 + 账户下拉（用户头/控制台/
+ *  退出→fork /logout 登出单点）；未登录 = 登录幽灵 + 免费注册强调色实心。 */
 export function HubHeader() {
   const user = useAuthUser()
   return (
@@ -15,7 +15,7 @@ export function HubHeader() {
       site="hub"
       subtitle={t('hub.title')}
       labelFor={(item) => t(`hub.nav.${item.key}`)}
-      // 开灯/关灯：排在场景槽最前（见 AppHeader）。杂志架是长文站，白天档尤其要有
+      // 主题开关：排在场景槽最前（见 AppHeader）。内容中心是长文站，浅色档尤其要有
       themeToggle
     >
       {user ? (

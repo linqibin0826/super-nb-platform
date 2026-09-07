@@ -40,7 +40,7 @@ function CategoryTabs({
 }
 
 /**
- * 列表页（杂志架）：架头（含未接线搜索位）+ 连载专栏位 + 类目胶囊 + 等高卡片墙 +
+ * 列表页（内容中心）：架头（含未接线搜索位）+ 连载专栏位 + 类目胶囊 + 等高卡片墙 +
  * 加载更多 + 空/错态配对件。
  * 🚨 砖墙改等高网格、列数纯 CSS 断点：JS 测宽会在首帧后重排整墙（CLS 大头）。
  */
@@ -79,7 +79,7 @@ export function ListPage() {
           <div className="eb">{th('mag.eyebrow')}</div>
           <h1>{t('hub.title')}</h1>
           <p className="ds">{th('mag.desc')}</p>
-          {/* 使用手册常驻直达位（Header 规范 v2：「使用指南」退出全站顶栏，唯一入口在杂志架） */}
+          {/* 使用手册常驻直达位（Header 规范 v2：「使用指南」退出全站顶栏，唯一入口在内容中心） */}
           <a className="hub-manual" href="https://help.super-nb.me/">
             📖 {t('hub.list.manual')}
           </a>

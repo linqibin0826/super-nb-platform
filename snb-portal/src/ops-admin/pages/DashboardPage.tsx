@@ -217,6 +217,9 @@ export function DashboardPage() {
   const pad = (n: number) => String(n).padStart(2, '0')
   const head = (
     <PageHead
+      // 🚨 「机房后勤簿」是站长 2026-08-18 亲自定的内部台账产品名（同「义父群」「女秘书」的
+      //    性质：专名，早于/独立于网吧化），苹果式 v3 文案回退**不动它**；
+      //    src/__tests__/no-wangba.spec.ts 为它开了一条具名白名单。要改先问站长。
       title="机房后勤簿"
       sub={`${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())} · 账号 / 订阅 / 缴费 / 退款`}
     />
