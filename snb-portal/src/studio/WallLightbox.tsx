@@ -1,7 +1,7 @@
 // 桌面「点开看大图」（设计定稿 Studio.dc.html「点开看大图」屏）：
 // 大图 + 提示词全文 + 「直接使用 / 复制提示词」三件在同一个界面里完成——
 // 原来桌面点卡片完全没反应、图只以 330px 软图形态出现，这是那条问题的落地。
-// · 分寸不变：提示词随便看随便抄、不拦登录；点赞收藏与照着出图才提示开卡。
+// · 分寸不变：提示词随便看随便抄、不拦登录；点赞收藏与照着出图才提示登录。
 // · 计数写「第 N 张 · 本次筛选」——不写「N / 5778」，那会被读成在全库翻页。
 // · 触屏窄屏仍走 PromptSheet 底部抽屉（手势更顺），本件只服务桌面/宽屏。
 import { useEffect, useState } from 'react'
@@ -16,7 +16,7 @@ interface WallLightboxProps {
   item: PromptListItem
   /** 当前筛选结果里的第几张（1 起） */
   index: number
-  /** 已登录：出赞/藏两钮；访客：出「开卡上机」说明 */
+  /** 已登录：出赞/藏两钮；访客：出「免费注册」说明 */
   isMember: boolean
   liked: boolean
   favorited: boolean

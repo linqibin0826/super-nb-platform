@@ -1,7 +1,7 @@
-// studio 本地文案层（2026-07-29 画图机位改版）：
+// studio 本地文案层（2026-07-29 创作工坊改版；2026-09-07 苹果式 v3 文案回退）：
 // 共享 src/i18n 是三站（studio/hub/invoice）合用文件、本轮并行改造中约定只读——
 // 新增与改词的 studio 文案全部收在这里，st() 先查本地字典、查不到回落共享 t()。
-// ⚠️ 八段等待文案是设计定稿逐字终稿（机房腔，节奏与「越往后越接近完工」的递进不许动）。
+// ⚠️ 八段等待文案是设计定稿逐字终稿（出图机器腔，节奏与「越往后越接近完工」的递进不许动）。
 import type { LocaleDict } from '../i18n/core'
 import { locale, t } from '../i18n'
 
@@ -9,7 +9,7 @@ const STUDIO_LOCAL: Record<'zh' | 'en', LocaleDict> = {
   zh: {
     studio: {
       hero: {
-        subtitle: '逛灵感库不用登录，出图和收藏才要开卡。',
+        subtitle: '逛灵感库不用登录，出图和收藏才要登录。',
         libCount: '灵感库 5778 条素材',
         queueLight: '生图队列 · 同时最多跑 {n} 个',
       },
@@ -41,7 +41,7 @@ const STUDIO_LOCAL: Record<'zh' | 'en', LocaleDict> = {
       },
       wallError: {
         title: '灵感库没拉下来',
-        body: '刚才请求素材列表失败了，是机房这边的问题；你的收藏和创作记录都还在。',
+        body: '刚才请求素材列表失败了，是我们这边的问题；你的收藏和创作记录都还在。',
         action: '再试一次',
       },
       big: {
@@ -50,12 +50,12 @@ const STUDIO_LOCAL: Record<'zh' | 'en', LocaleDict> = {
         promptHint: '可选可复制',
         use: '直接使用 · 填进创作票据',
         copiedFull: '已复制到剪贴板',
-        guestNote: '提示词随便看随便抄，不用登录。要点赞收藏或者照这张出图，得先开卡上机。',
+        guestNote: '提示词随便看随便抄，不用登录。要点赞收藏或者照这张出图，得先注册登录。',
         prev: '上一张',
         next: '下一张',
         close: '关闭',
       },
-      // 八段走纸文案 · 机房腔终稿（7 秒一换，越往后越接近完工）
+      // 八段走纸文案 · 出图机器腔终稿（7 秒一换，越往后越接近完工）
       results: {
         stage1: '机器自检，风扇转起来了…',
         stage2: '显存吃满，开始铺第一遍…',
@@ -80,7 +80,7 @@ const STUDIO_LOCAL: Record<'zh' | 'en', LocaleDict> = {
         badge: '规格牌 · 访客视图',
         lead: '先看清有得选、按用量算钱，再决定要不要充。',
         modelsTitle: '能选什么模型',
-        modelsBody: '这里会列出你能用的生图模型——清单是拿你自己的 Key 去问接口拿的，所以没上机之前谁也看不到。',
+        modelsBody: '这里会列出你能用的生图模型——清单是拿你自己的 Key 去问接口拿的，所以没登录之前谁也看不到。',
         sizesTitle: '出什么尺寸',
         sizesAuto: '自动 / 自定义宽高',
         sizesBody1: '先挑比例，再挑画质档 ',
@@ -89,15 +89,15 @@ const STUDIO_LOCAL: Record<'zh' | 'en', LocaleDict> = {
         costFormula1: '分组档位单价 × 张数 × 分组倍率',
         costFormula2: '按官方价计 · 充值 1:1 不看汇率',
         costBody: '出图前票据上会写清这一单预估多少钱，一分不差再撕票。分组是登录后才知道的，所以这儿只给算法不给数。',
-        cta: '开卡上机',
-        ctaNote: '开卡建 Key 全程免费，不充值不计费。登录后这三格会填上真的模型清单和你这一单的预估。',
+        cta: '免费注册',
+        ctaNote: '注册建 Key 全程免费，不充值不计费。登录后这三格会填上真的模型清单和你这一单的预估。',
       },
     },
   },
   en: {
     studio: {
       hero: {
-        subtitle: 'Browse the wall without signing in — generating and saving need a card.',
+        subtitle: 'Browse the wall without signing in — generating and saving need an account.',
         libCount: 'Library · 5,778 prompts',
         queueLight: 'Queue · up to {n} at once',
       },
@@ -135,7 +135,7 @@ const STUDIO_LOCAL: Record<'zh' | 'en', LocaleDict> = {
         promptHint: 'Select & copy freely',
         use: 'Use it · drop into the ticket',
         copiedFull: 'Copied to clipboard',
-        guestNote: 'Prompts are free to read and copy — no sign-in. Liking, saving, or generating from this one needs a card.',
+        guestNote: 'Prompts are free to read and copy — no sign-in. Liking, saving, or generating from this one needs an account.',
         prev: 'Previous',
         next: 'Next',
         close: 'Close',
@@ -164,7 +164,7 @@ const STUDIO_LOCAL: Record<'zh' | 'en', LocaleDict> = {
         badge: 'Spec board · guest view',
         lead: 'See what is on offer and how usage is priced, before you put money in.',
         modelsTitle: 'Which models',
-        modelsBody: 'Your selectable image models will be listed here — the list is fetched with your own key, so nobody sees it before getting on a station.',
+        modelsBody: 'Your selectable image models will be listed here — the list is fetched with your own key, so nobody sees it before signing in.',
         sizesTitle: 'Which sizes',
         sizesAuto: 'Auto / custom W×H',
         sizesBody1: 'Pick a ratio, then a resolution tier ',
@@ -173,8 +173,8 @@ const STUDIO_LOCAL: Record<'zh' | 'en', LocaleDict> = {
         costFormula1: 'group tier price × count × group multiplier',
         costFormula2: 'official rates · top-ups land 1:1, no FX',
         costBody: 'Before a run, the ticket spells out the estimate for this order — torn only at that exact price. Your group is known after sign-in, so here you get the formula, not a number.',
-        cta: 'Open a card',
-        ctaNote: 'Opening a card and creating keys is free — no top-up, no charge. Once signed in these three slots fill with your real model list and estimate.',
+        cta: 'Sign up free',
+        ctaNote: 'Signing up and creating keys is free — no top-up, no charge. Once signed in these three slots fill with your real model list and estimate.',
       },
     },
   },

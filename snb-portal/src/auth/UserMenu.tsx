@@ -3,7 +3,7 @@ import type { AuthUser } from './tokens'
 
 export interface UserMenuProps {
   user: AuthUser
-  /** 我的机位链接（studio 本地 dev 走同源相对路径，生产直链控制台域） */
+  /** 控制台链接（studio 本地 dev 走同源相对路径，生产直链控制台域） */
   dashboardHref: string
   /** 退出链接：一律直链 fork /logout 登出单点（墓碑协议唯一真源，子站绝不自己碰 cookie） */
   logoutHref: string
@@ -13,7 +13,7 @@ export interface UserMenuProps {
 }
 
 /** 已登录用户区（用户区契约 2026-07-28）：头像一枚，点开账户下拉——
- *  用户头（email）/ 我的机位 / 退出（破坏性操作走功能红）。
+ *  用户头（email）/ 控制台 / 退出（破坏性操作走功能红）。
  *  浮卡与 AppHeader 菜单钮浮卡同材质（panel + hairline + 纯黑投影）。
  *  studio / hub 共用；Esc 与点外任一关闭。 */
 export function UserMenu({ user, dashboardHref, logoutHref, dashboardLabel, logoutLabel, ariaLabel }: UserMenuProps) {
