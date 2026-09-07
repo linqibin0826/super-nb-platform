@@ -3,8 +3,9 @@
    强调改赤陶橙（浅压深 #A85A3F / 深提亮 #E08F72）。:root 是浅色、.dark 是深色，结构与 tokens.css 同构。 */
 
 :root {
-  /* 强调橙：白天档必须压深。品牌原色压白只有 3.28:1，够不着正文 4.5 */
-  --hub-accent: 168 90 63;   /* #A85A3F 压 #FFFFFF 5.00:1 / 压 #F5F5F7 4.59:1 */
+  /* 强调橙引 vendored 的 --snb-safety（浅 #A85A3F 压白 5.00:1 / 深 #E08F72 压黑 8.3:1），
+     不再写字面量——色值的唯一真源在 tokens.css。两档各声明一次是为了在各自作用域重新解析。 */
+  --hub-accent: var(--snb-safety);
   --hub-ink: 29 29 31;       /* 阅读墨 #1D1D1F */
 
   /* 无图封面 / 搜索框的「板」：面上是深井色，板上的字标与提示都是幽灵档（不承载信息） */
@@ -15,7 +16,7 @@
   --hub-chip-hover: rgba(29, 29, 31, 0.06); /* 代码块「复制」悬停底 */
 }
 .dark {
-  --hub-accent: 224 143 114; /* #E08F72 压纯黑 8.34:1 */
+  --hub-accent: var(--snb-safety);
   --hub-ink: 245 245 247;    /* 阅读墨 #F5F5F7 */
 
   --hub-plate: #2C2C2E;
@@ -67,18 +68,16 @@
    解析暗色档，与控制台/studio/help 同一套明暗纪律。
    🪦 2026-07-29 起文章页改走整根纸柱（.hub-paper），这件只剩电子书讲次页在用；
    随之退役的 .hub-metabar / .hub-sheet-cover / -eyebrow / -title / -foot 已删。 */
+/* 🪦 暖褐纸（浅 250 249 245 / 深 28 25 23）与暖墨投影随网吧退役：底改引 --snb-panel、
+   投影改面板槽 --snb-shadow-glass-sm，两者都在 .hub-sheet 这一层解析 ⇒ 两档自动翻，
+   原来的 `.dark .hub-sheet` 覆盖块整块删掉（再留就是第二真源）。 */
 .hub-sheet {
-  --sheet-bg: 250 249 245;
+  --sheet-bg: var(--snb-panel);
   border: 1px solid var(--snb-hairline-strong);
   border-radius: 22px;
   background: rgb(var(--sheet-bg));
   padding: clamp(26px, 5.5vw, 60px);
-  box-shadow: 0 1px 2px rgb(17 13 9 / 0.03), 0 12px 40px -18px rgb(17 13 9 / 0.12);
-}
-.dark .hub-sheet {
-  --sheet-bg: 28 25 23; /* panel 墨卡：纸随全站变墨 */
-  border-color: var(--snb-hairline-strong);
-  box-shadow: 0 18px 50px -22px rgb(0 0 0 / 0.6);
+  box-shadow: var(--snb-shadow-glass-sm);
 }
 .hub-sheet .hub-prose { margin-top: 2.1rem; font-size: 18px; }
 @media (max-width: 640px) {
@@ -256,7 +255,7 @@
 .hub-prose .book-flow-item {
   padding: 8px 14px;
   border: 1px solid var(--snb-hairline-strong);
-  border-radius: 8px;
+  border-radius: var(--snb-r-thumb);
   background: rgb(var(--snb-panel));
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.82em;
@@ -562,7 +561,13 @@
 /* ⚠️ 类名撞车：电子书目录页这个 .hub-cta 是**按钮行容器**，而下面第 1195 行的 .hub-cta 是
    **按钮本体**（同名同特异度、写在后面 ⇒ 后者赢），容器会被当成按钮渲染成一枚 44 高胶囊。
    加一层 .hub-book 提特异度，让容器拿回自己的排版；按钮本体只在 .hub-article 侧用，不受影响。 */
-.hub-book .hub-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin: 26px 0 0; height: auto; padding: 0; background: none; border-radius: 0; }
+.hub-book .hub-cta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin: 26px 0 0;
+  /* 按钮规则漏进来的每一条都要复位，少一条就漏一条（justify-content 漏掉时整行被水平居中）*/
+  justify-content: flex-start; height: auto; padding: 0; border: 0; border-radius: 0;
+  background: none; color: inherit; font-size: inherit; font-weight: inherit;
+  text-decoration: none; cursor: auto;
+}
 /* 🪦 4px 4px 0 的实心偏移投影退役（反模式）——主按钮统一成 44 高胶囊、悬停靠底色加深 */
 .hub-btn-read {
   display: inline-flex; align-items: center; gap: 10px;
@@ -778,7 +783,7 @@
 .hub-serial-art {
   flex-shrink: 0; width: 104px; border-radius: 10px; overflow: hidden;
   border: 1px solid var(--snb-hairline-strong);
-  box-shadow: 4px 4px 0 rgb(var(--snb-t1) / 0.1);
+  box-shadow: var(--snb-shadow-card); /* 🪦 4px 4px 0 硬偏移投影退役 */
 }
 .hub-serial-art svg { display: block; width: 100%; height: auto; }
 .hub-serial-main { min-width: 0; flex: 1; }
@@ -1221,7 +1226,7 @@
   height: 44px;
   padding: 0 20px;
   border: 1px solid var(--snb-hairline-strong);
-  border-radius: 8px;
+  border-radius: 999px;
   background: transparent;
   color: rgb(var(--snb-t1));
   font-size: 14px;
@@ -1230,7 +1235,6 @@
   transition: background 200ms var(--snb-ease-quick), border-color 200ms var(--snb-ease-quick);
 }
 .hub-btn2:hover { background: rgb(var(--snb-panel)); border-color: var(--snb-hairline-heavy); }
-.hub-btn2:active { transform: translateY(1px); transition-duration: 100ms; }
 .hub-btn2[disabled] { background: rgb(var(--snb-elv)); border-color: transparent; color: rgb(var(--snb-t3)); cursor: default; }
 /* 幽灵 */
 .hub-btn3 {
@@ -1240,7 +1244,7 @@
   height: 44px;
   padding: 0 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   background: transparent;
   color: rgb(var(--snb-t2));
   font-size: 14px;
@@ -1323,9 +1327,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: transform 100ms var(--snb-ease-quick);
 }
-.hub-code-copy:active { transform: translateY(1px); }
 .hub-code-copy > span {
   display: inline-flex;
   align-items: center;
@@ -1566,7 +1568,7 @@
 .hub-card-cover .word {
   /* 🪦 这里原来引的招牌字变量从来没在 tokens.css 里定义过（招牌字已随苹果式 v3 退役），
      一直静默退到系统栈——直接写成全站同款 sans 栈，别再留死变量。 */
-  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif);
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 0.08em;
