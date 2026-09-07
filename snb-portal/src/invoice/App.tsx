@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { BrowserRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { ThemeScope } from '../ui'
+import { Button, ThemeScope } from '../ui'
 import { t } from '../i18n'
 import { ti } from './copy'
 import { FirstVisitGuide } from './FirstVisitGuide'
@@ -40,7 +40,7 @@ function SubNav({ onOpenGuide }: { onOpenGuide: () => void }) {
                 className={`flex h-full w-full items-center justify-center whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium transition-[background-color,color,box-shadow] duration-quick ease-snb-quick ${
                   isActive
                     ? 'bg-snb-key-active font-semibold text-snb-t1 shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
-                    : 'text-snb-t3 hover:text-snb-t1'
+                    : 'text-snb-t2 hover:text-snb-t1'
                 }`}
               >
                 {tab.label}
@@ -50,13 +50,9 @@ function SubNav({ onOpenGuide }: { onOpenGuide: () => void }) {
         ))}
       </nav>
       {pathname === '/' && (
-        <button
-          type="button"
-          className="flex h-11 items-center rounded-full border border-snb-hairline-strong bg-snb-panel px-[22px] text-[15px] font-medium text-snb-t1 shadow-card transition-[border-color,transform] duration-quick ease-snb-quick hover:border-snb-hairline-heavy active:scale-[0.97] active:duration-press"
-          onClick={onOpenGuide}
-        >
+        <Button type="button" variant="secondary" onClick={onOpenGuide}>
           {ti('invoice.guide.reopen')}
-        </button>
+        </Button>
       )}
     </div>
   )
