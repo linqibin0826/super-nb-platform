@@ -2,35 +2,31 @@ import type { HTMLAttributes, ReactNode } from 'react'
 import { cx } from '../../lib/cx'
 
 export type AlertTone = 'tip' | 'warning' | 'danger' | 'info'
-
 export interface AlertProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   tone?: AlertTone
   title?: ReactNode
 }
 
-// 语义色条走双档槽位：深色取值与旧的 primary-500 / snb-amber / snb-ember / dark-500
-// 逐字相同（#FF5C00 / #FF5C00 / #EA494F / #828B96），浅色自动压深。
-// ⚠️ 旧的固定 hex 在纸上都不达标：#FF5C00 压面 2.94:1、#828B96 压面 3.28:1 卡在线上。
-// v2 色板没有黄：警告就是安全橙，危险就是功能红。
-const tones: Record<AlertTone, string> = {
-  tip: 'border-l-snb-safety',
-  warning: 'border-l-snb-safety',
-  danger: 'border-l-snb-danger',
-  info: 'border-l-snb-lamp-off',
+// 🪦 彩色左边条退役（spec §3.10：「碎卡片各带描边与底色 / 彩色左条」是反模式）。
+// 语气只落在标题色上，容器是一块统一面板；tone 同时挂到 data-tone 供消费方/测试选择。
+// 语气标题走 *-ink 槽：本色 safety/danger 压染色底与 well 余量不足 4.5:1
+const titleTones: Record<AlertTone, string> = {
+  tip: 'text-snb-t1',
+  warning: 'text-snb-safety-ink',
+  danger: 'text-snb-danger-ink',
+  info: 'text-snb-t1',
 }
 
-/** 记录卡：左 2px 语义色条 + 发丝线边（learn 警示块母题） */
+/** 提示块：统一面板 + 语气标题 */
 export function Alert({ tone = 'tip', title, className, children, ...rest }: AlertProps) {
   return (
     <div
-      className={cx(
-        'rounded-[10px] border border-snb-hairline border-l-2 px-[18px] py-4 text-sm text-snb-t2',
-        tones[tone],
-        className
-      )}
+      data-tone={tone}
+      role={tone === 'danger' ? 'alert' : undefined}
+      className={cx('rounded-2xl bg-snb-well px-[18px] py-4 text-sm leading-relaxed text-snb-t2', className)}
       {...rest}
     >
-      {title != null && <p className="mb-1 font-bold tracking-[0.02em] text-snb-t1">{title}</p>}
+      {title != null && <p className={cx('mb-1 font-semibold', titleTones[tone])}>{title}</p>}
       {children}
     </div>
   )

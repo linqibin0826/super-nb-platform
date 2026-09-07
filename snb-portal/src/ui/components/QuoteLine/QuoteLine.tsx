@@ -8,7 +8,7 @@ export interface QuoteLineProps {
   className?: string
 }
 
-/** 报价行：衬线点引线 + 等宽大字（studio 生图合计行同款） */
+/** 报价行：衬线点引线 + 大字数值（studio 生图合计行同款） */
 export function QuoteLine({ label, value, note, className }: QuoteLineProps) {
   return (
     <p className={cx('flex min-w-0 flex-1 items-baseline text-sm text-snb-t3', className)}>
@@ -18,7 +18,7 @@ export function QuoteLine({ label, value, note, className }: QuoteLineProps) {
         style={{ marginBottom: '0.4em' }}
         aria-hidden="true"
       />
-      <span className="ml-2 shrink-0 font-mono text-xl font-semibold tracking-tight text-snb-t1 sm:ml-0">
+      <span className="ml-2 shrink-0 text-xl font-semibold tabular-nums tracking-[-0.02em] text-snb-t1 sm:ml-0">
         {value}
       </span>
       {note && <span className="ml-2 hidden shrink-0 text-xs text-snb-t3 md:inline">{note}</span>}

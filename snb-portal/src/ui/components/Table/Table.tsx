@@ -15,14 +15,15 @@ export interface TableProps {
 
 export function Table({ columns, rows, rowKey, className }: TableProps) {
   return (
-    <div className={cx('overflow-x-auto rounded-xl border border-snb-hairline-strong', className)}>
+    <div className={cx('overflow-x-auto rounded-2xl border border-snb-hairline', className)}>
       <table className="w-full text-sm [&_tbody_tr:last-child_td]:border-b-0">
         <thead>
           <tr>
             {columns.map((c) => (
               <th
                 key={c.key}
-                className="border-b border-snb-hairline-strong bg-black/[0.03] px-4 py-3 text-left font-medium text-snb-t2 dark:bg-white/[0.07]"
+                // 表头压 well：t3 压 well 浅色只有 4.27:1，一律用 t2
+                className="border-b border-snb-hairline bg-snb-well px-4 py-3 text-left text-[13px] font-medium text-snb-t2"
               >
                 {c.title}
               </th>
@@ -33,7 +34,7 @@ export function Table({ columns, rows, rowKey, className }: TableProps) {
           {rows.map((row, i) => (
             <tr
               key={rowKey ? rowKey(row, i) : i}
-              className="transition-colors duration-150 hover:bg-black/[0.02] dark:hover:bg-white/[0.04]"
+              className="transition-colors duration-quick ease-snb-quick hover:bg-snb-well/60"
             >
               {columns.map((c) => (
                 <td key={c.key} className="border-b border-snb-hairline px-4 py-3 text-snb-t2">

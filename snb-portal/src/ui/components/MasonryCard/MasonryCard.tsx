@@ -49,7 +49,7 @@ export function MasonryCard({ src, alt = '', width, height, overlay, stats, capt
         // 卡框（图片外的部分）跟着主题翻：浅色底走深井 well（图未加载时是块桌面色），
         // 描边走 hairline；深色保持旧值原样。
         // 🚨 但**图上的一切不翻**——见下面遮罩层的注释
-        'group relative mb-4 break-inside-avoid overflow-hidden rounded-xl border border-snb-hairline bg-snb-well shadow-card transition-shadow duration-quick ease-snb focus-within:shadow-card-hover hover:shadow-card-hover dark:border-white/[0.06] dark:bg-dark-900',
+        'group relative mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-snb-hairline bg-snb-well shadow-card transition-shadow duration-quick ease-snb-quick focus-within:shadow-card-hover hover:shadow-card-hover dark:border-white/[0.06] dark:bg-dark-900',
         interactive && 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus',
         className
       )}
@@ -83,9 +83,10 @@ export function MasonryCard({ src, alt = '', width, height, overlay, stats, capt
             </div>
           )}
           <div className="[&_button]:pointer-events-auto">{stats}</div>
-          {/* 署名是授权要求不是装饰：实压阴影（不是辉光）保证它压在任何图上都读得出 */}
+          {/* 署名是授权要求不是装饰：实压阴影（不是辉光）保证它压在任何图上都读得出。
+              色值写死不随档翻——它压的是图片不是主题面；#D1D1D6 = v3 冷灰（🪦 旧暖灰署名色随网吧退役）*/}
           {caption && (
-            <p className="pointer-events-none mt-1.5 truncate text-[11px] text-[#D8D3CA] [text-shadow:0_1px_2px_rgba(0,0,0,0.95),0_2px_8px_rgba(0,0,0,0.75)]">
+            <p className="pointer-events-none mt-1.5 truncate text-[11px] text-[#D1D1D6] [text-shadow:0_1px_2px_rgba(0,0,0,0.95),0_2px_8px_rgba(0,0,0,0.75)]">
               {caption}
             </p>
           )}

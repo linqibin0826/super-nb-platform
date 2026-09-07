@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { cx } from '../../lib/cx'
 
-/** 三态（GlobalParts v3 §06）：正在发生 / 待开 / 已结束。橙不给未发生的事。 */
+/** 三态（GlobalParts v3 §06）：正在发生 / 待开 / 已结束。呼吸不给未发生的事。 */
 export type StatusLampState = 'live' | 'pending' | 'ended'
 
 export interface StatusLampProps {
@@ -13,13 +13,12 @@ export interface StatusLampProps {
   className?: string
 }
 
-// 🚨 双档：呼吸环颜色跟着 --snb-safety 翻（深 rgba(255,92,0,.5) / 浅 rgba(186,68,0,.5)），
-// 由 animate-snb-dot 的 keyframes 直接读变量，组件这边不写死。
-// 灭态两色不能沿用 t3：深色的 #828B96 压纸只有 2.98:1（压底那一档卡在线上、当不住边界），
-// 浅色单独走 --snb-lamp-off #86837C（压底 3.27 / 压面 3.60:1）。
+// 灭态灯不沿用 t3，单独走 --snb-lamp-off（浅 #AEAEB2 / 深 #6E6E73）：
+// 它是装饰点不是文本，3:1 非文本门槛不适用，取值只求两档看得见、不抢主色。
+// 在线点=绿（唯一允许的绿，只做点不做字）；扩散环由 animate-snb-dot 读 --snb-live。
+// 🪦 橙点随 v2 退役：赤陶橙（--snb-safety）只给「有新活动」的 6px 小点（NavCapsule 自渲染），不再当状态灯。
 const dotTone: Record<StatusLampState, string> = {
-  // 呼吸只属于「正在发生」：2200ms 平色扩散环（box-shadow 零模糊半径），不是光晕
-  live: 'bg-snb-safety animate-snb-dot motion-reduce:animate-none',
+  live: 'bg-snb-live animate-snb-dot motion-reduce:animate-none',
   pending: 'border-[1.5px] border-snb-lamp-off bg-transparent',
   ended: 'bg-snb-lamp-off',
 }

@@ -18,7 +18,7 @@ export function StatePanel({ tone, icon, title, description, actions, className 
   return (
     <div
       className={cx(
-        'flex flex-col items-center gap-3 rounded-xl bg-snb-panel px-6 py-11 text-center max-md:px-4',
+        'flex flex-col items-center gap-3 rounded-3xl bg-snb-panel px-6 py-11 text-center shadow-glass-sm max-md:px-4',
         // 错误态容器换功能红描边——一眼能和空态分开，不许「假装暂无数据」
         tone === 'error' ? 'border border-snb-danger/45' : 'border border-snb-hairline',
         className

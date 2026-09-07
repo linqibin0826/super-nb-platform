@@ -1,7 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// 设计系统样式须在本地样式之前：先 token 变量、再组件样式、最后 studio 自己的胶水
-import './ui/tokens/tokens.css'
+// 设计系统样式须在本地样式之前：先 token 变量、再组件层（.snb-glass 等工具类）、最后 studio 自己的胶水。
+// ⚠️ 2026-09-07：改为由 index.css 头部 @import './ui/styles.css' 统一引入（它自带 tokens 与三条 @tailwind），
+//    本文件不再单独 import tokens.css——否则同一份变量会被打包两遍。
 import './index.css'
 import App from './App.tsx'
 import { reconcileFromCookie } from './auth/tokens'

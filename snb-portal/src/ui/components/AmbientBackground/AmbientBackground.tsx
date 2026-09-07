@@ -3,35 +3,34 @@ import { cx } from '../../lib/cx'
 export type AmbientVariant = 'hero' | 'dusk' | 'mesh'
 
 export interface AmbientBackgroundProps {
-  /** hero=顶部暖光(studio)；dusk=页脚落日余晖(learn 暮色)；mesh=浅色网格光(fork) */
+  /** hero=左侧三团（带侧栏的壳）；dusk=底部一团；mesh=左上一团（无侧栏页面慎用：环境光只垫在有玻璃的壳底下） */
   variant?: AmbientVariant
-  /** false 时用 absolute 定位（容器内局部氛围），默认 fixed 全屏 */
+  /** false 时用 absolute 定位（容器内局部），默认 fixed 全屏底层 */
   fixed?: boolean
   className?: string
 }
 
-/* 🪦 港风霓虹大气（暖橙×青玉×品红三色 rgba 光晕）随零发光 v2 退役——
-   rgb 写法躲过了第一轮 hex 扫描，靠消费面清点才抓出来。
-   v2 的氛围只有一种：顶灯提亮（与 fork PublicShell/开卡台同配方），
-   背景无彩色——彩色只属于安全橙那一小撮状态灯。三个 variant 键保留（API 不动），
-   差异只剩灯位：hero=顶部中央 / dusk=底部余晖 / mesh=双侧低亮。
-
-   🚨 双档：提亮色走 --snb-ambient-lift（深 #161A20 提亮沥青 / 浅 #FBF9F5 纸面受光）。
-   同一手法反向——深色是「底上打一盏灯」，浅色是「纸上落一片光」；两档都只有 ~1.1 的
-   亮度差，绝不许变成模糊光球（那是发光，零发光红线）。写死 hex 会让白天档在纸上
-   糊出一团深色油渍。 */
+/* 环境光层（苹果式 v3，spec §3.5 ③）：玻璃需要有东西可折射。钉在左侧，只从侧栏与顶栏透出，
+   内容区实白面板不受影响。这是底层环境光不是元素发光，与零发光纪律不冲突。
+   两档同配方、只差透明度（深色由 .dark 下的 CSS 变量 --snb-ambient-alpha 缩放）。
+   🪦 07-27 的「顶灯提亮」--snb-ambient-lift 配方随网吧退役（那两个槽位保名给行悬停用）。 */
 const recipes: Record<AmbientVariant, string> = {
-  hero: 'radial-gradient(940px 640px at 50% 22%, var(--snb-ambient-lift) 0%, transparent 66%)',
-  dusk: 'radial-gradient(820px 460px at 50% 104%, var(--snb-ambient-lift) 0%, transparent 64%)',
-  mesh: 'radial-gradient(680px 420px at 12% -8%, var(--snb-ambient-lift-soft) 0%, transparent 62%), radial-gradient(600px 380px at 92% 2%, var(--snb-ambient-lift-soft) 0%, transparent 60%)',
+  hero: [
+    'radial-gradient(520px 440px at 0% 6%, rgb(var(--snb-brand) / calc(.55 * var(--snb-ambient-alpha, 1))), transparent 66%)',
+    'radial-gradient(480px 520px at 16% 52%, rgb(96 132 210 / calc(.42 * var(--snb-ambient-alpha, 1))), transparent 66%)',
+    'radial-gradient(560px 460px at 4% 100%, rgb(232 160 120 / calc(.48 * var(--snb-ambient-alpha, 1))), transparent 66%)',
+    'radial-gradient(300px 300px at 22% 30%, rgb(255 255 255 / calc(.8 * var(--snb-ambient-white, 1))), transparent 70%)',
+  ].join(', '),
+  dusk: 'radial-gradient(820px 460px at 50% 104%, rgb(var(--snb-brand) / calc(.35 * var(--snb-ambient-alpha, 1))), transparent 64%)',
+  mesh: 'radial-gradient(680px 420px at 12% -8%, rgb(var(--snb-brand) / calc(.40 * var(--snb-ambient-alpha, 1))), transparent 62%)',
 }
 
-/** 氛围光层：暗色的亮度靠它而非抬高底色（learn 军规） */
+/** 环境光层：放在壳的最底层（-z-10），玻璃侧栏 / 顶栏透它 */
 export function AmbientBackground({ variant = 'hero', fixed = true, className }: AmbientBackgroundProps) {
   return (
     <div
       aria-hidden="true"
-      className={cx('pointer-events-none inset-0 z-0', fixed ? 'fixed' : 'absolute', className)}
+      className={cx('pointer-events-none inset-0 -z-10', fixed ? 'fixed' : 'absolute', className)}
       style={{ background: recipes[variant] }}
     />
   )

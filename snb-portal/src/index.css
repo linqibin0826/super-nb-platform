@@ -1,6 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* 设计系统样式表（vendor 真源）：内含 @import tokens.css + @tailwind base/components/utilities
+   + .snb-glass / .snb-glass-side / .snb-glass-chip 三条玻璃工具类 + 三条无障碍媒体查询。
+   ⚠️ @import 必须在文件最前（CSS 规范），且本文件不得再写 @tailwind——会把整套工具类打两遍。 */
+@import './ui/styles.css';
 
 @layer base {
   /* 底色/文字色交给 ThemeScope（bg-snb-bg text-snb-t1），氛围光交给 AmbientBackground 组件 */

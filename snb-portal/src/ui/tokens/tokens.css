@@ -1,195 +1,173 @@
-/* super-nb 品牌语义槽位：零发光网吧 v2 —— 双档（白天 :root / 深夜 .dark）
-   （2026-07-27 换装，取代 07-26 港风霓虹——霓虹整条退役，站长判「土」，
-   复盘根因=发光：满屏都在发光等于什么都不亮）
-   真源对齐：sub2api fork style.css 网吧七变量 ↔ ai-relay activity-wangba/_wangba.css，
-   本文件的槽位值必须与两处逐字同值，改必三边同步。
-   2026-07-29 GlobalParts v3 补档：纸白交互两档（hover 白/按下米灰）、hairline 第三档、
-   动效四档 + 统一缓动——值表见 ai-relay 提示词档案 ①。
+/* super-nb 品牌语义槽位：苹果式 v3 —— 双档（浅色 :root / 深色 .dark）
+   （2026-09-07 换代，取代 07-27 零发光网吧 v2 + 07-29 白天档。
+   spec：ai-relay docs/superpowers/specs/2026-09-07-apple-glass-visual-language-design.md）
 
-   ═══ 2026-07-29 白天档补齐（双档一直在计划内）═══
-   ⚠️ 分期说明，别读成方向反复：双档从来都在计划内，07-26 的「全站恒暗」是**分期上线的
-   第一步**（先把网吧化改造整车推上线），浅色皮肤排在第二步。本次做的是按原计划补全
-   第二步，不是推翻任何决定。当时拆主题机制留下的注释（fork themeCookie「契约作废」、
-   help「四边契约在此拆除」）语气是终局性的，那只是分期期间防回潮的临时护栏，
-   不是产品意图——重建时按 src/theme/snbTheme.ts 的契约装回即可。
+   五条哲学（决策顺序）：统一面板 > 碎卡片 · 玻璃是调味不是主菜（只在粘性顶栏 / 浮层 /
+   彩色 CTA 标签）· 克制即奢侈 · 层级靠字重字号灰阶不靠颜色 · 品质在细节。
 
-   浅色定稿（Claude Design「浅色档 · Token 值表」+「公用件规范 v3 · 浅色镜像」，
-   2026-07-29）：16 槽位逐槽给值，正文 ≥4.5:1、大字与控件边界 ≥3:1，全部实测过。
-   三条不可选的结论：
-     ① 深色主按钮是**纸白**，浅色主按钮是**墨块**——浅色里最响的一块只能是最黑的一块；
-     ② 安全橙 #FF5C00 压纸只有 2.68 / 2.94:1，连大字 3:1 都够不着 ⇒ 白天档压深到
-        #BA4400（同色相 21.9° vs 21.6°，压纸 4.64 / 5.10:1），一站仍是一橙；
-     ③ 键帽的黑底边在纸上换成**实色暖灰侧壁** #C9C2B4（读作侧壁，不是影子）。
-   两条纪律：
-     · **遮罩两档都是暗的**（--snb-mask 浅色 = 墨 .32）——白天档不等于遮罩变白，
-       遮罩变白会让底下页面看着像没关掉；图片/画布上的信息层同理，一律不翻。
-     · **t3 只许压底与面**（4.59 / 5.05:1）；抬升面 elv（4.00）与深井 well（4.23）上
-       一律降级用 t2（5.43 / 5.74）。唯一例外=禁用态控件，WCAG 对禁用控件豁免对比度。
-   浅色下「投影」是合法工具（自然光影），但 glow / 霓虹 / 彩色渐变 / 模糊光球照旧全禁。
+   🚨 变量名与 07-29 契约逐字相同（41 个一个没改），只换值；新增 brand / live / live-ink /
+      safety-ink / danger-ink / t4 / glass-filter / shadow-cta / r-* / ease-quick。四边消费方（fork / snb-portal /
+      活动静态页 / help）批 2–4 逐个对齐，本文件仍是唯一真源。
+   🚨 `.dark` 选择器常驻不是可选项——全站有大量 Tailwind `dark:` 变体写法。切浅色 = 摘掉
+      .dark 让 :root 生效，绝不是删掉 .dark 规则块本身。
+   🚨 顺序铁律：`:root` 与 `.dark` 特异度相同（0,1,0），谁在后谁赢——.dark 必须写在 :root 之后。
 
-   🚨 `.dark` 选择器常驻不是可选项——全站有大量 Tailwind `dark:` 变体写法，该 class 从
-   <html> 上消失不是「变浅色」而是「没样式」。切浅色 = 摘掉 .dark 让 :root 生效，
-   绝不是删掉 .dark 规则块本身。
-   🚨 顺序铁律：`:root` 与 `.dark` 特异度相同（0,1,0），谁在后谁赢——**.dark 必须写在
-   :root 之后**，把浅色块挪到下面会让深色档整片失效。
+   格式：语义槽位为空格三元组，配 tailwind-preset 的 `rgb(var(--x) / <alpha-value>)`；
+   带透明度的描边 / 遮罩 / 玻璃底用 rgba(r, g, b, a) 逗号格式（tokens.test.ts 的解析器认它）。
+   ⚠️ 三元组不得改成逗号格式，Tailwind 的 alpha 插值只认空格。 */
 
-   格式：语义槽位为空格三元组，配 tailwind-preset 的
-   `rgb(var(--x) / <alpha-value>)`；CSS 里手写透明度用 `rgb(var(--x) / .5)`。
-   ⚠️ 不得改成逗号格式，Tailwind 的 alpha 插值只认空格。 */
-
-/* ═══════════ 白天档（开灯）：cookie snb_theme 缺席且系统偏好浅色时生效 ═══════════
-   `.snb-light` 是**局部浅色作用域**（ThemeScope theme="light" / 双档对照 / 深色页里的浅色区块）：
-   ⚠️ 不能只靠「没有 .dark」——CSS 变量按**继承**生效，`:root` 只匹配 <html>，
-   深色祖先里嵌一个不带 .dark 的容器仍会继承到深色值。必须有一个能重新声明浅色的钩子。 */
+/* ═══════════ 浅色档：cookie snb_theme 缺席且系统偏好浅色时生效（apple.com 主人格）═══════════
+   `.snb-light` 是局部浅色作用域（ThemeScope theme="light" / 双档对照 / 深色页里的浅色区块）：
+   CSS 变量按继承生效，`:root` 只匹配 <html>，深色祖先里嵌一个不带 .dark 的容器仍会继承到深色值。 */
 :root,
 .snb-light {
-  /* 暖纸四档 —— 底走暖纸不走冷灰：冷墨会让纸读起来像屏幕 */
-  --snb-bg: 242 238 230;        /* paper #F2EEE6 页面底 */
-  --snb-panel: 251 249 245;     /* card  #FBF9F5 卡片面 / 实心面板（比底亮一档）*/
-  --snb-elv: 229 223 211;       /* rule  #E5DFD3 抬升面 / 键帽当前位 / 禁用底 / 骨架色 */
-  --snb-well: 234 229 219;      /* plate #EAE5DB 深井 / 背板（浅色=桌面，比纸暗一档，
-                                   票据靠它立住：纸放在桌上，不是纸放在纸上）*/
+  /* 底 / 面：冷灰白，绝不用暖纸 */
+  --snb-bg: 245 245 247;        /* #F5F5F7 页面底 */
+  --snb-panel: 255 255 255;     /* #FFFFFF 统一面板 / 卡片 */
+  --snb-well: 235 235 240;      /* #EBEBF0 深井：轨道 / 分段控件底 / 输入框底 */
+  --snb-elv: 225 225 230;       /* #E1E1E6 更深一档：按压 / 次级轨道 / 骨架色 */
 
-  /* 墨阶三档 —— 🚨 纪律：t3 只许压底与面；elv / well 上一律降级 t2（见文件头） */
-  --snb-t1: 28 26 22;           /* ink  #1C1A16 主字暖墨（15.01 / 16.52:1）*/
-  --snb-t2: 90 87 80;           /* dim  #5A5750 次字（6.23 / 6.85:1）*/
-  --snb-t3: 111 107 98;         /* faint #6F6B62 弱字 / 标签（4.59 / 5.05:1）*/
+  /* 文字四阶灰：层级靠灰阶。🚨 t3 只许压底与面（elv 上 3.9:1 不够）；t4 只给占位 / 序号 */
+  --snb-t1: 29 29 31;           /* #1D1D1F 标题 / 主字 */
+  --snb-t2: 66 66 69;           /* #424245 正文 */
+  --snb-t3: 110 110 115;        /* #6E6E73 次字 / 元信息（底上 4.66:1）*/
+  --snb-t4: 134 134 139;        /* #86868B 占位 / 序号（仅非关键信息，3.6:1）*/
 
-  /* 主按钮四态：白天是**墨块**——「白天里更用力等于更黑」，悬停加深不是提亮 */
-  --snb-cta-bg: 28 26 22;       /* #1C1A16 常态底 */
-  --snb-cta-fg: 251 249 245;    /* #FBF9F5 字（16.52:1）*/
-  --snb-cta-hover: 15 14 12;    /* #0F0E0C 悬停加深（18.35:1）*/
-  --snb-cta-press: 58 54 46;    /* #3A362E 按下（11.43:1）*/
+  /* 唯一强调色：赤陶橙压深（白底 5.0:1，白字压填充 5.0:1）。品牌原色只给字标间隔号 /
+     大面积图形 / CTA 渐变——它压白只有 3.3:1，不许当文字 */
+  --snb-safety: 168 90 63;      /* #A85A3F 链接 / 焦点 / 主按钮填充 */
+  --snb-brand: 204 120 92;      /* #CC785C */
+  --snb-danger: 215 0 21;       /* #D70015 */
+  --snb-live: 48 209 88;        /* #30D158 在线点（唯一允许的绿，只做点不做字）*/
+  --snb-live-ink: 23 113 46;    /* #17712E 绿字（趋势上升等）压白 6.1 / 压 well 5.1:1 */
+  /* Badge/StatCard/Alert 标题等在 10% 染色底与 well 上的字色（同 live-ink 先例）：
+     safety 本色压 well 只有 4.21:1、danger 压 well 4.53:1 余量太薄，染色底上更低 */
+  --snb-safety-ink: 135 70 51;  /* #874633 压白 7.11:1 / 压 well 5.98:1 */
+  --snb-danger-ink: 165 0 16;   /* #A50010 压白 8.05:1 / 压 well 6.78:1 */
 
-  /* 🪦 兼容别名（深色时期的「纸白钮」语义）：值同 cta-hover / cta-press，
-     手写 CSS 若还在引它不至于失效；新代码一律用 --snb-cta-* */
-  --snb-paper-hover: 15 14 12;
-  --snb-paper-press: 58 54 46;
+  /* 主按钮四态：强调色填充白字；hover 加深、press 再加深 */
+  --snb-cta-bg: 168 90 63;
+  --snb-cta-fg: 255 255 255;
+  --snb-cta-hover: 152 80 59;   /* #98503B */
+  --snb-cta-press: 135 70 51;   /* #874633 */
+  /* 🪦 兼容别名：值同 cta-hover / cta-press，新代码一律用 --snb-cta-* */
+  --snb-paper-hover: 152 80 59;
+  --snb-paper-press: 135 70 51;
 
-  /* 状态灯灭态（空心描边 / 灰实心）：#86837C 压底 3.27 / 压面 3.60:1 过「边界 3:1」；
-     ⚠️ 不能沿用 t3——深色的 #828B96 压纸只有 2.98:1，压底那一档卡在线上当不住边界 */
-  --snb-lamp-off: 134 131 124;  /* #86837C */
+  --snb-lamp-off: 174 174 178;  /* #AEAEB2 灭态灯（非文本，3:1 门槛不适用于装饰点）*/
 
-  --snb-hairline: rgba(28, 26, 22, 0.12);         /* 装饰档：分隔线 / 卡片描边，不承担边界职责 */
-  --snb-hairline-strong: rgba(28, 26, 22, 0.50);  /* 控件边界：次按钮/胶囊/输入框/菜单钮（3.22 / 3.30:1）*/
-  --snb-hairline-heavy: rgba(28, 26, 22, 0.68);   /* 悬停边界：控件 hover 再压深一档（5.60 / 5.84:1）*/
-  --snb-hairline-hover: rgba(28, 26, 22, 0.68);   /* 兼容别名 = heavy，两者必须逐字同值 */
+  /* 描边：发丝线只做分隔；控件描边按 WCAG 1.4.11 抬到 3:1 */
+  --snb-hairline: rgba(0, 0, 0, 0.07);
+  --snb-hairline-strong: rgba(29, 29, 31, 0.50);
+  --snb-hairline-heavy: rgba(29, 29, 31, 0.68);
+  --snb-hairline-hover: rgba(29, 29, 31, 0.68); /* 兼容别名 = heavy，逐字同值 */
 
-  /* 底边两族（合成实边非投影，与零发光不冲突）：
-     CTA 族 = 墨 30%（纸上是被墨块挡出来的暗边）；键帽族 = **实色暖灰侧壁**
-     ——纸上做厚度靠实体边，不是把影子调深 */
-  --snb-edge: rgba(28, 26, 22, 0.30);
-  --snb-key-side: #C9C2B4;
-  --snb-key-border: rgba(28, 26, 22, 0.12); /* 键帽 1px 描边（与 hairline 同值，但语义独立）*/
-  --snb-key-active-edge: #C9C2B4;           /* 键帽**按到底**时收成 1px 的那道边（同侧壁材质）*/
-  --snb-key-active-bg: #E5DFD3;             /* 键帽当前位填充：白天是抬升面**实底**（t1 压它 13.09:1）
-                                               ⚠️ 整串色值不是三元组——两档连不透明度都不同，
-                                               深色是 7% 微亮平底、浅色是 100% 实底，无法靠 alpha 修饰统一 */
-  --snb-hdr-line: #CFC8B8;                  /* sticky 顶栏底边：白天用栏位线实色（hairline 墨 .12 在纸上几乎看不见）*/
+  /* 🪦 键帽六槽保名降级：键帽退役，值退化成发丝线 / 面色，供胶囊分段控件复用 */
+  --snb-edge: rgba(0, 0, 0, 0.07);
+  --snb-key-side: rgba(0, 0, 0, 0.07);
+  --snb-key-border: rgba(0, 0, 0, 0.07);
+  --snb-key-active-edge: rgba(0, 0, 0, 0.07);
+  --snb-key-active-bg: #FFFFFF;             /* 分段控件当前位=白胶囊 */
+  --snb-hdr-line: rgba(0, 0, 0, 0.07);      /* 顶栏滚动边缘线（静止时透明，滚过才出）*/
 
-  /* 浮层遮罩：🚨 白天档**仍然是暗的**（墨 .32）。遮罩变白 = 底下页面看着像没关掉 */
-  --snb-mask: rgba(28, 26, 22, 0.32);
+  --snb-mask: rgba(0, 0, 0, 0.40);          /* 🚨 遮罩两档都暗 */
+  --snb-focus: #A85A3F;
 
-  /* 焦点环：白天用实色熔铁橙（压底 4.64:1 过 3:1）；深色沿用半透安全橙原值 */
-  --snb-focus: #BA4400;
+  /* 玻璃：只在粘性顶栏 / 浮层 / 彩色 CTA 标签 */
+  --snb-glass-bg: rgba(245, 245, 247, 0.72);
+  --snb-glass-border: rgba(0, 0, 0, 0.07);
 
-  /* 唯一玻璃例外=滚动内容上的 sticky 顶栏（仍然无 blur 之外的花活）；
-     glass-border = 栏位线实色：顶栏底边 / 键帽侧壁同档 */
-  --snb-glass-bg: rgba(242, 238, 230, 0.90);
-  --snb-glass-border: #CFC8B8;
+  /* 面板/卡/浮层投影双层（贴身接触 + 柔和扩散）；hover lift 与彩色 CTA 投影单层 */
+  --snb-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.05);
+  --snb-shadow-card-hover: 0 12px 32px rgba(0, 0, 0, 0.10);
+  --snb-shadow-glass: 0 2px 8px rgba(0, 0, 0, 0.10), 0 30px 80px rgba(0, 0, 0, 0.24);      /* 浮层 */
+  --snb-shadow-glass-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 14px 40px rgba(0, 0, 0, 0.05);   /* 面板 */
+  --snb-shadow-cta: 0 20px 54px rgba(168, 90, 63, 0.28);                                   /* 彩色 CTA 块 */
 
-  /* 投影：浅色档的「投影」是合法自然光影（≠ 发光）。收 8px，纸上不虚 */
-  --snb-shadow-card: 0 1px 2px rgba(28, 26, 22, 0.06), 0 1px 3px rgba(28, 26, 22, 0.10);
-  --snb-shadow-card-hover: 0 12px 32px rgba(28, 26, 22, 0.16);
-  --snb-shadow-glass: 0 12px 32px rgba(28, 26, 22, 0.16);
-  --snb-shadow-glass-sm: 0 6px 18px rgba(28, 26, 22, 0.10);
+  /* 行悬停底 / 微抬（🪦 「氛围光」语义退役，槽位保名给行悬停用）*/
+  --snb-ambient-lift: #FFFFFF;
+  --snb-ambient-lift-soft: #FBFBFD;
 
-  /* 氛围提亮：深色是「沥青顶灯」，浅色是「纸面受光」——同一手法反向 */
-  --snb-ambient-lift: #FBF9F5;
-  --snb-ambient-lift-soft: #F8F5EF;
-
-  /* 强调色：只有两个，语义即授权范围。
-     🚨 白天档的橙是**压深版**：同色相、能当正文（4.64 / 5.10:1），
-     一屏之内橙的面积不超过两处，不给默认值、不给拒绝语 */
-  --snb-safety: 186 68 0;       /* #BA4400 熔铁橙：钱 / 正在发生 / 当前位 */
-  --snb-danger: 192 39 45;      /* #C0272D 功能红：只许破坏性操作与错误态（5.08 / 5.59:1）*/
-
-  /* ── 以下与主题无关，只声明一次，从根上杜绝两档漂移 ── */
-  /* 动效四档（GlobalParts v3）：按压 / 常规 / 开合落定 / 状态灯呼吸。
-     缓动全站一把 --snb-ease，不许出现其它档位与浏览器默认缓动 */
-  --snb-ease: cubic-bezier(0.2, 0, 0, 1);
-  --snb-dur-press: 55ms;
-  --snb-dur-quick: 120ms;
-  --snb-dur-settle: 420ms;
+  /* ── 以下与主题无关，只声明一次 ── */
+  --snb-glass-filter: saturate(180%) blur(20px);
+  --snb-r-pill: 999px;
+  --snb-r-chip: 6px;
+  --snb-r-thumb: 12px;
+  --snb-r-sheet: 16px;
+  --snb-r-card: 18px;
+  --snb-r-panel: 22px;
+  --snb-r-hero: 26px;
+  /* 动效：进场弹簧 / 小位移快曲线；四档时长 */
+  --snb-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --snb-ease-quick: cubic-bezier(0.25, 1, 0.5, 1);
+  --snb-dur-press: 100ms;
+  --snb-dur-quick: 200ms;
+  --snb-dur-settle: 400ms;
   --snb-dur-breath: 2200ms;
+
+  /* 环境光透明度缩放（AmbientBackground 读）：浅色 1 / 深色 .75，白团深色归零 */
+  --snb-ambient-alpha: 1;
+  --snb-ambient-white: 1;
 }
 
-/* ═══════════ 深夜档（关灯）：值 = 2026-07-27 零发光 v2 定稿，逐字未动 ═══════════
-   🚨 补浅色分支时**一个深色值都不许改**——白天档是新增分支，不是重新配色。 */
+/* ═══════════ 深色档：apple.com 深色，纯黑底 + #1D1D1F 面 ═══════════ */
 .dark {
-  /* 沥青底四档 —— 偏青的暖黑，不是纯黑 */
-  --snb-bg: 14 16 20;           /* asphalt #0E1014 页面底 */
-  --snb-panel: 23 26 32;        /* panel #171A20 卡片面 / 实心面板 */
-  --snb-elv: 36 42 51;          /* rule #242A33 抬升面（与栏位线同档）*/
-  --snb-well: 16 19 26;         /* plate #10131A 深井 / 背板 */
+  --snb-bg: 0 0 0;
+  --snb-panel: 29 29 31;        /* #1D1D1F */
+  --snb-well: 44 44 46;         /* #2C2C2E */
+  --snb-elv: 58 58 60;          /* #3A3A3C 深色抬升=更亮 */
 
-  /* 灰阶三档 —— 实测抬升过的可读性地板（对 panel：dim 7.2:1 / faint 5.1:1）。
-     🚨 纪律：faint 只许给标注/时间戳/禁用，带内容的字一律 t2(dim) 起步 */
-  --snb-t1: 239 235 228;        /* paper #EFEBE4 主字纸米白 */
-  --snb-t2: 160 167 176;        /* dim   #A0A7B0 次字 */
-  --snb-t3: 130 139 150;        /* faint #828B96 弱字 / 标签 */
+  --snb-t1: 245 245 247;
+  --snb-t2: 209 209 214;        /* #D1D1D6 */
+  --snb-t3: 161 161 166;        /* #A1A1A6（面上 6.5:1）*/
+  --snb-t4: 134 134 139;
 
-  /* 主按钮四态：深夜是**纸白**（与白天的墨块互为镜像，两档各只有一块最响的） */
-  --snb-cta-bg: 239 235 228;    /* #EFEBE4 = paper */
-  --snb-cta-fg: 14 16 20;       /* #0E1014 = asphalt */
-  --snb-cta-hover: 255 255 255; /* #FFFFFF 提白：全站唯一许可的纯白，只给纸白钮悬停 */
-  --snb-cta-press: 222 216 206; /* #DED8CE 按压米灰，配沉 1px + 55ms */
+  --snb-safety: 224 143 114;    /* #E08F72 黑底 8.3:1 */
+  --snb-brand: 204 120 92;
+  --snb-danger: 255 69 58;      /* #FF453A */
+  --snb-live: 48 209 88;
+  --snb-live-ink: 48 209 88;
+  --snb-safety-ink: 230 153 126; /* #E6997E 压面 7.39:1 / 压 well 6.12:1 */
+  --snb-danger-ink: 255 120 110; /* #FF786E 压面 6.54:1 / 压 well 5.42:1 */
 
-  /* 纸白交互两档（GlobalParts v3 §03）：与 --snb-cta-hover / -press 同值的历史键名 */
-  --snb-paper-hover: 255 255 255;  /* #FFFFFF 主按钮悬停 */
-  --snb-paper-press: 222 216 206;  /* #DED8CE 主按钮按下 */
+  /* 主按钮：提亮的赤陶橙填充黑字；hover 再提亮、press 回落 */
+  --snb-cta-bg: 224 143 114;
+  --snb-cta-fg: 0 0 0;
+  --snb-cta-hover: 230 153 126; /* #E6997E */
+  --snb-cta-press: 214 134 106; /* #D6866A */
+  --snb-paper-hover: 230 153 126;
+  --snb-paper-press: 214 134 106;
 
-  /* 状态灯灭态：深色沿用 faint 同值（#828B96），与旧实现逐字一致 */
-  --snb-lamp-off: 130 139 150;
+  --snb-lamp-off: 110 110 115;
 
-  --snb-hairline: rgba(239, 235, 228, 0.09);
-  /* 🚨 2026-07-30 抬档（站长拍板 B 案）：strong .17 → .38、heavy/hover .3 → .60。
-     旧值 .17 合成到面板只有 **1.53:1**，远低于 WCAG 1.4.11 对非文本（控件边界）
-     要求的 3:1——意味着**次按钮 / 胶囊 / 输入框 / 菜单钮的描边一直不合格**
-     （浅色档同位 3.22 一直是达标的，所以这是纯深色档的欠账）。
-     新值合成后：沥青底 3.18 / 面板 3.18 / 抬升面 3.04，三面都过。
-     ⚠️ heavy 必须**跟着一起抬**：strong 提到 .38 后，旧 heavy .3 会比常态还淡
-        （悬停反而更看不见 = 倒挂）。两者的档差必须保住。 */
-  --snb-hairline-strong: rgba(239, 235, 228, 0.38);
-  --snb-hairline-heavy: rgba(239, 235, 228, 0.6);   /* 描边件 hover 边（次按钮/胶囊）*/
-  --snb-hairline-hover: rgba(239, 235, 228, 0.6);   /* 兼容别名 = heavy，两者必须逐字同值 */
+  /* 深色描边：strong .42（elv #3A3A3C 上 3.18:1）、heavy .62 保档差 */
+  --snb-hairline: rgba(255, 255, 255, 0.12);
+  --snb-hairline-strong: rgba(245, 245, 247, 0.42);
+  --snb-hairline-heavy: rgba(245, 245, 247, 0.62);
+  --snb-hairline-hover: rgba(245, 245, 247, 0.62);
 
-  /* 底边两族：深色靠「黑半透实边」做物理感（浅色换实色侧壁，见 :root） */
-  --snb-edge: rgba(0, 0, 0, 0.45);
-  --snb-key-side: rgba(0, 0, 0, 0.5);
-  --snb-key-border: #242A33; /* 深色键帽描边=栏位线实色 */
-  --snb-key-active-edge: #242A33; /* 深色按到底收 1px = 栏位线实色（与旧 border-b-dark-700 同值）*/
-  --snb-key-active-bg: rgba(239, 235, 228, 0.07); /* 深色当前位=微亮平底（与旧 bg-snb-t1/[0.07] 逐字同值）*/
-  --snb-hdr-line: rgba(239, 235, 228, 0.09); /* 深色顶栏底边=hairline 原值，逐字未动 */
+  --snb-edge: rgba(255, 255, 255, 0.12);
+  --snb-key-side: rgba(255, 255, 255, 0.12);
+  --snb-key-border: rgba(255, 255, 255, 0.12);
+  --snb-key-active-edge: rgba(255, 255, 255, 0.12);
+  --snb-key-active-bg: #3A3A3C;             /* 深色分段控件当前位=比轨道亮一档的胶囊 */
+  --snb-hdr-line: rgba(255, 255, 255, 0.12);
 
-  --snb-mask: rgba(14, 16, 20, 0.6);
-  --snb-focus: rgba(255, 92, 0, 0.5);
+  --snb-mask: rgba(0, 0, 0, 0.60);
+  --snb-focus: #E08F72;
 
-  /* 🚨 玻璃已随零发光 v2 退役（唯一例外=滚动内容上的 sticky 顶栏）。
-     两键保名给顶栏例外用：半透沥青 + 栏位线（与 fork PublicShell 顶栏同值） */
-  --snb-glass-bg: rgba(14, 16, 20, 0.86);
-  --snb-glass-border: #242A33;
-  --snb-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.55);
-  --snb-shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.6);
-  --snb-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.45);
-  --snb-shadow-glass-sm: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --snb-glass-bg: rgba(29, 29, 31, 0.72);
+  --snb-glass-border: rgba(255, 255, 255, 0.12);
 
-  --snb-ambient-lift: #161A20;
-  --snb-ambient-lift-soft: #14171D;
+  --snb-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.40), 0 8px 24px rgba(0, 0, 0, 0.45);
+  --snb-shadow-card-hover: 0 12px 32px rgba(0, 0, 0, 0.60);
+  --snb-shadow-glass: 0 2px 8px rgba(0, 0, 0, 0.50), 0 30px 80px rgba(0, 0, 0, 0.70);
+  --snb-shadow-glass-sm: 0 1px 3px rgba(0, 0, 0, 0.40), 0 14px 40px rgba(0, 0, 0, 0.45);
+  --snb-shadow-cta: 0 20px 54px rgba(224, 143, 114, 0.22);
 
-  /* 强调色：只有两个，语义即授权范围
-     🪦 三支灯管（tangerine/jade/fuchsia）与管芯 core 随霓虹整条退役 */
-  --snb-safety: 255 92 0;       /* #FF5C00 工业安全橙：全站唯一强调色
-                                   （钱/正在发生/当前位，橙点=状态灯）*/
-  --snb-danger: 234 73 79;      /* #EA494F 功能红：只许破坏性操作与错误态 */
+  --snb-ambient-lift: #262628;
+  --snb-ambient-lift-soft: #222224;
+
+  --snb-ambient-alpha: 0.75;
+  --snb-ambient-white: 0;
 }

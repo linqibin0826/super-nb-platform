@@ -2,17 +2,16 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { cx } from '../../lib/cx'
 import { BrandLogo } from '../BrandLogo/BrandLogo'
 import { NavCapsule } from '../NavCapsule/NavCapsule'
-import { StatusLamp } from '../StatusLamp/StatusLamp'
 import { ThemeToggle } from '../ThemeToggle/ThemeToggle'
 import { siteNavItems, type SiteKey, type SiteNavItem } from './nav'
 
 export interface AppHeaderProps {
   /** 当前站（导航胶囊高亮 + 缺省副标） */
   site?: SiteKey
-  /** 品牌锁定区副标（「我的机位/画图机位/使用指南」等）；不传则只出词标 */
+  /** 品牌锁定区副标（「控制台/创作工坊/新手指南」等）；不传则只出词标 */
   subtitle?: string
   /**
-   * solid（默认）：桌面 64 / 手机 60 实底 + hairline 底边，内容站用；
+   * solid（默认）：桌面 64 / 手机 60 玻璃粘性顶栏 + 滚动边缘，内容站用；
    * hero：桌面 80 / 手机 60 透明渐变浮层无底边，首页/活动页顶部用
    */
   variant?: 'solid' | 'hero'
@@ -29,16 +28,16 @@ export interface AppHeaderProps {
    */
   children?: ReactNode
   /**
-   * 手机浮卡底部（拍板 B）：整宽 CTA + 整宽次按钮「登录」。
+   * 手机浮卡底部：整宽 CTA + 整宽次按钮「登录」。
    * 用 lib/cta 的 `ctaAnchorClass` / `secondaryAnchorClass` 配 `w-full` 写。
    * 业务地址（注册页/登录页）由各站自己给，设计系统不写死。
    */
   menuFooter?: ReactNode
   /**
-   * 主题开关「开灯 / 关灯」（浅色档值表 §05）。默认 `false`——存量消费方零改动。
+   * 主题开关「浅色 / 深色」（浅色档值表 §05）。默认 `false`——存量消费方零改动。
    *
    * 打开后开关渲染在**场景槽最前**：访客态即「登录」左边（与定稿一致）。
-   * ⚠️ 已登录态定稿要求放在**网费与头像之间**，那是 `HeaderAccount` 内部；要严格照稿
+   * ⚠️ 已登录态定稿要求放在**余额与头像之间**，那是 `HeaderAccount` 内部；要严格照稿
    * 就把本 prop 关掉，自己在 `children` 里 `<HeaderAccount/>` 前后插 `<ThemeToggle/>`。
    */
   themeToggle?: boolean
@@ -46,12 +45,18 @@ export interface AppHeaderProps {
 }
 
 /**
- * 全站统一 Header（GlobalParts v3，取代规范 v2 的数值）：三区骨架
- * 「品牌锁定 | 键帽行 | 场景槽」——**flex 两端对齐、键帽行 flex-1 居中吃掉剩余宽**
+ * 全站统一 Header（苹果式 v3）：三区骨架
+ * 「品牌锁定 | 胶囊分段 | 场景槽」——**flex 两端对齐；胶囊分段 `mx-auto flex-none`
+ * 贴合内容居中；<lg 收起**
  * （🪦 grid 三列已退役：768 平板下会把整条顶栏挤到左边、右侧空 37%）。
  * 桌面 ≥1024 高 64 / 内边距 24；手机 <1024 高 60 / 内边距 16，
  * 菜单钮 44×44 永远贴最右（拇指角），「登录」收进浮卡。
  * 非 React 站点（fork/learn/activity）按 templates/app-header.html 对齐，改必同步。
+ *
+ * 🚨 **1024 是按「没有侧栏的壳」定的断点**（站长 2026-07-30 拍板的例外规则）：
+ *    带常驻侧栏的外壳整体提高一档——可用宽得先减掉侧栏。已知例外一处：
+ *    sub2api fork `layout/AppHeader.vue`（控制台，侧栏 280px）走 **xl(1280)**。
+ *    本组件与其余消费方都没有侧栏，仍走 1024。细节见 templates/app-header.html 同段。
  */
 export function AppHeader({
   site,
@@ -66,6 +71,14 @@ export function AppHeader({
   className,
 }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  // 滚动边缘：静止时顶栏与底平齐无线，内容滚到下面（>8px）才出发丝线 + 4% 投影（.snb-scrolled）
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
   const menuId = useId()
   const menuWrapRef = useRef<HTMLDivElement | null>(null)
   const burgerRef = useRef<HTMLButtonElement | null>(null)
@@ -99,17 +112,15 @@ export function AppHeader({
 
   return (
     <header
+      data-scrolled={scrolled}
       className={cx(
-        // 三区弹性：两端对齐 + 中列 flex-1，平板窄屏也不会整条挤到左边
+        // 三区弹性：两端对齐；胶囊分段 mx-auto flex-none 贴合内容居中；<lg 收起
         'relative flex items-center justify-between gap-4 px-4 lg:gap-6 lg:px-6',
         variant === 'solid'
-          ? // sticky 毛玻璃：🚨 这是零发光 v2 全站唯一允许 backdrop-filter 的位置
-            // （滚动内容上的 sticky 顶栏，fork PublicShell 同款例外）。
-            // 底边走 --snb-hdr-line 双档槽：浅色是栏位线实色 #CFC8B8（hairline 墨 .12
-            // 在纸上几乎看不见），深色保持 hairline 原值逐字不动。
-            // ⚠️ 刻意用变量而非 `dark:border-*`——变量按继承生效，局部 .snb-light 作用域
-            // 里也能正确退回浅色；dark: 变体只看有没有 .dark 祖先，嵌套时会漏
-            'sticky top-0 z-40 h-[60px] border-b border-snb-hdr-line bg-snb-glass backdrop-blur-md lg:h-16'
+          ? // 玻璃粘性顶栏（.snb-glass 定义在 styles.css，全站允许毛玻璃滤镜的三处之一）。
+            // 静止无底线；滚过 8px 挂 .snb-scrolled 才出 --snb-hdr-line 发丝线 + 4% 投影。
+            // ⚠️ .snb-scrolled 必须与 .snb-glass 同挂一个元素才生效。
+            cx('snb-glass sticky top-0 z-40 h-[60px] lg:h-16', scrolled && 'snb-scrolled')
           : // hero = **浮在暗色画面上**的顶栏（图片/视频背景之上），加 dark 类锁死暗色 token。
             // 🚨 这里的「不翻」与主题无关，跟图片上的信息层是同一条纪律：底下是一张暗画面，
             //    白天把字翻成墨就直接瞎。用它的前提是**该处确实有暗底画面**——
@@ -129,19 +140,21 @@ export function AppHeader({
           </span>
         )}
       </a>
-      {/* 键帽行吃掉中间全部剩余宽并居中；<lg 整行收起，两端自动贴边 */}
-      <NavCapsule aria-label="全站导航" className="min-w-0 flex-1 justify-center max-lg:hidden" items={items} />
+      {/* 胶囊分段贴合内容、auto 居中；<lg 收起，两端自动贴边
+          （⚠️ 不能给 flex-1：根元素现在是 rounded-full bg-snb-well 灰轨，会横贯整条顶栏；
+           与 templates/app-header.html 的 .snb-hdr__capsule{flex:none;margin:0 auto} 一致） */}
+      <NavCapsule aria-label="全站导航" className="mx-auto flex-none max-lg:hidden" items={items} />
       <div className="flex flex-none items-center gap-2.5">
         {/* 主题开关：场景槽最前 = 访客态「登录」左边（定稿位置）。默认不出，见 props 注释 */}
         {themeToggle && <ThemeToggle />}
         {children}
         {/* 菜单钮：44×44 实热区、hairline-strong 描边，**永远排在场景槽最后**
             （拇指角在右下，v2 时期夹在字标与登录之间像挂在 logo 上的徽章）；
-            ≥lg 收起，键帽行常驻。有促销项时带呼吸点（活动曝光不丢） */}
+            ≥lg 收起，胶囊分段常驻。有促销项时带 6px 小点（活动曝光不丢） */}
         <button
           ref={burgerRef}
           type="button"
-          className="relative inline-flex h-11 w-11 flex-none items-center justify-center rounded-[8px] border border-snb-hairline-strong bg-transparent p-0 text-snb-t1 transition-all duration-quick ease-snb hover:bg-snb-panel aria-expanded:bg-snb-elv lg:hidden"
+          className="relative inline-flex h-11 w-11 flex-none items-center justify-center rounded-full border border-snb-hairline-strong bg-transparent p-0 text-snb-t1 transition-all duration-quick ease-snb-quick hover:bg-snb-well aria-expanded:bg-snb-well lg:hidden"
           aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}
           aria-expanded={menuOpen}
           aria-controls={menuId}
@@ -157,20 +170,20 @@ export function AppHeader({
             </svg>
           )}
           {!menuOpen && items.some((i) => i.dot) && (
-            <StatusLamp state="live" className="absolute right-1.5 top-1.5" />
+            <span aria-hidden="true" className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-snb-safety" />
           )}
         </button>
       </div>
 
-      {/* <lg 导航浮卡（GlobalParts v3 §02 拍板 B=实心面板 panel）：
-          自顶栏底边整宽滑落 + 淡入 420ms 落定档；下垫纯色遮罩（无模糊无发光），点遮罩即关 */}
+      {/* <lg 导航浮卡（玻璃浮层 .snb-glass）：
+          自顶栏底边整宽滑落 + 淡入 400ms 落定档；下垫纯色遮罩（无模糊无发光），点遮罩即关 */}
       {menuOpen && (
         <div ref={menuWrapRef} className="lg:hidden">
-          {/* ⚠️ 遮罩必须 absolute 挂在顶栏下沿，**不能用 fixed**：顶栏带 backdrop-blur，
-              backdrop-filter 会让自己成为 fixed 后代的包含块，`fixed inset-x-0 bottom-0`
+          {/* ⚠️ 遮罩必须 absolute 挂在顶栏下沿，**不能用 fixed**：顶栏带毛玻璃滤镜（backdrop 系滤镜），
+              该滤镜会让自己成为 fixed 后代的包含块，`fixed inset-x-0 bottom-0`
               会被算进 60px 高的顶栏里、塌成零高（实测过，遮罩整块消失）。
               🚨 定位这一条与主题无关，浅色化时也**绝不能**改回 fixed + top:Npx + bottom:0。
-              🚨 遮罩颜色走 --snb-mask：**两档都是暗的**（浅色 = 墨 .32）——
+              🚨 遮罩颜色走 --snb-mask：**两档都是暗的**（浅色 = 黑 .40）——
               白天档不等于遮罩变白，遮罩变白会让底下页面看着像没关掉 */}
           <div
             aria-hidden="true"
@@ -180,7 +193,7 @@ export function AppHeader({
           <nav
             id={menuId}
             aria-label="全站导航"
-            className="absolute inset-x-0 top-full z-40 animate-snb-menu border-b border-snb-hairline-strong bg-snb-panel px-2.5 pb-3.5 pt-2.5 shadow-glass motion-reduce:animate-none"
+            className="snb-glass absolute inset-x-0 top-full z-40 animate-snb-menu border-b border-snb-hairline px-2.5 pb-3.5 pt-2.5 shadow-glass motion-reduce:animate-none"
           >
             <ul className="m-0 flex list-none flex-col p-0">
               {items.map((item) => (
@@ -192,16 +205,13 @@ export function AppHeader({
                     onClick={() => setMenuOpen(false)}
                     className={cx(
                       // 条目高 52 = 整行热区（🪦 v2 的 210px 右锚小浮卡退役）
-                      'flex h-[52px] items-center gap-2.5 rounded-[8px] px-3.5 text-[15px] no-underline',
-                      item.current
-                        ? // 当前位 = 键帽按到底
-                          'bg-snb-elv font-semibold text-snb-t1 shadow-key-down'
-                        : 'text-snb-t2'
+                      'flex h-[52px] items-center gap-2.5 rounded-xl px-3.5 text-[15px] no-underline',
+                      item.current ? 'bg-snb-key-active font-semibold text-snb-t1' : 'text-snb-t2'
                     )}
                   >
                     {item.icon}
                     {item.label}
-                    {item.dot && <StatusLamp state="live" />}
+                    {item.dot && <span aria-hidden="true" className="h-1.5 w-1.5 flex-none rounded-full bg-snb-safety" />}
                   </a>
                 </li>
               ))}
