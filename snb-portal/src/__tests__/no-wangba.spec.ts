@@ -73,8 +73,14 @@ describe('苹果式 v3 防漂移 · 网吧母题零回流（业务面，vendored
   })
 
   it('🪦 网吧 v2 色值零命中（票据本体除外）', () => {
-    const HEX = /#(BA4400|FF5C00|FFA372|0E1014|171A20|242A33|F2EEE6|FBF9F5|E5DFD3|EAE5DB|CFC8B8|C9C2B4|EFEBE4|1C1A16|D9A35C|141821|1B1F27|2C333D|3A424E|221E18|14120F|100F0D|1B1710|BDB4A9|8F877D|D6CCBE|7E766B|6F6B62|5A5750|3A362E|CACFD5|1a1613|0F0E0C|D8D3CA|828B96|86837C|A08876|6B5749)\b/i
-    const RGB = /(?:239[,\s]+235[,\s]+228)|(?:186[,\s]+68[,\s]+0)|(?:255[,\s]+92[,\s]+0)|(?:14[,\s]+16[,\s]+20)|(?:28[,\s]+26[,\s]+22)|(?:36[,\s]+42[,\s]+51)/
+    // 🚨 补 `(?:#|%23)`（修复轮 1，与 neon-no-legacy 的 WANGBA_V2 口径拉齐）：data URI 里的
+    //    井号是 URL 编码的（`stroke='%23FF5C00'`），只认字面 `#` 的旧写法看不见它——
+    //    审查实测同一注入 neon 变红、本守卫却是绿的，属真盲区。
+    const HEX = /(?:#|%23)(BA4400|FF5C00|FFA372|0E1014|171A20|242A33|F2EEE6|FBF9F5|E5DFD3|EAE5DB|CFC8B8|C9C2B4|EFEBE4|1C1A16|D9A35C|141821|1B1F27|2C333D|3A424E|221E18|14120F|100F0D|1B1710|BDB4A9|8F877D|D6CCBE|7E766B|6F6B62|5A5750|3A362E|CACFD5|1a1613|0F0E0C|D8D3CA|828B96|86837C|A08876|6B5749)\b/i
+    // ⚠️ 三元组两端加数字边界：不加的话 `114,16,20` / `239,235,2280` 这类**别的**数会把
+    //    `14,16,20` 当子串命中，守卫变成假红源。
+    const RGB =
+      /(?<!\d)(?:(?:239[,\s]+235[,\s]+228)|(?:186[,\s]+68[,\s]+0)|(?:255[,\s]+92[,\s]+0)|(?:14[,\s]+16[,\s]+20)|(?:28[,\s]+26[,\s]+22)|(?:36[,\s]+42[,\s]+51))(?!\d)/
     expect(offenders(HEX, isInvoiceTicket)).toEqual([])
     expect(offenders(RGB, isInvoiceTicket)).toEqual([])
   })
@@ -118,7 +124,9 @@ describe('苹果式 v3 防漂移 · 网吧母题零回流（业务面，vendored
 
   it('🚨 studio 入口确实吃到了 vendored 的组件层（.snb-glass 不生成 = 玻璃静默失效）', () => {
     const indexCss = readFileSync(resolve(SRC, 'index.css'), 'utf8')
-    expect(indexCss).toContain("@import './ui/styles.css'")
+    // ⚠️ 同样要先 strip：不 strip 的话把整行 `@import` 注释掉（`/* @import './ui/styles.css'; */`）
+    //    断言依旧绿——玻璃已经进不来了，守卫却还在报平安。
+    expect(strip(indexCss)).toContain("@import './ui/styles.css'")
     // ⚠️ 必须先剥注释（本文件开头规则 ③）：index.css 的抬头注释里就写着「本文件不得再写
     //    @tailwind」这句纪律，裸 toContain 会把这句**说明**当成违规，守卫第一次跑就假红。
     expect(strip(indexCss)).not.toContain('@tailwind') // 否则整套工具类会打两遍
