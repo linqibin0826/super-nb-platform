@@ -14,7 +14,15 @@ export function HubHeader() {
     <AppHeader
       site="hub"
       subtitle={t('hub.title')}
-      labelFor={(item) => t(`hub.nav.${item.key}`)}
+      // 🚨 必须兜底：文案是按 vendor 的 SiteNavItem.key 拼出来的（2026-09-07 那次
+      //    hub→help 改名就撞了），字典缺键时 createT 原样返回 key ⇒ 顶栏会**静默**
+      //    把「hub.nav.help」当中文文案显示出来。缺键时回退 vendor 自带的中文 label。
+      //    覆盖率由 i18n/__tests__/nav-labels.spec.ts 表驱动守着，改 key 会直接红。
+      labelFor={(item) => {
+        const path = `hub.nav.${item.key}`
+        const label = t(path)
+        return label === path ? item.label : label
+      }}
       // 主题开关：排在场景槽最前（见 AppHeader）。内容中心是长文站，浅色档尤其要有
       themeToggle
       // <1024 两钮收进导航浮卡（AppHeader 契约）：顶栏只留主题钮 + 菜单钮。

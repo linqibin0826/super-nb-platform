@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AppHeader, ctaAnchorClass, ghostAnchorClass, type SiteNavItem } from '../ui'
+import { AppHeader, ctaAnchorClass, ghostAnchorClass, type SiteKey, type SiteNavItem } from '../ui'
 import { useAuthUser } from '../auth/useAuth'
 import { apiFetch, loginUrl } from '../auth/apiFetch'
 import { UserMenu } from '../auth/UserMenu'
@@ -12,7 +12,9 @@ interface ProfileBalance {
 }
 
 // 本地开发/路径部署：导航走站内相对路径（生产子域名用 SITE_NAV_ITEMS 的绝对地址）
-const DEV_HREFS: Record<string, string> = {
+// 🚨 类型收成 Partial<Record<SiteKey, …>>：vendor 改 key 时这里会直接 tsc 报错，
+//    而不是留一枚永远命不中的死键（'hub' 那次就是这样悄悄躺了 14 天）。
+const DEV_HREFS: Partial<Record<SiteKey, string>> = {
   console: '/dashboard',
   studio: '/studio/',
   // 🪦 'hub' 键随 vendor 的 nav key hub→help 退役：「新手指南」本来就该直链 help 站，
@@ -31,7 +33,8 @@ const consoleHref = (path: string): string => (isLocalDev ? path : `${CONSOLE_OR
 // 🚨 键必须跟 SiteNavItem.key 一一对上（2026-09-07 vendor 把「新手指南」的 key 从
 //    'hub' 改成 'help'，它代表 help 站不是 hub 站）；对不上时 labelFor 兜底回
 //    item.label，绝不能把 undefined 喂给 t()——t 会在 key.split('.') 上抛错、整条顶栏白屏。
-const NAV_LABEL_KEYS: Record<string, string> = {
+//    导出只为让 i18n/__tests__/nav-labels.spec.ts 断言「四个 key 一个不落」。
+export const NAV_LABEL_KEYS: Partial<Record<SiteKey, string>> = {
   console: 'studio.nav.console',
   studio: 'studio.title',
   help: 'studio.nav.help',
@@ -68,9 +71,10 @@ export function TopBar() {
       subtitle={t('studio.title')}
       homeHref={import.meta.env.BASE_URL}
       resolveHref={isLocalDev ? (item: SiteNavItem) => DEV_HREFS[item.key] ?? item.href : undefined}
-      labelFor={(item: SiteNavItem) =>
-        NAV_LABEL_KEYS[item.key] ? t(NAV_LABEL_KEYS[item.key]) : item.label
-      }
+      labelFor={(item: SiteNavItem) => {
+        const path = NAV_LABEL_KEYS[item.key]
+        return path ? t(path) : item.label
+      }}
       // 主题开关：AppHeader 把它排在场景槽最前（访客态就是「登录」左边）。
       // 组件自带契约接线，这里不用传档位也不用接回调。
       themeToggle
