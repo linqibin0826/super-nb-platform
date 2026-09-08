@@ -75,6 +75,8 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
     // 业务面（studio/hub/invoice 外壳/admin/auth/i18n）一律零命中，
     // 无论 hex 还是空格三元组 rgb（vendor tokens.css 写的正是 `204 120 92` 空格写法，
     // 旧版正则只认逗号 rgba，这条曾假绿）。
+    // ⚠️ 这条（以及霓虹/锈色两条）写的是**裸** hex，不带 `#`——因此天然同时命中
+    //    `#CC785C` 与 data URI 的 `%23CC785C`，不需要像上面两条那样补 `(?:#|%23)`。
     const isBrandSource = (p: string) => p === 'ui/tokens/tokens.css' || p === 'ui/tailwind-preset.js'
     expect(
       offenders(/CC785C|204\s+120\s+92|204,\s*120,\s*92/i, (p) => isBrandSource(p) || isInvoiceTicket(p))
@@ -102,7 +104,12 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
   })
 
   it('墨色黄铜色板清零', () => {
-    expect(offenders(/#ded6c9|#35302b|#262220|#8f8578|#c9beae|#f5efe6|#1c1917|#131110|D4AF6A/i)).toEqual([])
+    // 🚨 2026-09-08 补 `%23`（口径与 WANGBA_V2 拉齐）：data URI 里的井号是 URL 编码的
+    //    （`stroke='%23131110'`），只认字面 `#` 的旧正则看不见它。
+    //    末尾 D4AF6A 是**裸**写法，本来就同时覆盖 `#`/`%23`/纯字面三种形态，不用加前缀。
+    expect(
+      offenders(/(?:#|%23)(ded6c9|35302b|262220|8f8578|c9beae|f5efe6|1c1917|131110)\b|D4AF6A/i)
+    ).toEqual([])
   })
 
   it('衬线 display 字体遗产清零（发票票据本体除外）', () => {
@@ -137,7 +144,8 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
 
   it('🪦 锈色中性档与旧沥青阶清零（v2 中性回归灰阶，沥青换 #0E1014 系）', () => {
     expect(offenders(/A08876|6B5749/i)).toEqual([])
-    expect(offenders(/#070910|#0D111A|#151A25|#252B38|#333A4A/i)).toEqual([])
+    // 🚨 2026-09-08 补 `%23`：同上，data URI 编码的井号躲得过字面 `#`。
+    expect(offenders(/(?:#|%23)(070910|0D111A|151A25|252B38|333A4A)\b/i)).toEqual([])
   })
 
   it('🚨 零发光：辉光类/点火/灯色工具全域清零（曾是「每文件至多一处」，现在是零）', () => {
