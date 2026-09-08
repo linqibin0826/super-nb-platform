@@ -92,7 +92,7 @@ function RowAction({ label, onClick, disabled }: { label: string; onClick: () =>
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="shrink-0 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv px-2.5 py-1 text-xs text-snb-t3 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-50"
+      className="shrink-0 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv px-2.5 py-1 text-xs text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-50"
     >
       {label}
     </button>

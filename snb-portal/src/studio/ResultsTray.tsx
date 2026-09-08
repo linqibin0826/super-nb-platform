@@ -90,7 +90,7 @@ export function ResultsTray({ queue, onPreview, onClose }: Props) {
               type="button"
               onClick={onClose}
               title={t('studio.results.close')}
-              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv px-2.5 py-1 text-xs text-snb-t3 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
+              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv px-2.5 py-1 text-xs text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
             >
               {t('studio.results.collapse')}
               <svg

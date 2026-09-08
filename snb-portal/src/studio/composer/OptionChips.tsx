@@ -12,7 +12,7 @@ export interface ChipOption {
 export const rowVariants = { hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }
 
 /** 直选胶囊组（radiogroup）：选中态是一块纸白「墨」，切换时用 layoutId 在组内滑动过去。
- *  🚨 2026-07-29 起选中一律纸白填充 + 沥青字——白字压橙实测 2.61:1 读不出，
+ *  🚨 2026-07-29 起选中一律赤陶填充 + cta-fg 字——白字压橙实测 2.61:1 读不出，
  *  而且这些胶囊表达的多半只是**默认值**，比真正的行动按钮还响是错的层级。 */
 export function OptionChips(props: {
   groupId: string

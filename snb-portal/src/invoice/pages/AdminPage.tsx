@@ -109,7 +109,7 @@ export function AdminPage() {
               <button
                 type="button"
                 onClick={() => toggleRow(r.id)}
-                className="flex w-full items-center gap-4 border-b border-snb-hairline px-5 py-3.5 text-left text-[13.5px] transition-colors hover:bg-snb-t1/5"
+                className="flex w-full items-center gap-4 border-b border-snb-hairline px-5 py-3.5 text-left text-[13.5px] transition-colors duration-quick ease-snb-quick hover:bg-[var(--snb-ambient-lift-soft)]"
               >
                 <span className="w-[210px] flex-none font-mono font-semibold max-md:w-auto max-md:flex-1">
                   {r.requestNo}

@@ -114,7 +114,7 @@ export function PromptSheet({
               aria-label={t('studio.gallery.like')}
               aria-pressed={liked}
               onClick={onToggleLike}
-              // 选中 = 纸白填充 + 沥青字（与大图浮层的赞/藏同一种语言；
+              // 选中 = 赤陶填充 + cta-fg 字（与大图浮层的赞/藏同一种语言；
               // 🪦 rose/amber 两枚品牌外色随 v2 双强调色板退役）
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm transition-colors duration-quick ease-snb-quick ${
                 liked

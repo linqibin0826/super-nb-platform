@@ -34,7 +34,7 @@ export function SpecPanel(props: SpecPanelProps) {
   const reduceMotion = useReducedMotion()
   const { spec, sizeText, showEmptyState, hasUser } = props
 
-  // 选中 = 纸白填充 + 沥青字（与 OptionChips 同一条纪律，白字压橙整条退役）；
+  // 选中 = 赤陶填充 + cta-fg 字（与 OptionChips 同一条纪律，白字压橙整条退役）；
   // 比例形状小方框走 border-current，选中时自然跟着变沥青
   const ratioBtnClass = (active: boolean) =>
     `relative flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-1.5 text-[12.5px] transition-colors duration-quick ease-snb-quick focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-60 ${

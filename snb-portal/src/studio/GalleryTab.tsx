@@ -5,8 +5,8 @@
 // 2026-07-29 创作工坊改版（Claude Design 定稿）三处结构变化：
 // ① 卡片换本地 WallCard（加厚遮罩信息层）——ui 的 MasonryCard 只有 20% 遮罩，浅色图上标题
 //    与署名读不出（1.6:1），那是 5778 条素材唯一语义线索被掐掉；
-// ② 筛选胶囊换本地 FilterChip（纸白填充选中）——ui 的 Chip 选中是白字压橙 2.61:1，
-//    而旁边排序控件是纸白填充，同一屏「选中」两种语言；
+// ② 筛选胶囊换本地 FilterChip（赤陶填充选中）——ui 的 Chip 选中是白字压橙 2.61:1，
+//    而旁边排序控件是赤陶填充，同一屏「选中」两种语言；
 // ③ 桌面点卡片开大图（WallLightbox），提示词全文与「直接使用/复制」同界面完成；
 //    触屏窄屏仍走 PromptSheet 抽屉。逛不拦、生成才拦的分寸一律不动。
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -282,7 +282,7 @@ export function GalleryTab({ onApply }: Props) {
   return (
     <div className="space-y-5">
       {/* 工具条第一行：搜索 + 排序（原先各占一行、一头一尾没关联，手机上光外壳就吃掉半屏）。
-          排序四档与类目共用 FilterChip：全站「选中 = 纸白填充」只有一种语言。 */}
+          排序四档与类目共用 FilterChip：全站「选中 = 赤陶填充」只有一种语言。 */}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         {/* 搜索框按定稿本地实现（高 44 / 面板底 / hairline-strong 边 / 胶囊 / mono 斜杠提示位）。
             🚨 不用 vendor Input：那需要 [&>input] 去够它的内部结构，
