@@ -12,12 +12,12 @@ class DrawEligibilityTest {
     @ParameterizedTest
     @CsvSource({
         "0,   0, 0",
-        "49,  0, 0",
-        "50,  0, 1",
-        "125, 1, 1",
-        "125, 2, 0",
-        "125, 5, 0",
-        "500, 3, 7",
+        "99,  0, 0",
+        "100, 0, 1",
+        "250, 1, 1",
+        "250, 2, 0",
+        "250, 5, 0",
+        "1000, 3, 7",
     })
     void computesRemainingDraws(String total, int used, int expected) {
         assertThat(DrawEligibility.remainingDraws(new BigDecimal(total), used)).isEqualTo(expected);
@@ -30,6 +30,6 @@ class DrawEligibilityTest {
 
     @Test
     void negativeBalanceGuard() {
-        assertThat(DrawEligibility.remainingDraws(new BigDecimal("-50"), 0)).isZero();
+        assertThat(DrawEligibility.remainingDraws(new BigDecimal("-100"), 0)).isZero();
     }
 }
