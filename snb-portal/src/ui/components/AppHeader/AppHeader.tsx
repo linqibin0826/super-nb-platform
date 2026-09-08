@@ -46,9 +46,16 @@ export interface AppHeaderProps {
 
 /**
  * 全站统一 Header（苹果式 v3）：三区骨架
- * 「品牌锁定 | 胶囊分段 | 场景槽」——**flex 两端对齐；胶囊分段 `mx-auto flex-none`
- * 贴合内容居中；<lg 收起**
- * （🪦 grid 三列已退役：768 平板下会把整条顶栏挤到左边、右侧空 37%）。
+ * 「品牌锁定 | 胶囊分段 | 场景槽」——布局分两段：
+ * **≥lg(1024) 三列 grid `1fr auto 1fr`**（brand start / 胶囊 center / 场景槽 end），
+ * 中列是 auto、两侧 1fr 各分一半余量，胶囊中心 == 顶栏中心（1280 实测 ±1px）；
+ * **<lg flex 两端对齐**（胶囊本来就 `max-lg:hidden` 收起，只剩品牌与场景槽两端贴边）。
+ * 🪦 「全宽 grid」（不分档、<lg 也 grid）已退役：768 平板下会把整条顶栏挤到左边、右侧空 37%
+ *    ——那次退役退的是「不分档」，不是 grid 本身；≥lg 分档用 grid 才是胶囊真居中的解。
+ *    胶囊仍保 `mx-auto flex-none`（<lg 与模板 `.snb-hdr__capsule{flex:none;margin:0 auto}` 对齐），
+ *    ≥lg 由 `lg:justify-self-center` 接管——两者在 auto 轨道里都是空转，留着是为契约一致。
+ * ⚠️ 只靠 `mx-auto` 是**假居中**：flex 里 auto 外边距只分「剩余空间」，
+ *    brand 宽 ≠ 场景槽宽时胶囊会偏（实测 −36…−49px）。
  * 桌面 ≥1024 高 64 / 内边距 24；手机 <1024 高 60 / 内边距 16，
  * 菜单钮 44×44 永远贴最右（拇指角），「登录」收进浮卡。
  * 非 React 站点（fork/learn/activity）按 templates/app-header.html 对齐，改必同步。
@@ -114,8 +121,9 @@ export function AppHeader({
     <header
       data-scrolled={scrolled}
       className={cx(
-        // 三区弹性：两端对齐；胶囊分段 mx-auto flex-none 贴合内容居中；<lg 收起
-        'relative flex items-center justify-between gap-4 px-4 lg:gap-6 lg:px-6',
+        // <lg：flex 两端对齐（胶囊收起）；≥lg：三列 grid 1fr/auto/1fr 让胶囊真居中
+        'relative flex items-center justify-between gap-4 px-4',
+        'lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-6 lg:px-6',
         variant === 'solid'
           ? // 玻璃粘性顶栏（.snb-glass 定义在 styles.css，全站允许毛玻璃滤镜的三处之一）。
             // 静止无底线；滚过 8px 挂 .snb-scrolled 才出 --snb-hdr-line 发丝线 + 4% 投影。
@@ -131,7 +139,7 @@ export function AppHeader({
         className
       )}
     >
-      <a href={homeHref} className="flex flex-none items-baseline gap-2.5 no-underline">
+      <a href={homeHref} className="flex flex-none items-baseline gap-2.5 no-underline lg:justify-self-start">
         {/* 词标家族现状：20px、≥768 抬 24（首页/learn 同款） */}
         <BrandLogo className="md:text-2xl" />
         {subtitle && (
@@ -140,11 +148,18 @@ export function AppHeader({
           </span>
         )}
       </a>
-      {/* 胶囊分段贴合内容、auto 居中；<lg 收起，两端自动贴边
-          （⚠️ 不能给 flex-1：根元素现在是 rounded-full bg-snb-well 灰轨，会横贯整条顶栏；
-           与 templates/app-header.html 的 .snb-hdr__capsule{flex:none;margin:0 auto} 一致） */}
-      <NavCapsule aria-label="全站导航" className="mx-auto flex-none max-lg:hidden" items={items} />
-      <div className="flex flex-none items-center gap-2.5">
+      {/* 胶囊分段贴合内容；≥lg 由 grid 中列 + justify-self-center 真居中，<lg 收起
+          （⚠️ 不能给 flex-1，也不能让中列变成 1fr：根元素是 rounded-full bg-snb-well 灰轨，
+           会横贯整条顶栏；与 templates/app-header.html 的
+           .snb-hdr__capsule{flex:none;margin:0 auto;justify-self:center} 一致） */}
+      <NavCapsule
+        aria-label="全站导航"
+        className="mx-auto flex-none max-lg:hidden lg:justify-self-center"
+        items={items}
+      />
+      {/* ⚠️ 场景槽在 grid 里必须显式 justify-self-end：默认 stretch 会把它拉满右列、
+          内容靠左排（等于账户区整体左移一大截）*/}
+      <div className="flex flex-none items-center gap-2.5 lg:justify-self-end">
         {/* 主题开关：场景槽最前 = 访客态「登录」左边（定稿位置）。默认不出，见 props 注释 */}
         {themeToggle && <ThemeToggle />}
         {children}
@@ -175,8 +190,11 @@ export function AppHeader({
         </button>
       </div>
 
-      {/* <lg 导航浮卡（玻璃浮层 .snb-glass）：
-          自顶栏底边整宽滑落 + 淡入 400ms 落定档；下垫纯色遮罩（无模糊无发光），点遮罩即关 */}
+      {/* <lg 导航浮卡（厚材质 .snb-glass-sheet，不是顶栏那枚 .snb-glass）：
+          自顶栏底边整宽滑落 + 淡入 400ms 落定档；下垫纯色遮罩（无模糊无发光），点遮罩即关。
+          🚨 浮卡压的是整屏正文，.72 玻璃会把底下的字透上来；且它是带毛玻璃滤镜
+             （backdrop 系滤镜）顶栏的后代，父级滤镜已把底抽走、子层再滤是空转
+             ⇒ 走 .92 近实底、不挂滤镜。 */}
       {menuOpen && (
         <div ref={menuWrapRef} className="lg:hidden">
           {/* ⚠️ 遮罩必须 absolute 挂在顶栏下沿，**不能用 fixed**：顶栏带毛玻璃滤镜（backdrop 系滤镜），
@@ -193,7 +211,7 @@ export function AppHeader({
           <nav
             id={menuId}
             aria-label="全站导航"
-            className="snb-glass absolute inset-x-0 top-full z-40 animate-snb-menu border-b border-snb-hairline px-2.5 pb-3.5 pt-2.5 shadow-glass motion-reduce:animate-none"
+            className="snb-glass-sheet absolute inset-x-0 top-full z-40 animate-snb-menu border-b border-snb-hairline px-2.5 pb-3.5 pt-2.5 shadow-glass motion-reduce:animate-none"
           >
             <ul className="m-0 flex list-none flex-col p-0">
               {items.map((item) => (

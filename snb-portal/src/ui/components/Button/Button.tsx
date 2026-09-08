@@ -17,8 +17,11 @@ const base =
 
 // 主按钮四态（与 lib/cta.ts 的链接版逐字同源）：强调色填充 / hover 加深 / press 再加深 + 缩 .97 /
 // 禁用 elv 底 t3 字。🪦 键帽底边（shadow-edge-*）与 1px 抬沉随网吧退役。
+// 🚨 填充变体必须补 `ring-offset-2 ring-offset-snb-bg`：环色 `--snb-focus` 与填充 `--snb-cta-bg`
+//    是同一枚强调橙，不隔一圈页面底就是橙环贴橙底 1:1，键盘用户看不见焦点（WCAG 2.4.11）。
+//    描边款 / 幽灵不加——它们的底本来就是页面底，再垫一圈只会凭空多一道白边。
 const ctaFourStates =
-  'bg-snb-cta font-semibold text-snb-cta-fg hover:bg-snb-cta-hover active:bg-snb-cta-press active:scale-[0.97] active:duration-press disabled:bg-snb-elv disabled:text-snb-t3 disabled:scale-100'
+  'bg-snb-cta font-semibold text-snb-cta-fg focus-visible:ring-offset-2 focus-visible:ring-offset-snb-bg hover:bg-snb-cta-hover active:bg-snb-cta-press active:scale-[0.97] active:duration-press disabled:bg-snb-elv disabled:text-snb-t3 disabled:scale-100'
 
 const variants: Record<ButtonVariant, string> = {
   // 签名主键（🪦 霓虹橙填充与偏移硬阴影随霓虹退役）：

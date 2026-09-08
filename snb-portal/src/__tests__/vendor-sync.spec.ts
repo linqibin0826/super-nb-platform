@@ -23,6 +23,10 @@ const read = (p: string) => readFileSync(resolve(process.cwd(), p), 'utf8')
 const tokens = read('src/ui/tokens/tokens.css')
 const styles = read('src/ui/styles.css')
 const uiIndex = read('src/ui/index.ts')
+const appHeader = read('src/ui/components/AppHeader/AppHeader.tsx')
+const navSrc = read('src/ui/components/AppHeader/nav.tsx')
+const ctaSrc = read('src/ui/lib/cta.ts')
+const masonry = read('src/ui/components/MasonryCard/MasonryCard.tsx')
 
 // 双档后按块取值：全文匹配会拿到**先出现的浅色档**，深色断言会静默测错对象。
 const sliceBlock = (start: RegExp) => {
@@ -166,6 +170,48 @@ describe('vendor 同步：设计系统已是苹果式 v3', () => {
     expect(ease.snb).toBe('cubic-bezier(0.32, 0.72, 0, 1)')
     expect(ease['snb-quick']).toBe('cubic-bezier(0.25, 1, 0.5, 1)')
     expect(json).not.toContain('cubic-bezier(0.2, 0, 0, 1)')
+  })
+
+  it('批 5：浮卡厚材质 .snb-glass-sheet 就位（.92 近实底、不挂 backdrop-filter）', () => {
+    // 🚨 浮卡是带毛玻璃顶栏的后代，子层再滤是空转；且它压整屏正文，.72 会把底下的字透上来
+    expect(styles).toContain('.snb-glass-sheet { background: rgba(255, 255, 255, 0.92); }')
+    expect(styles).toContain('.dark .snb-glass-sheet { background: rgba(29, 29, 31, 0.92); }')
+    // AppHeader 的 <lg 浮卡必须用它，不能退回顶栏那枚 .snb-glass
+    expect(appHeader).toContain('snb-glass-sheet absolute inset-x-0 top-full')
+    // 高对比档：面变实的同时边也要抬，两档分开写
+    expect(styles).toMatch(/\.snb-glass-sheet \{[^}]*border-color: rgba\(0, 0, 0, 0\.35\)/)
+    expect(styles).toMatch(/\.dark \.snb-glass-sheet \{[^}]*border-color: rgba\(255, 255, 255, 0\.35\)/)
+  })
+
+  it('批 5：顶栏 ≥lg 三列 grid 真居中（<lg 仍是 flex 两端对齐，不许整条 grid）', () => {
+    expect(appHeader).toContain('lg:grid lg:grid-cols-[1fr_auto_1fr]')
+    expect(appHeader).toContain('lg:justify-self-center')
+    // 场景槽不显式 justify-self-end 会被拉满右列、账户区整体左移
+    expect(appHeader).toContain('lg:justify-self-end')
+    expect(appHeader).toContain('lg:justify-self-start')
+  })
+
+  it('批 5：「新手指南」nav key = help（写成 hub 会让内容中心误点亮、真在 help 上反而不亮）', () => {
+    expect(navSrc).toMatch(/key: 'help',\s*\n\s*label: '新手指南',\s*\n\s*href: 'https:\/\/help\.super-nb\.me\//)
+    expect(navSrc).not.toMatch(/key: 'hub'/)
+  })
+
+  it('批 5：焦点环补齐——填充变体垫 ring-offset，链接版三条都有 ring-2', () => {
+    // 环色与填充同为强调橙，不隔一圈页面底就是 1:1 隐形（WCAG 2.4.11）
+    expect(ctaSrc).toMatch(/ctaAnchorClass =\s*\n?\s*'[^']*focus-visible:ring-2 focus-visible:ring-snb-focus focus-visible:ring-offset-2 focus-visible:ring-offset-snb-bg/)
+    for (const name of ['secondaryAnchorClass', 'ghostAnchorClass']) {
+      const body = ctaSrc.slice(ctaSrc.indexOf(`${name} =`))
+      expect(body.slice(0, body.indexOf("'\n")), name).toContain('focus-visible:ring-snb-focus')
+    }
+    // 描边款 / 幽灵不加 offset——底本来就是页面底，垫一圈只会凭空多一道白边
+    const secondary = ctaSrc.slice(ctaSrc.indexOf('secondaryAnchorClass ='))
+    expect(secondary.slice(0, secondary.indexOf("'\n"))).not.toContain('ring-offset')
+  })
+
+  it('批 5：MasonryCard 图上遮罩改纯黑（网吧墨底 rgb 写法躲得过 hex 断言）', () => {
+    expect(masonry).toContain('rgba(0,0,0,0.97)_100%')
+    expect(masonry).not.toMatch(/rgba\(14, ?16, ?20/)
+    expect(masonry).not.toMatch(/0[Ee]1014/)
   })
 
   it('主题开关件与契约都在 vendor 出口里（缺任一样下游就切不了档）', () => {

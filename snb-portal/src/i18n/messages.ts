@@ -8,7 +8,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       nav: {
         console: '控制台',
         studio: '创作工坊',
-        hub: '新手指南',
+        help: '新手指南',
         activity: '活动中心',
         login: '登录',
         signup: '免费注册',
@@ -77,7 +77,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       title: '创作工坊',
       nav: {
         console: '控制台',
-        hub: '新手指南',
+        help: '新手指南',
         activity: '活动中心',
         login: '登录',
         signup: '免费注册',
@@ -526,7 +526,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       nav: {
         console: 'Console',
         studio: 'Creative Studio',
-        hub: 'Getting Started',
+        help: 'Getting Started',
         activity: "Events",
         login: 'Sign in',
         signup: 'Sign up free',
@@ -596,7 +596,7 @@ export const messages: Record<'zh' | 'en', LocaleDict> = {
       title: 'Creative Studio',
       nav: {
         console: 'Console',
-        hub: 'Getting Started',
+        help: 'Getting Started',
         activity: "Events",
         login: 'Sign in',
         signup: 'Sign up free',

@@ -75,8 +75,10 @@ export function MasonryCard({ src, alt = '', width, height, overlay, stats, capt
         // 🚨 遮罩必须够厚：旧版 from-black/70 via-black/20 在浅色图（白仪表盘/米色信息图/
         // 热敏小票截图）上，署名那一档只剩 20% 黑，实测 1.6:1——5778 条素材的语义线索
         // 与 CC BY 署名要求一起被掐掉。改四段加厚（0 → .62@34% → .9@68% → .97@100%），
-        // 合成底 ≈ #26282C，白字 ≈15:1，与深浅图无关恒定可读。
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex min-h-24 flex-col justify-end [background:linear-gradient(180deg,rgba(14,16,20,0)_0%,rgba(14,16,20,0.62)_34%,rgba(14,16,20,0.9)_68%,rgba(14,16,20,0.97)_100%)] px-3 pb-2.5">
+        // 白字与深浅图无关恒定可读（.97 那一档合成底几乎就是纯黑，≈19:1）。
+        // 🪦 四段原本写的是网吧 v2 墨底（rgb 形式，换代后全站已无此色）；图上遮罩改纯黑
+        //    （两档一致，本来就不跟主题翻）。守卫 no-wangba 同时盯 hex 与 rgb() 两种写法。
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex min-h-24 flex-col justify-end [background:linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_34%,rgba(0,0,0,0.9)_68%,rgba(0,0,0,0.97)_100%)] px-3 pb-2.5">
           {overlay && (
             <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-quick ease-snb group-hover:mb-2 group-hover:max-h-44 group-hover:opacity-100 focus-within:mb-2 focus-within:max-h-44 focus-within:opacity-100 [&>*]:pointer-events-auto">
               {overlay}

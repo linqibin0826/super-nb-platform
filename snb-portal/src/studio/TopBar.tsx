@@ -15,7 +15,8 @@ interface ProfileBalance {
 const DEV_HREFS: Record<string, string> = {
   console: '/dashboard',
   studio: '/studio/',
-  hub: 'https://hub.super-nb.me/',
+  // 🪦 'hub' 键随 vendor 的 nav key hub→help 退役：「新手指南」本来就该直链 help 站，
+  //    这里没有本地开发覆盖，走 SITE_NAV_ITEMS 里的 https://help.super-nb.me/ 即可。
   activity: '/activity/all/',
 }
 const isLocalDev =
@@ -26,11 +27,14 @@ const isLocalDev =
  *  登出必须走 fork /logout 单点（墓碑协议唯一真源），子站绝不自己碰 cookie。 */
 const consoleHref = (path: string): string => (isLocalDev ? path : `${CONSOLE_ORIGIN}${path}`)
 
-// SITE_NAV_ITEMS 文案是中文常量，双语站点由 i18n 覆盖
+// SITE_NAV_ITEMS 文案是中文常量，双语站点由 i18n 覆盖。
+// 🚨 键必须跟 SiteNavItem.key 一一对上（2026-09-07 vendor 把「新手指南」的 key 从
+//    'hub' 改成 'help'，它代表 help 站不是 hub 站）；对不上时 labelFor 兜底回
+//    item.label，绝不能把 undefined 喂给 t()——t 会在 key.split('.') 上抛错、整条顶栏白屏。
 const NAV_LABEL_KEYS: Record<string, string> = {
   console: 'studio.nav.console',
   studio: 'studio.title',
-  hub: 'studio.nav.hub',
+  help: 'studio.nav.help',
   activity: 'studio.nav.activity',
 }
 
@@ -64,7 +68,9 @@ export function TopBar() {
       subtitle={t('studio.title')}
       homeHref={import.meta.env.BASE_URL}
       resolveHref={isLocalDev ? (item: SiteNavItem) => DEV_HREFS[item.key] ?? item.href : undefined}
-      labelFor={(item: SiteNavItem) => t(NAV_LABEL_KEYS[item.key])}
+      labelFor={(item: SiteNavItem) =>
+        NAV_LABEL_KEYS[item.key] ? t(NAV_LABEL_KEYS[item.key]) : item.label
+      }
       // 主题开关：AppHeader 把它排在场景槽最前（访客态就是「登录」左边）。
       // 组件自带契约接线，这里不用传档位也不用接回调。
       themeToggle

@@ -9,6 +9,10 @@ import type { NavCapsuleItem } from '../NavCapsule/NavCapsule'
  * （2026-09-07 苹果式换代：本常量已先行改文案，check-headers.sh 与活动页在批 4 对齐，
  *  其间为已知漂移态）；
  * 「新手指南」直链 help.super-nb.me（2026-08-24 从「杂志架」/hub 改点，新手反馈找不到配置方法）。
+ * 🚨 该项的 `key` 是 **'help'**（它代表 help 站，不是 hub）：改点时链接改了、key 还留着 'hub'，
+ *    结果 hub 内容中心（site="hub"）把「新手指南」误点亮成当前位，而真在 help 上时反而不亮。
+ *    当前位判定只认 `item.key === active` 一条严格相等——hub 已退出四项，
+ *    site="hub" 时四项零高亮（身份由 brand 副标表达，规范三档规则的第 3 档）。
  * 响应式两段：≥1024 胶囊 / <1024 菜单钮+玻璃下拉浮卡（唯一例外：help 站保留 VitePress 三档）。
  * 非 React 消费方（fork Vue / learn VitePress / activity 静态页）按 templates/app-header.html
  * 模板抄写——项目/顺序/链接改动必须与本常量同步（契约互指）。
@@ -69,7 +73,7 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
     ),
   },
   {
-    key: 'hub',
+    key: 'help',
     label: '新手指南',
     href: 'https://help.super-nb.me/',
     icon: (
@@ -104,7 +108,9 @@ export interface SiteNavOptions {
   labelFor?: (item: SiteNavItem) => string
 }
 
-/** 生成 NavCapsule items：标出当前站、促销项转 accent+dot。 */
+/** 生成 NavCapsule items：标出当前站、促销项转 accent+dot。
+ *  当前位=`item.key === active` 严格相等，没有别名/前缀/子域推断——
+ *  「本站属某项子域」（活动子页）由消费方自己传 `site="activity"` 表达。 */
 export function siteNavItems(active?: SiteKey, opts: SiteNavOptions = {}): NavCapsuleItem[] {
   return SITE_NAV_ITEMS.map((item) => ({
     label: opts.labelFor ? opts.labelFor(item) : item.label,

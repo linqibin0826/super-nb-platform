@@ -27,6 +27,14 @@
     border-bottom-color: var(--snb-hdr-line);
     box-shadow: 0 1px 12px rgba(0, 0, 0, 0.04);
   }
+  /* 浮卡厚材质（<1024 导航浮卡专用，与顶栏本体的 .snb-glass 分开）：
+     🚨 **不给 backdrop-filter**——浮卡是带 backdrop-filter 的顶栏的后代，父级那层滤镜
+        已经把它变成了新的包含块与滤镜根，子层再挂一次也没有可滤的底（实测就是一层
+        半透薄膜）。所以浮卡不是「玻璃薄一点」，而是压到 .92 的近实底。
+     🚨 .72 不够：浮卡从顶栏底边整宽落下来，压的是**整屏正文**，底下的字会透上来
+        （27 张截图实证）——顶栏只压 60px 一条，浮卡是一整页，两者不能共用一个 alpha。 */
+  .snb-glass-sheet { background: rgba(255, 255, 255, 0.92); }
+  .dark .snb-glass-sheet { background: rgba(29, 29, 31, 0.92); }
   /* 常驻侧栏 vibrancy（2026-09-07 站长看样板拍板）：比顶栏更透更厚，右缘 1px 白内高光；深色高光 .06 */
   .snb-glass-side {
     background: rgb(var(--snb-bg) / 0.30);
@@ -63,6 +71,11 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+  /* 浮卡摘出来单写：它**本来就没有 blur**（父级顶栏已滤过一次，子层再滤是空转），
+     这里只需换实底，不必再 none 一次——跟着上面合写会留一条空转声明。
+     🚨 深色变体仍要一起点名：`.dark .snb-glass-sheet` 是 (0,2,0)，
+        只写 (0,1,0) 的裸类名在深色档压不过它（同 chip 的教训）。 */
+  .snb-glass-sheet, .dark .snb-glass-sheet { background: rgb(var(--snb-panel)); }
   /* 🚨 chip 必须摘出来单独退：它坐在彩色 CTA 块上，跟着退成 panel 白底 =
      白字压白底直接隐形。退到 cta-press 实底 + cta-fg 字色（两档 7.1 / 7.5:1）。
      🚨 深色变体必须一起点名：`.dark .snb-glass-chip` 是 (0,2,0)，这里只写
@@ -75,7 +88,14 @@
   }
 }
 @media (prefers-contrast: more) {
-  .snb-glass { background: rgb(var(--snb-panel)); border-color: rgba(0, 0, 0, 0.35); }
+  /* 🚨 必须把 `.snb-glass.snb-scrolled` 一起点名：它是 (0,2,0)，滚起来后
+     `border-bottom-color: var(--snb-hdr-line)`（7% 黑）会压过这里 (0,1,0) 的 .35 边，
+     高对比度档反而在滚动时静默失效。 */
+  .snb-glass, .snb-glass.snb-scrolled { background: rgb(var(--snb-panel)); border-color: rgba(0, 0, 0, 0.35); }
+  /* 🚨 浮卡也要抬边：只换实底不抬边，高对比档下浮卡与页面之间还是那条 7% 发丝线，
+     等于「面变实了、界还是看不见」。两档分开写——边色要跟着档翻（同 .snb-glass-side）。 */
+  .snb-glass-sheet { background: rgb(var(--snb-panel)); border-color: rgba(0, 0, 0, 0.35); }
+  .dark .snb-glass-sheet { background: rgb(var(--snb-panel)); border-color: rgba(255, 255, 255, 0.35); }
   /* ⚠️ 侧栏没有 border，它的边是右缘 1px 内高光——写 border-color 是空转，必须抬 box-shadow；
      深色变体同样要点名（.dark .snb-glass-side 是 (0,2,0)，不然又被 .06 的高光压回去）*/
   .snb-glass-side { background: rgb(var(--snb-panel)); box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.35); }
