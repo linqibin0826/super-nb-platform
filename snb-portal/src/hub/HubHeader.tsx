@@ -17,6 +17,20 @@ export function HubHeader() {
       labelFor={(item) => t(`hub.nav.${item.key}`)}
       // 主题开关：排在场景槽最前（见 AppHeader）。内容中心是长文站，浅色档尤其要有
       themeToggle
+      // <1024 两钮收进导航浮卡（AppHeader 契约）：顶栏只留主题钮 + 菜单钮。
+      // 390 宽实测过——44 高胶囊两枚留在顶栏会把菜单钮挤出视口、文档出横向滚动条。
+      menuFooter={
+        user ? undefined : (
+          <>
+            <a href={`${CONSOLE_ORIGIN}/register`} className={`${ctaAnchorClass} w-full`}>
+              {t('hub.nav.signup')}
+            </a>
+            <a href={loginUrl()} className={`${ghostAnchorClass} w-full`}>
+              {t('hub.nav.login')}
+            </a>
+          </>
+        )
+      }
     >
       {user ? (
         <UserMenu
@@ -29,10 +43,10 @@ export function HubHeader() {
         />
       ) : (
         <>
-          <a href={loginUrl()} className={`${ghostAnchorClass} px-4`}>
+          <a href={loginUrl()} className={`${ghostAnchorClass} px-4 max-lg:hidden`}>
             {t('hub.nav.login')}
           </a>
-          <a href={`${CONSOLE_ORIGIN}/register`} className={`${ctaAnchorClass} px-4`}>
+          <a href={`${CONSOLE_ORIGIN}/register`} className={`${ctaAnchorClass} px-4 max-lg:hidden`}>
             {t('hub.nav.signup')}
           </a>
         </>

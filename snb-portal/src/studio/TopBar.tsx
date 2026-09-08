@@ -68,12 +68,26 @@ export function TopBar() {
       // 主题开关：AppHeader 把它排在场景槽最前（访客态就是「登录」左边）。
       // 组件自带契约接线，这里不用传档位也不用接回调。
       themeToggle
+      // <1024 两钮收进导航浮卡（AppHeader 契约）：顶栏只留主题钮 + 菜单钮。
+      // 390 宽实测过——44 高胶囊两枚留在顶栏会把菜单钮挤出视口、文档出横向滚动条。
+      menuFooter={
+        user ? undefined : (
+          <>
+            <a href={consoleHref('/register')} className={`${ctaAnchorClass} w-full`}>
+              {t('studio.nav.signup')}
+            </a>
+            <a href={loginUrl()} className={`${ghostAnchorClass} w-full`}>
+              {t('studio.nav.login')}
+            </a>
+          </>
+        )
+      }
     >
       {user ? (
         <>
           {balance !== null && (
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[13px] text-snb-t3">{t('studio.nav.balance')}</span>
+              <span className="text-[13px] text-snb-t2">{t('studio.nav.balance')}</span>
               <span className="text-[13px] font-semibold tabular-nums text-snb-safety">
                 ${balance.toFixed(2)}
               </span>
@@ -91,11 +105,12 @@ export function TopBar() {
       ) : (
         // 两条配方来自 vendored lib/cta.ts（与 Button 的 ghost/primary 逐字同源）；
         // 三条配方都不含横向内边距，顶栏内按契约补 px-4。
+        // max-lg:hidden = <1024 收进浮卡（同两条在上面的 menuFooter 里整宽再出一份）。
         <>
-          <a href={loginUrl()} className={`${ghostAnchorClass} px-4`}>
+          <a href={loginUrl()} className={`${ghostAnchorClass} px-4 max-lg:hidden`}>
             {t('studio.nav.login')}
           </a>
-          <a href={consoleHref('/register')} className={`${ctaAnchorClass} px-4`}>
+          <a href={consoleHref('/register')} className={`${ctaAnchorClass} px-4 max-lg:hidden`}>
             {t('studio.nav.signup')}
           </a>
         </>
