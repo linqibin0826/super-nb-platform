@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AppHeader, type SiteNavItem } from '../ui'
+import { AppHeader, ctaAnchorClass, ghostAnchorClass, type SiteNavItem } from '../ui'
 import { useAuthUser } from '../auth/useAuth'
 import { apiFetch, loginUrl } from '../auth/apiFetch'
 import { UserMenu } from '../auth/UserMenu'
@@ -34,7 +34,7 @@ const NAV_LABEL_KEYS: Record<string, string> = {
   activity: 'studio.nav.activity',
 }
 
-/** 顶栏 = 统一 AppHeader（规范 v1）+ studio 场景槽（主题切换 → 余额 → 头像/登录） */
+/** 顶栏 = 统一 AppHeader（Header 规范 v2）+ studio 场景槽（主题开关 → 余额 → 头像/登录） */
 export function TopBar() {
   const user = useAuthUser()
   const [balance, setBalance] = useState<number | null>(null)
@@ -65,7 +65,7 @@ export function TopBar() {
       homeHref={import.meta.env.BASE_URL}
       resolveHref={isLocalDev ? (item: SiteNavItem) => DEV_HREFS[item.key] ?? item.href : undefined}
       labelFor={(item: SiteNavItem) => t(NAV_LABEL_KEYS[item.key])}
-      // 开灯/关灯：AppHeader 把它排在场景槽最前（访客态就是「登录」左边）。
+      // 主题开关：AppHeader 把它排在场景槽最前（访客态就是「登录」左边）。
       // 组件自带契约接线，这里不用传档位也不用接回调。
       themeToggle
     >
@@ -73,8 +73,8 @@ export function TopBar() {
         <>
           {balance !== null && (
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[11px] text-snb-t3">{t('studio.nav.balance')}</span>
-              <span className="font-mono text-[13.5px] font-semibold text-snb-t1">
+              <span className="text-[13px] text-snb-t3">{t('studio.nav.balance')}</span>
+              <span className="text-[13px] font-semibold tabular-nums text-snb-safety">
                 ${balance.toFixed(2)}
               </span>
             </div>
@@ -89,18 +89,13 @@ export function TopBar() {
           />
         </>
       ) : (
-        // ui Button 不支持 as/href（ButtonHTMLAttributes），用 <a> 内联复刻 ghost/primary sm 观感
+        // 两条配方来自 vendored lib/cta.ts（与 Button 的 ghost/primary 逐字同源）；
+        // 三条配方都不含横向内边距，顶栏内按契约补 px-4。
         <>
-          <a
-            href={loginUrl()}
-            className="inline-flex items-center whitespace-nowrap rounded-full bg-transparent px-3 py-1.5 text-xs font-medium text-snb-t2 transition-colors hover:bg-snb-t1/5 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
-          >
+          <a href={loginUrl()} className={`${ghostAnchorClass} px-4`}>
             {t('studio.nav.login')}
           </a>
-          <a
-            href={consoleHref('/register')}
-            className="inline-flex items-center whitespace-nowrap rounded-full bg-snb-cta px-3.5 py-1.5 text-xs font-semibold text-snb-cta-fg no-underline transition-colors duration-quick ease-snb hover:bg-snb-cta-hover"
-          >
+          <a href={consoleHref('/register')} className={`${ctaAnchorClass} px-4`}>
             {t('studio.nav.signup')}
           </a>
         </>

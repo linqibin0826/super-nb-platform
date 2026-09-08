@@ -1,4 +1,4 @@
-import { AppHeader } from '../ui'
+import { AppHeader, ctaAnchorClass, ghostAnchorClass } from '../ui'
 import { useAuthUser } from '../auth/useAuth'
 import { loginUrl } from '../auth/apiFetch'
 import { UserMenu } from '../auth/UserMenu'
@@ -29,16 +29,10 @@ export function HubHeader() {
         />
       ) : (
         <>
-          <a
-            href={loginUrl()}
-            className="inline-flex items-center whitespace-nowrap rounded-full bg-transparent px-3 py-1.5 text-xs font-medium text-snb-t2 transition-colors hover:bg-snb-t1/5 hover:text-snb-t1"
-          >
+          <a href={loginUrl()} className={`${ghostAnchorClass} px-4`}>
             {t('hub.nav.login')}
           </a>
-          <a
-            href={`${CONSOLE_ORIGIN}/register`}
-            className="inline-flex items-center whitespace-nowrap rounded-full bg-snb-cta px-3.5 py-1.5 text-xs font-semibold text-snb-cta-fg no-underline transition-colors duration-quick ease-snb hover:bg-snb-cta-hover"
-          >
+          <a href={`${CONSOLE_ORIGIN}/register`} className={`${ctaAnchorClass} px-4`}>
             {t('hub.nav.signup')}
           </a>
         </>
