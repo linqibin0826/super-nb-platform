@@ -24,18 +24,18 @@ import me.supernb.activity.domain.port.nb.NbLedgerPort;
 import me.supernb.activity.domain.port.metric.UserMetricPort;
 import org.springframework.stereotype.Service;
 
-/// 成就墙查询(spec/深化稿 §6;字段形状按前端接线计划契约总览钉死)。"元老档案"类目单独
-/// 抽出成 metaAchievements[],不进 categories[];隐藏关卡类目(全体 hiddenReveal=true)恒不建
+/// 成就墙查询(spec/深化稿 §6;字段形状按前端接线计划契约总览钉死)。"元编年史"类目单独
+/// 抽出成 metaAchievements[],不进 categories[];机密档案类目(全体 hiddenReveal=true)恒不建
 /// series 分组,即便个别行带 series_code/tier_level(与 Task 1 seed 注释同一条纪律)。
 @Service
 public class AchievementWallQueryService {
 
-    /// 元老档案类目(单独抽成 metaAchievements[],不进 categories[])。
-    /// 🚨 用集合而非单值,同时认新旧两个名字:类目名在 V15 由"元编年史"改为"元老档案",
-    ///    而 Flyway 可被 SNB_FLYWAY_ENABLED=false 关掉——那种情况下新镜像会读到未迁移的
-    ///    旧值。只认单个新值会让整个类目静默落错分组(既不在 meta 也没人发现)。
-    ///    等 V15 确认稳定后可删旧值。
-    private static final Set<String> META_CATEGORIES = Set.of("元老档案", "元编年史");
+    /// 元编年史类目(单独抽成 metaAchievements[],不进 categories[])。
+    /// 🚨 用集合而非单值,同时认两个名字:类目名 V15 由"元编年史"改为"元老档案",
+    ///    V22(苹果式换代批 5)又逐条回退到 V9 原文"元编年史";而 Flyway 可被
+    ///    SNB_FLYWAY_ENABLED=false 关掉——那种情况下新镜像会读到未迁移的另一套值。
+    ///    只认单个值会让整个类目静默落错分组(既不在 meta 也没人发现)。
+    private static final Set<String> META_CATEGORIES = Set.of("元编年史", "元老档案");
     private static final Set<String> EXCLUSIVE_CODES =
             Set.of("exclusive_founding_issue", "exclusive_founding_fullmonth");
     private static final NumberFormat INT_FORMAT = NumberFormat.getIntegerInstance(Locale.US);
@@ -107,7 +107,7 @@ public class AchievementWallQueryService {
                 if (hidden) {
                     hiddenOrdinal++;
                 }
-                // 隐藏关卡纪律:隐藏类目恒不建 series 分组,即便个别行带 series_code/tier_level。
+                // 机密档案纪律:隐藏类目恒不建 series 分组,即便个别行带 series_code/tier_level。
                 if (!hidden && d.seriesCode() != null) {
                     bySeries.computeIfAbsent(d.seriesCode(), k -> new ArrayList<>()).add(d);
                 } else {
@@ -133,7 +133,7 @@ public class AchievementWallQueryService {
     }
 
     /// 单条(items[]/metaAchievements[])视图映射。`hiddenOrdinal` 是该条在其(机密)类目内
-    /// 按 sort_order 的第几条(1-based),用于拼 "曾是隐藏关卡 #0X" 角标;非隐藏类目传 0 不使用。
+    /// 按 sort_order 的第几条(1-based),用于拼 "曾是机密档案 #0X" 角标;非隐藏类目传 0 不使用。
     private static AchievementItemView toItemView(AchievementDefinition def, AchievementUnlock unlock,
             int hiddenOrdinal) {
         boolean unlocked = unlock != null;
@@ -142,7 +142,7 @@ public class AchievementWallQueryService {
             return new AchievementItemView(def.code(), null, null, tier, def.nbPoints(), false, def.status(), true,
                     null, null, null, null, null, def.hiddenHintText());
         }
-        String revealedLabel = def.hiddenReveal() ? "曾是隐藏关卡 #" + String.format("%02d", hiddenOrdinal) : null;
+        String revealedLabel = def.hiddenReveal() ? "曾是机密档案 #" + String.format("%02d", hiddenOrdinal) : null;
         String exclusiveTag = EXCLUSIVE_CODES.contains(def.code()) ? "绝版" : null;
         return new AchievementItemView(def.code(), def.name(), def.conditionText(), tier, def.nbPoints(), unlocked,
                 def.status(), def.hiddenReveal(), def.flavorText(), null, exclusiveTag, revealedLabel, null, null);
