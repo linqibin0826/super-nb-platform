@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import me.supernb.sub2api.DisplayName;
 import me.supernb.sub2api.EmailMask;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -163,13 +164,9 @@ public class JdbcRaffleGateReadModel implements RaffleGateReadModel {
             default -> throw new IllegalArgumentException("unknown gateType: " + gateType);
         };
     }
-
-    /// 择名:username 非空白用 username,否则脱敏邮箱。契约与 JdbcUsageBoardReadModel 一致,改必同步。
-    static String displayName(String username, String email) {
-        if (username != null && !username.isBlank()) {
-            return username;
-        }
-        return mask(email);
+    /// 择名:委托全站唯一口径 [DisplayName#of]。
+    private static String displayName(String username, String email) {
+        return DisplayName.of(username, email);
     }
 
     /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask](恒 ≥2 位被遮,短本地名不再回显完整本地部分)。null 原样返回。

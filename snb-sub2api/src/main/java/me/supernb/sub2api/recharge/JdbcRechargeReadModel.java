@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import me.supernb.sub2api.DisplayName;
 import me.supernb.sub2api.EmailMask;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -49,13 +50,15 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
                 .addValue("end", Timestamp.from(end))
                 .addValue("limit", limit);
         return jdbc.query(
-                "SELECT u.email, SUM(po.amount) AS total FROM payment_orders po "
+                "SELECT u.email, u.username, SUM(po.amount) AS total FROM payment_orders po "
                         + "JOIN users u ON u.id = po.user_id "
                         + "WHERE po.order_type = 'balance' AND po.status = 'COMPLETED' "
                         + "AND po.completed_at >= :start AND po.completed_at < :end AND u.role = 'user' "
-                        + "GROUP BY u.id, u.email ORDER BY total DESC LIMIT :limit",
+                        + "GROUP BY u.id, u.email, u.username ORDER BY total DESC LIMIT :limit",
                 p,
-                (rs, i) -> new LeaderRow(mask(rs.getString("email")), rs.getBigDecimal("total")));
+                (rs, i) -> new LeaderRow(
+                        displayName(rs.getString("username"), rs.getString("email")),
+                        rs.getBigDecimal("total")));
     }
 
     /// 按完成时间倒序取窗口内 COMPLETED 余额单前 limit(仅 role=user、金额 ≥¥10 滤测试单),name 经 `mask` 脱敏。
@@ -66,7 +69,7 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
                 .addValue("end", Timestamp.from(end))
                 .addValue("limit", limit);
         return jdbc.query(
-                "SELECT u.email, po.amount, po.completed_at FROM payment_orders po "
+                "SELECT u.email, u.username, po.amount, po.completed_at FROM payment_orders po "
                         + "JOIN users u ON u.id = po.user_id "
                         + "WHERE po.order_type = 'balance' AND po.status = 'COMPLETED' "
                         + "AND po.completed_at >= :start AND po.completed_at < :end "
@@ -74,7 +77,7 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
                         + "ORDER BY po.completed_at DESC LIMIT :limit",
                 p,
                 (rs, i) -> new RechargeRow(
-                        mask(rs.getString("email")),
+                        displayName(rs.getString("username"), rs.getString("email")),
                         rs.getBigDecimal("amount"),
                         rs.getTimestamp("completed_at").toInstant()));
     }
@@ -94,11 +97,8 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
                 "SELECT id, username, email FROM users WHERE id IN (:ids) AND role = 'user'",
                 new MapSqlParameterSource("ids", ids),
                 rs -> {
-                    String username = rs.getString("username");
                     result.put(rs.getLong("id"),
-                            username == null || username.isBlank()
-                                    ? mask(rs.getString("email"))
-                                    : username.trim());
+                            displayName(rs.getString("username"), rs.getString("email")));
                 });
         return result;
     }
@@ -181,6 +181,12 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
                 (rs, i) -> new FirstOrder(rs.getBigDecimal("amount"),
                         rs.getTimestamp("completed_at").toInstant()));
         return rows.stream().findFirst();
+    }
+
+    /// 择名:委托全站唯一口径 [DisplayName#of](昵称非空白就用昵称,否则脱敏邮箱;
+    /// 昵称等于邮箱或其本地部分时一并回落,否则脱敏形同虚设)。
+    private static String displayName(String username, String email) {
+        return DisplayName.of(username, email);
     }
 
     /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask]。恒 ≥2 位被遮(短本地名不再回显完整本地部分)。

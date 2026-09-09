@@ -3,6 +3,7 @@ package me.supernb.sub2api.usageboard;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import me.supernb.sub2api.DisplayName;
 import me.supernb.sub2api.EmailMask;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -57,12 +58,11 @@ public class JdbcUsageBoardReadModel implements UsageBoardReadModel {
         return n != null && n > 0;
     }
 
-    /// 择名:username 非空白用 username,否则脱敏邮箱。
+    /// 择名:委托全站唯一口径 [DisplayName#of](昵称非空白就用昵称,否则脱敏邮箱;
+    /// 🚨 昵称等于邮箱或其本地部分时一并回落——原实现缺这道护栏,那类昵称会把
+    /// 刚遮住的本地部分原样吐回公开榜)。
     static String displayName(String username, String email) {
-        if (username != null && !username.isBlank()) {
-            return username;
-        }
-        return mask(email);
+        return DisplayName.of(username, email);
     }
 
     /// 邮箱脱敏:委托全站唯一口径 [EmailMask#mask](恒 ≥2 位被遮,短本地名不再回显完整本地部分)。null 原样返回。

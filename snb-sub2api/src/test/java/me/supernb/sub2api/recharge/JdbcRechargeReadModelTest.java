@@ -38,7 +38,8 @@ class JdbcRechargeReadModelTest {
 
         // 4/5 专供展示名用例(不下单,不影响其它断言):4 设了用户名,5 的用户名是纯空格
         jdbc.update("INSERT INTO users VALUES (1,'alice@qq.com',NULL,'user'),(2,'bob@gmail.com',NULL,'user'),"
-                + "(3,'admin@x.com',NULL,'admin'),(4,'carol@qq.com','网吧大魔王','user'),(5,'dave@qq.com','   ','user')");
+                + "(3,'admin@x.com',NULL,'admin'),(4,'carol@qq.com','网吧大魔王','user'),(5,'dave@qq.com','   ','user'),"
+                + "(6,'eve@qq.com','千早爱音','user'),(7,'frank@qq.com','frank','user')");
 
         // user1 窗口内 balance/COMPLETED:100 + 60 + 5(<10)= 165
         insertOrder(jdbc, 1, "100", "balance", "COMPLETED", "2026-07-10T00:00:00Z");
@@ -48,6 +49,9 @@ class JdbcRechargeReadModelTest {
         insertOrder(jdbc, 2, "250", "balance", "COMPLETED", "2026-07-11T00:00:00Z");
         // admin 500(role 排除)
         insertOrder(jdbc, 3, "500", "balance", "COMPLETED", "2026-07-11T00:00:00Z");
+        // user6 有昵称 80、user7 昵称恰好等于邮箱本地部分 70（时间都排在既有三笔之后，不动既有下标断言）
+        insertOrder(jdbc, 6, "80", "balance", "COMPLETED", "2026-07-09T00:00:00Z");
+        insertOrder(jdbc, 7, "70", "balance", "COMPLETED", "2026-07-08T00:00:00Z");
         // 各类应排除项
         insertOrder(jdbc, 1, "999", "balance", "COMPLETED", "2026-06-15T00:00:00Z"); // 窗口外
         insertOrder(jdbc, 2, "40", "balance", "PENDING", "2026-07-11T00:00:00Z");     // 未完成
@@ -70,24 +74,31 @@ class JdbcRechargeReadModelTest {
     }
 
     @Test
-    void leaderboardExcludesAdminAndMasksEmails() {
+    void leaderboardExcludesAdminAndPrefersNickname() {
         List<RechargeReadModel.LeaderRow> board = readModel.leaderboard(START, END, 10);
-        assertThat(board).hasSize(2);
-        assertThat(board.get(0).name()).isEqualTo("***@gmail.com");        // bob:本地名 3 位,整段遮
+        assertThat(board).hasSize(4);
+        assertThat(board.get(0).name()).isEqualTo("***@gmail.com");        // bob:没昵称 → 本地名 3 位整段遮
         assertThat(board.get(0).amount()).isEqualByComparingTo("250");
-        assertThat(board.get(1).name()).isEqualTo("a***e@qq.com");         // alice:本地名 5 位,露首尾各 1
+        assertThat(board.get(1).name()).isEqualTo("a***e@qq.com");         // alice:没昵称 → 本地名 5 位露首尾各 1
         assertThat(board.get(1).amount()).isEqualByComparingTo("165");
+        // 2026-09-09 站长要求:有昵称就显示昵称,别全是邮箱
+        assertThat(board.get(2).name()).isEqualTo("千早爱音");
+        // 🚨 昵称恰好等于邮箱本地部分时必须回落 —— 直接显示等于把 EmailMask 遮住的位原样吐回公开榜
+        assertThat(board.get(3).name()).isEqualTo("f***k@qq.com");
     }
 
     @Test
     void recentRechargesFiltersSmallAndOrdersByTimeDesc() {
         List<RechargeReadModel.RechargeRow> recent = readModel.recentRecharges(START, END, 10);
         // 排除 <¥10 的 5、admin、窗口外/未完成/非 balance;剩 100/60/250,按时间倒序
-        assertThat(recent).hasSize(3);
+        assertThat(recent).hasSize(5);
         assertThat(recent.get(0).amount()).isEqualByComparingTo("60");   // 07-12 最新
         assertThat(recent.get(1).amount()).isEqualByComparingTo("250");  // 07-11
         assertThat(recent.get(2).amount()).isEqualByComparingTo("100");  // 07-10
-        assertThat(recent).allSatisfy(r -> assertThat(r.name()).contains("***"));
+        // 择名与充值榜同口径:有昵称用昵称,没有则脱敏;昵称等于邮箱本地部分的一并回落
+        assertThat(recent.get(3).name()).isEqualTo("千早爱音");           // 07-09
+        assertThat(recent.get(4).name()).isEqualTo("f***k@qq.com");      // 07-08
+        assertThat(recent.subList(0, 3)).allSatisfy(r -> assertThat(r.name()).contains("***"));
     }
 
     @Test
