@@ -25,7 +25,7 @@ interface TaskCardProps {
 }
 
 // 生成中的阶段文案轮播：每 7 秒换一句，循环（studio.results.stage1..8，一轮 56 秒）。
-// 文案 2026-07-29 从画室人格换成机房腔（i18nStudio 覆盖层里是逐字终稿），
+// 文案 2026-07-29 从画室人格换成出图机器腔（i18nStudio 覆盖层里是逐字终稿），
 // 节奏与「越往后越接近完工」的递进照旧——换的是人格，不是机制。
 const STAGE_KEYS = [
   'stage1', 'stage2', 'stage3', 'stage4', 'stage5', 'stage6', 'stage7', 'stage8',
@@ -59,7 +59,7 @@ function StatusGlyph({ status }: { status: GenTask['status'] }) {
     return (
       <span
         aria-hidden="true"
-        className="h-2 w-2 flex-none animate-pulse rounded-full bg-snb-safety motion-reduce:animate-none"
+        className="h-2 w-2 flex-none animate-snb-dot rounded-full bg-snb-live motion-reduce:animate-none"
       />
     )
   }
@@ -92,7 +92,7 @@ function RowAction({ label, onClick, disabled }: { label: string; onClick: () =>
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="shrink-0 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv px-2.5 py-1 text-xs text-snb-t3 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-50"
+      className="shrink-0 whitespace-nowrap rounded-full border border-snb-hairline bg-snb-elv px-2.5 py-1 text-xs text-snb-t2 transition-colors hover:border-snb-t3 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-50"
     >
       {label}
     </button>
@@ -169,7 +169,7 @@ export function TaskCard(p: TaskCardProps) {
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
-            className={`shrink-0 text-snb-t3 transition-transform duration-200 ${p.expanded ? 'rotate-180' : ''}`}
+            className={`shrink-0 text-snb-t3 transition-transform duration-quick ease-snb-quick ${p.expanded ? 'rotate-180' : ''}`}
           >
             <path d="m6 9 6 6 6-6" />
           </svg>
@@ -223,7 +223,7 @@ export function TaskCard(p: TaskCardProps) {
                     className="relative mx-auto w-full overflow-hidden rounded-2xl border border-snb-hairline-strong bg-snb-bg"
                     style={{ aspectRatio: `${width} / ${height}`, maxWidth: cardMaxWidth(width, height) }}
                   >
-                    {/* 走纸描线：沥青底上一条纸白单色描线向左走纸，像热敏打印机/机房示波器。
+                    {/* 走纸描线：沥青底上一条纸白单色描线向左走纸，像热敏打印机/示波器。
                         零发光零粒子零加法混合；只在展开卡挂载 */}
                     <Suspense fallback={null}>
                       <PaperTrace seed={i + 1} />
@@ -249,7 +249,7 @@ export function TaskCard(p: TaskCardProps) {
                 </div>
                 <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-snb-elv">
                   <div
-                    className="h-full rounded-full bg-snb-cta transition-[width] duration-[420ms] ease-[cubic-bezier(0.2,0,0,1)]"
+                    className="h-full rounded-full bg-snb-cta transition-[width] duration-settle ease-snb"
                     style={{ width: `${Math.min(92, Math.round(92 * (1 - Math.exp(-elapsed / 45))))}%` }}
                   />
                 </div>

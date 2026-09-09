@@ -24,9 +24,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         ref={ref}
         id={inputId}
         className={cx(
-          // ⚠️ 浅色档纪律：输入框底是抬升面 elv，**t3 压 elv 只有 4.00:1**——
-          // 占位符在白天档必须降级到 t2（5.43:1）；深色档保持 t3 原样
-          'w-full rounded-xl border bg-snb-elv px-4 py-2.5 text-sm text-snb-t1 placeholder:text-snb-t2 transition-all duration-quick ease-snb focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 dark:placeholder:text-snb-t3',
+          // 输入框底走 well 灰底；t3 压 well 浅色只有 4.27:1，占位符两档都用 t2
+          'w-full rounded-xl border bg-snb-well px-4 py-2.5 text-[15px] text-snb-t1 placeholder:text-snb-t2 transition-[border-color,box-shadow] duration-quick ease-snb-quick focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60',
           error
             ? // 错误色归到语义槽 --snb-danger：Tailwind 默认 red-500 压纸只有 3.25:1
               'border-snb-danger focus:border-snb-danger focus:ring-snb-danger/50'

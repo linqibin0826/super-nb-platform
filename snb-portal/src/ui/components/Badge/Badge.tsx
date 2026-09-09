@@ -7,12 +7,14 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: BadgeTone
 }
 
+// 语义色只做浅底 + 同色字（10% 底），正文世界仍是灰阶；stock emerald/red 清零
+// 字色一律走 *-ink 槽：本色 safety/danger 压染色底与 well 余量不足 4.5:1
 const tones: Record<BadgeTone, string> = {
-  primary: 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
-  success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-  warning: 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
-  danger: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  gray: 'bg-black/[0.06] text-snb-t2 dark:bg-white/[0.08]',
+  primary: 'bg-snb-safety/10 text-snb-safety-ink',
+  success: 'bg-snb-live/15 text-snb-live-ink',
+  warning: 'bg-snb-safety/10 text-snb-safety-ink',
+  danger: 'bg-snb-danger/10 text-snb-danger-ink',
+  gray: 'bg-snb-well text-snb-t2',
 }
 
 export function Badge({ tone = 'primary', className, ...rest }: BadgeProps) {

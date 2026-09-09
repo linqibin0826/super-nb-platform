@@ -167,7 +167,7 @@ class ActivityWiringTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.summary.totalCount").value(42))
                 .andExpect(jsonPath("$.summary.unlockedCount").value(0))
-                .andExpect(jsonPath("$.categories[0].name").value("开卡入场")) // V15 网吧换名
+                .andExpect(jsonPath("$.categories[0].name").value("入职档案")) // V22 回退网吧换名(= V9 原文)
                 .andExpect(jsonPath("$.metaAchievements[0].code").value("meta_regular"));
     }
 

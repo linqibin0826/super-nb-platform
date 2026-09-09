@@ -12,7 +12,7 @@ export interface ChipOption {
 export const rowVariants = { hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }
 
 /** 直选胶囊组（radiogroup）：选中态是一块纸白「墨」，切换时用 layoutId 在组内滑动过去。
- *  🚨 2026-07-29 起选中一律纸白填充 + 沥青字——白字压橙实测 2.61:1 读不出，
+ *  🚨 2026-07-29 起选中一律赤陶填充 + cta-fg 字——白字压橙实测 2.61:1 读不出，
  *  而且这些胶囊表达的多半只是**默认值**，比真正的行动按钮还响是错的层级。 */
 export function OptionChips(props: {
   groupId: string
@@ -38,10 +38,10 @@ export function OptionChips(props: {
             disabled={o.disabled ?? props.disabled}
             title={o.title ?? (props.truncate ? o.label : undefined)}
             onClick={() => props.onSelect(o.value)}
-            className={`relative whitespace-nowrap rounded-full border px-3 py-1.5 text-[12.5px] transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-paper/60 disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`relative whitespace-nowrap rounded-full border px-3 py-1.5 text-[12.5px] transition-colors duration-quick ease-snb-quick focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus disabled:cursor-not-allowed disabled:opacity-60 ${
               active
                 ? 'border-transparent font-semibold text-snb-cta-fg'
-                : 'border-snb-hairline-strong text-snb-t2 hover:border-[rgba(239,235,228,0.4)] hover:text-snb-t1'
+                : 'border-snb-hairline-strong text-snb-t2 hover:border-snb-hairline-heavy hover:text-snb-t1'
             }`}
           >
             {active &&

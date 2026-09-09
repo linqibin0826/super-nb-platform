@@ -10,7 +10,8 @@ export function Card({ hover = false, className, ...rest }: CardProps) {
   return (
     <div
       className={cx(
-        'rounded-2xl border border-snb-hairline bg-snb-panel shadow-card transition-all duration-300',
+        // 统一面板：无描边、22px 圆角、面板级双层投影
+        'rounded-3xl bg-snb-panel shadow-glass-sm transition-[transform,box-shadow] duration-quick ease-snb-quick',
         hover && 'hover:-translate-y-0.5 hover:shadow-card-hover',
         className
       )}

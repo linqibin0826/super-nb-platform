@@ -1,12 +1,13 @@
 import type { ReactElement } from 'react'
 import { loginUrl } from '../auth/apiFetch'
+import { ctaAnchorClass } from '../ui'
 import { t } from '../i18n'
 import { ti } from './copy'
 
 export type GuestTab = 'apply' | 'requests' | 'profiles'
 
 /** 骨架:静态色块,不闪不动(数据永远不闪,骨架也不闪)。三个页签只换这一块。 */
-const BAR = 'block rounded-[6px] bg-snb-elv'
+const BAR = 'block rounded-chip bg-snb-elv'
 
 function SkeletonApply() {
   return (
@@ -15,12 +16,12 @@ function SkeletonApply() {
       <div className="border-t border-snb-hairline" />
       {['80%', '66%', '74%'].map((w) => (
         <div key={w} className="grid grid-cols-[16px_1fr_76px] gap-2.5">
-          <span className={`${BAR} h-4 rounded-[4px]`} />
+          <span className={`${BAR} h-4`} />
           <span className={`${BAR} h-3 self-center`} style={{ width: w }} />
           <span className={`${BAR} h-3 self-center`} />
         </div>
       ))}
-      <div className="mt-0.5 border-t border-dashed border-[rgba(239,235,228,0.28)]" />
+      <div className="mt-0.5 border-t border-dashed border-snb-hairline-strong" />
       <div className="flex items-center justify-between gap-3">
         <span className={`${BAR} h-2.5 w-[22%]`} />
         <span className={`${BAR} h-5 w-[32%]`} />
@@ -38,7 +39,7 @@ function SkeletonRequests() {
         ['50%', '40%'],
       ].map(([a, b]) => (
         <div key={a} className="flex items-center gap-3">
-          <span className="h-11 w-11 flex-none rounded-full border border-dashed border-[rgba(239,235,228,0.28)]" />
+          <span className="h-11 w-11 flex-none rounded-full border border-dashed border-snb-hairline-strong" />
           <span className="flex flex-1 flex-col gap-2">
             <span className={`${BAR} h-3`} style={{ width: a }} />
             <span className={`${BAR} h-2.5`} style={{ width: b }} />
@@ -90,7 +91,7 @@ export function GuestGate({ tab }: { tab: GuestTab }) {
       </div>
       <Skeleton />
       <a
-        className="flex h-12 items-center justify-center rounded-lg bg-snb-cta text-sm font-semibold text-snb-cta-fg shadow-edge-2 transition-colors duration-quick ease-snb hover:bg-snb-cta-hover active:bg-snb-cta-press active:duration-press sm:h-11"
+        className={`${ctaAnchorClass} w-full`}
         href={loginUrl()}
         target="_top"
       >

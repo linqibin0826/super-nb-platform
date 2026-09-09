@@ -1,9 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* 设计系统样式表（vendor 真源）：内含 @import tokens.css + @tailwind base/components/utilities
+   + .snb-glass / .snb-glass-side / .snb-glass-chip 三条玻璃工具类 + 三条无障碍媒体查询。
+   ⚠️ @import 必须在文件最前（CSS 规范），且本文件不得再写 @tailwind——会把整套工具类打两遍。 */
+@import './ui/styles.css';
 
 @layer base {
-  /* 底色/文字色交给 ThemeScope（bg-snb-bg text-snb-t1），氛围光交给 AmbientBackground 组件 */
+  /* 底色/文字色交给 ThemeScope（bg-snb-bg text-snb-t1）；🪦 氛围光随苹果式 v3 退役（环境光只垫带常驻侧栏的壳） */
   body {
     @apply min-h-screen antialiased;
   }
@@ -19,7 +20,7 @@
   :root {
     color-scheme: light;
   }
-  /* 细滚动条 + 品牌墨色滑块（Firefox 全版本 / Chromium 121+；其余浏览器退回 color-scheme 原生深浅） */
+  /* 细滚动条 + 中性灰滑块（Firefox 全版本 / Chromium 121+；其余浏览器退回 color-scheme 原生深浅） */
   * {
     scrollbar-width: thin;
     scrollbar-color: rgb(var(--snb-t3) / 0.4) transparent;

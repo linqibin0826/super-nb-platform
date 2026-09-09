@@ -24,8 +24,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         ref={ref}
         id={inputId}
         className={cx(
-          // ⚠️ 与 Input 逐字同源（改必两边同步）：占位符白天降级 t2、错误色走 --snb-danger
-          'w-full resize-y rounded-xl border bg-snb-elv px-4 py-2.5 text-sm text-snb-t1 placeholder:text-snb-t2 transition-all duration-quick ease-snb focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 dark:placeholder:text-snb-t3',
+          // ⚠️ 与 Input 逐字同源（改必两边同步）：well 灰底；t3 压 well 浅色只有 4.27:1，
+          //    占位符两档都用 t2；错误色走 --snb-danger
+          'w-full resize-y rounded-xl border bg-snb-well px-4 py-2.5 text-[15px] text-snb-t1 placeholder:text-snb-t2 transition-[border-color,box-shadow] duration-quick ease-snb-quick focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60',
           error
             ? 'border-snb-danger focus:border-snb-danger focus:ring-snb-danger/50'
             : 'border-snb-hairline-strong focus:border-snb-safety focus:ring-snb-focus'

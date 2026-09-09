@@ -8,7 +8,7 @@ function hrefOf(a: ArticleSummary): string {
   return `/a/${a.slug}`
 }
 
-/** 卡上只给「月-日」——年份在杂志架里是噪音，出处名才是这一行的主角。 */
+/** 卡上只给「月-日」——年份在内容中心里是噪音，出处名才是这一行的主角。 */
 function shortDate(iso: string): string {
   const d = new Date(iso)
   return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -54,7 +54,7 @@ function CardCover({ article }: { article: ArticleSummary }) {
 
 /**
  * 内容卡：结构恒定「封面槽 → 类目药丸 → 标题 → 摘要 → 出处行」。
- * 标题 18px/600（定稿问题⑥：杂志架的标题不该比正文还小）；
+ * 标题 18px/600（定稿问题⑥：内容中心的标题不该比正文还小）；
  * 最后一行固定挂出处名——出处是内容纪律，不是可省的装饰。
  */
 export function ArticleCard({ article }: { article: ArticleSummary }) {

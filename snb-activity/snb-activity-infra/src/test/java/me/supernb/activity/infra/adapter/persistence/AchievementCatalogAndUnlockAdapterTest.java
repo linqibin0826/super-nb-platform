@@ -59,7 +59,7 @@ class AchievementCatalogAndUnlockAdapterTest {
     @Test
     void byCodeFindsSeededRowWithCorrectFields() {
         var def = catalog.byCode("checkin_first").orElseThrow();
-        assertThat(def.category()).isEqualTo("开卡入场"); // V15 网吧化重命名后的类目名
+        assertThat(def.category()).isEqualTo("入职档案"); // V22 回退网吧化后的类目名(= V9 原文)
         assertThat(def.nbPoints()).isEqualTo(5);
         assertThat(def.rarity()).isEqualTo("T1");
     }
@@ -111,7 +111,7 @@ class AchievementCatalogAndUnlockAdapterTest {
     void allSeriesLabelsReturnsSeededDisplayNames() {
         Map<String, String> labels = catalog.allSeriesLabels();
         assertThat(labels).containsKey("api_calls");
-        // 钉 V15 网吧换名后的全值(此前 contains("API CALLS") 钉的是 V10 旧名)
-        assertThat(labels.get("api_calls")).isEqualTo("局数系列 · SESSIONS");
+        // 钉 V22 回退后的全值(= V10 原文;V15~V21 期间是"局数系列 · SESSIONS")
+        assertThat(labels.get("api_calls")).isEqualTo("调用量系列 · API CALLS");
     }
 }

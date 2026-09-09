@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
-/** 生成等待的「走纸描线」：机器表面上一条 1px 级描线向左走纸，像热敏打印机/机房示波器。
- *  双档（2026-07-29）：深夜是沥青底纸白墨，白天是纸底暖墨——整块画布都是我们自己画的，
+/** 生成等待的「走纸描线」：机器表面上一条 1px 级描线向左走纸，像热敏打印机/示波器。
+ *  双档（2026-07-29）：深夜是纯黑底纸白墨，白天是纸底近黑墨——整块画布都是我们自己画的，
  *  跟主题走（区别于「用户图片上的信息层两档都不翻」，见 readTone 注释）。
  *  设计定稿（StudioWaiting 2026-07-29）：零发光零粒子零加法混合——无 shadowBlur、
  *  无渐变、无 globalCompositeOperation:lighter；线的振幅随渐近进度收敛（越接近完工线越稳）。
@@ -31,8 +31,8 @@ function mulberry32(seed: number): () => number {
  */
 function readTone(el: HTMLElement) {
   const cs = getComputedStyle(el)
-  const bg = cs.getPropertyValue('--snb-bg').trim() || '14 16 20'
-  const ink = cs.getPropertyValue('--snb-t1').trim() || '239 235 228'
+  const bg = cs.getPropertyValue('--snb-bg').trim() || '0 0 0'
+  const ink = cs.getPropertyValue('--snb-t1').trim() || '245 245 247'
   return {
     bg: `rgb(${bg})`,
     ink: `rgb(${ink})`,
@@ -127,7 +127,7 @@ export function PaperTrace({ seed = 1 }: { seed?: number }) {
         ctx.stroke()
       }
 
-      // 主描线 1.3px：深夜是纸白墨、白天是暖墨
+      // 主描线 1.3px：深夜是纸白墨、白天是近黑墨
       ctx.strokeStyle = tone.ink
       ctx.lineWidth = 1.3
       ctx.beginPath()

@@ -16,15 +16,19 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-/// 充网费记录成就直判(日频,不入 user_metric——"现查透传不落表",深化稿 §6.1;
-/// 类目原名"补给记录",V15 网吧换名后本类的 category 过滤串必须与 DB 同步——
-/// 2026-07-28 矩阵测试抓出漏改:旧串筛出空集,网费四条成就在真实链路上永不解锁)。
+/// 补给记录成就直判(日频,不入 user_metric——"现查透传不落表",深化稿 §6.1)。
+/// 🚨 本类的 category 过滤串必须与 DB 真值同步:2026-07-28 矩阵测试抓出 V15 换名漏改这里,
+///    旧串筛出空集,补给记录四条成就在真实链路上**永不解锁**。V22(苹果式换代批 5)把类目名
+///    回退到 V9 原文"补给记录",这里改为集合同认两个名字——迁移与镜像不同步的窗口里
+///    (含 SNB_FLYWAY_ENABLED=false)两套值都能筛出定义,不会再静默空集。
 @Slf4j
 @ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service
 public class RechargeAchievementJudgeJob {
 
     private static final String JOB_NAME = "recharge_achievement_judge";
+    /// 现行"补给记录"(V9 原文,V22 起回归)+ 🪦 V15~V21 的网吧化名,同认两套见类注释。
+    private static final Set<String> RECHARGE_CATEGORIES = Set.of("补给记录", "充网费记录");
 
     private final AchievementRechargeReadPort rechargePort;
     private final AchievementCatalogPort catalogPort;
@@ -45,20 +49,20 @@ public class RechargeAchievementJudgeJob {
     @Scheduled(cron = "0 20 1 * * *", zone = "Asia/Shanghai")
     public void judgeDaily() {
         if (!settlementProperties.scanEnabled()) {
-            log.info("充网费记录成就判定已跳过:scanEnabled=false");
+            log.info("补给记录成就判定已跳过:scanEnabled=false");
             return;
         }
         Instant now = Instant.now();
         Instant since = watermarkPort.get(JOB_NAME).orElse(now.minus(Duration.ofDays(2)));
         List<Long> candidates = rechargePort.usersWithNewRechargeSince(since, now);
         List<AchievementDefinition> recDefs = catalogPort.activeDefinitions().stream()
-                .filter(d -> "充网费记录".equals(d.category()))
+                .filter(d -> RECHARGE_CATEGORIES.contains(d.category()))
                 .toList();
         for (long userId : candidates) {
             try {
                 judgeUser(userId, recDefs);
             } catch (Exception e) {
-                log.error("充网费记录成就判定失败 user={}", userId, e);
+                log.error("补给记录成就判定失败 user={}", userId, e);
             }
         }
         watermarkPort.advance(JOB_NAME, now);

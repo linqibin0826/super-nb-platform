@@ -32,7 +32,7 @@ export const TicketSelect = forwardRef<HTMLSelectElement, TicketSelectProps>(fun
       <select
         ref={ref}
         value={value}
-        className="absolute inset-0 w-full cursor-pointer appearance-none rounded-none border-0 border-b border-snb-hairline-strong bg-transparent py-1 pl-0 pr-5 text-sm font-medium text-snb-t1 transition-colors duration-200 hover:border-snb-t3 focus:border-primary-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+        className="absolute inset-0 w-full cursor-pointer appearance-none rounded-none border-0 border-b border-snb-hairline-strong bg-transparent py-1 pl-0 pr-5 text-sm font-medium text-snb-t1 transition-colors duration-quick ease-snb-quick hover:border-snb-t3 focus:border-snb-safety focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
         {...rest}
       >
         {options.map((o) => (

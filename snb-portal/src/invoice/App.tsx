@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { BrowserRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { ThemeScope } from '../ui'
+import { Button, ThemeScope } from '../ui'
 import { t } from '../i18n'
 import { ti } from './copy'
 import { FirstVisitGuide } from './FirstVisitGuide'
@@ -13,7 +13,7 @@ import { AdminPage } from './pages/AdminPage'
 
 /** 站内二级导航(申请/我的申请/抬头;admin 不放导航,直链 /admin)。
  *  柜台页(/admin)不渲染——那是站长在控制台里嵌的管理入口,用户端页签混进去不像话。
- *  热区:手机整宽三等分直接 44 高;桌面视觉胶囊 32 + 上下透明内边距 = 44(2026-07-29 定稿)。
+ *  热区:桌面胶囊 30 落在 3px 灰轨里、手机整宽三等分 44 高(苹果式 v3 胶囊分段)。
  *  右侧常驻「再看一遍开票须知」——须知单读过之后入口不消失,只在「申请开票」这条路由出现。 */
 function SubNav({ onOpenGuide }: { onOpenGuide: () => void }) {
   const { pathname } = useLocation()
@@ -25,20 +25,22 @@ function SubNav({ onOpenGuide }: { onOpenGuide: () => void }) {
   ]
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 pt-6">
-      <nav className="grid w-full grid-cols-3 gap-1.5 sm:flex sm:w-auto sm:gap-1">
+      {/* 胶囊分段控件（苹果式 v3，类串与 vendored NavCapsule 同源）：灰轨 3px 内边距 + 当前位白胶囊。
+          手机整宽三等分保持 44 高热区，桌面回到 30px 胶囊。 */}
+      <nav className="grid w-full grid-cols-3 gap-0.5 rounded-full bg-snb-well p-[3px] sm:flex sm:w-auto">
         {tabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             end={tab.to === '/'}
-            className="flex h-11 items-center justify-center sm:h-auto sm:justify-start sm:py-1.5"
+            className="flex h-11 items-center justify-center sm:h-[30px]"
           >
             {({ isActive }) => (
               <span
-                className={`flex h-full w-full items-center justify-center rounded-full px-4 text-[13.5px] transition-colors sm:h-8 sm:w-auto ${
+                className={`flex h-full w-full items-center justify-center whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium transition-[background-color,color,box-shadow] duration-quick ease-snb-quick ${
                   isActive
-                    ? 'bg-snb-cta font-semibold text-snb-cta-fg'
-                    : 'border border-snb-hairline-strong text-snb-t2 hover:border-snb-hairline-heavy hover:text-snb-t1'
+                    ? 'bg-snb-key-active font-semibold text-snb-t1 shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
+                    : 'text-snb-t2 hover:text-snb-t1'
                 }`}
               >
                 {tab.label}
@@ -48,13 +50,9 @@ function SubNav({ onOpenGuide }: { onOpenGuide: () => void }) {
         ))}
       </nav>
       {pathname === '/' && (
-        <button
-          type="button"
-          className="flex h-11 items-center rounded-lg border border-snb-hairline-strong px-4 text-[13.5px] text-snb-t1 transition-colors hover:border-snb-hairline-heavy hover:bg-snb-panel"
-          onClick={onOpenGuide}
-        >
+        <Button type="button" variant="secondary" onClick={onOpenGuide}>
           {ti('invoice.guide.reopen')}
-        </button>
+        </Button>
       )}
     </div>
   )

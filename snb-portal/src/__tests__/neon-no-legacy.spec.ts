@@ -51,16 +51,65 @@ function offenders(re: RegExp, skip: (p: string) => boolean = () => false): stri
  * 发票中心的票据本体是**有意保留**的旧色系（spec §7.1「外壳换、票据本体不换」）：
  * 朱砂 / 票号红 / 票据工具字色 / 仿宋 / 印章 SVG 的衬线。
  * 这不是漏改，是设计决策——全量换装会让用户怀疑发票真伪，属伤业务而非伤审美。
+ *
+ * 🚨 2026-09-07 收窄（原来是 `p.startsWith('invoice/')` 整目录放行）：票面像素只住在
+ *    两个文件里，其余 invoice 文件（GuestGate / HomeBar / App / FirstVisitGuide / pages/*）
+ *    是**外壳**，与其他业务面同等零容忍。实测：票据色（#97503c / #d9a35c）与仿宋 / Songti
+ *    字体栈只出现在下面这两个文件，收窄后衬线那条断言依然通过。
  */
-const isInvoiceTicket = (p: string) => p.startsWith('invoice/')
+const TICKET_FILES = new Set(['invoice/invoice.css', 'invoice/pages/shared.tsx'])
+const isInvoiceTicket = (p: string) => TICKET_FILES.has(p)
+
+/**
+ * vendored 设计系统（`src/ui/**`）由**上游**的 `super-nb-ui/src/__tests__/no-wangba.test.ts`
+ * 守，本仓不重复守：它里面合法地含有 `--snb-brand: 204 120 92`（#CC785C 品牌原色开了独立槽）、
+ * 三处 `backdrop-filter`（.snb-glass / -side / -chip）、新导航四项文案。
+ * 🚨 例外只给 `ui/`，业务面（studio/hub/invoice 外壳/两个 admin/auth/i18n）一律零容忍。
+ */
+const isVendored = (p: string) => p.startsWith('ui/')
 
 describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', () => {
-  it('赤陶橙色板清零（发票票据本体除外）', () => {
-    expect(offenders(/CC785C|B5634A|97503C|7A4231|204,\s*120,\s*92/i, isInvoiceTicket)).toEqual([])
+  it('赤陶橙品牌原色只许住在 vendored 定义处（业务面零命中新老写法）', () => {
+    // 2026-09-07 苹果式 v3：赤陶橙**回来了**（#CC785C = --snb-brand），
+    // 这条从「清零」翻成「限区」——只许出现在 vendored 的两处定义文件；
+    // 业务面（studio/hub/invoice 外壳/admin/auth/i18n）一律零命中，
+    // 无论 hex 还是空格三元组 rgb（vendor tokens.css 写的正是 `204 120 92` 空格写法，
+    // 旧版正则只认逗号 rgba，这条曾假绿）。
+    // ⚠️ 这条（以及霓虹/锈色两条）写的是**裸** hex，不带 `#`——因此天然同时命中
+    //    `#CC785C` 与 data URI 的 `%23CC785C`，不需要像上面两条那样补 `(?:#|%23)`。
+    const isBrandSource = (p: string) => p === 'ui/tokens/tokens.css' || p === 'ui/tailwind-preset.js'
+    expect(
+      offenders(/CC785C|204\s+120\s+92|204,\s*120,\s*92/i, (p) => isBrandSource(p) || isInvoiceTicket(p))
+    ).toEqual([])
+  })
+
+  // 2026-09-07 苹果式 v3：赤陶橙**回来了**（#CC785C 是 --snb-brand，#A85A3F 是 --snb-safety），
+  // 这条从「清赤陶」翻成「清网吧 v2」——熔铁橙 / 安全橙 / 沥青四档 / 暖纸四档 / 纸米白 / 暖灰侧壁。
+  // 业务面一律零容忍；vendored 与发票票据本体除外（票据的棕红 #97503C 与黄铜 #d9a35c 是它
+  // 自己的票框色系，spec 决策 10 明写不换；发票**外壳**的回归靠批 3 Task 8 的边界表 + diff 核验）。
+  it('🪦 网吧 v2 色板清零（vendored 与发票票据本体除外）', () => {
+    // 🚨 2026-09-07 补 `%23`：data URI 里的井号是 URL 编码的（`stroke='%235A5750'`），
+    //    只认字面 `#` 的旧正则看不见它——raffle-admin 的两支箭头因此一直躲在豁免表里假装干净。
+    const WANGBA_V2 =
+      /(?:#|%23)(BA4400|FF5C00|FFA372|0E1014|171A20|242A33|F2EEE6|FBF9F5|E5DFD3|EAE5DB|CFC8B8|C9C2B4|EFEBE4|1C1A16|D9A35C|141821|1B1F27|2C333D|3A424E|221E18|14120F|100F0D|1B1710|BDB4A9|8F877D|D6CCBE|7E766B|6F6B62|5A5750|3A362E|CACFD5|1a1613|0F0E0C)\b|(?<!\d)(?:(?:239[,\s]+235[,\s]+228)|(?:186[,\s]+68[,\s]+0)|(?:255[,\s]+92[,\s]+0)|(?:14[,\s]+16[,\s]+20)|(?:28[,\s]+26[,\s]+22))(?!\d)/i
+    // ⏳ 苹果式 v3 分期收口：以下文件在批 3 Task 6–9 逐个清干净，清完必须从本表删掉。
+    //    这张表**只减不增**；Task 11 的守卫断言它最终是空的。
+    // ✅ 2026-09-07 批 3 Task 9 收口完毕：分期清单已空，Task 11 的守卫会二次核实。
+    const PENDING = new Set<string>([])
+    // 「只减不增」的绊线：谁想把文件塞回豁免表，得先动这行，改不动就得真去改文件。
+    expect(PENDING.size).toBe(0)
+    expect(
+      offenders(WANGBA_V2, (p) => isVendored(p) || isInvoiceTicket(p) || PENDING.has(p))
+    ).toEqual([])
   })
 
   it('墨色黄铜色板清零', () => {
-    expect(offenders(/#ded6c9|#35302b|#262220|#8f8578|#c9beae|#f5efe6|#1c1917|#131110|D4AF6A/i)).toEqual([])
+    // 🚨 2026-09-08 补 `%23`（口径与 WANGBA_V2 拉齐）：data URI 里的井号是 URL 编码的
+    //    （`stroke='%23131110'`），只认字面 `#` 的旧正则看不见它。
+    //    末尾 D4AF6A 是**裸**写法，本来就同时覆盖 `#`/`%23`/纯字面三种形态，不用加前缀。
+    expect(
+      offenders(/(?:#|%23)(ded6c9|35302b|262220|8f8578|c9beae|f5efe6|1c1917|131110)\b|D4AF6A/i)
+    ).toEqual([])
   })
 
   it('衬线 display 字体遗产清零（发票票据本体除外）', () => {
@@ -85,11 +134,8 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
     expect(offenders(/snb_theme|prefers-color-scheme/, isThemeSource)).toEqual([])
   })
 
-  it('顶栏一级导航旧文案清零（12+ 处手抄副本，漏一处就是漂移）', () => {
-    // ⚠️ 只查导航语境的四个词。合规文本 / 第三方产品名 / 页面场景名不在此列，
-    //    本仓库暂无此类用法，故可直接全量扫。
-    expect(offenders(/控制台|创作工坊|内容中心/)).toEqual([])
-  })
+  // 🪦 「控制台|创作工坊|内容中心 零命中」整条退役（2026-09-07）：这三个词现在是**正确答案**
+  //    （spec §4 文案回退），锁反了。新方向的守卫（网吧词零命中）见 src/__tests__/no-wangba.spec.ts。
 
   it('🪦 港风霓虹三灯/管芯/霓虹纸清零（hex 与 rgb 逗号/空格双写法全钉）', () => {
     expect(offenders(/FF6B35|00E5C7|FF3DDB|FFF4EA|F3E7DA|FF9C6F|FFBE9F/i)).toEqual([])
@@ -98,7 +144,8 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
 
   it('🪦 锈色中性档与旧沥青阶清零（v2 中性回归灰阶，沥青换 #0E1014 系）', () => {
     expect(offenders(/A08876|6B5749/i)).toEqual([])
-    expect(offenders(/#070910|#0D111A|#151A25|#252B38|#333A4A/i)).toEqual([])
+    // 🚨 2026-09-08 补 `%23`：同上，data URI 编码的井号躲得过字面 `#`。
+    expect(offenders(/(?:#|%23)(070910|0D111A|151A25|252B38|333A4A)\b/i)).toEqual([])
   })
 
   it('🚨 零发光：辉光类/点火/灯色工具全域清零（曾是「每文件至多一处」，现在是零）', () => {
@@ -125,12 +172,10 @@ describe('旧体系清零（换皮遗漏靠断言兜，人眼一定会漏）', (
     expect(offenders(/text-shadow/, isWallCard)).toEqual([])
   })
 
-  it('🚨 backdrop-filter 全域清零（唯一例外：vendored AppHeader 的 sticky 顶栏）', () => {
-    // 2026-07-28 全局 review #3：这条纪律与零 text-shadow 同级，此前却零断言——
-    // studio 六处浮层 + invoice 引导蒙层的 backdrop-blur 全靠人眼漏了整整一批
-    // （旧色值扫描扫不到不含色值的 backdrop-blur-* 类，系统性盲区）。现已全部实心化，
-    // 遮蔽力走底色不透明度（GlassCard 实心化同款先例）。
-    const isStickyHeader = (p: string) => p === 'ui/components/AppHeader/AppHeader.tsx'
-    expect(offenders(/backdrop-filter|backdrop-blur/, isStickyHeader)).toEqual([])
+  it('🚨 backdrop-filter 业务面清零（唯一例外：vendored 设计系统）', () => {
+    // 2026-07-28 全局 review #3 立的这条纪律不变：业务面不许自己写玻璃。
+    // 2026-09-07 苹果式 v3 后，玻璃收口进 vendored 的三条工具类（.snb-glass / -side / -chip）
+    // 与 AppHeader，业务面要玻璃就**用类名**，不许自己写 backdrop-filter/backdrop-blur。
+    expect(offenders(/backdrop-filter|backdrop-blur/, isVendored)).toEqual([])
   })
 })

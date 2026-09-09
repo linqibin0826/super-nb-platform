@@ -4,7 +4,7 @@
 // 🚨 事实纪律：模型清单绑用户 Key、预估绑用户分组，访客侧根本没有这两份数据 ⇒
 //    一律骨架 + 口径说明，**一个模型名、一个价格数字都不许出现**。
 //    可以写的真数就三样：七种比例档 + 1K/2K/4K 计费归档 / 灵感库 5778 条 / 队列同时 5 个。
-// 骨架用静态 snb-elv 色块（深 #242A33 / 浅 #E5DFD3）：不闪不动，「数据永远不闪」。
+// 骨架用静态 snb-elv 色块（深 #3A3A3C / 浅 #E1E1E6）：不闪不动，「数据永远不闪」。
 import type { ReactNode } from 'react'
 import { RATIO_OPTIONS } from '../lib/sizes'
 import { RatioIcon } from './composer/RatioIcon'
@@ -15,7 +15,7 @@ import { st } from './i18nStudio'
 /** 三格之一：mono 小标 + 内容 */
 function Slot({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 rounded-[10px] border border-snb-hairline bg-snb-well px-[18px] py-4">
+    <div className="flex flex-col gap-3 rounded-lg border border-snb-hairline bg-snb-well px-[18px] py-4">
       {/* 🚨 深井上不许用 t3（4.23:1 不过线，见 tokens.css 的降级纪律），标签也走 t2 */}
       <span className="font-mono text-[11px] tracking-[0.14em] text-snb-t2">{title}</span>
       {children}
@@ -88,7 +88,7 @@ export function GuestSpecBoard() {
 
       <div className="mt-[18px] flex flex-wrap items-center gap-x-4 gap-y-3">
         {/* 手机档整宽（GuestGate 定稿：CTA 保持整宽 44 高），≥sm 回到行内 */}
-        <a href={registerUrl()} className={`${ctaAnchorClass} w-full sm:w-auto`}>
+        <a href={registerUrl()} className={`${ctaAnchorClass} w-full px-[22px] sm:w-auto`}>
           {st('studio.guestBoard.cta')}
         </a>
         <span className="text-[13px] text-snb-t2">{st('studio.guestBoard.ctaNote')}</span>

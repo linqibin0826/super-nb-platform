@@ -5,9 +5,9 @@ export interface ChipProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean
 }
 
-/** 筛选胶囊（GlobalParts v3 §03）：选中=cta 填充，未选=hairline-strong 描边 dim 字。
- *  🚨「橙底白字」整条退役（实测 2.61:1）——选中态与主按钮统一走 --snb-cta-*：
- *  深夜纸白填充沥青字（16.02:1）、白天墨块填充纸白字（16.52:1）。
+/** 筛选胶囊（GlobalParts v3 §03）：选中=cta 填充，未选=well 底 dim 字。
+ *  选中 = `bg-snb-cta text-snb-cta-fg` 强调色填充（浅白字 5.0:1 / 深黑字 8.3:1），
+ *  与主按钮统一走 --snb-cta-*；🪦 旧霓虹橙底白字 2.61:1 的口径随 v2 退役。
  *  两层结构是刻意的：外层 button 只做 6px/2px 透明边距把热区撑到 44，
  *  视觉高恒定 32 在内层 span 上——视觉可小，热区不许小。 */
 export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
@@ -26,10 +26,10 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
     >
       <span
         className={cx(
-          'inline-flex h-8 items-center rounded-full px-4 text-[13.5px] transition-colors duration-quick ease-snb',
+          'inline-flex h-8 items-center rounded-full px-4 text-[13px] font-medium transition-[background-color,color] duration-quick ease-snb-quick',
           active
             ? 'bg-snb-cta font-semibold text-snb-cta-fg'
-            : 'border border-snb-hairline-strong text-snb-t2 group-hover:border-snb-hairline-heavy group-hover:text-snb-t1'
+            : 'bg-snb-well text-snb-t2 group-hover:text-snb-t1'
         )}
       >
         {children}

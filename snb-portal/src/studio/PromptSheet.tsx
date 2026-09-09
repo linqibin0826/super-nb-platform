@@ -114,9 +114,9 @@ export function PromptSheet({
               aria-label={t('studio.gallery.like')}
               aria-pressed={liked}
               onClick={onToggleLike}
-              // 选中 = 纸白填充 + 沥青字（与大图浮层的赞/藏同一种语言；
+              // 选中 = 赤陶填充 + cta-fg 字（与大图浮层的赞/藏同一种语言；
               // 🪦 rose/amber 两枚品牌外色随 v2 双强调色板退役）
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] ${
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm transition-colors duration-quick ease-snb-quick ${
                 liked
                   ? 'border-transparent bg-snb-cta font-semibold text-snb-cta-fg'
                   : 'border-snb-hairline-strong bg-snb-elv font-medium text-snb-t1'
@@ -130,7 +130,7 @@ export function PromptSheet({
               aria-label={t('studio.gallery.save')}
               aria-pressed={favorited}
               onClick={onToggleFavorite}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)] ${
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm transition-colors duration-quick ease-snb-quick ${
                 favorited
                   ? 'border-transparent bg-snb-cta font-semibold text-snb-cta-fg'
                   : 'border-snb-hairline-strong bg-snb-elv font-medium text-snb-t1'

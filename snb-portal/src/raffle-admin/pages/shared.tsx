@@ -19,7 +19,7 @@ export function ErrorBar({ msg }: { msg: string }) {
   return <Alert tone="danger">{t('raffle.common.error', { msg })}</Alert>
 }
 
-/** 状态指示灯:机房面板的活体信号——进行中常亮微脉动,已开奖常亮不动,已作废熄灭 */
+/** 状态指示灯:控制面板的活体信号——进行中常亮微脉动,已开奖常亮不动,已作废熄灭 */
 export function Lamp({ status }: { status: CampaignStatus }) {
   return <span className={`rf-lamp rf-lamp-${status}`} aria-hidden="true" />
 }
@@ -29,7 +29,7 @@ export function Jack({ lit }: { lit: boolean }) {
   return <span className={`rf-jack ${lit ? 'rf-jack-lit' : ''}`} aria-hidden="true" />
 }
 
-/** 读数井:mono 数值嵌浅凹槽,机房仪表盘既视感 */
+/** 读数井:mono 数值嵌浅凹槽,仪表盘既视感 */
 export function Well({ children }: { children: ReactNode }) {
   return <span className="rf-well font-mono text-[12.5px] text-snb-t2">{children}</span>
 }

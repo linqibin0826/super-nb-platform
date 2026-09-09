@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence } from 'motion/react'
-import { AmbientBackground, Lightbox, Tabs, ThemeScope } from './ui'
+import { Lightbox, Tabs, ThemeScope } from './ui'
 import { TopBar } from './studio/TopBar'
 import { Composer } from './studio/Composer'
 import { ResultsTray } from './studio/ResultsTray'
@@ -250,15 +250,16 @@ export default function App() {
   )
 
   return (
-    <ThemeScope theme="inherit" className="min-h-screen">
-      <AmbientBackground variant="hero" />
+    // 🪦 AmbientBackground 退役（苹果式 v3）：环境光只垫在**有常驻侧栏**的壳底下（spec §3.5 ③），
+    //    creative studio 是顶栏 + 画墙的单页，底就该是干净的 --snb-bg。
+    <ThemeScope theme="inherit" className="min-h-screen bg-snb-bg">
       <div className="relative z-[1] flex min-h-screen flex-col">
         <TopBar />
 
         <main className="w-full flex-1">
           {/* 画墙即页面主体：近满屏宽（1760 封顶防超宽屏失控）。标题降格为眉行——墙本身才是 hero。 */}
           <section className="mx-auto w-full max-w-[1760px] px-5 pb-10 pt-7 sm:px-8">
-            {/* 眉行：机位名 + 一句分寸说明；右侧两枚真数（灵感库条数 / 队列并发）*/}
+            {/* 眉行：站名 + 一句分寸说明；右侧两枚真数（灵感库条数 / 队列并发）*/}
             <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2.5 pb-3">
               <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
                 <h1 className="font-sans text-[clamp(20px,1.6vw,26px)] font-bold tracking-[0.01em] text-snb-t1">

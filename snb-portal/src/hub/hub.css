@@ -1,31 +1,29 @@
-/* hub 专属全局样式。--hub-accent = 详情页强调色；.hub-prose = 文章正文排版：
-   全部走 token 变量。
-   2026-07-29 双档补全：恒暗期这些变量收敛成了单值（值全是深色档的），白天档下
-   「纸白 alpha 的发丝线」「压深板上的幽灵字」整批会失效。现按 tokens.css 的
-   两块结构拆开——:root 是白天、.dark 是深夜，深色值逐字未动。 */
+/* hub 专属全局样式。--hub-accent = 详情页强调色；.hub-prose = 文章正文排版：全部走 token 变量。
+   2026-09-07 苹果式 v3：暖褐纸 / 熔铁橙 / 黄铜整套退役，阅读面改 apple 面板（浅 #FFFFFF / 深 #1D1D1F），
+   强调改赤陶橙（浅压深 #A85A3F / 深提亮 #E08F72）。:root 是浅色、.dark 是深色，结构与 tokens.css 同构。 */
 
 :root {
-  /* 强调橙：白天档必须压深。#FFA372 压纸 1.9:1、#FF5C00 压纸 2.7:1，都够不着大字 3:1 */
-  --hub-accent: 186 68 0;    /* #BA4400 熔铁橙 */
-  --hub-ink: 28 26 22;       /* 阅读墨 #1C1A16（纸上不降档：白天的眩光来自底不来自字）*/
+  /* 强调橙引 vendored 的 --snb-safety（浅 #A85A3F 压白 5.00:1 / 深 #E08F72 压黑 8.3:1），
+     不再写字面量——色值的唯一真源在 tokens.css。两档各声明一次是为了在各自作用域重新解析。 */
+  --hub-accent: var(--snb-safety);
+  --hub-ink: 29 29 31;       /* 阅读墨 #1D1D1F */
 
-  /* 无图封面 / 搜索框的「板」：纸上是桌面色，板上的字标与提示都是幽灵档
-     （与深色档同样的层级关系：字标最淡、提示略深，都不承载信息）*/
-  --hub-plate: #EAE5DB;
-  --hub-plate-word: #CFC8B8;
-  --hub-plate-note: #C9C2B4;
-  --hub-skel-cv: #E5DFD3;    /* 骨架封面 = 抬升面（tokens 里 elv 本就兼「骨架色」）*/
-  --hub-chip-hover: rgba(28, 26, 22, 0.06); /* 代码块「复制」悬停底 */
+  /* 无图封面 / 搜索框的「板」：面上是深井色，板上的字标与提示都是幽灵档（不承载信息） */
+  --hub-plate: #EBEBF0;
+  --hub-plate-word: #D2D2D7;
+  --hub-plate-note: #C7C7CC;
+  --hub-skel-cv: #E1E1E6;    /* 骨架封面 = 抬升面（tokens 里 elv 本就兼「骨架色」）*/
+  --hub-chip-hover: rgba(29, 29, 31, 0.06); /* 代码块「复制」悬停底 */
 }
 .dark {
-  --hub-accent: 255 163 114; /* primary-300 #FFA372，沥青底上保持可读 */
-  --hub-ink: 202 207 213;    /* 阅读墨 #CACFD5：纸白降半档（ink-200），降眩光 */
+  --hub-accent: var(--snb-safety);
+  --hub-ink: 245 245 247;    /* 阅读墨 #F5F5F7 */
 
-  --hub-plate: #141821;
-  --hub-plate-word: #2C333D;
-  --hub-plate-note: #3A424E;
-  --hub-skel-cv: #1B1F27;
-  --hub-chip-hover: #221E18;
+  --hub-plate: #2C2C2E;
+  --hub-plate-word: #3A3A3C;
+  --hub-plate-note: #48484A;
+  --hub-skel-cv: #2C2C2E;
+  --hub-chip-hover: rgba(245, 245, 247, 0.06);
 }
 
 /* ── 速览面板（2026-07-29 定稿：层级反转）——「这篇值不值得读」的决策器，
@@ -36,17 +34,17 @@
   position: relative;
   margin: 34px 0 8px;
   padding: 26px 26px 24px;
-  border: 1px solid rgb(var(--snb-t1) / 0.14);
+  border: 1px solid var(--snb-hairline);
   border-radius: 12px;
-  background: var(--hub-paper-brief, #1B1710);
+  background: var(--hub-paper-brief, #F5F5F7);
 }
 .hub-tldr-tab {
   position: absolute;
   top: -9px;
   left: 24px;
   padding: 0 9px;
-  background: var(--hub-paper, #14120F); /* 与阅读面同底：眉标「骑」在卡边上 */
-  color: var(--hub-ink-dim, #8F877D);
+  background: var(--hub-paper, #FFFFFF); /* 与阅读面同底：眉标「骑」在卡边上 */
+  color: var(--hub-ink-dim, #6E6E73);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
   font-weight: 600;
@@ -70,18 +68,16 @@
    解析暗色档，与控制台/studio/help 同一套明暗纪律。
    🪦 2026-07-29 起文章页改走整根纸柱（.hub-paper），这件只剩电子书讲次页在用；
    随之退役的 .hub-metabar / .hub-sheet-cover / -eyebrow / -title / -foot 已删。 */
+/* 🪦 暖褐纸（浅 250 249 245 / 深 28 25 23）与暖墨投影随网吧退役：底改引 --snb-panel、
+   投影改面板槽 --snb-shadow-glass-sm，两者都在 .hub-sheet 这一层解析 ⇒ 两档自动翻，
+   原来的 `.dark .hub-sheet` 覆盖块整块删掉（再留就是第二真源）。 */
 .hub-sheet {
-  --sheet-bg: 250 249 245;
+  --sheet-bg: var(--snb-panel);
   border: 1px solid var(--snb-hairline-strong);
   border-radius: 22px;
   background: rgb(var(--sheet-bg));
   padding: clamp(26px, 5.5vw, 60px);
-  box-shadow: 0 1px 2px rgb(17 13 9 / 0.03), 0 12px 40px -18px rgb(17 13 9 / 0.12);
-}
-.dark .hub-sheet {
-  --sheet-bg: 28 25 23; /* panel 墨卡：纸随全站变墨 */
-  border-color: var(--snb-hairline-strong);
-  box-shadow: 0 18px 50px -22px rgb(0 0 0 / 0.6);
+  box-shadow: var(--snb-shadow-glass-sm);
 }
 .hub-sheet .hub-prose { margin-top: 2.1rem; font-size: 18px; }
 @media (max-width: 640px) {
@@ -259,7 +255,7 @@
 .hub-prose .book-flow-item {
   padding: 8px 14px;
   border: 1px solid var(--snb-hairline-strong);
-  border-radius: 8px;
+  border-radius: var(--snb-r-thumb);
   background: rgb(var(--snb-panel));
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.82em;
@@ -340,13 +336,12 @@
   margin-right: 0.55em;
   border-radius: 999px;
   background: rgb(var(--hub-accent));
-  color: #fff;
+  color: rgb(var(--snb-cta-fg));
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.5em;
   font-weight: 700;
   vertical-align: 0.32em;
 }
-.dark .hub-part .hub-prose h3::before { color: #1a1613; }
 
 /* callout 姓名章：作者原声引语卡（幽灵引号 + 衬线斜体 + 印章式署名 chip） */
 .hub-prose blockquote[data-seal] {
@@ -519,7 +514,9 @@
    衬线只用 3 处：masthead 标题 / 章题 / 引语卡。--hub-brass = 强调色（续读点/舞台）。
    ══════════════════════════════════════════════════════════════════════════ */
 
-:root { --hub-brass: 255 92 0; }  /* 🪦 赤陶/黄铜双值退役——v2 强调只有安全橙 */
+/* 🪦 黄铜 / 熔铁橙双值退役——强调只有赤陶橙一支。保名是因为 .hub-row .rtrack 与 .hub-tree 在用；
+   写成 var() 别名后它跟着 --hub-accent 两档翻（原来是写死单值，白天档会过亮）。 */
+:root { --hub-brass: var(--hub-accent); }
 
 .hub-book { position: relative; }
 .hub-book-col { max-width: 44rem; margin: 0 auto; padding: 0 24px 120px; }
@@ -561,18 +558,26 @@
   font-size: 12.5px; color: rgb(var(--snb-t3));
 }
 .hub-colophon b { color: rgb(var(--snb-t2)); font-weight: 600; }
-.hub-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin: 26px 0 0; }
+/* ⚠️ 类名撞车：电子书目录页这个 .hub-cta 是**按钮行容器**，而下面第 1195 行的 .hub-cta 是
+   **按钮本体**（同名同特异度、写在后面 ⇒ 后者赢），容器会被当成按钮渲染成一枚 44 高胶囊。
+   加一层 .hub-book 提特异度，让容器拿回自己的排版；按钮本体只在 .hub-article 侧用，不受影响。 */
+.hub-book .hub-cta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin: 26px 0 0;
+  /* 按钮规则漏进来的每一条都要复位，少一条就漏一条（justify-content 漏掉时整行被水平居中）*/
+  justify-content: flex-start; height: auto; padding: 0; border: 0; border-radius: 0;
+  background: none; color: inherit; font-size: inherit; font-weight: inherit;
+  text-decoration: none; cursor: auto;
+}
+/* 🪦 4px 4px 0 的实心偏移投影退役（反模式）——主按钮统一成 44 高胶囊、悬停靠底色加深 */
 .hub-btn-read {
   display: inline-flex; align-items: center; gap: 10px;
-  padding: 12px 22px; border: none; border-radius: 8px;
-  background: rgb(var(--hub-accent)); color: #fff;
+  height: 44px; padding: 0 22px; border: none; border-radius: 999px;
+  background: rgb(var(--snb-cta-bg)); color: rgb(var(--snb-cta-fg));
   font-weight: 600; font-size: 15px; cursor: pointer; text-decoration: none;
-  box-shadow: 4px 4px 0 rgb(var(--snb-t1) / 0.16);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: background 0.2s var(--snb-ease-quick), transform 0.1s ease-out;
 }
-.dark .hub-btn-read { color: #1a1613; }
-.hub-btn-read:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 rgb(var(--snb-t1) / 0.2); }
-.hub-btn-read:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgb(var(--snb-t1) / 0.16); }
+.hub-btn-read:hover { background: rgb(var(--snb-cta-hover)); }
+.hub-btn-read:active { background: rgb(var(--snb-cta-press)); transform: scale(0.97); }
 .hub-btn-read .sub { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 400; opacity: 0.78; font-size: 12.5px; }
 .hub-cta-ghost {
   font-size: 13.5px; color: rgb(var(--snb-t3)); text-decoration: none;
@@ -758,7 +763,7 @@
 .hub-stage.is-play .lvl:nth-child(3) .cap { transition-delay: 0.8s; }
 .hub-stage.is-play .hit { color: rgb(var(--hub-accent)); }
 .hub-stage-foot { margin: 0; padding: 12px 20px; border-top: 1px solid var(--snb-hairline); font-size: 12px; line-height: 1.6; color: rgb(var(--snb-t3)); }
-.hub-stage-foot code { padding: 0.1em 0.35em; border-radius: 4px; background: rgb(var(--snb-well)); font-size: 0.9em; }
+.hub-stage-foot code { padding: 0.1em 0.35em; border-radius: 6px; background: rgb(var(--snb-well)); font-size: 0.9em; }
 
 .hub-book-foot { margin-top: 56px; padding-top: 26px; border-top: 1px solid var(--snb-hairline); font-size: 13px; line-height: 1.7; color: rgb(var(--snb-t3)); }
 
@@ -778,7 +783,7 @@
 .hub-serial-art {
   flex-shrink: 0; width: 104px; border-radius: 10px; overflow: hidden;
   border: 1px solid var(--snb-hairline-strong);
-  box-shadow: 4px 4px 0 rgb(var(--snb-t1) / 0.1);
+  box-shadow: var(--snb-shadow-card); /* 🪦 4px 4px 0 硬偏移投影退役 */
 }
 .hub-serial-art svg { display: block; width: 100%; height: auto; }
 .hub-serial-main { min-width: 0; flex: 1; }
@@ -797,14 +802,13 @@
   overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1;
 }
 .hub-serial-cta {
-  flex-shrink: 0; padding: 9px 18px; border-radius: 8px;
-  background: rgb(var(--hub-accent)); color: #fff;
+  flex-shrink: 0; height: 44px; padding: 0 18px; display: inline-flex; align-items: center;
+  border-radius: 999px;
+  background: rgb(var(--snb-cta-bg)); color: rgb(var(--snb-cta-fg));
   font-size: 13.5px; font-weight: 600; white-space: nowrap;
-  box-shadow: 3px 3px 0 rgb(var(--snb-t1) / 0.14);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: background 0.2s var(--snb-ease-quick), transform 0.1s ease-out;
 }
-.dark .hub-serial-cta { color: #1a1613; }
-.hub-serial:hover .hub-serial-cta { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 rgb(var(--snb-t1) / 0.18); }
+.hub-serial:hover .hub-serial-cta { background: rgb(var(--snb-cta-hover)); }
 @media (max-width: 640px) {
   .hub-serial { flex-direction: column; align-items: flex-start; }
   .hub-serial-art { display: none; } /* 窄屏收起书封，留文字与 CTA */
@@ -822,7 +826,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   杂志架改版（2026-07-29 Claude Design 定稿落地）
+   内容中心改版（2026-07-29 Claude Design 定稿落地）
    —— 文章页：速览提级 / 迷你目录 / 进度条下移 / 章末导航 / 出处纪律 / 暖灰墨
    —— 列表页：等高网格统一扫描基线 / 封面三态 / 标题 18px / 类目胶囊
    —— 代码块：机箱壳 + 复制四态 + 长代码横向滚动 + 高亮四档外观层
@@ -854,28 +858,27 @@
    🚨 顺序：.dark .hub-article 特异度 (0,2,0) 天然压过 .hub-article (0,1,0)，
    与 tokens.css 的「谁在后谁赢」不同，这里不靠顺序靠特异度，挪块不会翻车。 */
 .hub-article {
-  /* 白天档（值照 Claude Design 浅色定稿「杂志架文章页」逐条抄，不自己调）：
-     纸=面板色，速览卡与代码机箱都往**深**里走一档——白天里「更用力」等于更黑。
-     ⚠️ 代码四档亮度在白天档必须重新排：t3 压深井只有 4.23:1（低于正文 4.5 底线，
-     tokens.css 明写「well 上一律降级 t2」），所以注释档落在 t2 而不是 t3。 */
-  --hub-paper: #FBF9F5;        /* 阅读面（纸）= panel */
-  --hub-paper-brief: #E5DFD3;  /* 速览卡底 = 抬升面（纸上压一档，最响的一段） */
-  --hub-paper-code: #EAE5DB;   /* 代码机箱底 = 深井（定稿同值） */
-  --hub-ink: 28 26 22;         /* #1C1A16 正文墨（16.5:1，定稿值） */
-  --hub-ink-dim: #6F6B62;      /* 纸上的弱字（眉标/注/时间戳），压 panel 5.05:1 */
-  --hub-ink-quote: #3A362E;    /* 代码字符串档，压机箱 9.8:1 */
-  --hub-ink-mute: #5A5750;     /* 代码注释档，压机箱 5.74:1（不用 t3：4.23 不过线） */
+  /* 浅色档：纸=面板色（纯白），速览卡与代码机箱往**深**里走一档——白天里「更用力」等于更暗。
+     ⚠️ 代码四档亮度必须按深井重排：t3 压 #EBEBF0 只有 4.27:1（低于正文 4.5 底线），
+     所以字符串档落 t2、注释档落 #5A5A5E（5.78:1），都不是 t3。 */
+  --hub-paper: #FFFFFF;        /* 阅读面（纸）= panel */
+  --hub-paper-brief: #F5F5F7;  /* 速览卡底 = 页面底色，纸上压一档 */
+  --hub-paper-code: #EBEBF0;   /* 代码机箱底 = 深井 */
+  --hub-ink: 29 29 31;         /* #1D1D1F 正文墨（16.8:1）*/
+  --hub-ink-dim: #6E6E73;      /* 纸上的弱字（眉标/注/时间戳），压 #FFFFFF 5.14:1 */
+  --hub-ink-quote: #424245;    /* 代码字符串档，压机箱 8.43:1 */
+  --hub-ink-mute: #5A5A5E;     /* 代码注释档，压机箱 5.78:1（不用 t3：4.27 不过线）*/
 }
 .dark .hub-article {
-  /* 阅读区暖灰墨（定稿问题⑧）：纸是暖褐、墨换同色温暖灰，冷蓝灰让「纸」读起来像屏幕。
-     只落在文章页作用域——电子书那套 9 分配色一个值都不动。逐字未动。 */
-  --hub-paper: #14120F;        /* 阅读面（纸） */
-  --hub-paper-brief: #1B1710;  /* 速览卡底：纸上再抬一档暖 */
-  --hub-paper-code: #100F0D;   /* 代码机箱底：纸上压一档 */
-  --hub-ink: 189 180 169;      /* #BDB4A9 正文墨（暖灰替冷蓝灰，对 #14120F 实测 9.1:1） */
-  --hub-ink-dim: #8F877D;      /* 纸上的弱字（眉标/注/时间戳） */
-  --hub-ink-quote: #D6CCBE;    /* 代码字符串档 */
-  --hub-ink-mute: #7E766B;     /* 代码注释档 */
+  /* 深色档：apple 深色三层——面 #1D1D1F、抬升 #2C2C2E、机箱压到纯黑。
+     🪦 暖褐纸与暖灰墨随网吧退役。 */
+  --hub-paper: #1D1D1F;        /* 阅读面（纸） */
+  --hub-paper-brief: #2C2C2E;  /* 速览卡底：纸上抬一档 */
+  --hub-paper-code: #000000;   /* 代码机箱底：纸上压一档 */
+  --hub-ink: 245 245 247;      /* #F5F5F7 正文墨（压纸 15.5:1）*/
+  --hub-ink-dim: #A1A1A6;      /* 纸上的弱字，压纸 6.54:1 */
+  --hub-ink-quote: #D1D1D6;    /* 代码字符串档，压机箱 13.8:1 */
+  --hub-ink-mute: #A1A1A6;     /* 代码注释档，压机箱 8.16:1 */
 }
 
 /* 三栏：目录 | 正文 | 右栏。要填的是空边距，正文一个像素不许加宽（红线 7 的明确例外）。 */
@@ -998,7 +1001,7 @@
   text-decoration: underline;
   text-decoration-color: rgb(var(--hub-ink) / 0.4);
   text-underline-offset: 3px;
-  transition: color 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: color 200ms var(--snb-ease-quick);
 }
 .hub-sources a:hover { color: rgb(var(--snb-t1)); }
 .hub-sources .note { margin: 14px 0 0; font-size: 14.5px; line-height: 1.75; color: var(--hub-ink-dim); }
@@ -1030,7 +1033,7 @@
   text-decoration: none;
   border-bottom: 1px solid rgb(var(--snb-t1) / 0.08);
 }
-.hub-related-row .rt { font-size: 17px; line-height: 1.6; color: rgb(var(--snb-t1)); transition: color 120ms cubic-bezier(0.2, 0, 0, 1); }
+.hub-related-row .rt { font-size: 17px; line-height: 1.6; color: rgb(var(--snb-t1)); transition: color 200ms var(--snb-ease-quick); }
 .hub-related-row:hover .rt { color: rgb(var(--snb-cta-hover)); }
 .hub-related-row .rc {
   flex: none;
@@ -1083,7 +1086,7 @@
   line-height: 1.5;
   text-decoration: none;
   color: var(--hub-ink-dim);
-  transition: color 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: color 200ms var(--snb-ease-quick);
 }
 .hub-toc a:hover { color: rgb(var(--snb-t1)); }
 .hub-toc a.on {
@@ -1143,7 +1146,7 @@
   max-height: 0;
   background: var(--hub-paper);
   border-bottom: 1px solid rgb(var(--snb-t1) / 0.10);
-  transition: max-height 420ms cubic-bezier(0.2, 0, 0, 1); /* 开合落定 420ms */
+  transition: max-height 400ms var(--snb-ease); /* 开合 = settle 档 */
 }
 .hub-tocbar-panel.open { max-height: 60vh; overflow-y: auto; }
 .hub-tocbar-panel nav { display: flex; flex-direction: column; padding: 6px 12px 12px; }
@@ -1194,7 +1197,8 @@
 }
 .hub-rail .note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.7; color: rgb(var(--snb-t3)); }
 
-/* ── 全站主按钮（公用件 v3 唯一数值：高 44 / 内边距 20 / r8 / 14px 600 / 纸白底沥青字）── */
+/* ── 全站主按钮（苹果式 v3 唯一数值：高 44 / 内边距 20 / 胶囊 / 15px 600 / 强调色填充）
+   🪦 键帽底边 box-shadow、translateY(±1px) 抬沉、网吧缓动三样一起退役。 ── */
 .hub-cta {
   display: inline-flex;
   align-items: center;
@@ -1202,19 +1206,17 @@
   height: 44px;
   padding: 0 20px;
   border: none;
-  border-radius: 8px;
-  background: rgb(var(--snb-t1));
-  color: rgb(var(--snb-bg));
-  font-size: 14px;
+  border-radius: 999px;
+  background: rgb(var(--snb-cta-bg));
+  color: rgb(var(--snb-cta-fg));
+  font-size: 15px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 2px 0 var(--snb-edge);
-  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), background 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: background 0.2s var(--snb-ease-quick), transform 0.1s ease-out;
 }
-/* 悬停在深色是提亮（→#FFFFFF）、在白天是加深（→#0F0E0C）：白天里「更用力」等于更黑 */
-.hub-cta:hover { background: rgb(var(--snb-cta-hover)); transform: translateY(-1px); }
-.hub-cta:active { background: rgb(var(--snb-cta-press)); transform: translateY(1px); transition-duration: 55ms; }
+.hub-cta:hover { background: rgb(var(--snb-cta-hover)); }
+.hub-cta:active { background: rgb(var(--snb-cta-press)); transform: scale(0.97); }
 .hub-cta.wide { display: flex; width: 100%; margin-top: 12px; }
 /* 次按钮 = ghost 描边纸白字 */
 .hub-btn2 {
@@ -1224,16 +1226,15 @@
   height: 44px;
   padding: 0 20px;
   border: 1px solid var(--snb-hairline-strong);
-  border-radius: 8px;
+  border-radius: 999px;
   background: transparent;
   color: rgb(var(--snb-t1));
   font-size: 14px;
   text-decoration: none;
   cursor: pointer;
-  transition: background 120ms cubic-bezier(0.2, 0, 0, 1), border-color 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: background 200ms var(--snb-ease-quick), border-color 200ms var(--snb-ease-quick);
 }
 .hub-btn2:hover { background: rgb(var(--snb-panel)); border-color: var(--snb-hairline-heavy); }
-.hub-btn2:active { transform: translateY(1px); transition-duration: 55ms; }
 .hub-btn2[disabled] { background: rgb(var(--snb-elv)); border-color: transparent; color: rgb(var(--snb-t3)); cursor: default; }
 /* 幽灵 */
 .hub-btn3 {
@@ -1243,13 +1244,13 @@
   height: 44px;
   padding: 0 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   background: transparent;
   color: rgb(var(--snb-t2));
   font-size: 14px;
   text-decoration: none;
   cursor: pointer;
-  transition: color 120ms cubic-bezier(0.2, 0, 0, 1), background 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: color 200ms var(--snb-ease-quick), background 200ms var(--snb-ease-quick);
 }
 .hub-btn3:hover { color: rgb(var(--snb-t1)); background: rgb(var(--snb-t1) / 0.06); }
 
@@ -1326,9 +1327,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: transform 55ms cubic-bezier(0.2, 0, 0, 1);
 }
-.hub-code-copy:active { transform: translateY(1px); }
 .hub-code-copy > span {
   display: inline-flex;
   align-items: center;
@@ -1339,8 +1338,8 @@
   border-radius: 7px;
   color: rgb(var(--hub-ink, var(--snb-t2)));
   font-size: 12.5px;
-  transition: background 120ms cubic-bezier(0.2, 0, 0, 1), color 120ms cubic-bezier(0.2, 0, 0, 1),
-    border-color 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: background 200ms var(--snb-ease-quick), color 200ms var(--snb-ease-quick),
+    border-color 200ms var(--snb-ease-quick);
 }
 .hub-code-copy:hover > span { background: var(--hub-chip-hover); color: rgb(var(--snb-t1)); border-color: var(--snb-hairline-heavy); }
 /* 已复制：纸白填充沥青字，1.4 秒后回落（绝不白字压橙） */
@@ -1394,7 +1393,7 @@
 .hub-code pre .token.attr-value,
 .hub-code pre .token.regex,
 .hub-code pre .token.char,
-.hub-code pre .token.inserted { color: var(--hub-ink-quote, #D6CCBE); }
+.hub-code pre .token.inserted { color: var(--hub-ink-quote, #424245); }
 
 .hub-code pre .hljs-comment,
 .hub-code pre .hljs-meta,
@@ -1405,28 +1404,28 @@
 .hub-code pre .token.doctype,
 .hub-code pre .token.cdata,
 .hub-code pre .token.punctuation,
-.hub-code pre .token.deleted { color: var(--hub-ink-mute, #7E766B); }
+.hub-code pre .token.deleted { color: var(--hub-ink-mute, #5A5A5E); }
 
-/* 电子书页的代码机箱借文章页那套暖值——代码块是全站统一的一件，
+/* 电子书页的代码机箱借文章页那套值——代码块是全站统一的一件，
    电子书版式的其余部分（9 分参照）一个值都没动 */
 .hub-part .hub-prose .hub-code,
 .hub-index .hub-prose .hub-code {
-  --hub-paper-code: #EAE5DB;
-  --hub-ink: 28 26 22;
-  --hub-ink-dim: #6F6B62;
-  --hub-ink-quote: #3A362E;
-  --hub-ink-mute: #5A5750;
+  --hub-paper-code: #EBEBF0;
+  --hub-ink: 29 29 31;
+  --hub-ink-dim: #6E6E73;
+  --hub-ink-quote: #424245;
+  --hub-ink-mute: #5A5A5E;
 }
 .dark .hub-part .hub-prose .hub-code,
 .dark .hub-index .hub-prose .hub-code {
-  --hub-paper-code: #100F0D;
-  --hub-ink: 189 180 169;
-  --hub-ink-dim: #8F877D;
-  --hub-ink-quote: #D6CCBE;
-  --hub-ink-mute: #7E766B;
+  --hub-paper-code: #000000;
+  --hub-ink: 245 245 247;
+  --hub-ink-dim: #A1A1A6;
+  --hub-ink-quote: #D1D1D6;
+  --hub-ink-mute: #A1A1A6;
 }
 
-/* ══════ 列表页（杂志架）══════ */
+/* ══════ 列表页（内容中心）══════ */
 .hub-rack { max-width: 1360px; margin: 0 auto; padding-inline: clamp(16px, 3vw, 40px); }
 
 /* 架头 */
@@ -1456,12 +1455,11 @@
   height: 44px;
   padding: 0 14px;
   border: 1px dashed var(--snb-hairline-strong);
-  border-radius: 8px;
+  border-radius: 999px;
   background: var(--hub-plate);
 }
-/* 🚨 搜索框底是 --hub-plate（白天档 = 深井色），t3 压它只有 4.23:1。
-   tokens.css 的纪律「t3 只许压底与面，抬升面与深井上一律降级 t2」在这里生效。
-   深色档 t2 压 #141821 是 8.5:1，比原来的 t3 更好读，不算回归。 */
+/* 🚨 搜索框底是 --hub-plate（浅色档 = 深井色），t3 压它只有 4.27:1。
+   tokens.css 的纪律「t3 只许压底与面，抬升面与深井上一律降级 t2」在这里生效。 */
 .hub-search .ic { flex: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: rgb(var(--snb-t2)); }
 .hub-search input {
   flex: 1;
@@ -1515,7 +1513,7 @@
   background: transparent;
   color: rgb(var(--snb-t2));
   font-size: 13.5px;
-  transition: color 120ms cubic-bezier(0.2, 0, 0, 1), border-color 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: color 200ms var(--snb-ease-quick), border-color 200ms var(--snb-ease-quick);
 }
 .hub-cat:hover > span { color: rgb(var(--snb-t1)); border-color: var(--snb-hairline-heavy); }
 .hub-cat[aria-selected='true'] > span {
@@ -1543,7 +1541,7 @@
   border: 1px solid var(--snb-hairline);
   border-radius: 12px;
   overflow: hidden;
-  transition: border-color 120ms cubic-bezier(0.2, 0, 0, 1), transform 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: border-color 200ms var(--snb-ease-quick), transform 200ms var(--snb-ease-quick);
 }
 .hub-card:hover { border-color: var(--snb-hairline-heavy); transform: translateY(-1px); }
 /* 封面槽三态：有图铺满 / 无图=类目字标平色板 / 加载中=静态骨架（不闪不呼吸） */
@@ -1564,11 +1562,13 @@
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 200ms var(--snb-ease-quick);
 }
 .hub-card-cover.loaded img { opacity: 1; }
 .hub-card-cover .word {
-  font-family: var(--snb-font-sign, var(--snb-font-sans, sans-serif));
+  /* 🪦 这里原来引的招牌字变量从来没在 tokens.css 里定义过（招牌字已随苹果式 v3 退役），
+     一直静默退到系统栈——直接写成全站同款 sans 栈，别再留死变量。 */
+  font-family: var(--snb-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif);
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1603,7 +1603,7 @@
   border-radius: 5px;
   color: rgb(var(--snb-t1));
 }
-/* 标题 18px/600：杂志架的标题不该比正文还小（定稿问题⑥） */
+/* 标题 18px/600：内容中心的标题不该比正文还小（定稿问题⑥） */
 .hub-card-title { font-size: 18px; line-height: 1.55; font-weight: 600; color: rgb(var(--snb-t1)); text-wrap: pretty; }
 .hub-card-sum {
   margin: 0;
@@ -1679,7 +1679,7 @@
   font-size: 14px;
   text-decoration: none;
   color: rgb(var(--snb-t2));
-  transition: color 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: color 200ms var(--snb-ease-quick);
 }
 .hub-foot .links a:hover { color: rgb(var(--snb-t1)); }
 .hub-foot-bar { border-top: 1px solid var(--snb-hairline); }
@@ -1721,7 +1721,7 @@
   .hub-state { padding: 44px 16px; }
 }
 
-/* 使用手册常驻直达位（Header 规范 v2：「使用指南」退出全站顶栏，唯一入口在杂志架） */
+/* 使用手册常驻直达位（Header 规范 v2：「使用指南」退出全站顶栏，唯一入口在内容中心） */
 .hub-manual {
   display: inline-flex;
   align-items: center;
@@ -1732,7 +1732,7 @@
   text-decoration: none;
   color: rgb(var(--snb-t2));
   border-bottom: 1px solid var(--snb-hairline-strong);
-  transition: color 120ms cubic-bezier(0.2, 0, 0, 1), border-color 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: color 200ms var(--snb-ease-quick), border-color 200ms var(--snb-ease-quick);
 }
 .hub-manual:hover { color: rgb(var(--snb-t1)); border-color: var(--snb-hairline-heavy); }
 

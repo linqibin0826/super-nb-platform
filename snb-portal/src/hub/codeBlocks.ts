@@ -2,7 +2,7 @@ import { useLayoutEffect, type RefObject } from 'react'
 import { th } from './hubMessages'
 
 /**
- * 代码块装配器（2026-07-29 杂志架改版）：给 .hub-prose 里的每个 <pre> 套上
+ * 代码块装配器（2026-07-29 内容中心改版）：给 .hub-prose 里的每个 <pre> 套上
  * 「文件名条 + 复制按钮」的机箱壳（视觉规格照定稿：条高 44 / 按钮视觉 28、热区 44 /
  * 已复制态纸白填充 1.4s 回落 / 长代码不折行横向滚动并标注）。
  *

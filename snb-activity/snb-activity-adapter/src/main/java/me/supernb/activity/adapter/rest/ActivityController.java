@@ -427,7 +427,7 @@ public class ActivityController {
         return CheckinRewardsResponse.of(checkinRewardQuery.myRewards(user.id()));
     }
 
-    /// 我的成就墙(需登录,仅本人;隐藏关卡未解锁项服务端脱敏,name/condition 恒 null)。
+    /// 我的成就墙(需登录,仅本人;机密档案未解锁项服务端脱敏,name/condition 恒 null)。
     /// 🪦 成就系统停用时(activity.achievement.enabled=false,2026-07-28 站长拍板暂时下线)恒 404
     /// ——判定 bean 已整体不装配,读端点若继续吐墙会让"下线"变成只藏入口的假下线。
     @GetMapping("/checkin/achievements")

@@ -20,7 +20,10 @@
  *   ① sub2api fork  —— `frontend/src/utils/themeCookie.ts`（Vue 3）
  *   ② snb-portal    —— `snb-portal/src/themeCookie.ts`（React，也可直接 vendor 本文件）
  *   ③ 活动静态页 ×N —— 抄 `templates/snb-theme.js`（IIFE 版，无模块无框架）
- *   ④ super-nb-learn—— `.vitepress/config.mts`（首帧 boot）+ `.vitepress/theme/Layout.vue`（对账）
+ *   ④ super-nb-learn—— `.vitepress/theme/snbTheme.ts`（**本文件的逐字副本**，VitePress
+ *      站吃不到本仓库的包只能 vendor；改真源后原样覆盖它，diff 除注释头外应为空）
+ *      ＋ `.vitepress/config.mts`（首帧 boot ＋ `appearance: false` 让 VitePress
+ *      自带主题机制彻底退出）＋ `.vitepress/theme/Layout.vue`（对账）
  *
  * 【七条硬规则】
  *  1. **父域 cookie `snb_theme` 是跨子域名唯一真源**：

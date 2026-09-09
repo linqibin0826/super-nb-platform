@@ -6,7 +6,7 @@ export interface ErrorStateProps {
   title: ReactNode
   /**
    * 文案三要素，缺一不可：哪件事失败了 / 责任在谁 / 用户的东西丢没丢。
-   * 例：「刚才请求上机记录失败了，是机房这边的问题，你的数据没丢。」
+   * 例：「刚才请求上机记录失败了，是我们这边的问题，你的数据没丢。」
    */
   description?: ReactNode
   /** 图标，默认叹号 */
@@ -14,7 +14,7 @@ export interface ErrorStateProps {
   /** 🚨 必填：错误态一律带「再试一次」，没有重试出口的错误态不许上线 */
   onRetry: () => void
   retryLabel?: ReactNode
-  /** 追加的次要出口（如「看机房公告」），排在重试右侧 */
+  /** 追加的次要出口（如「看系统公告」），排在重试右侧 */
   action?: ReactNode
   className?: string
 }

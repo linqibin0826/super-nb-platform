@@ -7,7 +7,7 @@ const isLocalDev =
   typeof location !== 'undefined' &&
   (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
 
-/** 「开卡上机」注册页 */
+/** 「免费注册」注册页 */
 export function registerUrl(): string {
   return isLocalDev ? '/register' : `${CONSOLE_ORIGIN}/register`
 }

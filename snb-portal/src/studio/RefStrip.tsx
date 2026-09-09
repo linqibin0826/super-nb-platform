@@ -33,13 +33,13 @@ function RefThumb({ item, reduceMotion, onRemove }: RefThumbProps) {
           <img
             src={item.url}
             alt={t('studio.editor.refAdd')}
-            className="h-16 w-16 rounded-xl border border-snb-hairline-strong object-cover shadow-[0_1px_4px_rgba(70,50,38,0.14)] animate-[snbRefLand_0.7s_ease-out] transition-transform duration-200 group-hover:-translate-y-0.5 dark:shadow-[0_2px_6px_rgba(0,0,0,0.5)] motion-reduce:animate-none motion-reduce:transform-none"
+            className="h-16 w-16 rounded-xl border border-snb-hairline-strong object-cover shadow-card animate-[snbRefLand_0.7s_ease-out] transition-transform duration-quick ease-snb-quick group-hover:-translate-y-0.5 motion-reduce:animate-none motion-reduce:transform-none"
           />
           <button
             type="button"
             onClick={onRemove}
             aria-label={t('studio.editor.refRemove')}
-            className="absolute right-1 top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-black/65 p-0 text-[12px] leading-none text-white opacity-0 transition-opacity duration-150 hover:bg-black/65 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-snb-focus group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+            className="absolute right-1 top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-black/65 p-0 text-[12px] leading-none text-white opacity-0 transition-opacity duration-quick ease-snb-quick hover:bg-black/65 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-snb-focus group-hover:opacity-100 [@media(hover:none)]:opacity-100"
           >
             ×
           </button>
@@ -93,7 +93,7 @@ export function RefStrip({ refs, onRemove, max }: RefStripProps) {
         </div>
         <div
           aria-hidden="true"
-          className={`pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-snb-panel to-transparent transition-opacity duration-200 ${
+          className={`pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-snb-panel to-transparent transition-opacity duration-quick ease-snb-quick ${
             canScrollRight ? 'opacity-100' : 'opacity-0'
           }`}
         />

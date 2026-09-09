@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AppHeader, type SiteNavItem } from '../ui'
+import { AppHeader, ctaAnchorClass, ghostAnchorClass, type SiteKey, type SiteNavItem } from '../ui'
 import { useAuthUser } from '../auth/useAuth'
 import { apiFetch, loginUrl } from '../auth/apiFetch'
 import { UserMenu } from '../auth/UserMenu'
@@ -12,10 +12,13 @@ interface ProfileBalance {
 }
 
 // 本地开发/路径部署：导航走站内相对路径（生产子域名用 SITE_NAV_ITEMS 的绝对地址）
-const DEV_HREFS: Record<string, string> = {
+// 🚨 类型收成 Partial<Record<SiteKey, …>>：vendor 改 key 时这里会直接 tsc 报错，
+//    而不是留一枚永远命不中的死键（'hub' 那次就是这样悄悄躺了 14 天）。
+const DEV_HREFS: Partial<Record<SiteKey, string>> = {
   console: '/dashboard',
   studio: '/studio/',
-  hub: 'https://hub.super-nb.me/',
+  // 🪦 'hub' 键随 vendor 的 nav key hub→help 退役：「新手指南」本来就该直链 help 站，
+  //    这里没有本地开发覆盖，走 SITE_NAV_ITEMS 里的 https://help.super-nb.me/ 即可。
   activity: '/activity/all/',
 }
 const isLocalDev =
@@ -26,15 +29,19 @@ const isLocalDev =
  *  登出必须走 fork /logout 单点（墓碑协议唯一真源），子站绝不自己碰 cookie。 */
 const consoleHref = (path: string): string => (isLocalDev ? path : `${CONSOLE_ORIGIN}${path}`)
 
-// SITE_NAV_ITEMS 文案是中文常量，双语站点由 i18n 覆盖
-const NAV_LABEL_KEYS: Record<string, string> = {
+// SITE_NAV_ITEMS 文案是中文常量，双语站点由 i18n 覆盖。
+// 🚨 键必须跟 SiteNavItem.key 一一对上（2026-09-07 vendor 把「新手指南」的 key 从
+//    'hub' 改成 'help'，它代表 help 站不是 hub 站）；对不上时 labelFor 兜底回
+//    item.label，绝不能把 undefined 喂给 t()——t 会在 key.split('.') 上抛错、整条顶栏白屏。
+//    导出只为让 i18n/__tests__/nav-labels.spec.ts 断言「四个 key 一个不落」。
+export const NAV_LABEL_KEYS: Partial<Record<SiteKey, string>> = {
   console: 'studio.nav.console',
   studio: 'studio.title',
-  hub: 'studio.nav.hub',
+  help: 'studio.nav.help',
   activity: 'studio.nav.activity',
 }
 
-/** 顶栏 = 统一 AppHeader（规范 v1）+ studio 场景槽（主题切换 → 余额 → 头像/登录） */
+/** 顶栏 = 统一 AppHeader（Header 规范 v2）+ studio 场景槽（主题开关 → 余额 → 头像/登录） */
 export function TopBar() {
   const user = useAuthUser()
   const [balance, setBalance] = useState<number | null>(null)
@@ -64,17 +71,34 @@ export function TopBar() {
       subtitle={t('studio.title')}
       homeHref={import.meta.env.BASE_URL}
       resolveHref={isLocalDev ? (item: SiteNavItem) => DEV_HREFS[item.key] ?? item.href : undefined}
-      labelFor={(item: SiteNavItem) => t(NAV_LABEL_KEYS[item.key])}
-      // 开灯/关灯：AppHeader 把它排在场景槽最前（访客态就是「登录」左边）。
+      labelFor={(item: SiteNavItem) => {
+        const path = NAV_LABEL_KEYS[item.key]
+        return path ? t(path) : item.label
+      }}
+      // 主题开关：AppHeader 把它排在场景槽最前（访客态就是「登录」左边）。
       // 组件自带契约接线，这里不用传档位也不用接回调。
       themeToggle
+      // <1024 两钮收进导航浮卡（AppHeader 契约）：顶栏只留主题钮 + 菜单钮。
+      // 390 宽实测过——44 高胶囊两枚留在顶栏会把菜单钮挤出视口、文档出横向滚动条。
+      menuFooter={
+        user ? undefined : (
+          <>
+            <a href={consoleHref('/register')} className={`${ctaAnchorClass} w-full`}>
+              {t('studio.nav.signup')}
+            </a>
+            <a href={loginUrl()} className={`${ghostAnchorClass} w-full`}>
+              {t('studio.nav.login')}
+            </a>
+          </>
+        )
+      }
     >
       {user ? (
         <>
           {balance !== null && (
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[11px] text-snb-t3">{t('studio.nav.balance')}</span>
-              <span className="font-mono text-[13.5px] font-semibold text-snb-t1">
+              <span className="text-[13px] text-snb-t2">{t('studio.nav.balance')}</span>
+              <span className="text-[13px] font-semibold tabular-nums text-snb-safety">
                 ${balance.toFixed(2)}
               </span>
             </div>
@@ -89,18 +113,14 @@ export function TopBar() {
           />
         </>
       ) : (
-        // ui Button 不支持 as/href（ButtonHTMLAttributes），用 <a> 内联复刻 ghost/primary sm 观感
+        // 两条配方来自 vendored lib/cta.ts（与 Button 的 ghost/primary 逐字同源）；
+        // 三条配方都不含横向内边距，顶栏内按契约补 px-4。
+        // max-lg:hidden = <1024 收进浮卡（同两条在上面的 menuFooter 里整宽再出一份）。
         <>
-          <a
-            href={loginUrl()}
-            className="inline-flex items-center whitespace-nowrap rounded-full bg-transparent px-3 py-1.5 text-xs font-medium text-snb-t2 transition-colors hover:bg-snb-t1/5 hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
-          >
+          <a href={loginUrl()} className={`${ghostAnchorClass} px-4 max-lg:hidden`}>
             {t('studio.nav.login')}
           </a>
-          <a
-            href={consoleHref('/register')}
-            className="inline-flex items-center whitespace-nowrap rounded-full bg-snb-cta px-3.5 py-1.5 text-xs font-semibold text-snb-cta-fg no-underline transition-colors duration-quick ease-snb hover:bg-snb-cta-hover"
-          >
+          <a href={consoleHref('/register')} className={`${ctaAnchorClass} px-4 max-lg:hidden`}>
             {t('studio.nav.signup')}
           </a>
         </>

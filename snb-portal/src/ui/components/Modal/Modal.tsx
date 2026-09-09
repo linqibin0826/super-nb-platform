@@ -23,18 +23,16 @@ export function Modal({ open, onClose, title, footer, children, className }: Mod
   if (!open) return null
   return (
     <div
-      // 🚨 遮罩两档都是暗的：白天档不等于遮罩变白（变白 = 底下页面看着像没关掉）。
-      // 全屏对话框比导航浮卡压得更重，故保留纯黑 60%，不走 --snb-mask
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4"
+      // 🚨 遮罩两档都是暗的：白天档不等于遮罩变白（变白 = 底下页面看着像没关掉）
+      className="fixed inset-0 z-50 flex items-center justify-center bg-snb-mask p-2 sm:p-4"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         className={cx(
-          // 对话框面：深色用抬升面 elv（比 panel 更亮=浮起），浅色用 panel #FBF9F5
-          // （浅色的 elv 比纸暗，当浮起面会读成「压下去」——方向相反，必须换槽不是换值）
-          'flex max-h-[90vh] w-full max-w-lg animate-scale-in flex-col rounded-2xl border border-snb-hairline bg-snb-panel shadow-2xl motion-reduce:animate-none dark:bg-snb-elv',
+          // 对话框面走 panel + shadow-glass 玻璃阴影表达浮起，两档同一套槽，不再按档换面
+          'flex max-h-[90vh] w-full max-w-lg animate-snb-materialize flex-col rounded-4xl bg-snb-panel shadow-glass motion-reduce:animate-none',
           className
         )}
         onClick={(e) => e.stopPropagation()}
@@ -43,7 +41,7 @@ export function Modal({ open, onClose, title, footer, children, className }: Mod
           <div className="flex flex-shrink-0 items-center justify-between border-b border-snb-hairline px-6 py-4">
             <h3 className="text-lg font-semibold text-snb-t1">{title}</h3>
             <button
-              className="rounded-lg px-2 py-1 text-snb-t3 transition-colors hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
+              className="rounded-full px-2 py-1 text-snb-t3 transition-colors hover:text-snb-t1 focus:outline-none focus-visible:ring-2 focus-visible:ring-snb-focus"
               aria-label="关闭"
               onClick={onClose}
             >
