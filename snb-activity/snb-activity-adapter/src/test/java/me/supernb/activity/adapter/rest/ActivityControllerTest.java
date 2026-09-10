@@ -144,11 +144,22 @@ class ActivityControllerTest {
     @Test
     void statusWithValidTokenReturnsEligibility() throws Exception {
         when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
-        when(drawStatusQuery.status(7)).thenReturn(new DrawStatus(true, 2));
+        when(drawStatusQuery.status(7)).thenReturn(new DrawStatus(true, 2, false));
         mvc.perform(get("/activity/v1/status").header("Authorization", "Bearer T"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.eligible").value(true))
                 .andExpect(jsonPath("$.remaining").value(2));
+    }
+
+    @Test
+    void statusExposesExcludedFlag() throws Exception {
+        when(introspect.introspect("Bearer T")).thenReturn(Optional.of(new UserProfile(7, "user", "active")));
+        when(drawStatusQuery.status(7)).thenReturn(new DrawStatus(false, 0, true));
+        mvc.perform(get("/activity/v1/status").header("Authorization", "Bearer T"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.eligible").value(false))
+                .andExpect(jsonPath("$.remaining").value(0))
+                .andExpect(jsonPath("$.excluded").value(true));
     }
 
     @Test

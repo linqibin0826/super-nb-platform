@@ -37,6 +37,10 @@ public interface RechargeReadModel {
     /// 活动期内该用户已完成的余额充值合计(元);无记录返回 0。
     BigDecimal totalRecharge(long userId, Instant start, Instant end);
 
+    /// 该用户是否被授权了 groupIds 中的任一分组(`user_allowed_groups` 名单口径:后台把人加进
+    /// 分组即算,不看有没有建 key、不看订阅)。groupIds 为空恒 false。
+    boolean inAnyAllowedGroup(long userId, Collection<Long> groupIds);
+
     /// 活动期充值榜 Top limit(仅 role=user,金额倒序,name 已脱敏)。
     List<LeaderRow> leaderboard(Instant start, Instant end, int limit);
 

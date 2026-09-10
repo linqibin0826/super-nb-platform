@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import me.supernb.activity.domain.exception.DrawExcludedException;
 import me.supernb.activity.domain.exception.NoDrawsLeftException;
 import me.supernb.activity.domain.exception.PrizePoolEmptyException;
 import me.supernb.activity.domain.model.Campaign;
@@ -12,6 +13,7 @@ import me.supernb.activity.domain.model.DrawEligibility;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.read.RawDraw;
 import me.supernb.activity.domain.model.read.RawWinner;
+import me.supernb.activity.domain.port.draw.DrawExclusionPort;
 import me.supernb.activity.domain.port.draw.DrawPort;
 import me.supernb.activity.domain.port.read.RechargeReadPort;
 import me.supernb.activity.infra.adapter.persistence.dao.DrawJpaRepository;
@@ -37,14 +39,24 @@ public class DrawAdapter implements DrawPort {
     private final PrizeSlotJpaRepository slots;
     private final TransactionTemplate txTemplate;
     private final RechargeReadPort rechargePort;
+    private final DrawExclusionPort exclusionPort;
 
-    /// 构造:注入抽奖与奖槽仓储、事务管理器(内部包成 TransactionTemplate)与充值只读端口。
+    /// 构造:注入抽奖与奖槽仓储、事务管理器(内部包成 TransactionTemplate)、充值只读端口与排除端口。
     public DrawAdapter(DrawJpaRepository draws, PrizeSlotJpaRepository slots,
-                       PlatformTransactionManager txManager, RechargeReadPort rechargePort) {
+                       PlatformTransactionManager txManager, RechargeReadPort rechargePort,
+                       DrawExclusionPort exclusionPort) {
         this.draws = draws;
         this.slots = slots;
         this.txTemplate = new TransactionTemplate(txManager);
         this.rechargePort = rechargePort;
+        this.exclusionPort = exclusionPort;
+    }
+
+    /// 排除门:中转接入用户(见 DrawExclusionPort)在算充值之前就拒——服务端真闸,前端弹窗只是礼貌。
+    private void rejectIfExcluded(long userId) {
+        if (exclusionPort.isExcluded(userId)) {
+            throw new DrawExcludedException();
+        }
     }
 
     /// 事务内执行一次抽奖:advisory lock 串行化同一用户后委托 `doDraw`。
@@ -53,8 +65,9 @@ public class DrawAdapter implements DrawPort {
         return txTemplate.execute(status -> doDraw(campaign, userId));
     }
 
-    /// 事务体:校验资格 → SKIP LOCKED 随机领槽 → 落中奖记录;池空拒抽。
+    /// 事务体:排除门 → 校验资格 → SKIP LOCKED 随机领槽 → 落中奖记录;池空拒抽。
     private DrawResult doDraw(Campaign campaign, long userId) {
+        rejectIfExcluded(userId);
         // 事务级 advisory lock:随事务结束自动释放,防并发超额
         draws.acquireUserXactLock(userId);
 
@@ -87,6 +100,7 @@ public class DrawAdapter implements DrawPort {
     /// (出到几张算几张,余下次数保留),一张未出则整体拒抽。
     /// 每领一槽显式 slots.flush() 落库,否则下一次 native SKIP LOCKED 会重选同一槽(重复发码)。
     private List<DrawResult> doDrawAll(Campaign campaign, long userId) {
+        rejectIfExcluded(userId);
         draws.acquireUserXactLock(userId);
 
         BigDecimal total = rechargePort.totalRecharge(userId, campaign.startsAt(), campaign.endsAt());

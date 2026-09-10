@@ -8,6 +8,7 @@ import java.util.Map;
 import me.supernb.activity.domain.model.read.CodeStatus;
 import me.supernb.activity.domain.model.read.LeaderEntry;
 import me.supernb.activity.domain.model.read.RechargeEntry;
+import me.supernb.activity.domain.port.draw.DrawExclusionPort;
 import me.supernb.activity.domain.port.read.RechargeReadPort;
 import me.supernb.activity.infra.adapter.persistence.DrawAdapter;
 import org.springframework.boot.SpringBootConfiguration;
@@ -24,6 +25,14 @@ class ActivityInfraTestApp {
 
     /// 桩充值额(默认 ¥300 = 应得 3 次);批量测试可改此字段调整 earned。
     static volatile java.math.BigDecimal recharge = new java.math.BigDecimal("300");
+
+    /// 桩「中转接入排除」开关:true = 该用户被排除(默认 false,散客)。
+    static volatile boolean excluded = false;
+
+    @Bean
+    DrawExclusionPort drawExclusionPort() {
+        return userId -> excluded;
+    }
 
     @Bean
     RechargeReadPort rechargeQueryPort() {
