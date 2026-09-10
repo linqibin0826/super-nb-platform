@@ -26,6 +26,8 @@ services:
       CONTENT_ADMIN_TOKEN: ${CONTENT_ADMIN_TOKEN:?}
       # 发票手续费结算(admin API 扣/退余额)+签到档位发奖共用;不配则相关能力 fail-closed
       SUB2API_ADMIN_KEY: ${SUB2API_ADMIN_KEY:?}
+      # 幸运余额包排除名单(逗号分隔分组 id;被授权其一的用户不可抽,2026-09-10 起 146=Claude-Max-下游专属)
+      DRAW_EXCLUDED_GROUP_IDS: '146'
     # 调试直连口(反代走容器网,不依赖这条)
     ports:
       - "127.0.0.1:8090:8080"

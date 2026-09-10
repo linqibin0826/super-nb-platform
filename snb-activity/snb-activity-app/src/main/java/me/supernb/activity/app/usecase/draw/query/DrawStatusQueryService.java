@@ -6,6 +6,7 @@ import me.supernb.activity.domain.model.Campaign;
 import me.supernb.activity.domain.model.DrawEligibility;
 import me.supernb.activity.domain.model.read.DrawStatus;
 import me.supernb.activity.domain.port.campaign.CampaignPort;
+import me.supernb.activity.domain.port.draw.DrawExclusionPort;
 import me.supernb.activity.domain.port.draw.DrawPort;
 import me.supernb.activity.domain.port.read.RechargeReadPort;
 import org.springframework.stereotype.Service;
@@ -17,21 +18,27 @@ public class DrawStatusQueryService {
     private final CampaignPort campaignPort;
     private final RechargeReadPort rechargePort;
     private final DrawPort drawPort;
+    private final DrawExclusionPort exclusionPort;
 
-    /// 构造:注入活动/充值读/抽奖端口。
-    public DrawStatusQueryService(CampaignPort campaignPort, RechargeReadPort rechargePort, DrawPort drawPort) {
+    /// 构造:注入活动/充值读/抽奖/排除端口。
+    public DrawStatusQueryService(CampaignPort campaignPort, RechargeReadPort rechargePort, DrawPort drawPort,
+                                  DrawExclusionPort exclusionPort) {
         this.campaignPort = campaignPort;
         this.rechargePort = rechargePort;
         this.drawPort = drawPort;
+        this.exclusionPort = exclusionPort;
     }
 
-    /// 取活动窗口内充值总额与已抽次数:充值总额达 DrawEligibility 定义的门槛即算资格达标,
-    /// 剩余次数委托 DrawEligibility 计算。
+    /// 先过排除门(中转接入 → excluded=true、其余全 0,不再算充值);散客再取活动窗口内充值总额与
+    /// 已抽次数:充值总额达 DrawEligibility 定义的门槛即算资格达标,剩余次数委托 DrawEligibility 计算。
     public DrawStatus status(long userId) {
         Campaign c = campaignPort.activeCampaign().orElseThrow(CampaignNotActiveException::new);
+        if (exclusionPort.isExcluded(userId)) {
+            return new DrawStatus(false, 0, true);
+        }
         BigDecimal total = rechargePort.totalRecharge(userId, c.startsAt(), c.endsAt());
         int used = drawPort.countDraws(c.id(), userId);
         boolean eligible = total.compareTo(DrawEligibility.DRAW_THRESHOLD) >= 0;
-        return new DrawStatus(eligible, DrawEligibility.remainingDraws(total, used));
+        return new DrawStatus(eligible, DrawEligibility.remainingDraws(total, used), false);
     }
 }

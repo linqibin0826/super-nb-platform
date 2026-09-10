@@ -42,6 +42,21 @@ public class JdbcRechargeReadModel implements RechargeReadModel {
         return total == null ? BigDecimal.ZERO : total;
     }
 
+    /// 空 groupIds 直接短路 false(不发 SQL);否则 EXISTS 查 user_allowed_groups 有无该用户×任一分组的授权行。
+    @Override
+    public boolean inAnyAllowedGroup(long userId, Collection<Long> groupIds) {
+        if (groupIds.isEmpty()) {
+            return false;
+        }
+        MapSqlParameterSource p = new MapSqlParameterSource()
+                .addValue("uid", userId)
+                .addValue("gids", groupIds);
+        Boolean found = jdbc.queryForObject(
+                "SELECT EXISTS(SELECT 1 FROM user_allowed_groups WHERE user_id = :uid AND group_id IN (:gids))",
+                p, Boolean.class);
+        return Boolean.TRUE.equals(found);
+    }
+
     /// 按用户聚合窗口内 COMPLETED 余额单、金额倒序取前 limit(仅 role=user),name 经 `mask` 脱敏。
     @Override
     public List<LeaderRow> leaderboard(Instant start, Instant end, int limit) {

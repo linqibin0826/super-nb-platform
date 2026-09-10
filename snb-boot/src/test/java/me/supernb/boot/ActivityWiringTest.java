@@ -49,6 +49,8 @@ class ActivityWiringTest {
         r.add("sub2api.read-datasource.password", PG::getPassword);
         // 成就系统生产默认停用(2026-07-28 暂时下线),测试显式开——继续验证全链,重开时不返工
         r.add("activity.achievement.enabled", () -> "true");
+        // 幸运余额包排除名单(中转接入不可抽):开着验 403 全链;其它用例无授权行,不受影响
+        r.add("activity.draw.excluded-group-ids", () -> "146");
     }
 
     @Autowired
@@ -84,6 +86,9 @@ class ActivityWiringTest {
                 + "recharge_code TEXT)");
         jdbc.execute("CREATE TABLE IF NOT EXISTS redeem_codes (id BIGSERIAL PRIMARY KEY, code TEXT UNIQUE, "
                 + "type TEXT, value NUMERIC(20,8), status TEXT, used_by BIGINT, used_at TIMESTAMPTZ)");
+        // 抽奖排除名单口径(DrawExclusionAdapter → user_allowed_groups),名单非空时每次 status/draw 都会查
+        jdbc.execute("CREATE TABLE IF NOT EXISTS user_allowed_groups (user_id BIGINT, group_id BIGINT, "
+                + "created_at TIMESTAMPTZ)");
     }
 
     @Test
@@ -113,6 +118,30 @@ class ActivityWiringTest {
                 .andExpect(jsonPath("$.campaigns[*].id").value(hasItem("checkin")))
                 .andExpect(jsonPath("$.campaigns[*].id").value(hasItem("qq-referral")))
                 .andExpect(jsonPath("$.campaigns[?(@.kind=='evergreen')].status").value(hasItem("running")));
+    }
+
+    /// 中转接入(被授权 146 分组)全链:status 返 excluded=true,draw / draw/all 经真 PG 走到
+    /// DrawAdapter 的排除门 → DrawExcludedException → commons 错误映射 403。
+    @Test
+    void relayUserIsExcludedFromDraw() throws Exception {
+        jdbc.update("INSERT INTO activity.campaign (id, name, starts_at, ends_at, status, consolation_amount) "
+                + "VALUES (901, 'wiring', now() - interval '1 day', now() + interval '1 day', 'active', 5)");
+        jdbc.update("INSERT INTO user_allowed_groups (user_id, group_id) VALUES (503, 146)");
+        when(introspect.introspect("Bearer RELAY")).thenReturn(Optional.of(new UserProfile(503, "user", "active")));
+        try {
+            mvc.perform(get("/activity/v1/status").header("Authorization", "Bearer RELAY"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.excluded").value(true))
+                    .andExpect(jsonPath("$.eligible").value(false))
+                    .andExpect(jsonPath("$.remaining").value(0));
+            mvc.perform(post("/activity/v1/draw").header("Authorization", "Bearer RELAY"))
+                    .andExpect(status().isForbidden());
+            mvc.perform(post("/activity/v1/draw/all").header("Authorization", "Bearer RELAY"))
+                    .andExpect(status().isForbidden());
+        } finally {
+            jdbc.update("DELETE FROM user_allowed_groups WHERE user_id = 503");
+            jdbc.update("DELETE FROM activity.campaign WHERE id = 901");
+        }
     }
 
     @Test

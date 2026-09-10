@@ -54,6 +54,11 @@ gallery:
     per-minute: 120
 
 activity:
+  draw:
+    # 幸运余额包排除名单(2026-09-10 站长拍板「抽奖只给散客」):逗号分隔分组 id,凡在 sub2api
+    # user_allowed_groups 被授权了其一的用户 status 返 excluded=true、draw 403。空 = 规则休眠。
+    # 生产填 146 = 「Claude-Max-下游专属」1.0x 组。⚠️ compose 不加映射 = 空默认静默生效(GATE_ 老教训)。
+    excluded-group-ids: ${DRAW_EXCLUDED_GROUP_IDS:}
   referral:
     start: ${QQ_CAMPAIGN_START:2026-07-09T16:00:00Z}
     end: ${QQ_CAMPAIGN_END:2026-07-16T16:00:00Z}

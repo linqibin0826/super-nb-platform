@@ -5,5 +5,7 @@ package me.supernb.activity.domain.model.read;
 /// @param eligible  活动期充值总额是否已达抽奖门槛(¥100);与 remaining 是否 >0 不等价——
 ///                  已达门槛但次数已抽满时 eligible 仍为 true、remaining 为 0
 /// @param remaining 剩余可抽次数(`DrawEligibility.remainingDraws` 的计算结果,不为负)
-public record DrawStatus(boolean eligible, int remaining) {
+/// @param excluded  是否被排除在抽奖之外(中转接入,见 DrawExclusionPort):true 时 eligible 恒 false、
+///                  remaining 恒 0,前端据此弹「这是给散户抽的」而不是劝充值
+public record DrawStatus(boolean eligible, int remaining, boolean excluded) {
 }
