@@ -19,22 +19,6 @@
         "postgresql://${SUB2API_RO_USER:-snb_ro}:${SUB2API_RO_PASSWORD:-}@${SUB2API_RO_HOST:-localhost}:${SUB2API_RO_PORT:-5432}/sub2api"
       ],
       "env": {}
-    },
-    "serena": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena",
-        "start-mcp-server",
-        "--context",
-        "claude-code",
-        "--project-from-cwd",
-        "--open-web-dashboard",
-        "false"
-      ],
-      "env": {}
     }
   }
 }

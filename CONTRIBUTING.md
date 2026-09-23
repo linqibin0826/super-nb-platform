@@ -49,7 +49,7 @@ CI(`.github/workflows/ci.yml`)在每次 push / PR 到 main 时跑同样两步:�
 - **禁止全类名(FQN)**,类型引用一律 `import`。唯一例外是同一文件里出现两个同名类型需要消歧义(本仓已知实例:Spring Data 的 `Page` 和读视图的 `Page` 同现的文件),这种场景才允许写一次 FQN。
 - **Lombok 优先**:`@Getter` / `@Setter` / `@Builder` / `@NoArgsConstructor` 这类注解能生成的样板不要手写,只有需要自定义逻辑时才手写。domain 与 DTO 一律用 record,本来就不需要 Lombok。
 - **JPA 实体禁用 `@Data`**——全字段 `equals` / `hashCode` / `toString` 跟懒加载、`@Id` 语义直接冲突。实体子类统一 `@Getter` + `@NoArgsConstructor(access = PROTECTED)` + 意图明确的业务构造器/业务方法;审计基座(`BaseJpaEntity` / `ChildJpaEntity` / `ValueObjectJpaEntity`)本身已经带了 `@Data` / `@SuperBuilder`,子类不要再叠一层。
-- **AI 辅助开发场景,Serena 语义工具优先于内置文本工具**。本仓 `.mcp.json` 配了 Serena MCP,符号级读写(`get_symbols_overview`、`find_symbol`、`find_referencing_symbols`、`replace_symbol_body` 等)是首选,内置的整文件 Read / Grep / Edit 是次选——只有 Serena 已经尝试失败、文件没法按代码解析、或者是 Markdown / JSON / YAML 这类非代码文件时才用内置工具。人工走惯用 IDE 正常开发就行,这条只约束 AI 辅助会话。
+- **AI 辅助开发场景,代码的语义级操作优先用 JetBrains MCP**(查符号、查调用链、重命名、查编译问题,依赖 IntelliJ IDEA 已打开本项目),文本级读写用内置 Read / Grep / Edit;重命名一律走 IDE 重构,不用文本替换。人工走惯用 IDE 正常开发就行,这条只约束 AI 辅助会话。
 
 ## 六边形分层与依赖方向
 

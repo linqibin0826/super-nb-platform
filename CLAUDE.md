@@ -76,19 +76,18 @@ commons 升级 = 改 `gradle.properties` 的 `patraRef`（钉 patra commit）→
 - 中文：交流、文档、注释、commit（代码标识符英文）；commit 结尾带 Co-Authored-By 行
 - 每次实质改动后 commit；**不推发布 tag**（发布属生产操作，等站长点头）
 
-## Serena 语义工具优先
+## JetBrains MCP 语义工具
 
-配置了 Serena MCP 的会话中，其符号级语义工具是代码读写的**首选**；内置 Read / Glob / Grep / Edit 为次选——存在 Serena 等价工具时，禁止用内置工具操作代码文件。禁止用「文件很小」「我已知道要改哪」「路径已知」来合理化内置工具。
+代码的语义级操作优先用 JetBrains MCP（`mcp__jetbrains__*`，依赖 IntelliJ IDEA 已打开本项目）；文本级读写用内置 Read / Grep / Edit。
 
-| 任务 | Serena 工具 |
-|------|------------|
-| 查看代码文件结构 | `get_symbols_overview` |
-| 读某个符号的实现 | `find_symbol`（`include_body=true`） |
-| 查找引用 / 调用方 | `find_referencing_symbols` |
-| 查找声明 / 实现 | `find_declaration` / `find_implementations` |
-| 编辑符号体 | `replace_symbol_body` |
-| 在符号前后插入 | `insert_before_symbol` / `insert_after_symbol` |
-| 文件内模式替换 | `replace_content` |
-| 重命名符号 | `rename_symbol` |
+| 任务 | JetBrains 工具 |
+|------|---------------|
+| 按名查找类 / 方法 / 字段 | `search_symbol` |
+| 查看符号声明、类型与文档 | `get_symbol_info` |
+| 查调用方 / 调用链 | `analyze_calls` |
+| 重命名符号（同步所有引用） | `rename_refactoring` |
+| 改完检查编译错误与告警 | `get_file_problems` |
+| 按项目代码风格格式化 | `reformat_file` |
+| 增量编译验证 | `build_project` |
 
-仅以下情况允许对代码文件用内置工具：Serena 已尝试且失败；文件无法按代码解析；跨多文件正则检索（Grep 仅作发现手段，后续读写仍走 Serena）；只需读几行、符号级读取过重。Markdown / JSON / YAML / 配置等**非代码文件**直接用内置工具。
+重命名一律走 `rename_refactoring`，禁止用文本替换代替。IDEA 未打开或 MCP 不可用时退回内置工具，不阻塞工作。
