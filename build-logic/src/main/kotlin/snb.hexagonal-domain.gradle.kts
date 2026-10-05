@@ -1,11 +1,7 @@
 // 领域层:纯 Java,禁止框架依赖(enforceDomainPurity 编译期强制)。
-import org.gradle.api.artifacts.VersionCatalogsExtension
-
 plugins {
     id("snb.java-library")
 }
-
-val libs = the<VersionCatalogsExtension>().named("libs")
 
 val bannedGroups = setOf(
     "org.springframework",
@@ -55,5 +51,5 @@ tasks.named("check") {
 }
 
 dependencies {
-    "api"(libs.findLibrary("commons-core").get())
+    "api"(project(":snb-commons:commons-core"))
 }

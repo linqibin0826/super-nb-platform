@@ -19,5 +19,5 @@ tasks.jar {
 }
 
 dependencies {
-    "testImplementation"(libs.findLibrary("commons-starter-test").get())
+    "testImplementation"(project(":snb-commons:starter-test"))
 }

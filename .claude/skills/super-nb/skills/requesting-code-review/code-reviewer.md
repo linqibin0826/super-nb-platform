@@ -140,7 +140,7 @@ Task tool（general-purpose）:
     ### 10. 依赖 / 构建
 
     - 新增依赖**禁**在模块内硬编码版本号——版本统一由 build-logic 约定插件 / version catalog 管理
-    - commons 来自 mavenLocal（`gradle.properties` 的 `patraRef` 钉版）；不要在业务模块直接改 commons
+    - 基建模块在 `snb-commons/`（包名 `dev.linqibin.*`）；改它等于改全平台的横切行为，要有对应测试
 
     ### 11. 代码质量（对照 `rules/code-style.md`）
 

@@ -1,6 +1,6 @@
 # super-nb-platform
 
-super-nb-platform 是 super-nb 中转站生意的自写后端统一平台:一个部署单元(单体),内部按限界上下文(bounded context)与六边形架构(hexagonal / ports-and-adapters)+ DDD 分层。架构照 [patra](https://github.com/linqibin0826/patra)(同一作者的另一个项目)落地,复用其 `linqibin-commons` 基建——CQRS 总线、JPA 审计基座、统一错误处理这些横切能力不在本仓重新发明。patra 是微服务形态,本仓库把同一套六边形骨架改造成单体,这层取舍见 [ARCHITECTURE.md](ARCHITECTURE.md) 第 11 节。
+super-nb-platform 是 super-nb 中转站生意的自写后端统一平台:一个部署单元(单体),内部按限界上下文(bounded context)与六边形架构(hexagonal / ports-and-adapters)+ DDD 分层。架构照 [patra](https://github.com/linqibin0826/patra)(同一作者的另一个项目)落地。CQRS 总线、JPA 审计基座、统一错误处理这些横切能力放在本仓的 `snb-commons/` 下,最初取自 patra 的 `linqibin-commons`,现在归本仓自己维护。patra 是微服务形态,本仓库把同一套六边形骨架改造成单体,这层取舍见 [ARCHITECTURE.md](ARCHITECTURE.md) 第 11 节。
 
 仓库当前收编两个此前各自独立部署的自写业务服务;未来任何新的自写后端业务都在这里长出新的限界上下文,不再起新服务。前端 `snb-portal`(统一 React 前端)也在同仓、松耦合并存,详见下文「前端 snb-portal」节。
 
@@ -57,14 +57,10 @@ Java 25 · Spring Boot 4(4.0.6)· Spring Data JPA(Hibernate 7)+ Flyway · Postgr
 前置:JDK 25(仓库 `mise.toml` 已钉版本,用 [mise](https://mise.jdx.dev) 可直接拿)、git。
 
 ```bash
-# 1. linqibin-commons 不在 Maven Central,先从 patra 源码(gradle.properties 的 patraRef 钉 commit)
-#    现场 build 并发布到本地 Maven 仓库——这一步不是可选项,CI 和本地开发都要先跑一次
-bash scripts/bootstrap-commons.sh
-
-# 2. 完成定义:编译 + 全部测试 + ArchUnit 门禁全绿
+# 1. 完成定义:编译 + 全部测试 + ArchUnit 门禁全绿
 ./gradlew build
 
-# 3. 起服务:需要一个可连接的 PostgreSQL(SNB_DB_URL / SNB_DB_USER / SNB_DB_PASSWORD)+ gallery 模块
+# 2. 起服务:需要一个可连接的 PostgreSQL(SNB_DB_URL / SNB_DB_USER / SNB_DB_PASSWORD)+ gallery 模块
 #    必装的 R2 端口配置(GALLERY_R2_ENDPOINT / GALLERY_R2_BUCKET / GALLERY_R2_ACCESS_KEY / GALLERY_R2_SECRET_KEY,
 #    冒烟可填占位值,S3Client 构建不校验真实连通性)——两者缺一都会在装配阶段启动失败,不存在"无 DB 冒烟"这回事。
 #    Flyway 默认开启,连一个全新空库会自动建 schema、跑迁移;SNB_FLYWAY_ENABLED=false 是给 schema 已经
@@ -79,14 +75,14 @@ curl -s localhost:8080/actuator/health
 # {"status":"UP"}
 ```
 
-commons 只需 `publishToMavenLocal` 一次,本地已有产物缓存后可跳过第 1 步直接 `./gradlew build`。commons 升级 = 改 `patraRef` 指向新 commit → 重跑 bootstrap 脚本,不是手改本仓代码。本仓库到"起服务、连本地库"为止,生产部署/割接/数据迁移归私有运维仓库管理,不在这里。
+本仓库到"起服务、连本地库"为止,生产部署/割接/数据迁移归私有运维仓库管理,不在这里。
 
 ## 依赖方向
 
 标准 ports-and-adapters,依赖方向单向、不可逆(以 activity 为例,gallery 对称):
 
 ```
-commons-core(纯 Java,来自 patra)
+commons-core(纯 Java,在 snb-commons/ 下)
         │ api
         ▼
 snb-activity-domain   (零框架依赖,定义端口)

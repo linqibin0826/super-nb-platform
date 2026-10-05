@@ -28,7 +28,7 @@ dependencies {
     implementation(project(":snb-common"))
     implementation(project(":snb-sub2api"))
 
-    implementation(libs.commons.starter.web)
+    implementation(project(":snb-commons:starter-web"))
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
     // AuditorAware 装配(CurrentUserAuditorConfig)的编译面
@@ -41,7 +41,7 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-webmvc-test")
-    testImplementation(libs.commons.starter.test)
+    testImplementation(project(":snb-commons:starter-test"))
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.junit)
     testImplementation(libs.archunit.junit5)

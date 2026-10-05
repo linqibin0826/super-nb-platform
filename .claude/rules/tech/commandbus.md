@@ -4,7 +4,7 @@ paths: snb-*/snb-*-app/**/*.java, snb-*/snb-*-adapter/**/*.java
 
 # CommandBus 使用规范
 
-**写操作统一经 CommandBus 派发**,adapter 与 Handler 解耦。基建全部来自 linqibin-commons,本仓零自建:接口在 `commons-core` 的 `dev.linqibin.commons.cqrs`,`SimpleCommandBus` 由 `starter-core` 的 `CommandBusAutoConfiguration` 自动装配(starter-web 已把 starter-core 带进 boot classpath,无需显式加依赖)。
+**写操作统一经 CommandBus 派发**,adapter 与 Handler 解耦。基建全部在 `snb-commons/` 里,业务模块不另写一套:接口在 `commons-core` 的 `dev.linqibin.commons.cqrs`,`SimpleCommandBus` 由 `starter-core` 的 `CommandBusAutoConfiguration` 自动装配(starter-web 已把 starter-core 带进 boot classpath,无需显式加依赖)。
 
 ## 架构图
 

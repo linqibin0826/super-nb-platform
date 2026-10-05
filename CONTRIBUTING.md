@@ -10,15 +10,9 @@ Gradle 走仓库自带的 wrapper(`./gradlew`,当前 9.5.0),不需要另外装 G
 
 ## 构建
 
-`linqibin-commons`(架构母版 [patra](https://github.com/linqibin0826/patra) 的基建,CQRS 总线、JPA 审计基座、统一错误处理都在这里,本仓不重新发明)不在 Maven Central。第一次构建要先跑:
+CQRS 总线、JPA 审计基座、统一错误处理这些基建在本仓的 `snb-commons/` 下,随工程一起编译,没有额外的前置步骤。需要 JDK 25 + git。
 
-```bash
-bash scripts/bootstrap-commons.sh
-```
-
-这个脚本做的事:按 `gradle.properties` 里 `patraRef` 钉的 commit,clone/checkout 公开的 patra 仓库,现场跑几个 `publishToMavenLocal` 任务,把 commons 全家桶(core、starter-core、starter-web、starter-jpa、starter-test)发布到本地 Maven 仓库。跑一次之后 mavenLocal 有产物缓存了,后续开发可以跳过这一步,除非 `patraRef` 升级了要重跑。需要 JDK 25 + git。
-
-之后正常构建:
+正常构建:
 
 ```bash
 ./gradlew build

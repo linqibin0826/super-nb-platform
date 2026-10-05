@@ -15,7 +15,7 @@ me.supernb.common
 
 **为什么不并进 snb-sub2api**:`UnauthorizedException` 目前唯一的实际抛出点是 snb-sub2api 的 `CurrentUserArgumentResolver`(`@CurrentUser` 解析失败时),但异常本身携带的语义只是"未登录或身份无效 → 映射 401",不涉及 sub2api 的 HTTP 接口形状或库表结构。如果把它挪进 snb-sub2api,任何想抛这个异常的场景——哪怕跟 sub2api 完全无关——都要被迫引入整个防腐层依赖,模块边界就错位了。依赖方向因此是单向的:snb-sub2api 依赖 snb-common,不是反过来。
 
-**错误映射零自建**:`UnauthorizedException` 继承 commons-core 的 `DomainException`,构造时带上 `StandardErrorTrait.UNAUTHORIZED`;把它翻译成 RFC 9457 problem+json 响应体的工作全部交给 `commons-starter-web` 的统一错误处理机制,本模块不写一行 `ResponseEntity` 拼装代码。
+**错误映射零自建**:`UnauthorizedException` 继承 commons-core 的 `DomainException`,构造时带上 `StandardErrorTrait.UNAUTHORIZED`;把它翻译成 RFC 9457 problem+json 响应体的工作全部交给 `snb-commons/starter-web` 的统一错误处理机制,本模块不写一行 `ResponseEntity` 拼装代码。
 
 **消费方式**:作为构建依赖,声明在 snb-sub2api(实际抛出点)、activity/gallery 各自的 `adapter` 模块、以及 snb-boot——都是处理 HTTP 请求边界的地方;`infra`、`domain`、`app` 都不依赖它,401 是协议边界的关注点,不是业务不变量该管的事。
 

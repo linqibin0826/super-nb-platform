@@ -13,9 +13,7 @@ super-nb-platform 是 super-nb 中转站生意的自写后端统一平台:一个
 - **activity**(活动中心):抽奖、充值榜、奖池实况。技术上的核心难点是并发正确性——同一时刻大量用户抢一个容量有限的奖池,不能超发,也不能因为加锁过粗把不同用户的请求串成队列。
 - **gallery**(灵感库):公开的提示词库(浏览/点赞/收藏)、登录用户的 AI 生成历史(图片存 R2、下发 presigned URL、列表用 256px 缩略图省流量)、匿名/登录混合场景下的令牌桶限流。
 
-架构血统:照 [patra](https://github.com/linqibin0826/patra)(同一作者的另一个项目)的架构,复用其 `linqibin-commons` 基建——CQRS 总线、JPA 审计基座、统一错误处理这些横切能力不在本仓重新发明。但 patra 是微服务形态(每个上下文独立部署、各有自己的 api/boot),本仓库是单体。同一套六边形/DDD 骨架套在不同的部署形态上必然要做取舍,这些取舍贯穿全文,第 11 节集中总结。
-
-`linqibin-commons` 不在 Maven Central,`scripts/bootstrap-commons.sh` 按 `gradle.properties` 里 `patraRef` 钉的 commit,从公开 patra 仓库现场 build 出来发布到 mavenLocal——这是 CI 和本地开发都要先跑一次的前置步骤,不是可选项。
+架构血统:照 [patra](https://github.com/linqibin0826/patra)(同一作者的另一个项目)的架构。CQRS 总线、JPA 审计基座、统一错误处理这些横切能力放在本仓的 `snb-commons/` 下(5 个模块,包名 `dev.linqibin.*`),最初取自 patra 的 `linqibin-commons`,现在归本仓自己维护,和 patra 不再同步。但 patra 是微服务形态(每个上下文独立部署、各有自己的 api/boot),本仓库是单体。同一套六边形/DDD 骨架套在不同的部署形态上必然要做取舍,这些取舍贯穿全文,第 11 节集中总结。
 
 ### 在整个 super-nb 系统里的位置
 
@@ -114,7 +112,7 @@ adapter 与 infra 都指向 domain(前者经 app 间接依赖,后者直接实现
 上一节的分层图是概念模型,这一节是 `build.gradle.kts` 里实际写的依赖坐标——这张图能解释很多新读者会疑惑的问题,比如"adapter 怎么拿到 domain 类型的,它明明没声明依赖 domain"。以 activity 为例(gallery 对称):
 
 ```
-commons-core(dev.linqibin.commons,纯 Java,来自 patra)
+commons-core(dev.linqibin.commons,纯 Java,在 snb-commons/ 下)
         │ api
         ▼
 snb-activity-domain(唯一依赖是 commons-core,零其他)
@@ -218,7 +216,7 @@ domain/port 下按端口的性质分四类,命名、包位置、实现层严格�
 读:Controller ──► 直接注入的 {View}QueryService ──► 端口
 ```
 
-基建全部来自 `linqibin-commons`,本仓零自建:`Command<R>`/`CommandHandler<C,R>` 接口在 commons-core 的 `dev.linqibin.commons.cqrs` 包,`SimpleCommandBus`(按 Command 类型自动路由到对应 Handler,支持 `@Order` 拦截器链)由 starter-core 的自动配置装配。
+基建全部在 `snb-commons/` 里,业务模块不另写一套:`Command<R>`/`CommandHandler<C,R>` 接口在 commons-core 的 `dev.linqibin.commons.cqrs` 包,`SimpleCommandBus`(按 Command 类型自动路由到对应 Handler,支持 `@Order` 拦截器链)由 starter-core 的自动配置装配。
 
 写为什么要多绕一层 bus 而不是 Controller 直接注入 Handler:解耦 adapter 与具体 Handler 实现,给未来要加的横切关注点(审计日志、限流、重试)留一个统一挂载点——真要加,在 bus 层面用 `@Order` 拦截器链一次性覆盖所有命令,不用每个 Controller 方法各自实现。`adapterInjectsBusNotHandlers` 门禁把"adapter 只能注入 CommandBus"这条焊死,防止有人图省事绕过去直接注入某个具体 Handler。
 
@@ -362,7 +360,7 @@ activity 上下文的核心场景是"同一时刻大量用户点同一个抽奖�
 
 ## 11. 与 patra 的血统与刻意差异
 
-Patra 是这个仓库的架构母版和基建来源——`linqibin-commons` 直接从 patra 源码 build 出来发布到 mavenLocal,commit 钉死在 `gradle.properties` 的 `patraRef`。但 patra 是微服务架构,本仓库是单体,同一套六边形/DDD 骨架落在不同的部署形态上,必然要做取舍。已知的刻意偏离,逐条说明为什么:
+Patra 是这个仓库的架构母版。`snb-commons/` 下的基建模块最初取自 patra 的 `linqibin-commons`,之后两边各自演进,不再同步。但 patra 是微服务架构,本仓库是单体,同一套六边形/DDD 骨架落在不同的部署形态上,必然要做取舍。已知的刻意偏离,逐条说明为什么:
 
 - **无 MapStruct**:Entity ↔ 读视图的映射手写(样板 `PromptMapper`)。仓库规模没有大到需要生成式映射框架分摊维护成本,手写 mapper 更透明,编译期报错更直接,IDE 跳转不会跳进生成代码里。
 - **保留 Flyway + `ddl-auto=validate`**:patra 没有迁移脚本。本仓库服务在线生产业务,schema 变更必须可追溯、可重放、有版本历史,这里选的是最保守也最成熟的路线,不跟 patra 的做法。
@@ -376,9 +374,7 @@ Patra 是这个仓库的架构母版和基建来源——`linqibin-commons` 直�
 
 ### 12.1 构建顺序
 
-`linqibin-commons` 不在 Maven Central。`scripts/bootstrap-commons.sh` 按 `gradle.properties` 里 `patraRef` 钉的 commit,从公开 patra 仓库 clone/checkout 后现场跑 `publishToMavenLocal`,产出 commons 全家桶(core、starter-core、starter-web、starter-jpa、starter-test)到本地 Maven 仓库。这一步 CI 和本地开发都要先跑一次;本地跑过一次、mavenLocal 里有产物缓存之后可以跳过,直接 `./gradlew build`。commons 升级 = 改 `patraRef` 指向新 commit → 重跑 bootstrap 脚本,不是手改本仓代码。
-
-`./gradlew build` 是完成定义:编译 + 全部测试 + ArchUnit 门禁全绿。`.github/workflows/ci.yml` 在每次 push/PR 到 main 时跑这一整套(先 bootstrap commons,再 build)。
+`./gradlew build` 是完成定义:编译 + 全部测试 + ArchUnit 门禁全绿。`.github/workflows/ci.yml` 在每次 push/PR 到 main 时跑这一整套。
 
 ### 12.2 测试分层
 

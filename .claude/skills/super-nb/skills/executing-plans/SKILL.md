@@ -37,7 +37,7 @@ plan.md 末尾维护一个 `## 实施笔记` 章节——**实施期的偏离日
 | `[DECISION]` | plan 留白处你做了选择 | "plan 未指定缓存 key 前缀，采用 `super-nb:{context}:{entity}`" |
 | `[CHANGE]` | 偏离了 plan 的明文要求 | "plan 要求 Flyway V12，但已存在 V12，改为 V13" |
 | `[TRADEOFF]` | 知情让步，未来可能要还的债 | "ReadPort 暂未抽缓存装饰器，因当前 QPS 低；量上来再补" |
-| `[OTHER]` | 阻塞原因 / 环境怪事 / 给用户的备忘 | "本地未跑 bootstrap-commons，commons 产物缺失，先补跑" |
+| `[OTHER]` | 阻塞原因 / 环境怪事 / 给用户的备忘 | "本地 Docker 没起，Testcontainers 用例跑不了，先启动 Docker" |
 
 ### 何时追加
 
@@ -68,7 +68,7 @@ plan.md 末尾：
 **审查时重点检查：**
 - 步骤之间是否有依赖遗漏？（A 依赖 B，但 B 排在 A 之后）
 - 验证条件是否明确？（"确认可用"不算，"运行 `./gradlew :snb-gallery:snb-gallery-app:test` 全部通过"才算）
-- 是否有隐含的环境假设？（JDK 25、commons 已 bootstrap 到 mavenLocal、Testcontainers 需 Docker、R2 env）
+- 是否有隐含的环境假设？（JDK 25、Testcontainers 需 Docker、R2 env）
 - 架构约束是否被尊重？（写走 CommandBus、读走 QueryService、domain 零框架、JSON id 用 String）
 
 **审查示例：**
@@ -79,7 +79,7 @@ plan.md 末尾：
 审查发现：
 - 任务 3（添加 Flyway 迁移）应在任务 2（编写 JPA Entity）之后，顺序正确 ✓
 - 任务 4 的验证条件写的是"确认功能正常"→ 需澄清：具体跑什么测试？
-- 计划未提及 commons 是否已 bootstrap → 已确认本地 mavenLocal 有产物
+- 计划未提及本地 Docker 是否可用 → 已确认 Docker 在运行
 
 向伙伴提出：
 "计划整体可执行。有一个问题：任务 4 的验证条件不够具体，建议改为
