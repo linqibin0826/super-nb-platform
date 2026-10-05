@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -25,8 +26,10 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 @Testcontainers
 class R2StorageAdapterTest {
 
+    // 官方 minio/minio 已从 Docker Hub/quay 下架(2026-10 实测 404/401),改用社区维护的兼容分支 pgsty/minio
     @Container
-    static final MinIOContainer MINIO = new MinIOContainer("minio/minio:RELEASE.2024-01-16T16-07-38Z");
+    static final MinIOContainer MINIO = new MinIOContainer(
+            DockerImageName.parse("pgsty/minio:RELEASE.2026-08-04T00-00-00Z").asCompatibleSubstituteFor("minio/minio"));
 
     static final String BUCKET = "snb-test";
     static R2StorageAdapter adapter;
