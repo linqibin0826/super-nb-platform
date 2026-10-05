@@ -10,7 +10,6 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
-        mavenLocal() // linqibin-commons 产物在此(见 scripts/bootstrap-commons.sh)
         maven { url = uri("https://maven.aliyun.com/repository/public") }
         mavenCentral()
     }
@@ -21,6 +20,14 @@ fun includeAt(path: String, dir: String) {
     include(path)
     project(path).projectDir = file(dir)
 }
+
+// 自有基建模块(原 linqibin-commons,包名保持 dev.linqibin.*)
+includeAt(":snb-commons:commons-core", "snb-commons/commons-core")
+includeAt(":snb-commons:starter-core", "snb-commons/starter-core")
+includeAt(":snb-commons:starter-web", "snb-commons/starter-web")
+includeAt(":snb-commons:starter-jpa", "snb-commons/starter-jpa")
+includeAt(":snb-commons:starter-test", "snb-commons/starter-test")
+project(":snb-commons").projectDir = file("snb-commons")
 
 includeAt(":snb-common", "snb-common")
 includeAt(":snb-sub2api", "snb-sub2api")

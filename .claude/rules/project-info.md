@@ -6,7 +6,7 @@
 
 **架构**: 单体 + 六边形架构 + DDD（照 [patra](https://github.com/linqibin0826/patra)，适配单体形态：全局唯一 boot，无 per-context api/boot 模块）
 **技术栈**: Java 25 | Spring Boot 4.0.6 | Spring Data JPA (Hibernate 7) + Flyway | PostgreSQL | AWS SDK v2 (R2)
-**构建**: Gradle 9.5 (Kotlin DSL) + Convention Plugins；基建复用 patra 的 `dev.linqibin.commons`（mavenLocal 产物，`gradle.properties` 的 `patraRef` 钉 patra commit）
+**构建**: Gradle 9.5 (Kotlin DSL) + Convention Plugins；基建在本仓 `snb-commons/`（5 个模块，包名 `dev.linqibin.*`，最初取自 patra，现归本仓维护）
 
 ## 限界上下文
 
@@ -58,5 +58,4 @@ snb-platform/
 ```bash
 ./gradlew build                                   # 全量编译+测试（完成定义）
 ./gradlew :snb-gallery:snb-gallery-infra:test     # 单模块测试
-scripts/bootstrap-commons.sh                      # 首次构建：发布 linqibin-commons 到 mavenLocal
 ```

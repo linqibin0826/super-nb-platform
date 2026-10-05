@@ -2,7 +2,7 @@
 
 ## 产品定义
 
-**super-nb-platform** — super-nb 业务自写后端统一平台。单体多模块 DDD（六边形架构），照 [patra](https://github.com/linqibin0826/patra) 架构，复用其 `linqibin-commons` 基建。当前收编 **activity**（活动中心）与 **gallery**（灵感库）两个限界上下文；未来新后端业务一律以新上下文进本平台，不再起散装服务。
+**super-nb-platform** — super-nb 业务自写后端统一平台。单体多模块 DDD（六边形架构），照 [patra](https://github.com/linqibin0826/patra) 架构；基建模块在本仓 `snb-commons/` 下（最初取自 patra 的 `linqibin-commons`，现归本仓维护，不再与 patra 同步）。当前收编 **activity**（活动中心）与 **gallery**（灵感库）两个限界上下文；未来新后端业务一律以新上下文进本平台，不再起散装服务。
 
 ## 系统上下文（这后端在哪、上下游是谁）
 
@@ -55,10 +55,9 @@ Red-Green-Refactor：先写失败测试 → 最少代码变绿 → 测试保护�
 ```bash
 ./gradlew build                                   # 全量编译 + 测试（完成任何任务前必须全绿）
 ./gradlew :snb-gallery:snb-gallery-infra:test     # 单模块测试
-scripts/bootstrap-commons.sh                      # 首次构建：从 patra 源码发布 commons 到 mavenLocal
 ```
 
-commons 升级 = 改 `gradle.properties` 的 `patraRef`（钉 patra commit）→ 重跑 bootstrap。
+基建模块（`snb-commons/`，包名 `dev.linqibin.*`）是本仓代码，要改直接改，改完跑它自己的测试。
 
 ## 开发规范
 

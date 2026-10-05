@@ -104,15 +104,9 @@ cd "$path"
 
 ## 步骤 3：项目设置
 
-super-nb-platform 是 Java + Gradle 项目，依赖 `dev.linqibin.commons`（mavenLocal 产物）。首次搭建或 commons 版本升级后，mavenLocal 缺产物会导致依赖解析失败，先发布一次：
+super-nb-platform 是 Java + Gradle 项目，基建模块在仓库内的 `snb-commons/`，没有额外的前置步骤。
 
-```bash
-if [ -f scripts/bootstrap-commons.sh ]; then
-  scripts/bootstrap-commons.sh   # 首次构建：发布 linqibin-commons 到 mavenLocal
-fi
-```
-
-再运行依赖刷新（不跑测试，留给步骤 4）：
+运行依赖刷新（不跑测试，留给步骤 4）：
 
 ```bash
 if [ -f build.gradle.kts ] || [ -f build.gradle ] || [ -f settings.gradle.kts ] || [ -f settings.gradle ]; then

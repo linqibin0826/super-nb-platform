@@ -1,5 +1,5 @@
 # 运行镜像:CI 先在 runner 上 `./gradlew build`(含全部测试)出 bootJar,这里只做装箱。
-# 本地手工等价物:bash scripts/bootstrap-commons.sh && ./gradlew build && docker build -t snb-platform .
+# 本地手工等价物:./gradlew build && docker build -t snb-platform .
 FROM eclipse-temurin:25-jre
 
 WORKDIR /app
