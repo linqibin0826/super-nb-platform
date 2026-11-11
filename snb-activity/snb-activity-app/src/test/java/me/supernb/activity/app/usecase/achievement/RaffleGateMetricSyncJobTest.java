@@ -15,7 +15,7 @@ import me.supernb.activity.domain.port.metric.UserMetricPort;
 import me.supernb.activity.domain.port.read.RaffleGateAchievementSignalPort;
 import org.junit.jupiter.api.Test;
 
-/// 五个信号独立发布;任一信号取数异常不阻断其余四个(仿 RankSnapshotJob"逐组 try/catch"惯例)。
+/// 五个信号独立发布;任一信号取数异常不阻断其余四个(逐组 try/catch)。
 class RaffleGateMetricSyncJobTest {
 
     private final RaffleGateAchievementSignalPort signalPort = mock(RaffleGateAchievementSignalPort.class);

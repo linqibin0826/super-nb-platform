@@ -32,7 +32,6 @@ import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService
 import me.supernb.activity.app.usecase.school.query.SchoolLeaderboardQueryService;
 import me.supernb.activity.app.usecase.school.query.SchoolStatusQueryService;
 import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
-import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.checkin.CheckInResult;
 import me.supernb.activity.domain.model.checkin.CheckinDailyRewardView;
 import me.supernb.activity.domain.model.checkin.CheckinMilestoneView;
@@ -53,7 +52,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 /// `CheckinAlreadyDoneException` 都是走 `StandardErrorTrait` 的 `DomainException`,只有真实
 /// Spring 上下文里的全局处理器才转译成 HTTP 状态码——standalone 装配下未登录会话直接把
 /// `UnauthorizedException` 原样抛出,断言 `status().isUnauthorized()` 反而会让测试本身炸掉;
-/// 家族里既有 `ActivityControllerTest`/`RaffleEndpointTest`/`UsageLeaderboardEndpointTest`
+/// 家族里既有 `ActivityControllerTest`/`RaffleEndpointTest`
 /// 同理都只测已登录路径),留给 Task 16 的 `ActivityWiringTest`(真实 Spring 上下文)验证。
 /// POST /checkin 成功响应体是与 GET /checkin/status 完全同形的完整状态快照(2026-07-14 控制器
 /// 裁决,覆盖三字段响应草稿 {checkinDate,cumulativeDays,streakCurrent}——三字段会在跨阈值打卡时
@@ -74,7 +73,7 @@ class CheckinEndpointTest {
                 commandBus, mock(DrawStatusQueryService.class), mock(LeaderboardQueryService.class),
                 mock(RecentRechargesQueryService.class), mock(PoolQueryService.class),
                 mock(RecentDrawsQueryService.class), mock(MyDrawsQueryService.class),
-                mock(ReferralLeaderboardQueryService.class), mock(UsageLeaderboardQueryService.class),
+                mock(ReferralLeaderboardQueryService.class),
                 mock(RaffleQueryService.class), mock(RegistryStatusQueryService.class),
                 statusQuery, rewardQuery, mock(AchievementWallQueryService.class),
                 new AchievementProperties(false, true),
@@ -160,7 +159,7 @@ class CheckinEndpointTest {
                 commandBus, mock(DrawStatusQueryService.class), mock(LeaderboardQueryService.class),
                 mock(RecentRechargesQueryService.class), mock(PoolQueryService.class),
                 mock(RecentDrawsQueryService.class), mock(MyDrawsQueryService.class),
-                mock(ReferralLeaderboardQueryService.class), mock(UsageLeaderboardQueryService.class),
+                mock(ReferralLeaderboardQueryService.class),
                 mock(RaffleQueryService.class), mock(RegistryStatusQueryService.class),
                 statusQuery, rewardQuery, mock(AchievementWallQueryService.class),
                 new AchievementProperties(false, false),

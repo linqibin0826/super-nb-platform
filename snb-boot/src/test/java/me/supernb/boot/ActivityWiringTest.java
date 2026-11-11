@@ -14,11 +14,13 @@ import me.supernb.activity.domain.port.checkin.SubscriptionGrantPort;
 import me.supernb.gallery.domain.port.storage.ImageStoragePort;
 import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
 import me.supernb.sub2api.auth.UserProfile;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -56,6 +58,9 @@ class ActivityWiringTest {
     @Autowired
     MockMvc mvc;
 
+    @Autowired
+    ApplicationContext ctx;
+
     // gallery 生成服务依赖 R2(测试不配),提供 mock 让全上下文可装配
     @MockitoBean
     ImageStoragePort imageStoragePort;
@@ -92,6 +97,25 @@ class ActivityWiringTest {
     }
 
     @Test
+    void usageBoardBeansAreGone() {
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(ctx.containsBean("usageBoardCache")).as("usageBoardCache").isFalse();
+        softly.assertThat(ctx.containsBean("rankSnapshotJob")).as("rankSnapshotJob").isFalse();
+        softly.assertThat(ctx.containsBean("leaderboardMetricSyncJob")).as("leaderboardMetricSyncJob").isFalse();
+        softly.assertThat(ctx.containsBean("usageBoardReadModel")).as("usageBoardReadModel").isFalse();
+        softly.assertThat(ctx.containsBean("usageLeaderboardQueryService")).as("usageLeaderboardQueryService")
+                .isFalse();
+        softly.assertAll();
+    }
+
+    /// 浏览器里还开着旧排行榜页的用户会继续轮询这个地址:真实上下文(含全局错误处理)下必须是 404 而非 500。
+    @Test
+    void usageLeaderboardEndpointIs404InFullContext() throws Exception {
+        mvc.perform(get("/activity/v1/usage-leaderboard").param("period", "day").param("metric", "tokens"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void poolIsPublicAndEmptyWhenNoActiveCampaign() throws Exception {
         mvc.perform(get("/activity/v1/pool"))
                 .andExpect(status().isOk())
@@ -114,7 +138,6 @@ class ActivityWiringTest {
         // 空库无 lottery/raffle 期 → 两条目缺席不断言;qq 状态值随测试运行日期变化,只断言存在性
         mvc.perform(get("/activity/v1/registry-status"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.campaigns[*].id").value(hasItem("leaderboard")))
                 .andExpect(jsonPath("$.campaigns[*].id").value(hasItem("checkin")))
                 .andExpect(jsonPath("$.campaigns[*].id").value(hasItem("qq-referral")))
                 .andExpect(jsonPath("$.campaigns[?(@.kind=='evergreen')].status").value(hasItem("running")));

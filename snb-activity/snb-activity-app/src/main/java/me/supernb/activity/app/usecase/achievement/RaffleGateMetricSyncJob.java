@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /// 联动矩阵成就 metric 生产者(日频)。五个信号各自独立 try/catch,任一异常不阻断其余
-/// (仿 RankSnapshotJob"逐组失败只记日志"惯例)。
+/// (逐组失败只记日志)。
 @Slf4j
 @ConditionalOnProperty(name = "activity.achievement.enabled", havingValue = "true")
 @Service

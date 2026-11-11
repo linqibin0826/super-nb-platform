@@ -12,8 +12,7 @@ import me.supernb.activity.domain.port.metric.UserMetricPort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-/// UserMetricPort 实现:纯 JdbcTemplate 自然键 upsert(仿 JdbcRankSnapshotAdapter 惯例,
-/// 不走 JPA 实体)。
+/// UserMetricPort 实现:纯 JdbcTemplate 自然键 upsert(不走 JPA 实体)。
 @Component
 public class JdbcUserMetricAdapter implements UserMetricPort {
 

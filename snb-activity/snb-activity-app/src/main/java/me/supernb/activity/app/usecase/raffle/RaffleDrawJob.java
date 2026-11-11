@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 /// 不能编译期 cron 绑定;查询吃 idx_raffle_campaign_due,常态零命中零成本。
 /// 10s 间隔是观感参数:页面到点后的「采样中」等待≈扫描间隔+页面 6s 轮询,
 /// 60s 时最坏干等 66s(首期彩排实测 47s),压到 10s 后最坏 ~16s。
-/// 系统自驱写路径不经 CommandBus(RankSnapshotJob 惯例);逐期 try/catch 互不拖垮;
+/// 系统自驱写路径不经 CommandBus;逐期 try/catch 互不拖垮;
 /// 单事务与幂等由 RaffleDrawPort 实现保证,任务层只做调度与日志。
 @Slf4j
 @Service

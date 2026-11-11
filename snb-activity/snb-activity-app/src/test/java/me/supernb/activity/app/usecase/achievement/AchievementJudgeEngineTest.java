@@ -81,6 +81,21 @@ class AchievementJudgeEngineTest {
     }
 
     @Test
+    void lteDefinitionIsSkippedWhenMetricAbsent() {
+        when(watermarkPort.get("achievement_judge_engine")).thenReturn(Optional.empty());
+        when(metricPort.usersUpdatedSince(any())).thenReturn(List.of(7L));
+        when(catalogPort.activeDefinitions()).thenReturn(List.of(
+                def("leaderboard_1", "联动矩阵", 15, "metric_threshold", "leaderboard_best_rank_ever",
+                        new BigDecimal("50"), "lte", null)));
+        when(unlockPort.unlockedCodes(7)).thenReturn(Set.of());
+        when(metricPort.allMetrics(7)).thenReturn(Map.of());
+
+        engine(true).judgeHourly();
+
+        verify(unlockPort, never()).unlock(eq(7L), eq("leaderboard_1"), any(), anyInt(), any());
+    }
+
+    @Test
     void alreadyUnlockedCodeIsSkipped() {
         when(watermarkPort.get("achievement_judge_engine")).thenReturn(Optional.empty());
         when(metricPort.usersUpdatedSince(any())).thenReturn(List.of(42L));

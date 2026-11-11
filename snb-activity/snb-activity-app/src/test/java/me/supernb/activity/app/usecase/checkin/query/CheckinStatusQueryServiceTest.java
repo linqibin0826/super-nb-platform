@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 /// gaugePct 按 2026-07-14 控制器裁决采用分段刻度公式(刻度 0/A/B/C 立于 0%/33%/66%/100%,
 /// 段内线性,每段另封顶到刻度线之下以消除"满格却未达标"矛盾),覆盖 spec 草稿"朝下一档线性"
 /// 公式——¥36 → 43 是与前端契约示例 JSON 对齐的锚点断言。满勤里程碑(`buildMilestones`)
-/// 另用固定 `LocalDate` 直接单测(包私有静态纯函数,仿 `BoardPeriods` 先例),覆盖"上线日落在
+/// 另用固定 `LocalDate` 直接单测(包私有静态纯函数),覆盖"上线日落在
 /// 被测月中旬"这一 launchDate 恒早于 today 的既有测试永远碰不到的分支(2026-07-14 复审补测)。
 class CheckinStatusQueryServiceTest {
 

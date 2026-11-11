@@ -56,7 +56,7 @@ class RaffleRateLimitFilterTest {
     void otherPathsBypassFilter() throws Exception {
         RaffleRateLimitFilter f = new RaffleRateLimitFilter();
         for (int i = 0; i < RaffleRateLimitFilter.CAPACITY + 5; i++) {
-            assertThat(fire(f, "/activity/v1/usage-leaderboard", "1.2.3.4")).isEqualTo(200);
+            assertThat(fire(f, "/activity/v1/pool", "1.2.3.4")).isEqualTo(200);
         }
     }
 

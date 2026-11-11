@@ -11,7 +11,7 @@ import java.util.Locale;
 /// username 恰好就是自己的邮箱前缀）。比较前先 trim、且大小写不敏感。
 ///
 /// 背景（2026-09-09）：站长要求充值榜「有昵称就显示昵称」。改之前全站有**三套**口径——
-/// 用量榜 `JdbcUsageBoardReadModel.displayName`、抽奖记录 `displayNamesByIds` 各写一份
+/// 用量榜读模型(已于 2026-11 随用量榜下架)、抽奖记录 `displayNamesByIds` 各写一份
 /// （两份都缺上面那道护栏），而充值榜 / 充值动态 / 拉新榜恒用脱敏邮箱。这正是 `EmailMask`
 /// 当初要消灭的「口径漂移」，只是上移了一层。四处读模型统一委托本方法，防漂移出第四种口径。
 public final class DisplayName {
