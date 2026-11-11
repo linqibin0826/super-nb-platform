@@ -32,7 +32,6 @@ import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService
 import me.supernb.activity.app.usecase.school.query.SchoolLeaderboardQueryService;
 import me.supernb.activity.app.usecase.school.query.SchoolStatusQueryService;
 import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
-import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.raffle.RaffleEntryTicket;
 import me.supernb.activity.domain.model.read.raffle.MyRaffleView;
 import me.supernb.activity.domain.model.read.raffle.PersonWinsView;
@@ -64,7 +63,7 @@ class RaffleEndpointTest {
                 commandBus, mock(DrawStatusQueryService.class), mock(LeaderboardQueryService.class),
                 mock(RecentRechargesQueryService.class), mock(PoolQueryService.class),
                 mock(RecentDrawsQueryService.class), mock(MyDrawsQueryService.class),
-                mock(ReferralLeaderboardQueryService.class), mock(UsageLeaderboardQueryService.class),
+                mock(ReferralLeaderboardQueryService.class),
                 raffleQuery, mock(RegistryStatusQueryService.class),
                 mock(CheckinStatusQueryService.class), mock(CheckinRewardQueryService.class),
                 mock(AchievementWallQueryService.class),

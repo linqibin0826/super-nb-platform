@@ -39,7 +39,6 @@ import me.supernb.activity.app.usecase.registry.query.RegistryStatusQueryService
 import me.supernb.activity.app.usecase.school.query.SchoolLeaderboardQueryService;
 import me.supernb.activity.app.usecase.school.query.SchoolStatusQueryService;
 import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
-import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.activity.domain.model.DrawResult;
 import me.supernb.activity.domain.model.read.DrawStatus;
 import me.supernb.activity.domain.model.read.PoolTier;
@@ -67,7 +66,6 @@ class ActivityControllerTest {
     private final RecentDrawsQueryService recentDrawsQuery = mock(RecentDrawsQueryService.class);
     private final MyDrawsQueryService myDrawsQuery = mock(MyDrawsQueryService.class);
     private final ReferralLeaderboardQueryService referralQuery = mock(ReferralLeaderboardQueryService.class);
-    private final UsageLeaderboardQueryService usageLeaderboardQuery = mock(UsageLeaderboardQueryService.class);
     private final RegistryStatusQueryService registryStatusQuery = mock(RegistryStatusQueryService.class);
     private final Sub2apiIntrospectClient introspect = mock(Sub2apiIntrospectClient.class);
     private final AchievementWallQueryService achievementWallQuery = mock(AchievementWallQueryService.class);
@@ -78,7 +76,7 @@ class ActivityControllerTest {
     void setup() {
         ActivityController controller = new ActivityController(
                 commandBus, drawStatusQuery, leaderboardQuery, recentRechargesQuery,
-                poolQuery, recentDrawsQuery, myDrawsQuery, referralQuery, usageLeaderboardQuery,
+                poolQuery, recentDrawsQuery, myDrawsQuery, referralQuery,
                 mock(RaffleQueryService.class), registryStatusQuery,
                 mock(CheckinStatusQueryService.class), mock(CheckinRewardQueryService.class),
                 achievementWallQuery,
@@ -121,7 +119,7 @@ class ActivityControllerTest {
         when(registryStatusQuery.status()).thenReturn(List.of(
                 new RegistryEntryStatus("qq-referral", "qq-referral", "running",
                         Instant.parse("2026-07-09T16:00:00Z"), Instant.parse("2026-07-16T16:00:00Z")),
-                new RegistryEntryStatus("leaderboard", "evergreen", "running", null, null)));
+                new RegistryEntryStatus("checkin", "evergreen", "running", null, null)));
         mvc.perform(get("/activity/v1/registry-status"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.campaigns[0].id").value("qq-referral"))
@@ -246,5 +244,12 @@ class ActivityControllerTest {
                         .content("{\"codes\":[\"api_calls_2\"]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.acknowledged").value(1));
+    }
+
+    @Test
+    void usageLeaderboardEndpointIsGone() throws Exception {
+        mvc.perform(get("/activity/v1/usage-leaderboard").param("period", "day").param("metric", "tokens")
+                        .header("Authorization", "Bearer t"))
+                .andExpect(status().isNotFound());
     }
 }

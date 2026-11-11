@@ -14,12 +14,12 @@ import me.supernb.activity.app.usecase.achievement.AccountAnniversaryJudgeJob;
 import me.supernb.activity.app.usecase.achievement.AchievementJudgeEngine;
 import me.supernb.activity.app.usecase.achievement.CheckinMetricSyncJob;
 import me.supernb.activity.app.usecase.achievement.GalleryMetricSyncJob;
-import me.supernb.activity.app.usecase.achievement.LeaderboardMetricSyncJob;
 import me.supernb.activity.app.usecase.achievement.RaffleGateMetricSyncJob;
 import me.supernb.activity.app.usecase.achievement.RechargeAchievementJudgeJob;
 import me.supernb.activity.app.usecase.achievement.ReferralMetricSyncJob;
 import me.supernb.activity.app.usecase.achievement.UsageMetricSyncJob;
 import me.supernb.activity.domain.port.achievement.AchievementUnlockPort;
+import me.supernb.activity.domain.port.metric.UserMetricPort;
 import me.supernb.gallery.domain.port.storage.ImageStoragePort;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Test;
@@ -88,12 +88,12 @@ class AchievementFullChainMatrixTest {
     @Autowired CheckinMetricSyncJob checkinJob;
     @Autowired GalleryMetricSyncJob galleryJob;
     @Autowired RaffleGateMetricSyncJob raffleGateJob;
-    @Autowired LeaderboardMetricSyncJob leaderboardJob;
     @Autowired ReferralMetricSyncJob referralJob;
     @Autowired RechargeAchievementJudgeJob rechargeJudge;
     @Autowired AccountAnniversaryJudgeJob anniversaryJudge;
     @Autowired AchievementJudgeEngine engine;
     @Autowired AchievementUnlockPort unlockPort;
+    @Autowired UserMetricPort metricPort;
     @Autowired JdbcTemplate jdbc;
 
     @Test
@@ -112,7 +112,6 @@ class AchievementFullChainMatrixTest {
         }
         galleryJob.syncDaily();
         raffleGateJob.syncDaily();
-        leaderboardJob.syncDaily();
         referralJob.syncDaily();
         rechargeJudge.judgeDaily();
         anniversaryJudge.judgeDaily();
@@ -279,8 +278,8 @@ class AchievementFullChainMatrixTest {
                 + "VALUES (900, '矩阵期次', now() - interval '10 days', now() + interval '10 days')");
         seedDraws(1126, 1126_000L, 1);
         seedDraws(1127, 1127_000L, 10);
-        jdbc.update("INSERT INTO activity.leaderboard_rank_snapshot VALUES (?, 'day', 'tokens', 1128, 30)", today);
-        jdbc.update("INSERT INTO activity.leaderboard_rank_snapshot VALUES (?, 'day', 'tokens', 1129, 5)", today);
+        // 名次指标生产者已随用量榜下架;直接写入库里已有的 leaderboard_best_rank_ever,钉住存量指标照常解锁
+        metricPort.upsertBatch("leaderboard_best_rank_ever", Map.of(1128L, 30.0, 1129L, 5.0));
 
         // —— 拉新轴(user_affiliates × 被邀者 api metric 交叉)——
         seedInvitee(2130, 1130);

@@ -31,7 +31,6 @@ import me.supernb.activity.app.usecase.school.command.ResetSchoolCardCommand;
 import me.supernb.activity.app.usecase.school.query.SchoolLeaderboardQueryService;
 import me.supernb.activity.app.usecase.school.query.SchoolStatusQueryService;
 import me.supernb.activity.app.usecase.thursday.query.ThursdayBucketQueryService;
-import me.supernb.activity.app.usecase.usageboard.UsageLeaderboardQueryService;
 import me.supernb.sub2api.auth.CurrentUserArgumentResolver;
 import me.supernb.sub2api.auth.Sub2apiIntrospectClient;
 import me.supernb.sub2api.auth.UserProfile;
@@ -58,7 +57,7 @@ class SchoolEndpointTest {
                 commandBus, mock(DrawStatusQueryService.class), mock(LeaderboardQueryService.class),
                 mock(RecentRechargesQueryService.class), mock(PoolQueryService.class),
                 mock(RecentDrawsQueryService.class), mock(MyDrawsQueryService.class),
-                mock(ReferralLeaderboardQueryService.class), mock(UsageLeaderboardQueryService.class),
+                mock(ReferralLeaderboardQueryService.class),
                 mock(RaffleQueryService.class), mock(RegistryStatusQueryService.class),
                 mock(CheckinStatusQueryService.class), mock(CheckinRewardQueryService.class),
                 mock(AchievementWallQueryService.class), new AchievementProperties(false, true),

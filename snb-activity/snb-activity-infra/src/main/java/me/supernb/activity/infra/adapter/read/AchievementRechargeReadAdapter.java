@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 /// RECHARGE 全口径(payment_orders UNION 已核销 redeem_codes,剔 ZPay 镜像码防双算,2026-07-13
 /// 站长拍板;与 A-7 CheckinRechargeReadPort 同款读模型,补给资格/充值成就口径统一——此前误接
 /// GateReadModel/RechargeReadModel 只含 payment_orders,漏计闲鱼历史充值,已改正)。
-/// 全量充值窗口=[Instant.EPOCH, now)(EPOCH 为本仓"全历史起点"既定哨兵,见 BoardPeriods.ALL);
+/// 全量充值窗口=[Instant.EPOCH, now)(EPOCH 为本仓"全历史起点"既定哨兵);
 /// 连续 3 月按月窗口三连查,任一窗口 ≤0 即短路返回 false。gateType 传字面量 "RECHARGE"——
 /// 不导入 raffle 子域自己的 GateType 枚举,achievement 只借用这个只读能力,不感知 raffle 的
 /// 领域类型(同 CheckinRechargeReadAdapter 惯例)。

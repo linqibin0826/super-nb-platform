@@ -215,7 +215,7 @@ public class CheckinStatusQueryService {
     /// 🚨 顺序必须按 target 排而不能写死:门槛是 env 可调的(同日已从 20 调到 15),一旦它
     /// 落到 5/10/20 三枚徽章**中间**,固定排第四就会让 rail 读成「20 天:15/20 未达」紧挨着
     /// 「加时资格:已打穿」——后面那格先亮、前面那格还没到。稳定排序保证同值时徽章在前。
-    /// 包私有(非 private)以便脱离端口 mock 直接单测这一纯计算(仿 `BoardPeriods` 先例)。
+    /// 包私有(非 private)以便脱离端口 mock 直接单测这一纯计算。
     static List<CheckinMilestoneView> buildMilestones(int monthCount, int fullMonthDays) {
         List<CheckinMilestoneView> list = new ArrayList<>();
         list.add(milestoneOf("days_5", "出勤 5 天", 5, monthCount));
